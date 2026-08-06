@@ -94,14 +94,11 @@ export async function updateMemberProfile(
   memberId: string,
   input: ProfileInput
 ): Promise<Member> {
-  const saved = await prisma.member.update({
-    where: { id: memberId },
-    data: { ...input },
-  });
-  const rate = calcCompletionRate(saved);
+  // 記入率は入力値から直接計算し、更新は1回にまとめる（往復を減らす）
+  const rate = calcCompletionRate(input as unknown as Member);
   return prisma.member.update({
     where: { id: memberId },
-    data: { completionRate: rate, level: levelFromRate(rate) },
+    data: { ...input, completionRate: rate, level: levelFromRate(rate) },
   });
 }
 

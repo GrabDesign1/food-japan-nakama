@@ -16,6 +16,24 @@ import { eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
 // 商談が「停滞中」とみなす日数（最終活動からの経過）
 const STALL_DAYS = 14;
 
+// 「最近閲覧した共創パートナー」カード用の型
+type RecentlyViewed = {
+  id: string;
+  direction: string;
+  category: string;
+  title: string;
+  area: string | null;
+  imageUrls: string[];
+  amountValue: number | null;
+  amountUnit: string | null;
+  amountPeriod: string | null;
+  amountText: string | null;
+  createdAt: Date;
+  memberName: string | null;
+  tags: string[];
+  views24h?: number;
+};
+
 // クイック操作ボタン（丸アイコンバッジ＋太字ラベル）
 const QUICK_ACTIONS = [
   { href: "/search", icon: "🔍", label: "パートナーを探す", bg: "bg-[var(--green-soft)]" },
@@ -31,67 +49,166 @@ export default async function DashboardPage() {
     ? await prisma.member.findUnique({ where: { id: su.app.memberId } })
     : null;
 
-  // お知らせ（事務局投稿）
-  const announcements = su
-    ? await prisma.announcement.findMany({
-        where: { tenantId: su.app.tenantId },
-        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-        take: 5,
-      })
-    : [];
+  const tenantId = su?.app.tenantId;
+  const memberId = member?.id;
+  const stallCutoff = new Date(Date.now() - STALL_DAYS * 86_400_000);
 
-  // バナー（事務局が登録）
-  const banners = su
-    ? await prisma.banner.findMany({
-        where: { tenantId: su.app.tenantId, active: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      })
-    : [];
-
-  // 登録した売りたい・買いたいの件数
-  const giveCount = member
-    ? await prisma.offering.count({ where: { memberId: member.id, direction: "GIVE" } })
-    : 0;
-  const wantCount = member
-    ? await prisma.offering.count({ where: { memberId: member.id, direction: "WANT" } })
-    : 0;
-
-  // 進行中の商談（フェーズ1〜4）と、そのうち停滞中の件数
-  let activeDeals = 0;
-  let stalledDeals = 0;
-  if (member) {
-    const dealWhere = {
-      OR: [{ ownerMemberId: member.id }, { counterpartMemberId: member.id }],
-      phase: { gte: 1, lte: 4 },
-    };
-    activeDeals = await prisma.deal.count({ where: dealWhere });
-    stalledDeals = await prisma.deal.count({
-      where: {
-        ...dealWhere,
-        lastActivityAt: { lt: new Date(Date.now() - STALL_DAYS * 86_400_000) },
-      },
-    });
-  }
-
-  // 未読メッセージ数 ＆ 自分の会話数（3ステップ判定に使う）
-  let unreadCount = 0;
-  let myThreadCount = 0;
-  if (member) {
-    const myThreads = await prisma.thread.findMany({
-      where: { OR: [{ fromMemberId: member.id }, { toMemberId: member.id }] },
-      select: { id: true },
-    });
-    myThreadCount = myThreads.length;
-    if (myThreads.length) {
-      unreadCount = await prisma.message.count({
+  // ── 表示に必要なデータは一括で並列取得（着地時のもたつきを軽減）──
+  const [
+    announcements,
+    banners,
+    giveCount,
+    wantCount,
+    dealCounts,
+    unreadInfo,
+    favoriteMembers,
+    recentlyViewed,
+    myProjects,
+    published,
+    recentOfferings,
+  ] = await Promise.all([
+    tenantId
+      ? prisma.announcement.findMany({
+          where: { tenantId },
+          orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+          take: 5,
+        })
+      : Promise.resolve([]),
+    tenantId
+      ? prisma.banner.findMany({
+          where: { tenantId, active: true },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        })
+      : Promise.resolve([]),
+    memberId
+      ? prisma.offering.count({ where: { memberId, direction: "GIVE" } })
+      : Promise.resolve(0),
+    memberId
+      ? prisma.offering.count({ where: { memberId, direction: "WANT" } })
+      : Promise.resolve(0),
+    // 進行中の商談（フェーズ1〜4）と、そのうち停滞中の件数
+    (async () => {
+      if (!memberId) return { activeDeals: 0, stalledDeals: 0 };
+      const dealWhere = {
+        OR: [{ ownerMemberId: memberId }, { counterpartMemberId: memberId }],
+        phase: { gte: 1, lte: 4 },
+      };
+      const [activeDeals, stalledDeals] = await Promise.all([
+        prisma.deal.count({ where: dealWhere }),
+        prisma.deal.count({ where: { ...dealWhere, lastActivityAt: { lt: stallCutoff } } }),
+      ]);
+      return { activeDeals, stalledDeals };
+    })(),
+    // 未読メッセージ数 ＆ 自分の会話数（3ステップ判定に使う）
+    (async () => {
+      if (!memberId) return { unreadCount: 0, myThreadCount: 0 };
+      const myThreads = await prisma.thread.findMany({
+        where: { OR: [{ fromMemberId: memberId }, { toMemberId: memberId }] },
+        select: { id: true },
+      });
+      if (!myThreads.length) return { unreadCount: 0, myThreadCount: 0 };
+      const unreadCount = await prisma.message.count({
         where: {
           threadId: { in: myThreads.map((t) => t.id) },
-          senderMemberId: { not: member.id },
+          senderMemberId: { not: memberId },
           readAt: null,
         },
       });
-    }
-  }
+      return { unreadCount, myThreadCount: myThreads.length };
+    })(),
+    // お気に入りの企業
+    (async (): Promise<ProducerCardData[]> => {
+      if (!memberId) return [];
+      const favs = await prisma.favorite.findMany({
+        where: { memberId, targetType: "member" },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      });
+      if (!favs.length) return [];
+      const ids = favs.map((f) => f.targetId);
+      const rows = await prisma.member.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          companyLogoUrl: true,
+          imageUrls: true,
+          categoryL1: true,
+          categoryL2: true,
+          prefecture: true,
+          city: true,
+          productItems: true,
+          description: true,
+        },
+      });
+      const map = new Map(rows.map((r) => [r.id, r]));
+      return ids.map((id) => map.get(id)).filter((r): r is ProducerCardData => !!r);
+    })(),
+    // 最近閲覧した共創パートナー（自分が見た公開中の台帳。重複除外）
+    (async (): Promise<RecentlyViewed[]> => {
+      if (!su) return [];
+      const views = await prisma.offeringView.findMany({
+        where: {
+          viewerUserId: su.app.id,
+          offering: { isPublic: true, title: { not: "" } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 40,
+        include: { offering: { include: { member: { select: { name: true } } } } },
+      });
+      const seen = new Set<string>();
+      const out: RecentlyViewed[] = [];
+      for (const v of views) {
+        if (seen.has(v.offeringId)) continue;
+        seen.add(v.offeringId);
+        out.push({ ...v.offering, memberName: v.offering.member.name });
+        if (out.length >= 4) break;
+      }
+      return out;
+    })(),
+    memberId
+      ? prisma.project.findMany({
+          where: { memberId },
+          orderBy: { updatedAt: "desc" },
+          take: 4,
+        })
+      : Promise.resolve([]),
+    // 新着の共創プロジェクト（掲載中）＋掲載者名
+    (async () => {
+      if (!tenantId) return { projects: [] as Awaited<ReturnType<typeof prisma.project.findMany>>, nameMap: new Map<string, string>() };
+      const projects = await prisma.project.findMany({
+        where: { tenantId, status: "published" },
+        orderBy: { publishedAt: "desc" },
+        take: 4,
+      });
+      const ids = Array.from(new Set(projects.map((p) => p.memberId)));
+      const members = ids.length
+        ? await prisma.member.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+        : [];
+      return { projects, nameMap: new Map(members.map((m) => [m.id, m.name])) };
+    })(),
+    // 新着の持ち寄り台帳（公開中）
+    tenantId
+      ? prisma.offering.findMany({
+          where: { isPublic: true, title: { not: "" }, member: { tenantId } },
+          orderBy: { createdAt: "desc" },
+          take: 8,
+          include: { member: { select: { name: true } } },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const { activeDeals, stalledDeals } = dealCounts;
+  const { unreadCount, myThreadCount } = unreadInfo;
+  const publishedProjects = published.projects;
+  const projNameMap = published.nameMap;
+
+  // 一覧カード用：直近24時間の閲覧数
+  const dashViewMap = await views24hMap([
+    ...recentlyViewed.map((o) => o.id),
+    ...recentOfferings.map((o) => o.id),
+  ]);
 
   // ── はじめの3ステップ（新規会員向けオンボーディング）─────────
   const offeringCount = giveCount + wantCount;
@@ -128,118 +245,6 @@ export default async function DashboardPage() {
   if (!showOnboarding && member && member.completionRate < 80) {
     todos.push({ icon: "📋", label: `プロフィールをあと少しで完成（記入率 ${member.completionRate}%）`, cta: "続きを入力", href: "/profile", cls: AMBER });
   }
-
-  // お気に入りの企業
-  let favoriteMembers: ProducerCardData[] = [];
-  if (member) {
-    const favs = await prisma.favorite.findMany({
-      where: { memberId: member.id, targetType: "member" },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-    });
-    if (favs.length) {
-      const ids = favs.map((f) => f.targetId);
-      const rows = await prisma.member.findMany({
-        where: { id: { in: ids } },
-        select: {
-          id: true,
-          name: true,
-          avatarUrl: true,
-          companyLogoUrl: true,
-          imageUrls: true,
-          categoryL1: true,
-          categoryL2: true,
-          prefecture: true,
-          city: true,
-          productItems: true,
-          description: true,
-        },
-      });
-      const map = new Map(rows.map((r) => [r.id, r]));
-      favoriteMembers = ids
-        .map((id) => map.get(id))
-        .filter((r): r is ProducerCardData => !!r);
-    }
-  }
-
-  // 最近閲覧した共創パートナー（自分が見た公開中のプロジェクト。重複除外）
-  const recentlyViewed: {
-    id: string;
-    direction: string;
-    category: string;
-    title: string;
-    area: string | null;
-    imageUrls: string[];
-    amountValue: number | null;
-    amountUnit: string | null;
-    amountPeriod: string | null;
-    amountText: string | null;
-    createdAt: Date;
-    memberName: string | null;
-    tags: string[];
-    views24h?: number;
-  }[] = [];
-  if (su) {
-    const views = await prisma.offeringView.findMany({
-      where: {
-        viewerUserId: su.app.id,
-        offering: { isPublic: true, title: { not: "" } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 40,
-      include: { offering: { include: { member: { select: { name: true } } } } },
-    });
-    const seen = new Set<string>();
-    for (const v of views) {
-      if (seen.has(v.offeringId)) continue;
-      seen.add(v.offeringId);
-      recentlyViewed.push({ ...v.offering, memberName: v.offering.member.name });
-      if (recentlyViewed.length >= 4) break;
-    }
-  }
-
-  // 自分が登録した共創プロジェクト
-  const myProjects = member
-    ? await prisma.project.findMany({
-        where: { memberId: member.id },
-        orderBy: { updatedAt: "desc" },
-        take: 4,
-      })
-    : [];
-
-  // 新着の共創プロジェクト（掲載中）
-  const publishedProjects = su
-    ? await prisma.project.findMany({
-        where: { tenantId: su.app.tenantId, status: "published" },
-        orderBy: { publishedAt: "desc" },
-        take: 4,
-      })
-    : [];
-  const projMemberIds = Array.from(new Set(publishedProjects.map((p) => p.memberId)));
-  const projMembers = projMemberIds.length
-    ? await prisma.member.findMany({ where: { id: { in: projMemberIds } }, select: { id: true, name: true } })
-    : [];
-  const projNameMap = new Map(projMembers.map((m) => [m.id, m.name]));
-
-  // 新着の持ち寄り台帳（公開中）
-  const recentOfferings = su
-    ? await prisma.offering.findMany({
-        where: {
-          isPublic: true,
-          title: { not: "" },
-          member: { tenantId: su.app.tenantId },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 8,
-        include: { member: { select: { name: true } } },
-      })
-    : [];
-
-  // 一覧カード用：直近24時間の閲覧数
-  const dashViewMap = await views24hMap([
-    ...recentlyViewed.map((o) => o.id),
-    ...recentOfferings.map((o) => o.id),
-  ]);
 
   // 売りたい(GIVE)・買いたい(WANT)で分けて、ダッシュボードで明確に見せる
   const recentGives = recentOfferings.filter((o) => o.direction === "GIVE");
