@@ -45,18 +45,18 @@ export default async function ThreadPage({
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-serif text-[22px] text-[var(--ink)]">メッセージ一覧</h1>
-      <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white md:grid-cols-[300px_1fr]">
-        {/* 左：一覧（スマホでは非表示） */}
-        <div className="hidden max-h-[74vh] overflow-y-auto border-r border-[var(--line)] md:block">
+      <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white lg:grid-cols-[300px_1fr]">
+        {/* 左：一覧（スマホ・タブレットでは非表示） */}
+        <div className="hidden max-h-[74vh] overflow-y-auto border-r border-[var(--line)] lg:block">
           <ThreadList meId={me.id} activeId={thread.id} />
         </div>
 
         {/* 右：会話 */}
         <div className="flex max-h-[74vh] flex-col">
-          {/* スマホ用：一覧へ戻る */}
+          {/* スマホ・タブレット用：一覧へ戻る */}
           <Link
             href="/messages"
-            className="border-b border-[var(--line)] px-5 py-2.5 text-[12px] text-[var(--green-d)] md:hidden"
+            className="border-b border-[var(--line)] px-5 py-2.5 text-[12px] text-[var(--green-d)] lg:hidden"
           >
             ← メッセージ一覧
           </Link>
