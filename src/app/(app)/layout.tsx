@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { signOut } from "../(auth)/actions";
+import { MobileNav } from "./_components/MobileNav";
 
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean };
 
@@ -65,9 +66,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-[238px_1fr]">
-      {/* サイドバー */}
-      <aside className="sticky top-0 flex h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4]">
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_1fr]">
+      {/* サイドバー（PCのみ。スマホはヘッダーのメニューから） */}
+      <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex">
         <div className="flex items-center gap-2.5 border-b border-white/12 px-5 pb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.png" alt="" width={32} height={32} />
@@ -118,9 +119,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
       {/* メイン */}
       <div className="flex min-h-screen flex-col bg-[var(--canvas)]">
-        <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-[var(--line)] bg-white px-8 py-3">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--line)] bg-white px-4 py-3 md:px-8">
+          {/* スマホ用：メニュー＋ブランド */}
+          <MobileNav items={items.filter((i) => i.ready).map((i) => ({ label: i.label, href: i.href, admin: i.admin }))} unread={unread} />
+          <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-mark.png" alt="" width={24} height={24} />
+            <span className="font-serif text-[13px] tracking-[0.08em] text-[var(--ink)]">
+              FOOD JAPAN <span className="text-[var(--green-d)]">NAKAMA</span>
+            </span>
+          </Link>
+
           <div className="ml-auto flex items-center gap-3">
-            <div className="text-right text-[12px] leading-tight">
+            <div className="hidden text-right text-[12px] leading-tight sm:block">
               <div className="text-[var(--ink)]">{su.app.name}</div>
               <div className="text-[11px] text-[var(--muted)]">
                 {ROLE_LABEL[su.app.role] ?? su.app.role}
@@ -149,7 +160,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="max-w-[1200px] px-8 py-6">{children}</main>
+        <main className="max-w-[1200px] px-4 py-6 md:px-8">{children}</main>
       </div>
     </div>
   );

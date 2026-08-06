@@ -303,7 +303,7 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-[10px] border border-[var(--line)] bg-white p-5">
           <div className="text-[11px] text-[var(--muted)]">登録したプロジェクト</div>
           <div className="mt-2 flex items-baseline gap-5">
