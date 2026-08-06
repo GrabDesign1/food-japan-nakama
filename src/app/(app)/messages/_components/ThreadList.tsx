@@ -50,40 +50,49 @@ export async function ThreadList({
         const other = map.get(otherId);
         const last = t.messages[0];
         const unreadN = unreadMap.get(t.id) ?? 0;
-        const needsReply = last ? last.senderMemberId !== meId : false;
         const active = activeId === t.id;
+        const preview = last
+          ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
+          : "（メッセージはまだありません）";
         return (
           <Link
             key={t.id}
             href={`/messages/${t.id}`}
-            className={`border-b border-[#EDF0EA] px-4 py-3 transition ${
+            className={`flex items-center gap-3 border-b border-[#EDF0EA] px-4 py-3 transition ${
               active ? "bg-[var(--green-soft)]" : "hover:bg-[var(--canvas)]"
             }`}
           >
-            <div className="flex items-center gap-2 text-[11px] text-[var(--muted)]">
-              <span>{unreadN > 0 ? "✉️" : "📩"}</span>
-              <span>{formatDate(t.lastMessageAt)}</span>
-              {unreadN > 0 ? (
-                <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[9px] font-bold text-white">
-                  {unreadN}
+            <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[16px] text-[var(--green-d)]">
+              {other?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={other.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                (other?.name?.[0] ?? "?").toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--ink)]">
+                  {other?.name || "（不明）"}
                 </span>
-              ) : null}
-            </div>
-            <div className="mt-1.5 flex items-center gap-2.5">
-              <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[14px] text-[var(--green-d)]">
-                {other?.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={other.avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  (other?.name?.[0] ?? "?").toUpperCase()
-                )}
+                <span className="shrink-0 text-[11px] text-[var(--muted)]">
+                  {shortTime(t.lastMessageAt)}
+                </span>
               </div>
-              <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[var(--ink)]">
-                {other?.name || "（不明）"}
-              </span>
-            </div>
-            <div className="mt-1.5 text-[11px] text-[var(--muted)]">
-              {needsReply ? "未返信" : "返信済み"}
+              <div className="mt-0.5 flex items-center gap-2">
+                <span
+                  className={`min-w-0 flex-1 truncate text-[12px] ${
+                    unreadN > 0 ? "font-medium text-[var(--ink-2)]" : "text-[var(--muted)]"
+                  }`}
+                >
+                  {preview}
+                </span>
+                {unreadN > 0 ? (
+                  <span className="grid h-[18px] min-w-[18px] shrink-0 place-items-center rounded-full bg-[var(--green)] px-1 text-[10px] font-bold text-white">
+                    {unreadN}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </Link>
         );
@@ -92,12 +101,15 @@ export async function ThreadList({
   );
 }
 
-const WD = ["日", "月", "火", "水", "木", "金", "土"];
-function formatDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${y}年${m}月${day}日（${WD[d.getDay()]}）${hh}:${mm}`;
+// 今日なら時刻、それ以外は月/日 を短く表示（LINE風）
+function shortTime(d: Date): string {
+  const now = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  return sameDay
+    ? `${p(d.getHours())}:${p(d.getMinutes())}`
+    : `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
 }
