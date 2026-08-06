@@ -72,6 +72,14 @@ export function AuthForm({
         </label>
       ) : null}
 
+      {mode === "login" ? (
+        <div className="-mt-1 text-right">
+          <Link href="/forgot-password" className="text-[12px] text-[var(--green-d)] underline">
+            パスワードをお忘れの方
+          </Link>
+        </div>
+      ) : null}
+
       {state.error ? (
         <p className="rounded-md bg-[var(--red-soft)] px-3 py-2 text-[12px] text-[var(--red)]">
           {state.error}
