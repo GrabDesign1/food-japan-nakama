@@ -10,10 +10,12 @@ export function AuthForm({
   mode,
   next,
   notice,
+  success,
 }: {
   mode: "login" | "signup";
   next?: string;
   notice?: string;
+  success?: string;
 }) {
   const action = mode === "login" ? signIn : signUp;
   const [state, formAction, pending] = useActionState(action, initial);
@@ -29,6 +31,12 @@ export function AuthForm({
       {notice ? (
         <p className="rounded-md bg-[var(--red-soft)] px-3 py-2 text-[12px] text-[var(--red)]">
           {notice}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p className="rounded-md bg-[var(--green-soft)] px-3 py-2 text-[12px] text-[var(--green-d)]">
+          {success}
         </p>
       ) : null}
 

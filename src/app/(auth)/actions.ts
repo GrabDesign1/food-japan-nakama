@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export type AuthState = { error?: string; message?: string };
 
@@ -73,13 +75,22 @@ export async function requestPasswordReset(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { error: "正しいメールアドレスを入力してください。" };
   }
 
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.resetPasswordForEmail(email);
+  // Supabaseのメールテンプレに頼らず、リカバリー用リンクを生成してアプリから日本語で送る。
+  const admin = createSupabaseAdminClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+  });
+  if (!error && data?.properties?.hashed_token) {
+    const url = `${appUrl}/auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery&next=/reset-password`;
+    await sendPasswordResetEmail(email, url);
+  }
 
   // メールの有無に関わらず同じ表示（アカウント存在を漏らさない）
   return {
@@ -114,10 +125,14 @@ export async function updatePassword(
     };
   }
 
-  const { error } = await supabase.auth.updateUser({ password });
+  // 管理者権限で確実に更新（リカバリーセッションの制約を回避）。
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(user.id, { password });
   if (error) {
     return { error: "パスワードの更新に失敗しました。時間をおいて再度お試しください。" };
   }
 
-  redirect("/dashboard");
+  // リカバリーセッションを終了し、新パスワードでログインし直してもらう。
+  await supabase.auth.signOut();
+  redirect("/login?reset=done");
 }

@@ -30,6 +30,28 @@ async function send({ to, subject, html }: SendArgs): Promise<void> {
   }
 }
 
+// パスワード再設定メール（Supabaseテンプレに依存せず、アプリから日本語で送る）。
+export async function sendPasswordResetEmail(
+  to: string,
+  confirmUrl: string
+): Promise<void> {
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">パスワードの再設定</h2>
+    <p style="font-size:14px;color:#3C4A62">FOOD JAPAN NAKAMA のパスワード再設定のご依頼を受け付けました。<br>下のボタンから、新しいパスワードを設定してください。</p>
+    <p style="margin:22px 0">
+      <a href="${confirmUrl}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">パスワードを再設定する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">このメールにお心当たりがない場合は、破棄してください（パスワードは変更されません）。</p>
+  </div>`;
+
+  await send({
+    to: [to],
+    subject: "【FOOD JAPAN NAKAMA】パスワード再設定のご案内",
+    html,
+  });
+}
+
 // 会員が審査申請したとき、事務局へ通知。
 export async function notifyAdminMemberRegistered(params: {
   adminEmails: string[];
