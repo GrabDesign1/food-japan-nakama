@@ -5,9 +5,8 @@ import { prisma } from "@/lib/db";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
-import { UpgradeToMessage } from "@/components/UpgradeToMessage";
 import { toggleFavoriteMember } from "../actions";
-import { sendInterest } from "../../messages/actions";
+import { startConversation } from "../../messages/actions";
 
 export default async function ProducerDetailPage({
   params,
@@ -34,14 +33,6 @@ export default async function ProducerDetailPage({
   const isOwner = m.id === su.app.memberId;
   if (m.status !== "APPROVED" && !isOwner) notFound();
 
-  // 送信元（自分）の課金状態。フリープランは興味送信不可（アップグレード誘導）。
-  const meMember = su.app.memberId
-    ? await prisma.member.findUnique({
-        where: { id: su.app.memberId },
-        select: { paymentStatus: true },
-      })
-    : null;
-  const canSend = meMember?.paymentStatus === "PAID";
 
   const isFavorited = su.app.memberId
     ? !!(await prisma.favorite.findUnique({
@@ -134,17 +125,33 @@ export default async function ProducerDetailPage({
         </div>
 
         {!isOwner ? (
-          <form action={toggleFavoriteMember.bind(null, m.id)}>
-            <button
-              className={`rounded-lg px-4 py-2.5 text-[13px] font-medium transition ${
-                isFavorited
-                  ? "bg-[var(--yuzu-soft,#FAF0D6)] text-[#B77F0B]"
-                  : "border border-[var(--green)] text-[var(--green-d)] hover:bg-[var(--green-soft)]"
-              }`}
-            >
-              {isFavorited ? "★ お気に入り済み" : "☆ お気に入りに追加"}
-            </button>
-          </form>
+          <div className="flex shrink-0 flex-col gap-2">
+            {existingThread ? (
+              <Link
+                href={`/messages/${existingThread.id}`}
+                className="rounded-lg bg-[var(--green)] px-4 py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[var(--green-d)]"
+              >
+                💬 メッセージを見る
+              </Link>
+            ) : (
+              <form action={startConversation.bind(null, m.id)}>
+                <button className="w-full rounded-lg bg-[var(--green)] px-4 py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[var(--green-d)]">
+                  💬 問い合わせする
+                </button>
+              </form>
+            )}
+            <form action={toggleFavoriteMember.bind(null, m.id)}>
+              <button
+                className={`w-full rounded-lg px-4 py-2 text-[13px] font-medium transition ${
+                  isFavorited
+                    ? "bg-[var(--yuzu-soft,#FAF0D6)] text-[#B77F0B]"
+                    : "border border-[var(--green)] text-[var(--green-d)] hover:bg-[var(--green-soft)]"
+                }`}
+              >
+                {isFavorited ? "★ お気に入り済み" : "☆ お気に入りに追加"}
+              </button>
+            </form>
+          </div>
         ) : null}
       </div>
 
@@ -155,49 +162,6 @@ export default async function ProducerDetailPage({
           alt=""
           className="max-h-[420px] w-full rounded-xl border border-[var(--line)] object-cover"
         />
-      ) : null}
-
-      {/* 連絡する（興味を送る） */}
-      {!isOwner ? (
-        !canSend && !existingThread ? (
-          <UpgradeToMessage targetName={m.name} />
-        ) : existingThread ? (
-          <div className="flex items-center justify-between rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-4">
-            <span className="text-[13px] text-[var(--green-d)]">
-              この事業者とはすでにやり取りがあります。
-            </span>
-            <Link
-              href={`/messages/${existingThread.id}`}
-              className="rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)]"
-            >
-              メッセージを見る →
-            </Link>
-          </div>
-        ) : (
-          <form
-            action={sendInterest.bind(null, m.id, null)}
-            className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5"
-          >
-            <div className="mb-2 text-[14px] font-semibold text-[var(--ink)]">
-              この事業者に興味を送る
-            </div>
-            <textarea
-              name="message"
-              required
-              rows={3}
-              placeholder="はじめまして。◯◯について相談させてください。"
-              className="w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
-            />
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-[11px] text-[var(--muted)]">
-                送信すると相手にメッセージが届きます。
-              </span>
-              <button className="rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-bold text-white hover:bg-[var(--green-d)]">
-                興味を送る
-              </button>
-            </div>
-          </form>
-        )
       ) : null}
 
       {m.description ? (

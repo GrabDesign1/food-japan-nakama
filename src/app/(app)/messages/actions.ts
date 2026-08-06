@@ -66,6 +66,41 @@ export async function sendInterest(
   redirect(`/messages/${thread.id}`);
 }
 
+/** 事業者に問い合わせる：会話（スレッド）を用意してメッセージ画面へ直行する。 */
+export async function startConversation(toMemberId: string): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) redirect("/login");
+  const me = await getOrCreateMemberForUser(su!);
+  if (me.id === toMemberId) return;
+
+  // フリープランは問い合わせ不可 → アップグレードへ
+  if (me.paymentStatus !== "PAID") redirect("/billing");
+
+  let thread = await prisma.thread.findFirst({
+    where: {
+      OR: [
+        { fromMemberId: me.id, toMemberId },
+        { fromMemberId: toMemberId, toMemberId: me.id },
+      ],
+    },
+  });
+
+  if (!thread) {
+    thread = await prisma.thread.create({
+      data: { tenantId: su!.app.tenantId, fromMemberId: me.id, toMemberId },
+    });
+    // 初回接触で商談を自動作成（phase 0 出会う）
+    await ensureDeal({
+      tenantId: su!.app.tenantId,
+      meId: me.id,
+      otherId: toMemberId,
+      threadId: thread.id,
+    });
+  }
+
+  redirect(`/messages/${thread.id}`);
+}
+
 /** スレッドに返信 */
 export async function sendMessage(
   threadId: string,
