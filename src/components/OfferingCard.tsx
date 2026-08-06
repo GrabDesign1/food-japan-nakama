@@ -21,7 +21,7 @@ export type OfferingCardData = {
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function OfferingCard({ o }: { o: OfferingCardData }) {
+export function OfferingCard({ o, isOwn = false }: { o: OfferingCardData; isOwn?: boolean }) {
   const meta = categoryMeta(o.category);
   const thumb = o.imageUrls?.[0];
   const isGive = o.direction === "GIVE";
@@ -32,7 +32,11 @@ export function OfferingCard({ o }: { o: OfferingCardData }) {
 
   return (
     <Link href={`/ledger/${o.id}`} className="group block">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)]">
+      <div
+        className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] ${
+          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)]"
+        }`}
+      >
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -48,6 +52,11 @@ export function OfferingCard({ o }: { o: OfferingCardData }) {
         {isNew ? (
           <span className="absolute left-0 top-0 rounded-br-lg bg-[var(--red)] px-2.5 py-1 text-[11px] font-bold text-white shadow">
             新着
+          </span>
+        ) : null}
+        {isOwn ? (
+          <span className="absolute right-2 top-2 rounded bg-[#B77F0B] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            あなたの投稿
           </span>
         ) : null}
         <div className="absolute bottom-2 left-2 flex items-center gap-1.5">

@@ -15,14 +15,18 @@ export type ProducerCardData = {
   description: string | null;
 };
 
-export function ProducerCard({ p }: { p: ProducerCardData }) {
+export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?: boolean }) {
   const initial = (p.name?.[0] ?? "?").toUpperCase();
   const area = [p.prefecture, p.city].filter(Boolean).join(" ");
   const thumb = p.imageUrls?.[0] ?? p.avatarUrl ?? null;
 
   return (
     <Link href={`/producers/${p.id}`} className="group block">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)]">
+      <div
+        className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] ${
+          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)]"
+        }`}
+      >
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -44,6 +48,11 @@ export function ProducerCard({ p }: { p: ProducerCardData }) {
               className="max-h-[26px] max-w-full object-contain"
             />
           </div>
+        ) : null}
+        {isOwn ? (
+          <span className="absolute right-2 top-2 rounded bg-[#B77F0B] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            あなたの会社
+          </span>
         ) : null}
         <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
           {area ? (

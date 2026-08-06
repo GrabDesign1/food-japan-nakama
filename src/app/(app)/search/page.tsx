@@ -38,13 +38,13 @@ export default async function SearchPage({
   let offerings: Awaited<ReturnType<typeof searchOfferings>> = [];
   let producers: Awaited<ReturnType<typeof searchProducers>> = [];
 
-  // 自分の事業者・自分の投稿は検索結果から除外する
-  const excludeMemberId = su.app.memberId ?? undefined;
+  // 自分の事業者・投稿は除外せず、「あなたの会社／あなたの投稿」バッジで区別する
+  const ownMemberId = su.app.memberId ?? null;
 
   if (target === "producers") {
-    producers = await searchProducers({ tenantId, area, category, q, excludeMemberId });
+    producers = await searchProducers({ tenantId, area, category, q });
   } else {
-    offerings = await searchOfferings({ tenantId, area, category, q, direction, excludeMemberId });
+    offerings = await searchOfferings({ tenantId, area, category, q, direction });
   }
 
   const count = target === "producers" ? producers.length : offerings.length;
@@ -137,7 +137,7 @@ export default async function SearchPage({
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {producers.map((p) => (
-              <ProducerCard key={p.id} p={p} />
+              <ProducerCard key={p.id} p={p} isOwn={p.id === ownMemberId} />
             ))}
           </div>
         )
@@ -146,7 +146,7 @@ export default async function SearchPage({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {offerings.map((o) => (
-            <OfferingCard key={o.id} o={{ ...o, memberName: o.member.name, views24h: viewMap.get(o.id) ?? 0 }} />
+            <OfferingCard key={o.id} o={{ ...o, memberName: o.member.name, views24h: viewMap.get(o.id) ?? 0 }} isOwn={o.memberId === ownMemberId} />
           ))}
         </div>
       )}
@@ -168,13 +168,11 @@ async function searchOfferings(f: {
   category: string;
   q: string;
   direction: string;
-  excludeMemberId?: string;
 }) {
   return prisma.offering.findMany({
     where: {
       isPublic: true,
       title: { not: "" },
-      ...(f.excludeMemberId ? { memberId: { not: f.excludeMemberId } } : {}),
       member: {
         tenantId: f.tenantId,
         ...(f.category ? { categoryL1: f.category } : {}),
@@ -202,13 +200,11 @@ async function searchProducers(f: {
   area: string;
   category: string;
   q: string;
-  excludeMemberId?: string;
 }) {
   return prisma.member.findMany({
     where: {
       tenantId: f.tenantId,
       status: "APPROVED",
-      ...(f.excludeMemberId ? { id: { not: f.excludeMemberId } } : {}),
       ...(f.category ? { categoryL1: f.category } : {}),
       ...(f.area ? { prefecture: { contains: f.area } } : {}),
       ...(f.q
