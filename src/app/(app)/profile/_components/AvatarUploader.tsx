@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { uploadMemberAvatar, removeMemberAvatar } from "../actions";
+import { btn } from "@/lib/ui";
 
 export function AvatarUploader({
   url,
@@ -44,7 +45,7 @@ export function AvatarUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={pending}
-            className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[12px] text-[var(--ink-2)] hover:bg-[var(--canvas)] disabled:opacity-60"
+            className={btn("secondary", "sm")}
           >
             {pending ? "処理中…" : url ? "画像を変更" : "画像を選ぶ"}
           </button>
@@ -57,7 +58,7 @@ export function AvatarUploader({
                 })
               }
               disabled={pending}
-              className="rounded-md px-3 py-1.5 text-[12px] text-[var(--red)] hover:bg-[var(--red-soft)] disabled:opacity-60"
+              className={btn("danger", "sm")}
             >
               削除
             </button>

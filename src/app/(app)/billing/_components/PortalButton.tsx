@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { openBillingPortal, type PortalState } from "../actions";
+import { btn } from "@/lib/ui";
 
 const INIT: PortalState = {};
 
@@ -11,7 +12,7 @@ export function PortalButton() {
     <form action={formAction} className="flex flex-col gap-1">
       <button
         disabled={pending}
-        className="rounded-md border border-[var(--line)] bg-white px-4 py-2 text-[13px] font-medium text-[var(--ink-2)] hover:bg-[var(--canvas)] disabled:opacity-60"
+        className={btn("secondary")}
       >
         {pending ? "開いています…" : "お支払い情報を管理する（解約・領収書・カード変更）"}
       </button>

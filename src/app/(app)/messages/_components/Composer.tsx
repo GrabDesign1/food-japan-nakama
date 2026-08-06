@@ -8,6 +8,7 @@ import {
   createTemplate,
   deleteTemplate,
 } from "../actions";
+import { btn } from "@/lib/ui";
 
 type Template = { id: string; name: string; body: string };
 
@@ -145,7 +146,7 @@ export function Composer({
           </p>
           <a
             href="/billing"
-            className="inline-block rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-bold text-white hover:bg-[var(--green-d)]"
+            className={`${btn("primary")} inline-block`}
           >
             アップグレードする
           </a>
@@ -194,7 +195,7 @@ export function Composer({
               📎 ファイル添付
             </button>
           </div>
-          <button className="shrink-0 whitespace-nowrap rounded-lg bg-[var(--green)] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[var(--green-d)]">
+          <button className={`${btn("primary")} shrink-0 whitespace-nowrap`}>
             送信
           </button>
         </div>
@@ -222,10 +223,10 @@ export function Composer({
                 <textarea value={tBody} onChange={(e) => setTBody(e.target.value)} rows={6} className="rounded-md border border-[var(--green)] px-3 py-2 text-[14px] outline-none" />
               </label>
               <div className="flex gap-2">
-                <button type="button" onClick={onCreateTemplate} disabled={pending} className="rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-bold text-white disabled:opacity-60">
+                <button type="button" onClick={onCreateTemplate} disabled={pending} className={btn("primary", "sm")}>
                   保存する
                 </button>
-                <button type="button" onClick={() => setCreating(false)} className="rounded-md border border-[var(--line)] px-5 py-2 text-[13px] text-[var(--ink-2)]">
+                <button type="button" onClick={() => setCreating(false)} className={btn("secondary", "sm")}>
                   キャンセル
                 </button>
               </div>
@@ -268,7 +269,7 @@ export function Composer({
                 </div>
               ))}
 
-              <button type="button" onClick={() => setCreating(true)} className="w-fit rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white">
+              <button type="button" onClick={() => setCreating(true)} className={`${btn("primary", "sm")} w-fit`}>
                 ＋ 新規テンプレート作成
               </button>
             </div>
@@ -295,7 +296,7 @@ export function Composer({
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={() => setRows([...rows, { date: "", start: "", end: "" }])} className="mt-3 rounded-md border border-[var(--green)] px-4 py-1.5 text-[12px] text-[var(--green-d)]">
+              <button type="button" onClick={() => setRows([...rows, { date: "", start: "", end: "" }])} className={`${btn("secondary", "sm")} mt-3`}>
                 候補日を追加する
               </button>
             </div>
@@ -304,10 +305,10 @@ export function Composer({
               <textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={3} className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]" />
             </label>
             <div className="flex gap-2">
-              <button type="button" onClick={insertSchedule} className="rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-bold text-white">
+              <button type="button" onClick={insertSchedule} className={btn("primary", "sm")}>
                 メッセージに反映
               </button>
-              <button type="button" onClick={() => setModal(null)} className="rounded-md border border-[var(--line)] px-5 py-2 text-[13px] text-[var(--ink-2)]">
+              <button type="button" onClick={() => setModal(null)} className={btn("secondary", "sm")}>
                 キャンセル
               </button>
             </div>
@@ -335,7 +336,7 @@ function Modal({
             <span className="inline-block h-5 w-1.5 rounded bg-[var(--green)]" />
             {title}
           </h2>
-          <button type="button" onClick={onClose} className="text-[14px] text-[var(--muted)]">
+          <button type="button" onClick={onClose} className={btn("secondary", "sm")}>
             ✕ 閉じる
           </button>
         </div>

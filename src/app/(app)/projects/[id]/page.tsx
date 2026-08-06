@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { applyToProject } from "../actions";
+import { btn } from "@/lib/ui";
 
 export default async function ProjectDetailPage({
   params,
@@ -46,7 +47,7 @@ export default async function ProjectDetailPage({
       <div className="flex items-center justify-between">
         <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">← 一覧</Link>
         {isOwner ? (
-          <Link href={`/projects/${project.id}/edit`} className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[12px] text-[var(--ink-2)] hover:bg-[var(--canvas)]">編集する</Link>
+          <Link href={`/projects/${project.id}/edit`} className={btn("secondary", "sm")}>編集する</Link>
         ) : null}
       </div>
 
@@ -106,7 +107,7 @@ export default async function ProjectDetailPage({
             <form action={applyToProject.bind(null, project.id)} className="flex flex-col gap-2">
               <div className="text-[14px] font-semibold text-[var(--ink)]">このプロジェクトに応募する</div>
               <textarea name="message" rows={3} placeholder="意気込みや、提供できるもの・強みをお書きください。" className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]" />
-              <button className="w-fit rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-bold text-white hover:bg-[var(--green-d)]">応募する</button>
+              <button className={`${btn("primary")} w-fit`}>応募する</button>
             </form>
           )}
         </div>

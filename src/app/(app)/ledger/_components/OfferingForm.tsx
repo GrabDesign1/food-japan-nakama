@@ -11,6 +11,7 @@ import {
   AMOUNT_PERIODS,
   TIMINGS,
 } from "@/lib/offering-taxonomy";
+import { btn } from "@/lib/ui";
 
 export type OfferingData = {
   id: string;
@@ -213,7 +214,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-60"
+          className={btn("primary")}
         >
           {pending ? "保存中…" : "保存する"}
         </button>

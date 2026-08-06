@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { signIn, signUp, type AuthState } from "../actions";
 import { GoogleButton } from "./GoogleButton";
+import { btn } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -111,7 +112,7 @@ export function AuthForm({
       <button
         type="submit"
         disabled={pending}
-        className="mt-1 rounded-md bg-[var(--green)] py-2.5 text-[14px] font-medium text-white transition hover:bg-[var(--green-d)] disabled:opacity-60"
+        className={`${btn("primary")} mt-1 w-full`}
       >
         {pending
           ? "処理中…"

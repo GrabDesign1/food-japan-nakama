@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { createAdminAccount, type AdminAccountState } from "../admin-account-actions";
+import { btn } from "@/lib/ui";
 
 const INIT: AdminAccountState = {};
 
@@ -65,7 +66,7 @@ export function AdminAccountForm() {
         </p>
         <button
           disabled={pending}
-          className="ml-auto rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-50"
+          className={`${btn("primary")} ml-auto`}
         >
           {pending ? "作成中…" : "管理者を追加"}
         </button>

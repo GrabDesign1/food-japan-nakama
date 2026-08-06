@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { DIRECTION_LABEL } from "@/lib/offering-taxonomy";
 import { OfferingForm, type OfferingData } from "../../_components/OfferingForm";
 import { togglePublish, deleteOffering } from "../../actions";
+import { btn } from "@/lib/ui";
 
 export default async function OfferingEditPage({
   params,
@@ -43,7 +44,7 @@ export default async function OfferingEditPage({
     <div className="flex max-w-[720px] flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/ledger" className="text-[12px] text-[var(--green-d)] underline">
+          <Link href="/ledger" className={btn("secondary", "sm")}>
             ← 台帳一覧
           </Link>
           <h1 className="mt-1 font-serif text-[20px] text-[var(--ink)]">
@@ -57,7 +58,7 @@ export default async function OfferingEditPage({
                 公開中
               </span>
               <form action={togglePublish.bind(null, offering.id, false)}>
-                <button className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[12px] text-[var(--ink-2)] hover:bg-[var(--canvas)]">
+                <button className={btn("secondary", "sm")}>
                   非公開にする
                 </button>
               </form>
@@ -68,7 +69,7 @@ export default async function OfferingEditPage({
                 下書き
               </span>
               <form action={togglePublish.bind(null, offering.id, true)}>
-                <button className="rounded-md bg-[var(--green)] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[var(--green-d)]">
+                <button className={btn("primary", "sm")}>
                   公開する
                 </button>
               </form>

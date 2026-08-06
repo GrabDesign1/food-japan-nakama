@@ -7,6 +7,7 @@ import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { toggleFavoriteMember } from "../actions";
 import { startConversation } from "../../messages/actions";
+import { btn } from "@/lib/ui";
 
 export default async function ProducerDetailPage({
   params,
@@ -130,7 +131,7 @@ export default async function ProducerDetailPage({
           <div className="flex shrink-0 flex-col gap-2">
             {!existingThread ? (
               <form action={startConversation.bind(null, m.id)}>
-                <button className="w-full rounded-lg bg-[var(--green)] px-4 py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[var(--green-d)]">
+                <button className={`${btn("primary")} w-full`}>
                   💬 問い合わせする
                 </button>
               </form>
@@ -167,7 +168,7 @@ export default async function ProducerDetailPage({
           </span>
           <Link
             href={`/messages/${existingThread.id}`}
-            className="shrink-0 rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)]"
+            className={`${btn("primary", "sm")} shrink-0`}
           >
             メッセージを見る →
           </Link>

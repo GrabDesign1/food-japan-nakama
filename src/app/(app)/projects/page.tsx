@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createDraftProject } from "./actions";
 import { ProjectCard } from "@/components/ProjectCard";
+import { btn } from "@/lib/ui";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   draft: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -45,7 +46,7 @@ export default async function ProjectsPage() {
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">困っていること・実現したいことを書いて、解決してくれる共創パートナーを募ります。</p>
         </div>
         <form action={createDraftProject}>
-          <button className="rounded-md bg-[var(--green)] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[var(--green-d)]">
+          <button className={btn("primary")}>
             ＋ 共創プロジェクトを企画する
           </button>
         </form>

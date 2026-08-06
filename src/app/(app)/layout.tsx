@@ -6,6 +6,7 @@ import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { signOut } from "../(auth)/actions";
 import { MobileNav } from "./_components/MobileNav";
+import { btn } from "@/lib/ui";
 
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean };
 
@@ -152,7 +153,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <form action={signOut}>
               <button
                 type="submit"
-                className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[11px] text-[var(--ink-2)] transition hover:bg-[var(--canvas)]"
+                className={btn("secondary", "sm")}
               >
                 ログアウト
               </button>

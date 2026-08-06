@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { PHASES, isStale, loadMemberDeals } from "@/lib/deal";
 import { PhaseSelect } from "./_components/PhaseSelect";
 import { setDealNext } from "./actions";
+import { btn } from "@/lib/ui";
 
 function ymd(d: Date | null): string {
   if (!d) return "";
@@ -34,7 +35,7 @@ export default async function DealsPage({
           <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">DEALS</p>
           <h1 className="font-serif text-[22px] text-[var(--ink)]">商談管理</h1>
         </div>
-        <Link href="/deals/board" className="rounded-md border border-[var(--line)] px-4 py-2 text-[13px] text-[var(--ink-2)] hover:bg-[var(--canvas)]">
+        <Link href="/deals/board" className={btn("secondary", "sm")}>
           ステータスボードで見る →
         </Link>
       </div>
@@ -100,7 +101,7 @@ export default async function DealsPage({
                       期限
                       <input type="date" name="dueDate" defaultValue={ymd(deal.dueDate)} className={`rounded-md border bg-white px-3 py-1.5 text-[13px] outline-none focus:border-[var(--green)] ${overdue ? "border-[var(--red)] text-[var(--red)]" : "border-[var(--line)]"}`} />
                     </label>
-                    <button className="rounded-md bg-[var(--green)] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[var(--green-d)]">
+                    <button className={btn("primary", "sm")}>
                       保存
                     </button>
                     {deal.threadId ? (

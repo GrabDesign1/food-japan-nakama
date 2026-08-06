@@ -6,6 +6,7 @@ import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
 import { ProducerCard } from "@/components/ProducerCard";
 import { views24hMap } from "@/lib/offering-views";
+import { btn } from "@/lib/ui";
 
 type SP = {
   target?: string;
@@ -120,7 +121,7 @@ export default async function SearchPage({
             </select>
           ) : null}
 
-          <button className="rounded-lg bg-[var(--green)] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[var(--green-d)]">
+          <button className={btn("primary")}>
             検索
           </button>
         </div>

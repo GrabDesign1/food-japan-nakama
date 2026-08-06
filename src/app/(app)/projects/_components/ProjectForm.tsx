@@ -9,6 +9,7 @@ import {
 } from "../actions";
 import { CATEGORY_L1 } from "@/lib/member-taxonomy";
 import { ProjectBodyImage } from "./ProjectBodyImage";
+import { btn } from "@/lib/ui";
 
 export type ProjectData = {
   id: string;
@@ -118,7 +119,7 @@ export function ProjectForm({ project }: { project: ProjectData }) {
       </label>
 
       <div className="flex items-center gap-3 border-t border-[var(--line)] pt-4">
-        <button type="submit" disabled={pending} className="rounded-md bg-[var(--green)] px-5 py-2.5 text-[14px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-60">
+        <button type="submit" disabled={pending} className={btn("primary")}>
           {pending ? "保存中…" : "保存する"}
         </button>
         {state.ok ? <span className="text-[12px] text-[var(--green-d)]">保存しました。</span> : null}

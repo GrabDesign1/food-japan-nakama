@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createBanner, type BannerState } from "../banner-actions";
+import { btn } from "@/lib/ui";
 
 const INIT: BannerState = {};
 
@@ -79,7 +80,7 @@ export function BannerManager() {
         </p>
         <button
           disabled={pending}
-          className="ml-auto rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-50"
+          className={`${btn("primary")} ml-auto`}
         >
           {pending ? "アップロード中…" : "バナーを追加"}
         </button>

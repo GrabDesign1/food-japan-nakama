@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { submitProfile, type ProfileState } from "../actions";
+import { btn } from "@/lib/ui";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   DRAFT: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -53,7 +54,7 @@ export function ReviewStatus({ status }: { status: string }) {
             <button
               type="submit"
               disabled={pending}
-              className="rounded-lg bg-[var(--green)] px-6 py-3.5 text-[15px] font-bold text-white shadow-md transition hover:bg-[var(--green-d)] hover:shadow-lg disabled:opacity-60"
+              className={btn("primary", "lg")}
             >
               {pending ? "申請中…" : "事務局に審査を申請する →"}
             </button>

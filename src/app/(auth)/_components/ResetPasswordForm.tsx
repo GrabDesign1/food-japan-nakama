@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { updatePassword, type AuthState } from "../actions";
+import { btn } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -49,7 +50,7 @@ export function ResetPasswordForm() {
       <button
         type="submit"
         disabled={pending}
-        className="mt-1 rounded-md bg-[var(--green)] py-2.5 text-[14px] font-medium text-white transition hover:bg-[var(--green-d)] disabled:opacity-60"
+        className={`${btn("primary")} mt-1 w-full`}
       >
         {pending ? "更新中…" : "パスワードを更新する"}
       </button>

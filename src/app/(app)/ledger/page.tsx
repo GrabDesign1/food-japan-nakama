@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { createDraftOffering } from "./actions";
+import { btn } from "@/lib/ui";
 
 export default async function LedgerPage() {
   const su = await getSessionUser();
@@ -34,7 +35,7 @@ export default async function LedgerPage() {
         </div>
         <div className="flex gap-2">
           <form action={createDraftOffering.bind(null, "GIVE")}>
-            <button className="rounded-md bg-[var(--green)] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[var(--green-d)]">
+            <button className={btn("primary")}>
               ＋ 売りたいを登録
             </button>
           </form>
@@ -96,7 +97,7 @@ function Section({
               <OfferingCard o={o} />
               <Link
                 href={`/ledger/${o.id}/edit`}
-                className="mt-1 inline-block text-[11px] text-[var(--green-d)] underline"
+                className={`${btn("secondary", "sm")} mt-1 inline-block`}
               >
                 編集
               </Link>

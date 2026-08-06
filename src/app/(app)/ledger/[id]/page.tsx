@@ -13,6 +13,7 @@ import {
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
 import { UpgradeToMessage } from "@/components/UpgradeToMessage";
+import { btn } from "@/lib/ui";
 
 export default async function OfferingDetailPage({
   params,
@@ -90,13 +91,13 @@ export default async function OfferingDetailPage({
   return (
     <div className="mx-auto flex max-w-[820px] flex-col gap-6">
       <div className="flex items-center justify-between">
-        <Link href="/ledger" className="text-[12px] text-[var(--green-d)] underline">
+        <Link href="/ledger" className={btn("secondary", "sm")}>
           ← 台帳一覧
         </Link>
         {isOwner ? (
           <Link
             href={`/ledger/${offering.id}/edit`}
-            className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[12px] text-[var(--ink-2)] hover:bg-[var(--canvas)]"
+            className={btn("secondary", "sm")}
           >
             編集する
           </Link>
@@ -198,7 +199,7 @@ export default async function OfferingDetailPage({
             </span>
             <Link
               href={`/messages/${existingThread.id}`}
-              className="rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)]"
+              className={btn("primary", "sm")}
             >
               メッセージを見る →
             </Link>
@@ -222,7 +223,7 @@ export default async function OfferingDetailPage({
               <span className="text-[11px] text-[var(--muted)]">
                 送信すると {offering.member.name} にメッセージが届きます。
               </span>
-              <button className="rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-bold text-white hover:bg-[var(--green-d)]">
+              <button className={btn("primary")}>
                 メッセージを送る
               </button>
             </div>

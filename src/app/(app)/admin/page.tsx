@@ -10,6 +10,7 @@ import { revokeAdmin } from "./admin-account-actions";
 import { AdminAccountForm } from "./_components/AdminAccountForm";
 import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
+import { btn } from "@/lib/ui";
 
 export default async function AdminPage() {
   const su = await getSessionUser();
@@ -118,7 +119,7 @@ export default async function AdminPage() {
             <label className="flex items-center gap-1.5 text-[12px] text-[var(--ink-2)]">
               <input type="checkbox" name="pinned" /> 上部に固定（重要）
             </label>
-            <button className="ml-auto rounded-md bg-[var(--green)] px-5 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)]">投稿する</button>
+            <button className={`${btn("primary")} ml-auto`}>投稿する</button>
           </div>
         </form>
 
@@ -136,7 +137,7 @@ export default async function AdminPage() {
                   </div>
                 </div>
                 <form action={deleteAnnouncement.bind(null, a.id)}>
-                  <button className="text-[12px] text-[var(--red)] underline">削除</button>
+                  <button className={btn("danger", "sm")}>削除</button>
                 </form>
               </div>
             ))}
@@ -180,12 +181,12 @@ export default async function AdminPage() {
                   )}
                 </div>
                 <form action={toggleBanner.bind(null, b.id, !b.active)}>
-                  <button className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[12px] text-[var(--ink-2)] hover:bg-[var(--canvas)]">
+                  <button className={btn("secondary", "sm")}>
                     {b.active ? "非表示にする" : "表示する"}
                   </button>
                 </form>
                 <form action={deleteBanner.bind(null, b.id)}>
-                  <button className="text-[12px] text-[var(--red)] underline">削除</button>
+                  <button className={btn("danger", "sm")}>削除</button>
                 </form>
               </div>
             ))}
@@ -205,10 +206,10 @@ export default async function AdminPage() {
                 </Link>
                 <span className="text-[12px] text-[var(--muted)]">{projNameMap.get(p.memberId)}</span>
                 <form action={adminReviewProject.bind(null, p.id, true)}>
-                  <button className="rounded-md bg-[var(--green)] px-3 py-1.5 text-[12px] text-white hover:bg-[var(--green-d)]">承認</button>
+                  <button className={btn("primary", "sm")}>承認</button>
                 </form>
                 <form action={adminReviewProject.bind(null, p.id, false)}>
-                  <button className="rounded-md border border-[var(--red)] px-3 py-1.5 text-[12px] text-[var(--red)] hover:bg-[var(--red-soft)]">差し戻し</button>
+                  <button className={btn("danger", "sm")}>差し戻し</button>
                 </form>
               </div>
             ))}
@@ -248,7 +249,7 @@ export default async function AdminPage() {
                 </span>
               ) : (
                 <form action={revokeAdmin.bind(null, u.id)} className="w-[72px] text-right">
-                  <button className="text-[12px] text-[var(--red)] underline">権限解除</button>
+                  <button className={btn("danger", "sm")}>権限解除</button>
                 </form>
               )}
             </div>

@@ -10,6 +10,7 @@ import {
   unmarkMemberPaid,
 } from "../actions";
 import type { ReviewDecision } from "@/lib/member";
+import { btn } from "@/lib/ui";
 
 export type AdminRow = {
   id: string;
@@ -336,7 +337,7 @@ function DetailModal({
             type="button"
             disabled={pending}
             onClick={() => onAct(row.id, "approve")}
-            className="rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-60"
+            className={btn("primary", "md")}
           >
             承認
           </button>
@@ -344,7 +345,7 @@ function DetailModal({
             type="button"
             disabled={pending}
             onClick={() => onAct(row.id, "require_payment")}
-            className="rounded-md bg-[#B77F0B] px-4 py-2 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-60"
+            className={btn("primary", "md")}
           >
             課金してもらう
           </button>
@@ -352,7 +353,7 @@ function DetailModal({
             type="button"
             disabled={pending}
             onClick={() => onAct(row.id, "reject")}
-            className="rounded-md border border-[var(--red)] px-4 py-2 text-[13px] text-[var(--red)] hover:bg-[var(--red-soft)] disabled:opacity-60"
+            className={btn("danger", "md")}
           >
             非承認（情報記載を促す）
           </button>
@@ -360,7 +361,7 @@ function DetailModal({
             type="button"
             disabled={pending}
             onClick={onClose}
-            className="ml-auto rounded-md border border-[var(--line)] px-4 py-2 text-[13px] text-[var(--ink-2)] hover:bg-[var(--canvas)] disabled:opacity-60"
+            className={`${btn("secondary", "md")} ml-auto`}
           >
             画面を閉じる
           </button>
@@ -378,7 +379,7 @@ function DetailModal({
                 type="button"
                 disabled={pending}
                 onClick={() => onUnmarkPaid(row.id)}
-                className="rounded-md border border-[var(--line)] px-4 py-2 text-[13px] text-[var(--ink-2)] hover:bg-white disabled:opacity-60"
+                className={btn("secondary", "md")}
               >
                 課金を解除（無料に戻す）
               </button>
@@ -387,7 +388,7 @@ function DetailModal({
                 type="button"
                 disabled={pending}
                 onClick={() => onMarkPaid(row.id)}
-                className="rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-60"
+                className={btn("primary", "md")}
               >
                 入金確認済み → 課金中にする
               </button>
@@ -407,7 +408,7 @@ function DetailModal({
                 type="button"
                 disabled={pending}
                 onClick={() => onReactivate(row.id)}
-                className="rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-60"
+                className={btn("primary", "md")}
               >
                 利用を再開する
               </button>
@@ -416,7 +417,7 @@ function DetailModal({
                 type="button"
                 disabled={pending}
                 onClick={() => onSuspend(row.id)}
-                className="rounded-md border border-[#B77F0B] px-4 py-2 text-[13px] text-[#B77F0B] hover:bg-[#FAF0D6] disabled:opacity-60"
+                className={btn("danger", "md")}
               >
                 アカウントを停止（無効化）
               </button>
@@ -425,7 +426,7 @@ function DetailModal({
               type="button"
               disabled={pending}
               onClick={() => onDelete(row.id, row.name)}
-              className="ml-auto rounded-md bg-[var(--red)] px-4 py-2 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-60"
+              className={`${btn("danger", "md")} ml-auto`}
             >
               完全に削除する
             </button>

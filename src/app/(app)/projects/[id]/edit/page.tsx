@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { ProjectForm, type ProjectData } from "../../_components/ProjectForm";
 import { submitProject, closeProject, deleteProject } from "../../actions";
+import { btn } from "@/lib/ui";
 
 export default async function ProjectEditPage({
   params,
@@ -40,7 +41,7 @@ export default async function ProjectEditPage({
         <div className="flex items-center gap-2">
           {project.status === "draft" || project.status === "closed" ? (
             <form action={submitProject.bind(null, project.id)}>
-              <button className="rounded-md bg-[var(--green)] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[var(--green-d)]">掲載を申請</button>
+              <button className={btn("primary", "sm")}>掲載を申請</button>
             </form>
           ) : project.status === "pending" ? (
             <span className="rounded-full bg-[#FAF0D6] px-3 py-1 text-[11px] text-[#B77F0B]">承認待ち</span>
@@ -48,7 +49,7 @@ export default async function ProjectEditPage({
             <>
               <span className="rounded-full bg-[var(--green-soft)] px-3 py-1 text-[11px] text-[var(--green-d)]">掲載中</span>
               <form action={closeProject.bind(null, project.id)}>
-                <button className="rounded-md border border-[var(--line)] px-3 py-1.5 text-[12px] text-[var(--ink-2)] hover:bg-[var(--canvas)]">終了する</button>
+                <button className={btn("secondary", "sm")}>終了する</button>
               </form>
             </>
           )}
@@ -64,7 +65,7 @@ export default async function ProjectEditPage({
           <Link href={`/projects/${project.id}`} className="text-[13px] text-[var(--green-d)] underline">掲載ページを見る →</Link>
         ) : <span />}
         <form action={deleteProject.bind(null, project.id)}>
-          <button className="text-[12px] text-[var(--red)] underline">削除</button>
+          <button className={btn("danger", "sm")}>削除</button>
         </form>
       </div>
     </div>
