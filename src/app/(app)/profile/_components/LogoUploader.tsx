@@ -42,27 +42,25 @@ export function LogoUploader({
             <span className="text-[11px] text-[var(--muted)]">未登録</span>
           )}
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
+        <div className="flex flex-col items-stretch gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={pending}
+            className={btn("secondary", "sm")}
+          >
+            {pending ? "処理中…" : url ? "画像を変更" : "画像を選ぶ"}
+          </button>
+          {url ? (
             <button
               type="button"
-              onClick={() => inputRef.current?.click()}
+              onClick={() => startTransition(async () => { await removeMemberLogo(kind); })}
               disabled={pending}
-              className={btn("secondary", "sm")}
+              className={btn("danger", "sm")}
             >
-              {pending ? "処理中…" : url ? "画像を変更" : "画像を選ぶ"}
+              削除
             </button>
-            {url ? (
-              <button
-                type="button"
-                onClick={() => startTransition(async () => { await removeMemberLogo(kind); })}
-                disabled={pending}
-                className={btn("danger", "sm")}
-              >
-                削除
-              </button>
-            ) : null}
-          </div>
+          ) : null}
           {error ? <p className="text-[12px] text-[var(--red)]">{error}</p> : null}
         </div>
       </div>

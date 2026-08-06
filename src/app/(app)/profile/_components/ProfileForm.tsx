@@ -184,15 +184,27 @@ function SelectField({
 export function ProfileForm({ member }: { member: MemberData }) {
   const [tab, setTab] = useState(0);
   const [l1, setL1] = useState(member.categoryL1 ?? "");
+  // 細分類は大分類に依存するため制御コンポーネントにし、大分類変更時に整合を取る
+  const [l2, setL2] = useState(member.categoryL2 ?? "");
   const [hasLicense, setHasLicense] = useState(member.hasLicense);
   const [state, formAction, pending] = useActionState<ProfileState, FormData>(
     saveProfile,
     {}
   );
 
-  // 未入力の重要項目（アドバイス表示用）。categoryL1は選択状態を反映。
+  // 大分類を変えたら、細分類が新しい大分類の選択肢に無ければクリアする
+  function onChangeL1(next: string) {
+    setL1(next);
+    if (!l2Options(next).includes(l2)) setL2("");
+  }
+
+  // 未入力の重要項目（アドバイス表示用）。categoryL1/L2は選択状態を反映。
   const missing = GUIDE_FIELDS.filter((f) =>
-    f.key === "categoryL1" ? isEmpty(l1) : isEmpty(member[f.key] as string | null)
+    f.key === "categoryL1"
+      ? isEmpty(l1)
+      : f.key === "categoryL2"
+        ? isEmpty(l2)
+        : isEmpty(member[f.key] as string | null)
   );
 
   return (
@@ -288,7 +300,7 @@ export function ProfileForm({ member }: { member: MemberData }) {
           <select
             name="categoryL1"
             value={l1}
-            onChange={(e) => setL1(e.target.value)}
+            onChange={(e) => onChangeL1(e.target.value)}
             className={`${inputBase} ${isEmpty(l1) ? guideSkin : normalSkin}`}
           >
             <option value="">未選択</option>
@@ -299,13 +311,25 @@ export function ProfileForm({ member }: { member: MemberData }) {
             ))}
           </select>
         </label>
-        <SelectField
-          label="会員種別（細分類）"
-          name="categoryL2"
-          options={l2Options(l1)}
-          defaultValue={member.categoryL2}
-          guide
-        />
+        <label className={labelCls}>
+          <span>
+            会員種別（細分類）
+            {isEmpty(l2) ? <span className="ml-1 text-[11px] text-[#B77F0B]">未選択</span> : null}
+          </span>
+          <select
+            name="categoryL2"
+            value={l2}
+            onChange={(e) => setL2(e.target.value)}
+            className={`${inputBase} ${isEmpty(l2) ? guideSkin : normalSkin}`}
+          >
+            <option value="">未選択</option>
+            {l2Options(l1).map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <SelectField
           label="都道府県"
