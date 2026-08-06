@@ -30,6 +30,7 @@ export async function startCheckout(
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      allow_promotion_codes: true, // 決済画面でクーポン（プロモーションコード）入力を可能にする
       line_items: [
         {
           price_data: {
