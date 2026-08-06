@@ -15,12 +15,12 @@ import { ProjectCard } from "@/components/ProjectCard";
 // 商談が「停滞中」とみなす日数（最終活動からの経過）
 const STALL_DAYS = 14;
 
-// クイック操作ボタン
+// クイック操作ボタン（丸アイコンバッジ＋太字ラベル）
 const QUICK_ACTIONS = [
-  { href: "/search", icon: "🔍", label: "パートナーを探す" },
-  { href: "/ledger", icon: "📝", label: "台帳を登録" },
-  { href: "/messages", icon: "💬", label: "メッセージ" },
-  { href: "/deals", icon: "🤝", label: "商談を見る" },
+  { href: "/search", icon: "🔍", label: "パートナーを探す", bg: "bg-[var(--green-soft)]" },
+  { href: "/ledger", icon: "📝", label: "台帳を登録", bg: "bg-[#FAF0D6]" },
+  { href: "/messages", icon: "💬", label: "メッセージ", bg: "bg-[#E4EEF7]" },
+  { href: "/deals", icon: "🤝", label: "商談を見る", bg: "bg-[#F3E7DA]" },
 ];
 
 export default async function DashboardPage() {
@@ -261,10 +261,12 @@ export default async function DashboardPage() {
           <Link
             key={a.href}
             href={a.href}
-            className="flex items-center gap-2.5 rounded-[12px] border border-[var(--line)] bg-white px-4 py-3.5 transition hover:border-[var(--green)] hover:bg-[var(--green-soft)]"
+            className="flex items-center gap-3 rounded-full border border-[var(--line)] bg-white px-3.5 py-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
           >
-            <span className="text-[20px]">{a.icon}</span>
-            <span className="text-[13px] font-semibold text-[var(--ink)]">{a.label}</span>
+            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[19px] ${a.bg}`}>
+              {a.icon}
+            </span>
+            <span className="text-[14px] font-bold text-[var(--ink)]">{a.label}</span>
           </Link>
         ))}
       </div>
