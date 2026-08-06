@@ -11,11 +11,11 @@ export default async function MessagesPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-serif text-[22px] text-[var(--ink)]">メッセージ一覧</h1>
-      <div className="grid grid-cols-[300px_1fr] overflow-hidden rounded-[12px] border border-[var(--line)] bg-white">
-        <div className="max-h-[70vh] overflow-y-auto border-r border-[var(--line)]">
+      <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white md:grid-cols-[300px_1fr]">
+        <div className="max-h-[70vh] overflow-y-auto border-[var(--line)] md:border-r">
           <ThreadList meId={me.id} />
         </div>
-        <div className="grid min-h-[400px] place-items-center p-8 text-center text-[13px] text-[var(--muted)]">
+        <div className="hidden min-h-[400px] place-items-center p-8 text-center text-[13px] text-[var(--muted)] md:grid">
           左の一覧から相手を選ぶと、ここに会話が表示されます。
         </div>
       </div>
