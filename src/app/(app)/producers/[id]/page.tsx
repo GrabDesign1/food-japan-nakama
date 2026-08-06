@@ -126,20 +126,13 @@ export default async function ProducerDetailPage({
 
         {!isOwner ? (
           <div className="flex shrink-0 flex-col gap-2">
-            {existingThread ? (
-              <Link
-                href={`/messages/${existingThread.id}`}
-                className="rounded-lg bg-[var(--green)] px-4 py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[var(--green-d)]"
-              >
-                💬 メッセージを見る
-              </Link>
-            ) : (
+            {!existingThread ? (
               <form action={startConversation.bind(null, m.id)}>
                 <button className="w-full rounded-lg bg-[var(--green)] px-4 py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[var(--green-d)]">
                   💬 問い合わせする
                 </button>
               </form>
-            )}
+            ) : null}
             <form action={toggleFavoriteMember.bind(null, m.id)}>
               <button
                 className={`w-full rounded-lg px-4 py-2 text-[13px] font-medium transition ${
@@ -162,6 +155,21 @@ export default async function ProducerDetailPage({
           alt=""
           className="max-h-[420px] w-full rounded-xl border border-[var(--line)] object-cover"
         />
+      ) : null}
+
+      {/* すでにやり取りがある場合の案内 */}
+      {!isOwner && existingThread ? (
+        <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-4">
+          <span className="text-[13px] text-[var(--green-d)]">
+            この事業者とはすでにやり取りがあります。
+          </span>
+          <Link
+            href={`/messages/${existingThread.id}`}
+            className="shrink-0 rounded-md bg-[var(--green)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)]"
+          >
+            メッセージを見る →
+          </Link>
+        </div>
       ) : null}
 
       {m.description ? (
