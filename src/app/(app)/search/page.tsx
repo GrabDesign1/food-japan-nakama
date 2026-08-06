@@ -60,20 +60,20 @@ export default async function SearchPage({
         className="rounded-xl border border-[var(--line)] bg-[var(--green-soft)] p-4"
       >
         {/* 対象トグル */}
-        <div className="mb-3 inline-flex overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
+        <div className="mb-3 flex w-full max-w-[440px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
           <button
             name="target"
             value="projects"
-            className={`px-4 py-2 ${target === "projects" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
+            className={`flex-1 whitespace-nowrap px-3 py-2 text-center ${target === "projects" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
           >
-            共創プロジェクト
+            プロジェクトから探す
           </button>
           <button
             name="target"
             value="producers"
-            className={`px-4 py-2 ${target === "producers" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
+            className={`flex-1 whitespace-nowrap px-3 py-2 text-center ${target === "producers" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
           >
-            登録事業者
+            登録事業者から探す
           </button>
         </div>
 
