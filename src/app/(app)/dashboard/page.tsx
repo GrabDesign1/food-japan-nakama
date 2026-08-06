@@ -1,4 +1,9 @@
-// ダッシュボード（最初のログイン後ページ）。指標などは後続タスクで実装。
+// ダッシュボード（最初のログイン後ページ）。
+// UX方針：開いた瞬間に「次の一手」が分かること。
+//  1. クイック操作（探す/台帳/メッセージ/商談）
+//  2. あなたのやること（未読・停滞商談・記入率・支払い等、対応が必要な時だけ）
+//  3. はじめの3ステップ（新規会員のみ）
+//  4. お知らせ（コンパクト）→ バナー → 数字 → 発見系
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -7,27 +12,16 @@ import { views24hMap } from "@/lib/offering-views";
 import { ProducerCard, type ProducerCardData } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
 
-// 会員状態に応じたお知らせバナー
-const BANNERS: Record<
-  string,
-  { title: string; body: string; cls: string }
-> = {
-  PENDING: {
-    title: "審査中",
-    body: "事務局の承認をお待ちください。",
-    cls: "border-[#E7D9A6] bg-[#FAF0D6] text-[#7A5A0B]",
-  },
-  AWAITING_PAYMENT: {
-    title: "お支払い待ち",
-    body: "事務局よりお支払いのご案内をします（オンライン決済は準備中です）。",
-    cls: "border-[#E7D9A6] bg-[#FAF0D6] text-[#7A5A0B]",
-  },
-  REJECTED: {
-    title: "要修正",
-    body: "プロフィールを見直し、再度「審査を申請」してください。",
-    cls: "border-[#E7C7BE] bg-[var(--red-soft)] text-[var(--red)]",
-  },
-};
+// 商談が「停滞中」とみなす日数（最終活動からの経過）
+const STALL_DAYS = 14;
+
+// クイック操作ボタン
+const QUICK_ACTIONS = [
+  { href: "/search", icon: "🔍", label: "パートナーを探す" },
+  { href: "/ledger", icon: "📝", label: "台帳を登録" },
+  { href: "/messages", icon: "💬", label: "メッセージ" },
+  { href: "/deals", icon: "🤝", label: "商談を見る" },
+];
 
 export default async function DashboardPage() {
   const su = await getSessionUser();
@@ -35,8 +29,6 @@ export default async function DashboardPage() {
   const member = su?.app.memberId
     ? await prisma.member.findUnique({ where: { id: su.app.memberId } })
     : null;
-
-  const banner = member ? BANNERS[member.status] : undefined;
 
   // お知らせ（事務局投稿）
   const announcements = su
@@ -63,23 +55,32 @@ export default async function DashboardPage() {
     ? await prisma.offering.count({ where: { memberId: member.id, direction: "WANT" } })
     : 0;
 
-  // 進行中の商談（フェーズ1〜4）
-  const activeDeals = member
-    ? await prisma.deal.count({
-        where: {
-          OR: [{ ownerMemberId: member.id }, { counterpartMemberId: member.id }],
-          phase: { gte: 1, lte: 4 },
-        },
-      })
-    : 0;
+  // 進行中の商談（フェーズ1〜4）と、そのうち停滞中の件数
+  let activeDeals = 0;
+  let stalledDeals = 0;
+  if (member) {
+    const dealWhere = {
+      OR: [{ ownerMemberId: member.id }, { counterpartMemberId: member.id }],
+      phase: { gte: 1, lte: 4 },
+    };
+    activeDeals = await prisma.deal.count({ where: dealWhere });
+    stalledDeals = await prisma.deal.count({
+      where: {
+        ...dealWhere,
+        lastActivityAt: { lt: new Date(Date.now() - STALL_DAYS * 86_400_000) },
+      },
+    });
+  }
 
-  // 未読メッセージ数
+  // 未読メッセージ数 ＆ 自分の会話数（3ステップ判定に使う）
   let unreadCount = 0;
+  let myThreadCount = 0;
   if (member) {
     const myThreads = await prisma.thread.findMany({
       where: { OR: [{ fromMemberId: member.id }, { toMemberId: member.id }] },
       select: { id: true },
     });
+    myThreadCount = myThreads.length;
     if (myThreads.length) {
       unreadCount = await prisma.message.count({
         where: {
@@ -89,6 +90,41 @@ export default async function DashboardPage() {
         },
       });
     }
+  }
+
+  // ── はじめの3ステップ（新規会員向けオンボーディング）─────────
+  const offeringCount = giveCount + wantCount;
+  const step1 = (member?.completionRate ?? 0) >= 80; // プロフィール
+  const step2 = offeringCount > 0; // 持ち寄り
+  const step3 = myThreadCount > 0; // パートナーへコンタクト
+  const showOnboarding = !!member && !(step1 && step2 && step3);
+
+  // ── あなたのやること（対応が必要な時だけ）───────────────
+  type Todo = { icon: string; label: string; cta: string; href: string; cls: string };
+  const todos: Todo[] = [];
+  const st = member?.status;
+  const AMBER = "border-[#E7D9A6] bg-[#FAF0D6] text-[#7A5A0B]";
+  const RED = "border-[#E7C7BE] bg-[var(--red-soft)] text-[var(--red)]";
+  const GREEN = "border-[var(--green)] bg-[var(--green-soft)] text-[var(--green-d)]";
+
+  if (st === "REJECTED") {
+    todos.push({ icon: "⚠️", label: "プロフィールに修正が必要です", cta: "見直して再申請", href: "/profile", cls: RED });
+  }
+  if (st === "AWAITING_PAYMENT" || member?.paymentStatus === "UNPAID") {
+    todos.push({ icon: "💳", label: "お支払いのお手続きが必要です", cta: "手続きへ", href: "/billing", cls: AMBER });
+  }
+  if (st === "PENDING") {
+    todos.push({ icon: "🕒", label: "事務局の審査をお待ちください", cta: "プロフィールを見る", href: "/profile", cls: AMBER });
+  }
+  if (unreadCount > 0) {
+    todos.push({ icon: "✉️", label: `未読メッセージが ${unreadCount}件`, cta: "返信する", href: "/messages", cls: GREEN });
+  }
+  if (stalledDeals > 0) {
+    todos.push({ icon: "⏳", label: `停滞している商談が ${stalledDeals}件（${STALL_DAYS}日以上）`, cta: "確認する", href: "/deals", cls: AMBER });
+  }
+  // 記入率は3ステップと重複するので、オンボーディング非表示のときだけ出す
+  if (!showOnboarding && member && member.completionRate < 100) {
+    todos.push({ icon: "📋", label: `プロフィール記入率 ${member.completionRate}%`, cta: "完成させる", href: "/profile", cls: AMBER });
   }
 
   // お気に入りの企業
@@ -207,6 +243,8 @@ export default async function DashboardPage() {
   const recentGives = recentOfferings.filter((o) => o.direction === "GIVE");
   const recentWants = recentOfferings.filter((o) => o.direction === "WANT");
 
+  const [newest, ...restAnnouncements] = announcements;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -216,64 +254,114 @@ export default async function DashboardPage() {
         </h1>
       </div>
 
-      {unreadCount > 0 ? (
-        <Link
-          href="/messages"
-          className="flex items-center gap-2 rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-3 text-[14px] font-semibold text-[var(--green-d)] hover:bg-[#d9e8df]"
-        >
-          <span>✉️</span>
-          メッセージが入ってます。（未読 {unreadCount}件）
-          <span className="ml-auto">→</span>
-        </Link>
-      ) : null}
-
-      {banner ? (
-        <div className={`rounded-[10px] border px-5 py-4 ${banner.cls}`}>
-          <div className="flex items-center gap-2 text-[13px] font-semibold">
-            <span className="rounded-full bg-white/60 px-2.5 py-0.5 text-[11px]">
-              {banner.title}
-            </span>
-          </div>
-          <p className="mt-2 text-[13px] leading-6">{banner.body}</p>
+      {/* ① クイック操作 */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {QUICK_ACTIONS.map((a) => (
           <Link
-            href="/profile"
-            className="mt-2 inline-block text-[12px] underline underline-offset-2"
+            key={a.href}
+            href={a.href}
+            className="flex items-center gap-2.5 rounded-[12px] border border-[var(--line)] bg-white px-4 py-3.5 transition hover:border-[var(--green)] hover:bg-[var(--green-soft)]"
           >
-            会員プロフィールを確認する
+            <span className="text-[20px]">{a.icon}</span>
+            <span className="text-[13px] font-semibold text-[var(--ink)]">{a.label}</span>
           </Link>
+        ))}
+      </div>
+
+      {/* ② あなたのやること */}
+      {todos.length > 0 ? (
+        <div>
+          <h2 className="mb-3 flex items-center gap-2 font-serif text-[18px] text-[var(--ink)]">
+            <span>✅</span> あなたのやること
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {todos.map((t, i) => (
+              <Link
+                key={i}
+                href={t.href}
+                className={`group flex items-center gap-3 rounded-[10px] border px-4 py-3.5 transition hover:brightness-[0.98] ${t.cls}`}
+              >
+                <span className="text-[18px]">{t.icon}</span>
+                <span className="min-w-0 flex-1 text-[13px] font-semibold leading-5">{t.label}</span>
+                <span className="shrink-0 rounded-md bg-white/70 px-3 py-1.5 text-[12px] font-bold">
+                  {t.cta} →
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       ) : null}
 
-      {/* お知らせ */}
-      <div>
-        <h2 className="mb-3 flex items-center gap-2 font-serif text-[18px] text-[var(--ink)]">
-          <span>📣</span> お知らせ
-        </h2>
-        {announcements.length === 0 ? (
-          <div className="rounded-[10px] border border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
-            現在、お知らせはありません。
+      {/* ③ はじめの3ステップ（新規会員向け）*/}
+      {showOnboarding ? (
+        <div className="rounded-[12px] border border-[var(--green)] bg-white p-5">
+          <h2 className="flex items-center gap-2 font-serif text-[17px] text-[var(--ink)]">
+            <span>🌱</span> はじめの3ステップ
+          </h2>
+          <p className="mt-1 text-[12px] text-[var(--muted)]">
+            この3つを終えると、共創パートナー探しがスムーズになります。
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <OnboardingStep n={1} done={step1} title="プロフィールを完成" desc="事業内容を登録して信頼されるページに" href="/profile" cta="編集する" />
+            <OnboardingStep n={2} done={step2} title="持ち寄りを登録" desc="売りたい・買いたいを掲載" href="/ledger" cta="登録する" />
+            <OnboardingStep n={3} done={step3} title="パートナーを探す" desc="気になる事業者へ問い合わせ" href="/search" cta="探す" />
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {announcements.map((a) => (
-              <article key={a.id} className="rounded-[10px] border border-[var(--line)] bg-white p-5">
-                <div className="flex items-center gap-2">
-                  {a.pinned ? (
-                    <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] text-[#B77F0B]">重要</span>
-                  ) : null}
-                  <span className="text-[11px] text-[var(--muted)]">
-                    {a.createdAt.getFullYear()}年{a.createdAt.getMonth() + 1}月{a.createdAt.getDate()}日
-                  </span>
-                </div>
-                <h3 className="mt-1 text-[15px] font-semibold text-[var(--ink)]">{a.title}</h3>
-                {a.body ? (
-                  <p className="mt-2 whitespace-pre-wrap text-[13px] leading-7 text-[var(--ink-2)]">{a.body}</p>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      ) : null}
+
+      {/* ④ お知らせ（コンパクト：最新1件＋折りたたみ）*/}
+      {newest ? (
+        <div>
+          <details className="group rounded-[10px] border border-[var(--line)] bg-white" open={newest.pinned}>
+            <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3.5 marker:hidden">
+              <span className="shrink-0">📣</span>
+              {newest.pinned ? (
+                <span className="shrink-0 rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] font-bold text-[#B77F0B]">重要</span>
+              ) : null}
+              <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--ink)]">
+                {newest.title}
+              </span>
+              <span className="hidden shrink-0 text-[11px] text-[var(--muted)] sm:block">
+                {newest.createdAt.getFullYear()}/{newest.createdAt.getMonth() + 1}/{newest.createdAt.getDate()}
+              </span>
+              {newest.body ? (
+                <span className="shrink-0 text-[var(--muted)] transition group-open:rotate-90">›</span>
+              ) : null}
+            </summary>
+            {newest.body ? (
+              <p className="whitespace-pre-wrap border-t border-[var(--line)] px-5 py-3 text-[13px] leading-7 text-[var(--ink-2)]">
+                {newest.body}
+              </p>
+            ) : null}
+          </details>
+          {restAnnouncements.length > 0 ? (
+            <details className="group mt-2 rounded-[10px] border border-[var(--line)] bg-white">
+              <summary className="cursor-pointer list-none px-5 py-2.5 text-[12px] text-[var(--green-d)] marker:hidden">
+                他 {restAnnouncements.length}件のお知らせを見る
+                <span className="ml-1 inline-block transition group-open:rotate-90">›</span>
+              </summary>
+              <div className="flex flex-col divide-y divide-[#EDF0EA] border-t border-[var(--line)]">
+                {restAnnouncements.map((a) => (
+                  <div key={a.id} className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      {a.pinned ? (
+                        <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] text-[#B77F0B]">重要</span>
+                      ) : null}
+                      <span className="text-[11px] text-[var(--muted)]">
+                        {a.createdAt.getFullYear()}年{a.createdAt.getMonth() + 1}月{a.createdAt.getDate()}日
+                      </span>
+                    </div>
+                    <h3 className="mt-1 text-[14px] font-semibold text-[var(--ink)]">{a.title}</h3>
+                    {a.body ? (
+                      <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[var(--ink-2)]">{a.body}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* バナー */}
       {banners.length > 0 ? (
@@ -303,9 +391,10 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
+      {/* 数字カード */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-[10px] border border-[var(--line)] bg-white p-5">
-          <div className="text-[11px] text-[var(--muted)]">登録したプロジェクト</div>
+          <div className="text-[11px] text-[var(--muted)]">登録した持ち寄り</div>
           <div className="mt-2 flex items-baseline gap-5">
             <div className="flex items-baseline gap-1">
               <span className="text-[12px] text-[var(--muted)]">売りたい</span>
@@ -431,7 +520,7 @@ export default async function DashboardPage() {
       {/* 新着の共創プロジェクト */}
       <div>
         <div className="mb-3 flex items-end justify-between">
-          <h2 className="font-serif text-[18px] text-[var(--ink)]">共創プロジェクト</h2>
+          <h2 className="font-serif text-[18px] text-[var(--ink)]">新着の共創プロジェクト</h2>
           <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">企画する →</Link>
         </div>
         {publishedProjects.length === 0 ? (
@@ -447,10 +536,10 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* 登録した共創プロジェクト（自分の掲載） */}
+      {/* あなたの共創プロジェクト（自分の掲載） */}
       {myProjects.length > 0 ? (
         <div>
-          <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">登録した共創プロジェクト</h2>
+          <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">あなたの共創プロジェクト</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {myProjects.map((p) => (
               <ProjectCard key={p.id} p={{ id: p.id, title: p.title, imageUrls: p.imageUrls, status: p.status, budget: p.budget }} />
@@ -472,6 +561,50 @@ export default async function DashboardPage() {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// はじめの3ステップの各ステップ
+function OnboardingStep({
+  n,
+  done,
+  title,
+  desc,
+  href,
+  cta,
+}: {
+  n: number;
+  done: boolean;
+  title: string;
+  desc: string;
+  href: string;
+  cta: string;
+}) {
+  return (
+    <div
+      className={`flex flex-col rounded-[10px] border p-4 ${
+        done ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)] bg-white"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-bold ${
+            done ? "bg-[var(--green)] text-white" : "bg-[var(--canvas)] text-[var(--ink-2)]"
+          }`}
+        >
+          {done ? "✓" : n}
+        </span>
+        <span className="text-[14px] font-semibold text-[var(--ink)]">{title}</span>
+      </div>
+      <p className="mt-1.5 flex-1 text-[12px] leading-5 text-[var(--muted)]">{desc}</p>
+      {done ? (
+        <span className="mt-2 text-[12px] font-semibold text-[var(--green-d)]">完了 ✓</span>
+      ) : (
+        <Link href={href} className="mt-2 text-[12px] font-bold text-[var(--green-d)] underline">
+          {cta} →
+        </Link>
+      )}
     </div>
   );
 }
