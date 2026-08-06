@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { createDraftOffering } from "./actions";
-import { btn } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function LedgerPage() {
   const su = await getSessionUser();
@@ -27,8 +27,8 @@ export default async function LedgerPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">MOCHIYORI</p>
-          <h1 className="font-serif text-[22px] text-[var(--ink)]">持ち寄り（売りたい・買いたい）</h1>
+          <p className={eyebrowCls}>MOCHIYORI</p>
+          <h1 className={h1Cls}>持ち寄り（売りたい・買いたい）</h1>
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">
             「売りたい」「買いたい」を1件ずつ登録します。
           </p>
@@ -78,7 +78,7 @@ function Section({
 }) {
   return (
     <div>
-      <h2 className="mb-3 font-serif text-[22px] font-semibold text-[var(--ink)]">
+      <h2 className={`${h2Cls} mb-3`}>
         {title}
       </h2>
       {items.length === 0 ? (

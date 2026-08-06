@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { ThreadList } from "./_components/ThreadList";
+import { h1Cls } from "@/lib/ui";
 
 export default async function MessagesPage() {
   const su = await getSessionUser();
@@ -10,7 +11,7 @@ export default async function MessagesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-serif text-[22px] text-[var(--ink)]">メッセージ一覧</h1>
+      <h1 className={h1Cls}>メッセージ一覧</h1>
       <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white lg:grid-cols-[300px_1fr]">
         <div className="max-h-[70vh] overflow-y-auto border-[var(--line)] lg:border-r">
           <ThreadList meId={me.id} />

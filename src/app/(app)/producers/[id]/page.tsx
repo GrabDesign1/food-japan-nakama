@@ -7,7 +7,7 @@ import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { toggleFavoriteMember } from "../actions";
 import { startConversation } from "../../messages/actions";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function ProducerDetailPage({
   params,
@@ -105,7 +105,7 @@ export default async function ProducerDetailPage({
         </div>
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="font-serif text-[24px] text-[var(--ink)]">
+            <h1 className={h1Cls}>
               {m.name || "（未入力）"}
             </h1>
             {m.companyLogoUrl ? (
@@ -184,7 +184,7 @@ export default async function ProducerDetailPage({
       {/* 事業の中身 */}
       {detailRows.some(([, v]) => v) ? (
         <div>
-          <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">事業の中身</h2>
+          <h2 className={`${h2Cls} mb-2`}>事業の中身</h2>
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)]">
             <table className="w-full text-[14px]">
               <tbody>
@@ -222,7 +222,7 @@ export default async function ProducerDetailPage({
       {/* この生産者の共創プロジェクト */}
       {m.offerings.length ? (
         <div>
-          <h2 className="mb-3 text-[16px] font-semibold text-[var(--ink)]">
+          <h2 className={`${h2Cls} mb-3`}>
             この事業者の「売りたい・買いたい」
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -235,7 +235,7 @@ export default async function ProducerDetailPage({
 
       {/* 事業者情報 */}
       <div>
-        <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">事業者情報</h2>
+        <h2 className={`${h2Cls} mb-2`}>事業者情報</h2>
         <div className="overflow-hidden rounded-[10px] border border-[var(--line)]">
           <table className="w-full text-[14px]">
             <tbody>

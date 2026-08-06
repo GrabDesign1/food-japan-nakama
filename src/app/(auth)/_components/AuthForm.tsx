@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { signIn, signUp, type AuthState } from "../actions";
 import { GoogleButton } from "./GoogleButton";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -24,7 +24,7 @@ export function AuthForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <h1 className="text-[16px] font-semibold text-[var(--ink)]">
+      <h1 className={h1Cls}>
         {mode === "login" ? "ログイン" : "新規登録"}
       </h1>
 

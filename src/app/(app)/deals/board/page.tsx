@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { PHASES, PHASE_DESC, isStale, loadMemberDeals } from "@/lib/deal";
 import { PhaseSelect } from "../_components/PhaseSelect";
-import { btn } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function DealBoardPage() {
   const su = await getSessionUser();
@@ -16,8 +16,8 @@ export default async function DealBoardPage() {
     <div className="flex flex-col gap-5">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">DEAL BOARD</p>
-          <h1 className="font-serif text-[22px] text-[var(--ink)]">商談ステータス</h1>
+          <p className={eyebrowCls}>DEAL BOARD</p>
+          <h1 className={h1Cls}>商談ステータス</h1>
         </div>
         <Link href="/deals" className={btn("secondary", "sm")}>
           リストで見る →

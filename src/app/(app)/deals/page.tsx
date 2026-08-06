@@ -5,7 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { PHASES, isStale, loadMemberDeals } from "@/lib/deal";
 import { PhaseSelect } from "./_components/PhaseSelect";
 import { setDealNext } from "./actions";
-import { btn } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 function ymd(d: Date | null): string {
   if (!d) return "";
@@ -32,8 +32,8 @@ export default async function DealsPage({
     <div className="flex flex-col gap-5">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">DEALS</p>
-          <h1 className="font-serif text-[22px] text-[var(--ink)]">商談管理</h1>
+          <p className={eyebrowCls}>DEALS</p>
+          <h1 className={h1Cls}>商談管理</h1>
         </div>
         <Link href="/deals/board" className={btn("secondary", "sm")}>
           ステータスボードで見る →

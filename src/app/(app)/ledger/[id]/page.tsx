@@ -13,7 +13,7 @@ import {
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
 import { UpgradeToMessage } from "@/components/UpgradeToMessage";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function OfferingDetailPage({
   params,
@@ -123,7 +123,7 @@ export default async function OfferingDetailPage({
             </span>
           ) : null}
         </div>
-        <h1 className="font-serif text-[26px] leading-tight text-[var(--ink)]">
+        <h1 className={`${h1Cls} leading-tight`}>
           {offering.title || "（無題）"}
         </h1>
 
@@ -234,7 +234,7 @@ export default async function OfferingDetailPage({
       {/* 本文 */}
       {offering.description || offering.descriptionImageUrl ? (
         <div>
-          <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">詳細</h2>
+          <h2 className={`${h2Cls} mb-2`}>詳細</h2>
           {offering.description ? (
             <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">
               {offering.description}
@@ -254,7 +254,7 @@ export default async function OfferingDetailPage({
       {/* おすすめポイント */}
       {points.length || offering.pointsImageUrl ? (
         <div>
-          <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">
+          <h2 className={`${h2Cls} mb-2`}>
             おすすめポイント
           </h2>
           {points.length ? (
@@ -283,7 +283,7 @@ export default async function OfferingDetailPage({
       {/* ギャラリー */}
       {gallery.length ? (
         <div>
-          <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">写真</h2>
+          <h2 className={`${h2Cls} mb-2`}>写真</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {gallery.map((u) => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -300,7 +300,7 @@ export default async function OfferingDetailPage({
 
       {/* 事業者情報 */}
       <div>
-        <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">事業者情報</h2>
+        <h2 className={`${h2Cls} mb-2`}>事業者情報</h2>
         <div className="overflow-hidden rounded-[10px] border border-[var(--line)]">
           <table className="w-full text-[14px]">
             <tbody>

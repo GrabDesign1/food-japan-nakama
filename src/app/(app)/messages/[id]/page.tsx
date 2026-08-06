@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { markThreadRead } from "../actions";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
+import { h1Cls } from "@/lib/ui";
 
 export default async function ThreadPage({
   params,
@@ -44,7 +45,7 @@ export default async function ThreadPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-serif text-[22px] text-[var(--ink)]">メッセージ一覧</h1>
+      <h1 className={h1Cls}>メッセージ一覧</h1>
       <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white lg:grid-cols-[300px_1fr]">
         {/* 左：一覧（スマホ・タブレットでは非表示） */}
         <div className="hidden max-h-[74vh] overflow-y-auto border-r border-[var(--line)] lg:block">

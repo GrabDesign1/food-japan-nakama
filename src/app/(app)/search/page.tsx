@@ -6,7 +6,7 @@ import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
 import { ProducerCard } from "@/components/ProducerCard";
 import { views24hMap } from "@/lib/offering-views";
-import { btn } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 type SP = {
   target?: string;
@@ -54,8 +54,8 @@ export default async function SearchPage({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">SEARCH</p>
-        <h1 className="font-serif text-[22px] text-[var(--ink)]">共創パートナーを探す</h1>
+        <p className={eyebrowCls}>SEARCH</p>
+        <h1 className={h1Cls}>共創パートナーを探す</h1>
       </div>
 
       {/* 検索バー */}

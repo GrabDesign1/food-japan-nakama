@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { DIRECTION_LABEL } from "@/lib/offering-taxonomy";
 import { OfferingForm, type OfferingData } from "../../_components/OfferingForm";
 import { togglePublish, deleteOffering } from "../../actions";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls } from "@/lib/ui";
 
 export default async function OfferingEditPage({
   params,
@@ -47,7 +47,7 @@ export default async function OfferingEditPage({
           <Link href="/ledger" className={btn("secondary", "sm")}>
             ← 台帳一覧
           </Link>
-          <h1 className="mt-1 font-serif text-[20px] text-[var(--ink)]">
+          <h1 className={`${h1Cls} mt-1`}>
             {DIRECTION_LABEL[offering.direction]}の登録
           </h1>
         </div>

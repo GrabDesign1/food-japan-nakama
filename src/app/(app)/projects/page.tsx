@@ -5,7 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createDraftProject } from "./actions";
 import { ProjectCard } from "@/components/ProjectCard";
-import { btn } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   draft: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -41,8 +41,8 @@ export default async function ProjectsPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">PROJECTS</p>
-          <h1 className="font-serif text-[22px] text-[var(--ink)]">共創プロジェクトを企画する</h1>
+          <p className={eyebrowCls}>PROJECTS</p>
+          <h1 className={h1Cls}>共創プロジェクトを企画する</h1>
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">困っていること・実現したいことを書いて、解決してくれる共創パートナーを募ります。</p>
         </div>
         <form action={createDraftProject}>
@@ -54,7 +54,7 @@ export default async function ProjectsPage() {
 
       {/* 掲載中のプロジェクト */}
       <div>
-        <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">掲載中のプロジェクト</h2>
+        <h2 className={`${h2Cls} mb-3`}>掲載中のプロジェクト</h2>
         {published.length === 0 ? (
           <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">まだ掲載中のプロジェクトはありません。</p>
         ) : (
@@ -71,7 +71,7 @@ export default async function ProjectsPage() {
 
       {/* 自分の掲載 */}
       <div>
-        <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">自分の掲載</h2>
+        <h2 className={`${h2Cls} mb-3`}>自分の掲載</h2>
         {mine.length === 0 ? (
           <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">まだ掲載していません。「＋ プロジェクトを掲載」から作成できます。</p>
         ) : (

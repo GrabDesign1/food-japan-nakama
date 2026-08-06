@@ -39,3 +39,17 @@ const variants: Record<Variant, string> = {
 export function btn(variant: Variant = "primary", size: Size = "md"): string {
   return `${base} ${sizes[size]} ${variants[variant]}`;
 }
+
+// ── 見出しの階層（全ページ共通）─────────────────────────
+// 使い方: <h1 className={h1Cls}>…</h1>
+//   レイアウト（mb-*, flex, gap 等）が要る場合は後ろに足す:
+//   <h2 className={`${h2Cls} mb-3 flex items-center gap-2`}>…</h2>
+//
+// eyebrow : ページ上の小ラベル（DASHBOARD / MEMBER PROFILE 等）
+// h1Cls   : ページタイトル（各ページに1つ）
+// h2Cls   : セクション見出し
+// h3Cls   : サブ見出し（セクション内の小見出し・テーブル見出し）
+export const eyebrowCls = "text-[10px] tracking-[0.2em] text-[var(--muted)]";
+export const h1Cls = "font-serif text-[22px] text-[var(--ink)]";
+export const h2Cls = "font-serif text-[18px] text-[var(--ink)]";
+export const h3Cls = "text-[15px] font-semibold text-[var(--ink)]";

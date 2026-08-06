@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { PLANS, stripe } from "@/lib/stripe";
 import { PlanButton } from "./_components/PlanButton";
 import { PortalButton } from "./_components/PortalButton";
+import { eyebrowCls, h1Cls } from "@/lib/ui";
 
 const PAY_LABEL: Record<string, { label: string; cls: string }> = {
   FREE: { label: "無料", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -29,8 +30,8 @@ export default async function BillingPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">BILLING</p>
-        <h1 className="font-serif text-[22px] text-[var(--ink)]">プラン・お支払い</h1>
+        <p className={eyebrowCls}>BILLING</p>
+        <h1 className={h1Cls}>プラン・お支払い</h1>
       </div>
 
       {success ? (

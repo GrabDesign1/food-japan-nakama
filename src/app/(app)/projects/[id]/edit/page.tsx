@@ -5,7 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { ProjectForm, type ProjectData } from "../../_components/ProjectForm";
 import { submitProject, closeProject, deleteProject } from "../../actions";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls } from "@/lib/ui";
 
 export default async function ProjectEditPage({
   params,
@@ -36,7 +36,7 @@ export default async function ProjectEditPage({
       <div className="flex items-center justify-between">
         <div>
           <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">← 一覧</Link>
-          <h1 className="mt-1 font-serif text-[20px] text-[var(--ink)]">プロジェクトの編集</h1>
+          <h1 className={`${h1Cls} mt-1`}>プロジェクトの編集</h1>
         </div>
         <div className="flex items-center gap-2">
           {project.status === "draft" || project.status === "closed" ? (

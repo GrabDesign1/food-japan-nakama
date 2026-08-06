@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { updatePassword, type AuthState } from "../actions";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -12,7 +12,7 @@ export function ResetPasswordForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <h1 className="text-[16px] font-semibold text-[var(--ink)]">新しいパスワードの設定</h1>
+      <h1 className={h1Cls}>新しいパスワードの設定</h1>
       <p className="text-[12px] leading-6 text-[var(--ink-2)]">
         新しいパスワード（8文字以上）を入力してください。
       </p>

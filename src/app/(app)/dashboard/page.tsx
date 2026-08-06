@@ -11,6 +11,7 @@ import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { ProducerCard, type ProducerCardData } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
+import { eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
 
 // 商談が「停滞中」とみなす日数（最終活動からの経過）
 const STALL_DAYS = 14;
@@ -249,8 +250,8 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">DASHBOARD</p>
-        <h1 className="font-serif text-[22px] text-[var(--ink)]">
+        <p className={eyebrowCls}>DASHBOARD</p>
+        <h1 className={h1Cls}>
           ようこそ、{su?.app.name} さん
         </h1>
       </div>
@@ -274,7 +275,7 @@ export default async function DashboardPage() {
       {/* ② あなたのやること */}
       {todos.length > 0 ? (
         <div>
-          <h2 className="mb-3 flex items-center gap-2 font-serif text-[18px] text-[var(--ink)]">
+          <h2 className={`${h2Cls} mb-3 flex items-center gap-2`}>
             <span>✅</span> あなたのやること
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -298,7 +299,7 @@ export default async function DashboardPage() {
       {/* ③ はじめの3ステップ（新規会員向け）*/}
       {showOnboarding ? (
         <div className="rounded-[12px] border border-[var(--green)] bg-white p-5">
-          <h2 className="flex items-center gap-2 font-serif text-[17px] text-[var(--ink)]">
+          <h2 className={`${h2Cls} flex items-center gap-2`}>
             <span>🌱</span> はじめの3ステップ
           </h2>
           <p className="mt-1 text-[12px] text-[var(--muted)]">
@@ -354,7 +355,7 @@ export default async function DashboardPage() {
                         {a.createdAt.getFullYear()}年{a.createdAt.getMonth() + 1}月{a.createdAt.getDate()}日
                       </span>
                     </div>
-                    <h3 className="mt-1 text-[14px] font-semibold text-[var(--ink)]">{a.title}</h3>
+                    <h3 className={`${h3Cls} mt-1`}>{a.title}</h3>
                     {a.body ? (
                       <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[var(--ink-2)]">{a.body}</p>
                     ) : null}
@@ -457,7 +458,7 @@ export default async function DashboardPage() {
       {/* 最近閲覧した共創パートナー */}
       {recentlyViewed.length > 0 ? (
         <div>
-          <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">
+          <h2 className={`${h2Cls} mb-3`}>
             最近閲覧した共創パートナー
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -471,7 +472,7 @@ export default async function DashboardPage() {
       {/* 新着の持ち寄り台帳（売りたい・買いたいで明確に分ける） */}
       <div>
         <div className="mb-3 flex items-end justify-between">
-          <h2 className="font-serif text-[18px] text-[var(--ink)]">
+          <h2 className={h2Cls}>
             持ち寄り（売りたい・買いたい）
           </h2>
           <Link
@@ -523,7 +524,7 @@ export default async function DashboardPage() {
       {/* 新着の共創プロジェクト */}
       <div>
         <div className="mb-3 flex items-end justify-between">
-          <h2 className="font-serif text-[18px] text-[var(--ink)]">新着の共創プロジェクト</h2>
+          <h2 className={h2Cls}>新着の共創プロジェクト</h2>
           <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">企画する →</Link>
         </div>
         {publishedProjects.length === 0 ? (
@@ -542,7 +543,7 @@ export default async function DashboardPage() {
       {/* あなたの共創プロジェクト（自分の掲載） */}
       {myProjects.length > 0 ? (
         <div>
-          <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">あなたの共創プロジェクト</h2>
+          <h2 className={`${h2Cls} mb-3`}>あなたの共創プロジェクト</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {myProjects.map((p) => (
               <ProjectCard key={p.id} p={{ id: p.id, title: p.title, imageUrls: p.imageUrls, status: p.status, budget: p.budget }} />
@@ -554,7 +555,7 @@ export default async function DashboardPage() {
       {/* お気に入りの企業（一番下） */}
       {favoriteMembers.length > 0 ? (
         <div>
-          <h2 className="mb-3 font-serif text-[18px] text-[var(--ink)]">
+          <h2 className={`${h2Cls} mb-3`}>
             お気に入りの企業
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

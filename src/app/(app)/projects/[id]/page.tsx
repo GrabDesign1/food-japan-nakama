@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { applyToProject } from "../actions";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function ProjectDetailPage({
   params,
@@ -62,7 +62,7 @@ export default async function ProjectDetailPage({
             予算：{project.budget}
           </span>
         ) : null}
-        <h1 className="mt-2 font-serif text-[26px] leading-tight text-[var(--ink)]">{project.title || "（無題）"}</h1>
+        <h1 className={`${h1Cls} mt-2 leading-tight`}>{project.title || "（無題）"}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--ink-2)]">
           <span>{owner?.name}</span>
           {owner?.prefecture ? <span>📍 {owner.prefecture}</span> : null}
@@ -116,7 +116,7 @@ export default async function ProjectDetailPage({
       {/* 応募者一覧（オーナー） */}
       {isOwner ? (
         <div>
-          <h2 className="mb-2 text-[16px] font-semibold text-[var(--ink)]">応募（{project.applications.length}）</h2>
+          <h2 className={`${h2Cls} mb-2`}>応募（{project.applications.length}）</h2>
           {project.applications.length === 0 ? (
             <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">まだ応募はありません。</p>
           ) : (

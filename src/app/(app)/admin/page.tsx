@@ -10,7 +10,7 @@ import { revokeAdmin } from "./admin-account-actions";
 import { AdminAccountForm } from "./_components/AdminAccountForm";
 import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
-import { btn } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function AdminPage() {
   const su = await getSessionUser();
@@ -95,8 +95,8 @@ export default async function AdminPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">ADMIN ・ 事務局ダッシュボード</p>
-        <h1 className="font-serif text-[22px] text-[var(--ink)]">事務局管理</h1>
+        <p className={eyebrowCls}>ADMIN ・ 事務局ダッシュボード</p>
+        <h1 className={h1Cls}>事務局管理</h1>
       </div>
 
       {/* 指標サマリ */}
@@ -111,7 +111,7 @@ export default async function AdminPage() {
 
       {/* お知らせ投稿 */}
       <div>
-        <h2 className="mb-2 text-[15px] font-semibold text-[var(--ink)]">お知らせを投稿（会員のトップに表示）</h2>
+        <h2 className={`${h2Cls} mb-2`}>お知らせを投稿（会員のトップに表示）</h2>
         <form action={createAnnouncement} className="flex flex-col gap-2 rounded-[10px] border border-[var(--line)] bg-white p-4">
           <input name="title" required placeholder="タイトル（例：宮崎カンファレンスの参加受付を開始しました）" className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]" />
           <textarea name="body" rows={4} placeholder="本文（ブログのように自由に書けます）" className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] leading-6 outline-none focus:border-[var(--green)]" />
@@ -147,7 +147,7 @@ export default async function AdminPage() {
 
       {/* バナー管理 */}
       <div>
-        <h2 className="mb-1 text-[15px] font-semibold text-[var(--ink)]">バナー管理（会員トップに表示）</h2>
+        <h2 className={`${h2Cls} mb-1`}>バナー管理（会員トップに表示）</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">
           バナー画像とリンク先URLを登録すると、ダッシュボードのお知らせの下に表示されます。
         </p>
@@ -197,7 +197,7 @@ export default async function AdminPage() {
       {/* 掲載承認 */}
       {pendingProjects.length > 0 ? (
         <div>
-          <h2 className="mb-2 text-[15px] font-semibold text-[var(--ink)]">プロジェクト掲載の承認（{pendingProjects.length}）</h2>
+          <h2 className={`${h2Cls} mb-2`}>プロジェクト掲載の承認（{pendingProjects.length}）</h2>
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {pendingProjects.map((p) => (
               <div key={p.id} className="flex items-center gap-3 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
@@ -219,14 +219,14 @@ export default async function AdminPage() {
 
       {/* 会員管理 */}
       <div>
-        <h2 className="mb-2 text-[15px] font-semibold text-[var(--ink)]">会員管理（審査中 {pendingCount} 件）</h2>
+        <h2 className={`${h2Cls} mb-2`}>会員管理（審査中 {pendingCount} 件）</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">会社名をクリックすると、詳細の確認・審査（承認/非承認/課金）・アカウントの停止や削除ができます。</p>
         <AdminTable rows={rows} />
       </div>
 
       {/* 管理者アカウント */}
       <div>
-        <h2 className="mb-1 text-[15px] font-semibold text-[var(--ink)]">管理者アカウント</h2>
+        <h2 className={`${h2Cls} mb-1`}>管理者アカウント</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">
           事務局スタッフのログインアカウントをここで発行できます。作成すると、すぐに設定したメール・パスワードでログインできます。
         </p>

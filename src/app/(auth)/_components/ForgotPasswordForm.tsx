@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { requestPasswordReset, type AuthState } from "../actions";
-import { btn } from "@/lib/ui";
+import { btn, h1Cls } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -12,7 +12,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <h1 className="text-[16px] font-semibold text-[var(--ink)]">パスワードの再設定</h1>
+      <h1 className={h1Cls}>パスワードの再設定</h1>
       <p className="text-[12px] leading-6 text-[var(--ink-2)]">
         ご登録のメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。
       </p>

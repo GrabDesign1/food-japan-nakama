@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ResetPasswordForm } from "../_components/ResetPasswordForm";
+import { h1Cls } from "@/lib/ui";
 
 export default async function ResetPasswordPage() {
   // 再設定リンク経由でセッションが張られている前提。無ければ期限切れ扱い。
@@ -12,7 +13,7 @@ export default async function ResetPasswordPage() {
   if (!user) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-[16px] font-semibold text-[var(--ink)]">リンクが無効です</h1>
+        <h1 className={h1Cls}>リンクが無効です</h1>
         <p className="rounded-md bg-[var(--red-soft)] px-3 py-2 text-[12px] leading-6 text-[var(--red)]">
           パスワード再設定リンクの有効期限が切れているか、無効です。お手数ですが、もう一度やり直してください。
         </p>

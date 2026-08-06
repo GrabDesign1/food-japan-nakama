@@ -10,7 +10,7 @@ import {
   unmarkMemberPaid,
 } from "../actions";
 import type { ReviewDecision } from "@/lib/member";
-import { btn } from "@/lib/ui";
+import { btn, h2Cls } from "@/lib/ui";
 
 export type AdminRow = {
   id: string;
@@ -236,7 +236,7 @@ function DetailModal({
       >
         <div className="mb-3 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-serif text-[20px] text-[var(--ink)]">
+            <h2 className={h2Cls}>
               {row.name || "（未入力）"}
             </h2>
             <p className="mt-1 text-[12px] text-[var(--muted)]">

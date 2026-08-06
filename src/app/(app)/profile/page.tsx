@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { ProfileForm, type MemberData } from "./_components/ProfileForm";
 import { ReviewStatus } from "./_components/ReviewStatus";
+import { eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function ProfilePage() {
   const su = await getSessionUser();
@@ -46,10 +47,10 @@ export default async function ProfilePage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.2em] text-[var(--muted)]">
+          <p className={eyebrowCls}>
             MEMBER PROFILE
           </p>
-          <h1 className="font-serif text-[22px] text-[var(--ink)]">
+          <h1 className={h1Cls}>
             会員プロフィール
           </h1>
         </div>
