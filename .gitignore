@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# Prisma 生成物
+/src/generated
+
+# ローカルツール（コミット不要）
+/.claude
+/.agents

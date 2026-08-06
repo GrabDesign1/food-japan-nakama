@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── ブランド配色（ここを変えれば全体に反映）── */
+  --ink: #141414;        /* 黒（文字・サイドバー） */
+  --ink-2: #3c4a62;      /* やや薄い文字 */
+  --muted: #7c8899;      /* 補助テキスト */
+  --canvas: #f2f3ef;     /* 背景 */
+  --surface: #ffffff;    /* カード面 */
+  --line: #dbe1d9;       /* 罫線 */
+
+  --green: #0f7a3d;      /* 緑（主アクション・フォーク） */
+  --green-d: #0b5c2e;    /* 濃い緑（ホバー） */
+  --green-soft: #e4ede7;
+
+  --red: #e8341f;        /* 赤（アクセント・スプーン） */
+  --red-soft: #fbe4e0;
+
+  --orange: #f59e0b;     /* オレンジ（差し色） */
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* 和文：Noto Sans JP ／ 欧文：Roboto（欧文を先に置き、日本語はNotoへフォールバック）*/
+  --font-sans: var(--font-roboto), var(--font-noto-jp), "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-serif: var(--font-roboto), var(--font-noto-jp), "Hiragino Sans", "Yu Gothic", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* タイトル・見出し（font-serif で統一）は太字に。
+   個別に font-semibold 等を指定した箇所はそちらを優先（:where で優先度0）。 */
+:where(.font-serif) {
+  font-weight: 700;
 }

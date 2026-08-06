@@ -1,0 +1,1302 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Food Japan Connect ｜ マイページ v4</title>
+<style>
+:root{
+  --ink:#15243B;--ink2:#3C4A62;--muted:#7C8899;--line:#DBE1D9;--line2:#EDF0EA;
+  --canvas:#EDF0EA;--surface:#FFF;--accent:#2E6F52;--accent-d:#1F5540;--accent-soft:#E4EDE7;
+  --yuzu:#B77F0B;--yuzu-soft:#FAF0D6;--alert:#A63E2A;--alert-soft:#F6E5E0;
+  --admin:#4A3B6B;--admin-soft:#EDE8F4;
+  --display:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --body:"Hiragino Sans","Yu Gothic","YuGothic","Noto Sans JP","Helvetica Neue",sans-serif;
+  --num:"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--canvas);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh}
+.side{background:var(--ink);color:#E7EBE4;padding:22px 0 40px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:0 22px 18px;border-bottom:1px solid rgba(255,255,255,.12)}
+.brand .mark{font-family:var(--display);font-size:20px;letter-spacing:.14em;line-height:1.25}
+.brand .mark em{font-style:normal;color:#9FC7B0}
+.brand .sub{font-size:10px;letter-spacing:.2em;color:#8F9BAB;margin-top:6px}
+.nav{padding:14px 12px 0;display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:0;color:#D7DDD3;padding:9px 10px;border-radius:6px;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.07)}
+.nav button.on{background:var(--accent);color:#fff}
+.nav button.adm{margin-top:12px;border-top:1px solid rgba(255,255,255,.12);border-radius:0 0 6px 6px;padding-top:14px}
+.nav button.adm.on{background:#6B5A91;border-top-color:transparent}
+.nav .badge{margin-left:auto;background:var(--yuzu);color:#241a00;font-family:var(--num);font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px}
+.nav button.on .badge{background:#fff;color:var(--accent-d)}
+
+.top{background:var(--surface);border-bottom:1px solid var(--line);padding:13px 30px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:20}
+.top .crumb{font-size:11px;letter-spacing:.14em;color:var(--muted)}
+.top h1{font-family:var(--display);font-size:20px;margin:2px 0 0;font-weight:600;letter-spacing:.04em}
+.top .me{margin-left:auto;display:flex;align-items:center;gap:10px;text-align:right}
+.top .me .nm{font-size:12px;line-height:1.4}
+.top .me .nm span{display:block;color:var(--muted);font-size:11px}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-d);display:grid;place-items:center;font-family:var(--display);font-size:15px}
+.ticket{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:11px;color:var(--ink2)}
+.ticket b{font-family:var(--num);color:var(--accent-d)}
+.roleswitch{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.roleswitch button{background:#fff;border:0;padding:5px 11px;font-size:11.5px;color:var(--muted)}
+.roleswitch button.on{background:var(--ink);color:#fff}
+.roleswitch button.on.adm{background:var(--admin)}
+.demo-tip{font-size:10px;color:var(--muted);letter-spacing:.04em}
+
+.page{padding:24px 30px 60px;max-width:1200px}
+.page[hidden]{display:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.card .hd{padding:13px 18px;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
+.card .hd h2{font-family:var(--display);font-size:15px;margin:0;font-weight:600;letter-spacing:.05em}
+.card .hd .side-note{margin-left:auto;font-size:11px;color:var(--muted)}
+.card .bd{padding:18px}
+.grid{display:grid;gap:16px}
+.eyebrow{font-size:10px;letter-spacing:.2em;color:var(--muted);margin:0 0 8px}
+.lead{color:var(--ink2);margin:0 0 18px;max-width:66ch}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:6px;padding:7px 14px;font-size:12.5px;transition:.15s}
+.btn:hover{background:var(--accent-d);border-color:var(--accent-d)}
+.btn.ghost{background:none;color:var(--accent-d)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.quiet{background:none;border-color:var(--line);color:var(--ink2)}
+.btn.quiet:hover{background:var(--line2)}
+.btn.warn{background:none;border-color:#D8BDB6;color:var(--alert)}
+.btn.warn:hover{background:var(--alert-soft)}
+.btn.adm{background:var(--admin);border-color:var(--admin)}
+.btn.adm:hover{background:#3A2D57;border-color:#3A2D57}
+.btn.sm{padding:4px 10px;font-size:11.5px}
+.btn[disabled]{background:var(--line2);border-color:var(--line);color:var(--muted);cursor:default}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--ink2);margin:0 5px 5px 0;background:#fff}
+.tag.give{border-color:#BFD8C8;background:var(--accent-soft);color:var(--accent-d)}
+.tag.want{border-color:#E6D3A4;background:var(--yuzu-soft);color:var(--yuzu)}
+.pill{font-size:10.5px;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:var(--line2);color:var(--ink2);white-space:nowrap}
+.pill.ok{background:var(--accent-soft);color:var(--accent-d)}
+.pill.warn{background:var(--yuzu-soft);color:var(--yuzu)}
+.pill.new{background:var(--alert-soft);color:var(--alert)}
+.pill.adm{background:var(--admin-soft);color:var(--admin)}
+
+.role{font-size:10.5px;letter-spacing:.04em;padding:2px 8px;border-radius:3px;font-weight:600;white-space:nowrap}
+.r-prod{background:#E8F0DC;color:#4A6B21}
+.r-maker{background:var(--accent-soft);color:var(--accent-d)}
+.r-dist{background:#DDE8F2;color:#25527A}
+.r-shop{background:#F7E4DC;color:#96482C}
+.r-gov{background:#F4EBD0;color:#7A5C10}
+.r-sup{background:var(--admin-soft);color:#4A3B6B}
+.stance{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--ink2);background:#fff;white-space:nowrap}
+
+.axes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:900px){.axes{grid-template-columns:1fr 1fr}}
+.axis{background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px;text-align:left;transition:.15s}
+.axis:hover{border-color:var(--accent)}
+.axis.on{border-color:var(--accent);border-width:2px;padding:13px;background:var(--accent-soft)}
+.axis .pair{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.axis .arrow{color:var(--muted);font-size:11px}
+.axis .cap{font-size:11.5px;color:var(--ink2);line-height:1.6}
+.axis .cnt{font-family:var(--num);font-size:11px;color:var(--muted);margin-top:8px}
+
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media (max-width:900px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat .n{font-family:var(--display);font-size:27px;line-height:1.1}
+.stat .n small{font-size:12px;color:var(--muted)}
+.stat .l{font-size:11px;color:var(--muted);margin-top:4px}
+.stat .d{font-size:11px;margin-top:6px;color:var(--accent-d)}
+.bar{height:5px;background:var(--line2);border-radius:3px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .6s ease}
+.bar i.o{background:var(--yuzu)}
+.bar i.r{background:var(--alert)}
+
+table.simple{width:100%;border-collapse:collapse;font-size:12.5px}
+table.simple th{text-align:left;font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:600;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+table.simple td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line2)}
+table.simple td.n{font-family:var(--num);text-align:right;padding-right:0}
+table.simple tr:last-child td{border-bottom:0}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:5px}
+.field .hint{font-size:11px;color:var(--muted);margin:0 0 7px}
+.field .req{color:var(--alert);font-size:10px;margin-left:5px}
+.searchable{font-size:10px;letter-spacing:.06em;color:var(--accent-d);background:var(--accent-soft);border-radius:3px;padding:1px 6px;margin-left:6px}
+input[type=text],textarea,select{width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:#fff}
+textarea{resize:vertical;min-height:70px;line-height:1.7}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media (max-width:700px){.two,.three{grid-template-columns:1fr}}
+.chipset{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12px;color:var(--ink2);transition:.15s}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.on.want{background:var(--yuzu);border-color:var(--yuzu);color:#fff}
+.savebar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 18px;display:flex;align-items:center;gap:12px;border-radius:0 0 10px 10px}
+.savebar .st{font-size:11.5px;color:var(--muted);margin-left:auto}
+
+.ledger{width:100%;border-collapse:collapse;font-size:12.5px}
+.ledger th{text-align:left;font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:600;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+.ledger td{padding:11px 10px 11px 0;border-bottom:1px solid var(--line2);vertical-align:top}
+.ledger .it{font-weight:600}
+.ledger .it span{display:block;font-weight:400;font-size:11.5px;color:var(--muted);margin-top:2px}
+.ledger .qty{font-family:var(--num);white-space:nowrap}
+.dir{font-size:10.5px;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.dir.g{background:var(--accent-soft);color:var(--accent-d)}
+.dir.w{background:var(--yuzu-soft);color:var(--yuzu)}
+
+.filters{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;align-items:end}
+@media (max-width:980px){.filters{grid-template-columns:1fr 1fr}}
+.filters label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.result-count{font-size:12px;color:var(--muted);margin:18px 0 12px}
+.result-count b{font-family:var(--num);color:var(--ink);font-size:15px}
+.co{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.co .row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.co h3{font-family:var(--display);font-size:16px;margin:0;font-weight:600}
+.co .meta{font-size:11.5px;color:var(--muted)}
+.co .pitch{font-size:13px;color:var(--ink2);margin:9px 0 11px;line-height:1.7}
+.co .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+@media (max-width:700px){.co .cols{grid-template-columns:1fr}}
+.co .cols h4{font-size:10.5px;letter-spacing:.12em;color:var(--muted);margin:0 0 6px;font-weight:600}
+.co .acts{display:flex;gap:8px;align-items:center;border-top:1px solid var(--line2);padding-top:11px;flex-wrap:wrap}
+.co .acts .lvl{margin-left:auto;font-size:11px;color:var(--muted)}
+.sent{font-size:12px;color:var(--accent-d)}
+
+/* 商談管理テーブル */
+.deals{width:100%;border-collapse:collapse;font-size:12.5px}
+.deals th{text-align:left;font-size:10.5px;letter-spacing:.09em;color:var(--muted);font-weight:600;padding:0 12px 9px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.deals td{padding:12px 12px 12px 0;border-bottom:1px solid var(--line2);vertical-align:top}
+.deals tr:last-child td{border-bottom:0}
+.deals tr.row{cursor:pointer;transition:background .12s}
+.deals tr.row:hover td{background:var(--line2)}
+.deals .who{font-weight:600}
+.deals .who span{display:block;margin-top:3px;font-weight:400}
+.deals .next{color:var(--ink2)}
+.deals .due{font-family:var(--num);white-space:nowrap}
+.deals .due.over{color:var(--alert);font-weight:600}
+.phase-dot{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:11.5px}
+.phase-dot i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:block}
+.phase-dot.p0 i{background:#B9C3B4}
+.phase-dot.p1 i{background:#8FB49E}
+.phase-dot.p2 i{background:var(--yuzu)}
+.phase-dot.p3 i{background:#3F8763}
+.phase-dot.p4 i{background:var(--accent)}
+.phase-dot.p5 i{background:var(--accent-d)}
+
+.board{display:grid;grid-template-columns:repeat(6,minmax(166px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}
+.lane{background:#fff;border:1px solid var(--line);border-radius:9px;min-height:220px;display:flex;flex-direction:column}
+.lane .lhd{padding:10px 12px;border-bottom:1px solid var(--line2)}
+.lane .lhd .st{font-family:var(--num);font-size:10px;color:var(--muted);letter-spacing:.1em}
+.lane .lhd .nm{font-size:12.5px;font-weight:600;margin-top:2px}
+.lane .lhd .ct{font-family:var(--num);font-size:11px;color:var(--muted)}
+.lane .ls{padding:9px;display:flex;flex-direction:column;gap:8px}
+.mini{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;padding:9px 10px;background:#fff;text-align:left;width:100%;transition:.15s}
+.mini:hover{background:var(--line2)}
+.mini.stale{border-left-color:var(--alert)}
+.mini .nm{font-size:12px;font-weight:600;line-height:1.45}
+.mini .sub{font-size:10.5px;color:var(--muted);margin-top:3px}
+.lane-empty{font-size:11px;color:var(--muted);padding:10px}
+
+.drawer{position:fixed;top:0;right:0;width:400px;max-width:92vw;height:100vh;background:#fff;border-left:1px solid var(--line);box-shadow:-14px 0 34px rgba(21,36,59,.10);transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:60;overflow-y:auto}
+.drawer.open{transform:none}
+.drawer .dhd{padding:20px 22px 14px;border-bottom:1px solid var(--line2)}
+.drawer .dhd h3{font-family:var(--display);font-size:18px;margin:6px 0 4px;font-weight:600}
+.drawer .dbd{padding:18px 22px 40px}
+.drawer .close{background:none;border:0;color:var(--muted);font-size:12px;padding:0}
+.ladder{list-style:none;margin:14px 0 0;padding:0}
+.ladder li{display:flex;gap:11px;padding:0 0 14px;position:relative}
+.ladder li:before{content:"";position:absolute;left:6px;top:15px;bottom:0;width:1px;background:var(--line)}
+.ladder li:last-child:before{display:none}
+.ladder .dot{width:13px;height:13px;border-radius:50%;border:2px solid var(--line);background:#fff;flex:none;margin-top:3px}
+.ladder li.done .dot{background:var(--accent);border-color:var(--accent)}
+.ladder li.now .dot{box-shadow:0 0 0 3px var(--accent-soft)}
+.ladder .tx{font-size:12.5px}
+.ladder .tx span{display:block;font-size:11px;color:var(--muted)}
+.memo{background:var(--line2);border-radius:7px;padding:12px 13px;font-size:12.5px;line-height:1.75;margin-top:6px}
+.memo h5{margin:0 0 5px;font-size:10.5px;letter-spacing:.09em;color:var(--muted);font-weight:600}
+
+.msg-wrap{display:grid;grid-template-columns:262px 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;min-height:450px}
+@media (max-width:820px){.msg-wrap{grid-template-columns:1fr}.thread-list{max-height:180px;overflow-y:auto}}
+.thread-list{border-right:1px solid var(--line)}
+.thread-list button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line2);padding:12px 14px}
+.thread-list button:hover{background:var(--line2)}
+.thread-list button.on{background:var(--accent-soft)}
+.thread-list .t1{font-size:12.5px;font-weight:600}
+.thread-list .t2{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conv{display:flex;flex-direction:column}
+.conv .chd{padding:13px 18px;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
+.conv .chd .nm{font-family:var(--display);font-size:15px}
+.bubbles{flex:1;padding:18px;display:flex;flex-direction:column;gap:14px;background:var(--canvas);max-height:410px;overflow-y:auto}
+.bub{max-width:75%;border-radius:10px;padding:11px 14px;font-size:12.5px;line-height:1.75;background:#fff;border:1px solid var(--line)}
+.bub.me{align-self:flex-end;background:var(--accent-soft);border-color:#C9DCD0}
+.bub .who{font-size:10.5px;color:var(--muted);margin-bottom:4px}
+.composer{border-top:1px solid var(--line2);padding:12px 14px;display:flex;gap:10px;align-items:flex-end;background:#fff}
+.composer textarea{min-height:44px}
+
+.adm-band{background:var(--admin-soft);border:1px solid #D9D1E8;border-radius:9px;padding:12px 16px;font-size:12.5px;color:var(--admin);margin-bottom:18px}
+.rev{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line2)}
+.rev:last-child{border-bottom:0}
+.rev .info{flex:1;min-width:0}
+.rev .nm{font-size:13.5px;font-weight:600}
+.rev .mt{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rev .why{font-size:12px;color:var(--ink2);margin-top:7px;line-height:1.7}
+.rev .ops{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end;max-width:200px}
+.flag{font-size:11.5px;color:var(--alert);background:var(--alert-soft);border-radius:4px;padding:6px 10px;margin-top:8px}
+.locked{text-align:center;padding:60px 20px;color:var(--muted)}
+.locked h2{font-family:var(--display);font-size:18px;color:var(--ink);margin:0 0 8px}
+
+/* 課金 */
+.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:980px){.plans{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.plans{grid-template-columns:1fr}}
+.plan{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column}
+.plan.cur{border-color:var(--accent);border-width:2px;padding:15px}
+.plan .tier{font-size:10px;letter-spacing:.16em;color:var(--muted)}
+.plan h3{font-family:var(--display);font-size:17px;margin:4px 0 0;font-weight:600}
+.plan .price{font-family:var(--num);font-size:26px;font-weight:600;margin:10px 0 2px;line-height:1}
+.plan .price small{font-size:12px;color:var(--muted);font-weight:400;margin-left:3px}
+.plan .per{font-size:11px;color:var(--muted)}
+.plan ul{list-style:none;margin:13px 0 16px;padding:0;flex:1}
+.plan ul li{font-size:12px;color:var(--ink2);padding:4px 0 4px 17px;position:relative;line-height:1.6}
+.plan ul li:before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--accent-soft);border:1px solid #BFD8C8}
+.plan ul li.off{color:var(--muted)}
+.plan ul li.off:before{background:var(--line2);border-color:var(--line)}
+.plan .badge-cur{display:inline-block;background:var(--accent);color:#fff;font-size:10.5px;border-radius:3px;padding:2px 8px;margin-top:8px}
+.usage{display:grid;grid-template-columns:170px 1fr 96px;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.usage:last-child{border-bottom:0}
+.usage .g{height:6px;background:var(--line2);border-radius:3px;overflow:hidden}
+.usage .g i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .6s}
+.usage .g i.o{background:var(--yuzu)}
+.usage .g i.r{background:var(--alert)}
+.usage .v{font-family:var(--num);text-align:right;color:var(--ink2);font-size:12px}
+.paymethod{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:8px;padding:13px 15px}
+.cardface{width:46px;height:30px;border-radius:4px;background:linear-gradient(135deg,#2B3A55,#15243B);display:grid;place-items:center;color:#fff;font-family:var(--num);font-size:9px;letter-spacing:.06em;flex:none}
+.stripe-note{background:#F4F6FB;border:1px solid #DDE3EF;border-radius:8px;padding:13px 15px;font-size:12px;color:#3A4A66;line-height:1.75}
+.stripe-note b{color:#1F2E4A}
+.mrr{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:900px){.mrr{grid-template-columns:1fr 1fr}}
+
+.note{font-size:11.5px;color:var(--muted);line-height:1.75;margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
+.scrim{position:fixed;inset:0;background:rgba(21,36,59,.28);opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:7px;font-size:12.5px;opacity:0;pointer-events:none;transition:.25s;z-index:70}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;padding-bottom:14px}
+  .nav{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .nav button{width:auto}
+  .nav button.adm{margin-top:0;border-top:0;padding-top:9px}
+  .page{padding:18px 15px 50px}
+  .top{padding:11px 15px;flex-wrap:wrap}
+  .stat-row{grid-template-columns:1fr 1fr}
+}
+</style>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">Food Japan<br><em>Connect</em></div>
+      <div class="sub">食の共創プラットフォーム</div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-p="dash" class="on">ダッシュボード</button>
+      <button data-p="profile">会員プロフィール</button>
+      <button data-p="ledger">持ち寄り台帳</button>
+      <button data-p="search">パートナーを探す</button>
+      <button data-p="deals">商談管理</button>
+      <button data-p="board">商談ステータス</button>
+      <button data-p="projects">共創プロジェクト</button>
+      <button data-p="favs">お気に入り<span class="badge">5</span></button>
+      <button data-p="messages">メッセージ<span class="badge">3</span></button>
+      <button data-p="billing">プラン・お支払い</button>
+      <button data-p="admin" class="adm" id="navAdmin">事務局管理</button>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div>
+        <div class="crumb" id="crumb">MY PAGE</div>
+        <h1 id="ptitle">ダッシュボード</h1>
+      </div>
+      <div class="me">
+        <div style="text-align:left">
+          <div class="demo-tip">デモ切替</div>
+          <div class="roleswitch" id="roleswitch">
+            <button data-r="member" class="on">会員</button>
+            <button data-r="admin" class="adm">事務局</button>
+          </div>
+        </div>
+        <div class="ticket">興味送信チケット 残り <b>7</b></div>
+        <div class="nm" id="userName">株式会社まるみ食品<span id="userSub">食品メーカー／長野県</span></div>
+        <div class="avatar" id="userAv">丸</div>
+      </div>
+    </header>
+
+    <!-- ダッシュボード -->
+    <section class="page" id="p-dash">
+      <div class="stat-row" style="margin-bottom:16px">
+        <div class="stat"><div class="n">1,284</div><div class="l">プロフィール閲覧（30日）</div><div class="d">＋18%</div></div>
+        <div class="stat"><div class="n">27</div><div class="l">受け取った興味</div><div class="d">未対応 4件</div></div>
+        <div class="stat"><div class="n">14</div><div class="l">登録した持ち寄り</div><div class="d">提供9／募集5</div></div>
+        <div class="stat"><div class="n">9</div><div class="l">進行中の商談</div><div class="d">今月 3件</div></div>
+        <div class="stat"><div class="n">2</div><div class="l">商品化</div><div class="d">実証中 1件</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="hd"><h2>あなたに向いている組み方</h2><span class="side-note">持ち寄り台帳から算出</span></div>
+        <div class="bd">
+          <p style="margin:0 0 14px;font-size:12.5px;color:var(--ink2)">
+            あなたは<b>食品メーカー</b>です。関わり方によって、探す相手も持ち寄るものも変わります。</p>
+          <div class="axes" id="axesDash"></div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1.15fr 1fr">
+        <div class="card">
+          <div class="hd"><h2>いま止まっていること</h2><span class="side-note">期限切れが上に来ます</span></div>
+          <div class="bd" style="padding:0"><table class="simple" id="stuckTbl"></table></div>
+        </div>
+        <div class="card">
+          <div class="hd"><h2>最近の動き</h2></div>
+          <div class="bd" style="padding:0">
+            <table class="simple">
+              <tbody>
+                <tr><td style="padding-left:18px">能登町役場 産業振興課から「話を聞きたい」</td><td class="n" style="padding-right:18px">8/06</td></tr>
+                <tr><td style="padding-left:18px">丹波農園組合の商談メモを更新（試作・PoC）</td><td class="n" style="padding-right:18px">8/05</td></tr>
+                <tr><td style="padding-left:18px">JAみやざき中央がプロフィールを閲覧</td><td class="n" style="padding-right:18px">8/05</td></tr>
+                <tr><td style="padding-left:18px">共創プロジェクトに6件の閲覧</td><td class="n" style="padding-right:18px">8/02</td></tr>
+                <tr><td style="padding-left:18px">房総フラワーファームをお気に入りに保存</td><td class="n" style="padding-right:18px">7/30</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p class="note">プロトタイプです。企業名・数値はすべて架空のサンプルです。</p>
+    </section>
+
+    <!-- プロフィール -->
+    <section class="page" id="p-profile" hidden>
+      <p class="lead">会員種別によって入力項目が変わります。生産者に「加工設備」を聞いても意味がなく、飲食店に「作付面積」を聞いても答えられないためです。</p>
+      <div class="tabs" id="ptabs">
+        <button class="on" data-t="t1">1. 基本情報</button>
+        <button data-t="t2">2. 事業の中身</button>
+        <button data-t="t3">3. 組みたい相手</button>
+        <button data-t="t4">4. 検索タグ</button>
+      </div>
+      <div class="card">
+        <div class="bd">
+          <div id="t1">
+            <div class="two">
+              <div class="field"><label>法人・団体名<span class="req">必須</span></label><input type="text" value="株式会社まるみ食品"></div>
+              <div class="field"><label>Webサイト</label><input type="text" value="https://example.co.jp"></div>
+            </div>
+            <div class="three">
+              <div class="field"><label>会員種別（大分類）<span class="req">必須</span></label>
+                <select id="cat1"></select></div>
+              <div class="field"><label>細分類<span class="req">必須</span></label>
+                <select id="cat2"></select></div>
+              <div class="field"><label>担当者の立場<span class="req">必須</span></label>
+                <select id="stance"><option>バイヤー</option><option>シェフ・料理人</option><option>生産者</option><option selected>一般（その他の担当者）</option></select>
+                <p class="hint" style="margin-top:6px">相手が「誰と話せるか」を判断する材料になります。</p></div>
+            </div>
+            <p class="hint" id="typeHint" style="margin:-8px 0 18px">選んだ種別に応じて、次のタブの入力項目が切り替わります。</p>
+            <div class="two">
+              <div class="field"><label>所在地<span class="req">必須</span></label>
+                <select><option>長野県</option><option>北海道</option><option>岩手県</option><option>千葉県</option><option>石川県</option><option>京都府</option><option>愛知県</option><option>大阪府</option><option>宮崎県</option></select></div>
+              <div class="field"><label>設立年／規模</label><input type="text" value="1948年／84名"></div>
+            </div>
+            <div class="field"><label>事業内容<span class="req">必須</span></label>
+              <textarea>味噌・醤油をはじめとする発酵調味料の製造。信州産大豆と自家培養の麹菌を使った長期熟成品が主力で、OEM受託が売上の4割を占めます。</textarea></div>
+          </div>
+
+          <div id="t2" hidden>
+            <div class="field"><label>自社の特徴<span class="searchable">検索表示</span></label>
+              <p class="hint">一覧に出る2行です。技術・設備・原料のどれで選ばれたいかを先頭に。</p>
+              <textarea>78年分の蔵付き酵母と、小ロット（50L）から回せる発酵タンクを14基保有。水分・糖度が不安定な規格外品でも、発酵条件を組み替えて製品化できます。</textarea></div>
+            <div class="two">
+              <div class="field"><label>加工できる設備<span class="searchable">検索表示</span></label>
+                <textarea>小ロット発酵タンク14基／真空包装ライン／レトルト（外注）／HACCP対応工場</textarea></div>
+              <div class="field"><label>対応できるロット</label><input type="text" value="最小50L／月産上限12t"></div>
+            </div>
+            <div class="two">
+              <div class="field"><label>販売できる地域・売り場<span class="searchable">検索表示</span></label>
+                <textarea>長野県内スーパー120店／首都圏百貨店8店／自社EC（月商420万円）</textarea></div>
+              <div class="field"><label>物流の状況・困りごと<span class="searchable">検索表示</span></label>
+                <textarea>常温は自社便で県内対応可。冷凍の小ロット出荷ができず、少量の試作品を遠方に送れないのが課題です。</textarea></div>
+            </div>
+            <div class="field"><label>フードロス・未利用資源への取り組み<span class="searchable">検索表示</span></label>
+              <p class="hint">「廃棄を資源に」で検索されるのはこの項目です。</p>
+              <textarea>2024年から規格外りんごの発酵調味料を通年販売（年間3.2tを利用）。もろみ粕の飼料化を検討中です。</textarea></div>
+          </div>
+
+          <div id="t3" hidden>
+            <p class="eyebrow">どの関わり方で組みたいか（複数可）</p>
+            <div class="chipset" id="axisChips" style="margin-bottom:22px"></div>
+            <p class="eyebrow">会いたい相手の立場（複数可）</p>
+            <div class="chipset" id="stanceChips" style="margin-bottom:22px"></div>
+            <div class="field"><label>解決したい課題<span class="req">必須</span></label>
+              <textarea>産地では毎年一定量の規格外品が廃棄されますが、単独では加工コストが合いません。原料側・加工側・販路側が最初から組めば、収穫前に生産量と販売数を決められます。</textarea></div>
+            <div class="two">
+              <div class="field"><label>想定する組み方</label>
+                <select><option>共同開発（試作から）</option><option>OEM受託</option><option>原料の継続仕入</option><option>共同実証（PoC）</option><option>販路提携</option><option>共同研究</option></select></div>
+              <div class="field"><label>着手できる時期</label><input type="text" value="2026年10月〜"></div>
+            </div>
+          </div>
+
+          <div id="t4" hidden>
+            <p class="eyebrow">自社が出せるもの</p>
+            <div class="chipset" id="giveTags" style="margin-bottom:24px"></div>
+            <p class="eyebrow">探しているもの</p>
+            <div class="chipset" id="wantTags"></div>
+          </div>
+        </div>
+        <div class="savebar">
+          <button class="btn" onclick="toast('保存しました')">保存する</button>
+          <button class="btn quiet" onclick="toast('公開ページを開きます')">公開ページを確認</button>
+          <span class="st">記入率 72%　あと2項目で上位表示対象</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 台帳 -->
+    <section class="page" id="p-ledger" hidden>
+      <p class="lead">このシステムの中心です。企業名ではなく、動かせるモノ・場所・条件を1件ずつ登録します。検索とマッチングはすべてこの台帳を見ています。</p>
+      <div class="card" style="margin-bottom:16px"><div class="bd" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn" onclick="toast('新規登録フォームを開きます')">＋ 持ち寄りを登録</button>
+        <button class="btn quiet" onclick="toast('CSVを取り込みます')">CSVで一括登録</button>
+        <span style="font-size:11.5px;color:var(--muted);margin-left:auto">提供 9件／募集 5件　最終更新 8/05</span>
+      </div></div>
+      <div class="card">
+        <div class="hd"><h2>登録済みの持ち寄り</h2><span class="side-note">数量と時期まで入れると検索に強くなります</span></div>
+        <div class="bd" style="overflow-x:auto"><table class="ledger" id="ledgerTbl"></table></div>
+      </div>
+      <p class="note">分類は 食材・原料／加工設備／技術・ノウハウ／販路・売り場／実証の場／物流／資金・補助／人材／地域課題 の9つ。生産者は「食材・原料」中心、飲食・ホテルは「実証の場」中心と、種別によって埋まる欄が自然に変わります。</p>
+    </section>
+
+    <!-- 探す -->
+    <section class="page" id="p-search" hidden>
+      <p class="lead">まず「どう組みたいか」を選びます。同じ企業でも、卸として見るのか実証の場として見るのかで、必要な情報が違うためです。</p>
+      <div class="axes" id="axesSearch" style="margin-bottom:18px"></div>
+      <div class="card"><div class="bd">
+        <div class="filters">
+          <div><label>探しているもの</label><select id="f-cat">
+            <option>すべて</option><option>食材・原料</option><option>加工設備</option><option>技術・ノウハウ</option>
+            <option>販路・売り場</option><option>実証の場</option><option>物流</option><option>資金・補助</option><option>人材</option><option>地域課題</option>
+          </select></div>
+          <div><label>会員種別</label><select id="f-type"></select></div>
+          <div><label>相手の立場</label><select id="f-stance">
+            <option>すべて</option><option>バイヤー</option><option>シェフ・料理人</option><option>生産者</option><option>一般（その他の担当者）</option>
+          </select></div>
+          <div><label>地域</label><select id="f-area">
+            <option>すべて</option><option>北海道・東北</option><option>関東</option><option>中部</option><option>近畿</option><option>中国・四国</option><option>九州・沖縄</option>
+          </select></div>
+          <div><label>キーワード</label><input type="text" id="f-kw" placeholder="規格外／冷凍／二番茶"></div>
+        </div>
+      </div></div>
+      <p class="result-count"><b id="hits">0</b> 件<span id="axisNote" style="margin-left:10px"></span></p>
+      <div id="colist"></div>
+    </section>
+
+    <!-- 商談管理 -->
+    <section class="page" id="p-deals" hidden>
+      <p class="lead">進行中の商談を一覧で見ます。次にやること・期限・担当者を1画面で確認するための表です。行を押すと詳細が開きます。</p>
+      <div class="card" style="margin-bottom:16px"><div class="bd">
+        <div class="filters" style="grid-template-columns:repeat(4,1fr)">
+          <div><label>フェーズ</label><select id="d-ph"><option>すべて</option></select></div>
+          <div><label>会員種別</label><select id="d-type"></select></div>
+          <div><label>状態</label><select id="d-st"><option>すべて</option><option>期限切れ・停滞のみ</option><option>今週が期限</option></select></div>
+          <div><label>キーワード</label><input type="text" id="d-kw" placeholder="相手先・メモ"></div>
+        </div>
+      </div></div>
+      <div class="card">
+        <div class="hd"><h2>商談一覧</h2><span class="side-note" id="dealCount"></span></div>
+        <div class="bd" style="overflow-x:auto"><table class="deals" id="dealsTbl"></table></div>
+      </div>
+      <p class="note">30日以上動きのないものは期限欄が赤くなります。宮崎開催と名古屋開催の間が最も止まりやすい期間です。</p>
+    </section>
+
+    <!-- ステータス -->
+    <section class="page" id="p-board" hidden>
+      <p class="lead">同じ商談を段階別に並べた盤面です。全体のどこに滞留しているかを見るのに使います。</p>
+      <div class="board" id="board"></div>
+      <p class="note">30日以上動きのない相手には赤い線が付きます。現在 <b>2件</b>。</p>
+    </section>
+
+    <!-- プロジェクト -->
+    <section class="page" id="p-projects" hidden>
+      <p class="lead">「一緒に取り組みたいこと」の掲載板です。掲載は事務局の承認後に公開されます。</p>
+      <div class="card" style="margin-bottom:16px">
+        <div class="hd"><h2>自社の掲載</h2><span class="side-note">無料プランは1件まで</span></div>
+        <div class="bd">
+          <div class="co" style="border:0;padding:0;margin:0">
+            <div class="row1"><h3>規格外の果実・野菜を、通年売れる発酵調味料に変える</h3><span class="pill ok">公開中</span></div>
+            <p class="pitch">原料側・加工側・販路側で最初から組み、収穫前に生産量と販売数を決める形を試したいです。まず1品目、2026年内の試作が目標です。</p>
+            <div class="cols">
+              <div><h4>出せるもの</h4><span class="tag give">小ロット発酵タンク</span><span class="tag give">麹菌3系統</span><span class="tag give">HACCP工場</span><span class="tag give">自社EC</span></div>
+              <div><h4>探しているもの</h4><span class="tag want">年3t以上の規格外果実</span><span class="tag want">首都圏の実証店舗</span><span class="tag want">小ロット冷凍配送</span></div>
+            </div>
+            <div class="acts">
+              <button class="btn sm quiet" onclick="toast('編集画面を開きます')">編集</button>
+              <button class="btn sm quiet" onclick="toast('掲載を止めました')">掲載を止める</button>
+              <span class="lvl">閲覧 214 ／ 応募 11 ／ 商談 3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="eyebrow">他社の募集</p>
+      <div id="projlist"></div>
+    </section>
+
+    <!-- お気に入り -->
+    <section class="page" id="p-favs" hidden>
+      <p class="lead">気になった相手と案件の保存先です。イベントで回る順を決めるときに使います。</p>
+      <div class="card"><div class="bd" style="padding:0;overflow-x:auto"><table class="simple" id="favTbl"></table></div></div>
+    </section>
+
+    <!-- メッセージ -->
+    <section class="page" id="p-messages" hidden>
+      <p class="lead">1社への初回送信でチケットを1枚消費します。返信のやり取りでは消費しません。</p>
+      <div class="msg-wrap">
+        <div class="thread-list" id="threads"></div>
+        <div class="conv">
+          <div class="chd"><span class="nm" id="convName"></span><span class="pill" id="convPhase"></span>
+            <button class="btn sm ghost" style="margin-left:auto" onclick="go('deals')">商談管理で見る</button></div>
+          <div class="bubbles" id="bubbles"></div>
+          <div class="composer"><textarea id="draft" placeholder="返信を書く"></textarea>
+            <button class="btn" onclick="send()">送信</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- プラン・お支払い -->
+    <section class="page" id="p-billing" hidden>
+      <p class="lead">プランの変更、支払い方法、請求書の確認をここで行います。決済はStripeの安全な画面に移動して処理され、カード番号はこのシステムには保存されません。</p>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="hd"><h2>ご契約中のプラン</h2><span class="side-note">次回請求日 2026年9月1日</span></div>
+        <div class="bd">
+          <div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:18px">
+            <div>
+              <div class="plan-tier" style="font-size:10px;letter-spacing:.16em;color:var(--muted)">STANDARD</div>
+              <div style="font-family:var(--display);font-size:24px;font-weight:600;margin-top:3px">スタンダード</div>
+            </div>
+            <div style="font-family:var(--num);font-size:26px;font-weight:600">¥15,000<span style="font-size:12px;color:var(--muted);font-weight:400;margin-left:4px">／月（税別）</span></div>
+            <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn" onclick="toast('プラン比較へ移動します')">プランを変更する</button>
+              <button class="btn quiet" onclick="toast('Stripeの管理画面を開きます')">支払い情報を管理</button>
+            </div>
+          </div>
+          <p class="eyebrow">今月の利用状況</p>
+          <div id="usageList"></div>
+        </div>
+      </div>
+
+      <p class="eyebrow">プランの比較</p>
+      <div class="plans" id="planList" style="margin-bottom:16px"></div>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+        <div class="card">
+          <div class="hd"><h2>追加購入</h2><span class="side-note">都度課金</span></div>
+          <div class="bd" style="padding:0">
+            <table class="simple">
+              <tbody>
+                <tr><td style="padding-left:18px">興味送信チケット 10枚<span style="display:block;font-size:11px;color:var(--muted)">残り7枚。イベント直前は不足しがちです</span></td>
+                    <td class="n" style="padding-right:18px">¥8,000<br><button class="btn sm quiet" style="margin-top:5px" onclick="toast('決済画面に移動します')">購入</button></td></tr>
+                <tr><td style="padding-left:18px">共創プロジェクトの追加掲載 1件<span style="display:block;font-size:11px;color:var(--muted)">スタンダードは3件まで</span></td>
+                    <td class="n" style="padding-right:18px">¥5,000<br><button class="btn sm quiet" style="margin-top:5px" onclick="toast('決済画面に移動します')">購入</button></td></tr>
+                <tr><td style="padding-left:18px">イベント出展ブース<span style="display:block;font-size:11px;color:var(--muted)">試食・展示ブース1小間</span></td>
+                    <td class="n" style="padding-right:18px">¥200,000<br><button class="btn sm quiet" style="margin-top:5px" onclick="toast('申込画面に移動します')">申し込む</button></td></tr>
+                <tr><td style="padding-left:18px">追加ユーザー 1名<span style="display:block;font-size:11px;color:var(--muted)">スタンダードは3名まで</span></td>
+                    <td class="n" style="padding-right:18px">¥3,000／月<br><button class="btn sm quiet" style="margin-top:5px" onclick="toast('決済画面に移動します')">追加</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="hd"><h2>お支払い方法</h2></div>
+          <div class="bd">
+            <div class="paymethod" style="margin-bottom:12px">
+              <div class="cardface">VISA</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600">•••• •••• •••• 4242</div>
+                <div style="font-size:11.5px;color:var(--muted)">有効期限 09/28　／　佐野 健一</div>
+              </div>
+              <button class="btn sm quiet" onclick="toast('Stripeのカード管理画面を開きます')">変更</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+              <button class="btn sm quiet" onclick="toast('カードを追加します')">カードを追加</button>
+              <button class="btn sm quiet" onclick="toast('請求先情報を編集します')">請求先・インボイス番号</button>
+            </div>
+            <div class="stripe-note">
+              カード情報は <b>Stripe</b> が保持し、このシステムには保存されません。<br>
+              変更・解約はStripeのカスタマーポータルで行います。銀行振込をご希望の場合は事務局にご連絡ください（年額契約のみ対応）。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h2>請求履歴</h2><span class="side-note">領収書・請求書をダウンロードできます</span></div>
+        <div class="bd" style="padding:0;overflow-x:auto"><table class="simple" id="invoiceTbl"></table></div>
+      </div>
+      <p class="note">解約は次回請求日の前日まで受け付けます。解約後もプロフィールと商談履歴は90日間保持され、その間に再契約すればそのまま復帰できます。</p>
+    </section>
+
+    <!-- 事務局管理 -->
+    <section class="page" id="p-admin" hidden>
+      <div id="adminLocked" class="card" hidden>
+        <div class="locked">
+          <h2>この画面を開く権限がありません</h2>
+          <p style="font-size:12.5px;margin:0">事務局管理は、テナント管理者・管理者権限を持つアカウントにのみ表示されます。<br>
+          権限が必要な場合は、所属テナントの管理者にご依頼ください。</p>
+        </div>
+      </div>
+      <div id="adminBody">
+        <div class="adm-band">
+          テナント：<b>Food Japan Summit 実行委員会</b>　／　ログイン権限：<b>管理者（アドミニストレータ）</b><br>
+          この画面は管理者権限を持つアカウントにのみ表示されます。会員には存在自体が見えません。
+        </div>
+        <div class="stat-row" style="margin-bottom:16px">
+          <div class="stat"><div class="n">1,842</div><div class="l">承認済み会員</div><div class="d">今月＋126</div></div>
+          <div class="stat"><div class="n">7</div><div class="l">審査待ち</div><div class="d">最長3日経過</div></div>
+          <div class="stat"><div class="n">4</div><div class="l">掲載の承認待ち</div><div class="d">—</div></div>
+          <div class="stat"><div class="n">318</div><div class="l">今月の興味送信</div><div class="d">返信率 61%</div></div>
+          <div class="stat"><div class="n">23</div><div class="l">成約・商品化</div><div class="d">累計</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="hd"><h2>会員審査</h2><span class="side-note">法人番号と事業実態を確認して承認します</span></div>
+          <div class="bd" id="reviewList"></div>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1.2fr 1fr;margin-bottom:16px">
+          <div class="card">
+            <div class="hd"><h2>組み合わせごとの成立状況</h2></div>
+            <div class="bd" style="padding:0">
+              <table class="simple">
+                <thead><tr><th style="padding-left:18px">組み合わせ</th><th class="n">興味送信</th><th class="n">商談</th><th class="n">成約</th><th class="n" style="padding-right:18px">成約率</th></tr></thead>
+                <tbody>
+                  <tr><td style="padding-left:18px">生産者 → 流通・小売（卸）</td><td class="n">86</td><td class="n">41</td><td class="n">9</td><td class="n" style="padding-right:18px">10.5%</td></tr>
+                  <tr><td style="padding-left:18px">生産者 → 食品メーカー</td><td class="n">124</td><td class="n">58</td><td class="n">14</td><td class="n" style="padding-right:18px">11.3%</td></tr>
+                  <tr><td style="padding-left:18px">生産者 → 飲食・ホテル</td><td class="n">73</td><td class="n">26</td><td class="n">4</td><td class="n" style="padding-right:18px">5.5%</td></tr>
+                  <tr><td style="padding-left:18px">食品メーカー → 飲食・ホテル</td><td class="n">35</td><td class="n">19</td><td class="n">6</td><td class="n" style="padding-right:18px">17.1%</td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:12px;color:var(--ink2);padding:14px 18px 4px;margin:0;line-height:1.75">
+                生産者→飲食・ホテルが最も低くなっています。少量を都市部に送る手段が決まらず止まる例が大半です。物流会員を増やすか、事務局から共同配送の案件を起こす必要があります。</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><h2>対応が必要なもの</h2></div>
+            <div class="bd">
+              <div class="flag">利用規約違反の通報 1件：メッセージが営業目的と申告されています</div>
+              <div class="flag" style="background:var(--yuzu-soft);color:var(--yuzu)">30日以上返信のない興味 42件。送信側にリマインドを出すか検討してください。</div>
+              <div class="flag" style="background:var(--line2);color:var(--ink2)">イベント参加者 214名のうち、38名が未登録です。招待メールを再送できます。</div>
+              <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                <button class="btn sm adm" onclick="toast('招待メールを再送しました')">未登録38名に再送</button>
+                <button class="btn sm quiet" onclick="toast('通報の詳細を開きます')">通報を確認</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="hd"><h2>契約・請求管理</h2><span class="side-note">Stripe 最終同期 8/06 09:12</span></div>
+          <div class="bd">
+            <div class="mrr" style="margin-bottom:18px">
+              <div class="stat"><div class="n">¥2,184,000</div><div class="l">月次経常収益（MRR）</div><div class="d">前月比 ＋7.2%</div></div>
+              <div class="stat"><div class="n">148</div><div class="l">有料契約</div><div class="d">無料 1,694</div></div>
+              <div class="stat"><div class="n">3</div><div class="l">決済失敗</div><div class="d" style="color:var(--alert)">要対応</div></div>
+              <div class="stat"><div class="n">2.1<small>%</small></div><div class="l">解約率（月）</div><div class="d">前月 2.8%</div></div>
+            </div>
+            <table class="simple" style="margin-bottom:16px">
+              <thead><tr><th>プラン</th><th class="n">契約数</th><th class="n">単価</th><th class="n">月額合計</th><th class="n">前月差</th></tr></thead>
+              <tbody>
+                <tr><td>フリー</td><td class="n">1,694</td><td class="n">¥0</td><td class="n">¥0</td><td class="n">＋126</td></tr>
+                <tr><td>スタンダード</td><td class="n">96</td><td class="n">¥15,000</td><td class="n">¥1,440,000</td><td class="n">＋8</td></tr>
+                <tr><td>プロ</td><td class="n">44</td><td class="n">¥30,000</td><td class="n">¥1,320,000</td><td class="n">＋3</td></tr>
+                <tr><td>エンタープライズ</td><td class="n">8</td><td class="n">個別</td><td class="n">¥960,000</td><td class="n">±0</td></tr>
+                <tr><td>都度課金（チケット・掲載枠）</td><td class="n">—</td><td class="n">—</td><td class="n">¥312,000</td><td class="n">＋¥48,000</td></tr>
+              </tbody>
+            </table>
+            <p class="eyebrow">対応が必要な支払い</p>
+            <table class="simple">
+              <thead><tr><th>会員</th><th>プラン</th><th>状態</th><th class="n"></th></tr></thead>
+              <tbody>
+                <tr><td>株式会社◯◯青果</td><td>スタンダード</td><td><span class="pill new">決済失敗 3回目</span></td>
+                    <td class="n"><button class="btn sm quiet" onclick="toast('再試行を実行しました')">再試行</button>
+                        <button class="btn sm warn" onclick="toast('利用を停止しました')">停止</button></td></tr>
+                <tr><td>△△ホテルズ株式会社</td><td>プロ</td><td><span class="pill warn">カード期限切れ間近</span></td>
+                    <td class="n"><button class="btn sm quiet" onclick="toast('更新依頼を送信しました')">更新を依頼</button></td></tr>
+                <tr><td>□□町 産業課</td><td>エンタープライズ</td><td><span class="pill">銀行振込 未入金（期日 8/10）</span></td>
+                    <td class="n"><button class="btn sm quiet" onclick="toast('請求書を再送しました')">請求書を再送</button></td></tr>
+                <tr><td>◇◇食品工業</td><td>スタンダード</td><td><span class="pill warn">解約予定 8/31</span></td>
+                    <td class="n"><button class="btn sm quiet" onclick="toast('担当者に引き止め連絡を割り当てました')">担当を割当</button></td></tr>
+              </tbody>
+            </table>
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button class="btn sm adm" onclick="toast('Stripeと同期しました')">Stripeと同期</button>
+              <button class="btn sm quiet" onclick="toast('プラン・価格の設定画面を開きます')">プラン・価格を設定</button>
+              <button class="btn sm quiet" onclick="toast('請求データを書き出しました')">請求データをCSVで書き出し</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr">
+          <div class="card">
+            <div class="hd"><h2>テナント・権限管理</h2><span class="side-note">管理者のみ</span></div>
+            <div class="bd" style="padding:0">
+              <table class="simple">
+                <thead><tr><th style="padding-left:18px">アカウント</th><th>権限</th><th class="n" style="padding-right:18px"></th></tr></thead>
+                <tbody>
+                  <tr><td style="padding-left:18px">事務局 河西<span style="display:block;font-size:11px;color:var(--muted)">kasai@example.jp</span></td>
+                      <td><span class="pill adm">テナント管理者</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm quiet" onclick="toast('権限を変更します')">変更</button></td></tr>
+                  <tr><td style="padding-left:18px">事務局 三宅<span style="display:block;font-size:11px;color:var(--muted)">miyake@example.jp</span></td>
+                      <td><span class="pill adm">管理者</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm quiet" onclick="toast('権限を変更します')">変更</button></td></tr>
+                  <tr><td style="padding-left:18px">審査担当 佐々木<span style="display:block;font-size:11px;color:var(--muted)">sasaki@example.jp</span></td>
+                      <td><span class="pill">審査のみ</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm quiet" onclick="toast('権限を変更します')">変更</button></td></tr>
+                  <tr><td style="padding-left:18px">閲覧用（協賛企業向け）<span style="display:block;font-size:11px;color:var(--muted)">viewer@example.jp</span></td>
+                      <td><span class="pill">閲覧のみ</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm quiet" onclick="toast('権限を変更します')">変更</button></td></tr>
+                </tbody>
+              </table>
+              <div style="padding:14px 18px"><button class="btn sm adm" onclick="toast('管理者を招待します')">＋ 管理者を招待</button></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><h2>掲載の承認待ち</h2></div>
+            <div class="bd" style="padding:0">
+              <table class="simple">
+                <tbody>
+                  <tr><td style="padding-left:18px">未利用魚を学校給食の定番に<span style="display:block;font-size:11px;color:var(--muted)">能登町役場 産業振興課</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm adm" onclick="toast('公開しました')">公開</button></td></tr>
+                  <tr><td style="padding-left:18px">帰り便を使った産地直送の冷凍網<span style="display:block;font-size:11px;color:var(--muted)">ヤマト冷凍物流</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm adm" onclick="toast('公開しました')">公開</button></td></tr>
+                  <tr><td style="padding-left:18px">二番茶を飲料原料に変える<span style="display:block;font-size:11px;color:var(--muted)">都城 鎌田製茶園</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm adm" onclick="toast('公開しました')">公開</button></td></tr>
+                  <tr><td style="padding-left:18px">余剰生乳のチーズ化<span style="display:block;font-size:11px;color:var(--muted)">十勝みどり牧場</span></td>
+                      <td class="n" style="padding-right:18px"><button class="btn sm adm" onclick="toast('公開しました')">公開</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <p class="note">運営が毎日触るのはこの画面です。会員側より先に、審査フローと通報対応、そして権限の切り方を固めたほうが安全です。</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhd"><button class="close" onclick="closeDrawer()">閉じる ✕</button>
+    <h3 id="dName"></h3><div id="dMeta" style="font-size:11.5px;color:var(--muted)"></div></div>
+  <div class="dbd" id="dBody"></div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 会員種別マスタ ===== */
+const TYPES={
+ "生産者":{cls:"r-prod",sub:["野菜・青果","生花","お茶","酪農・乳業","水産"]},
+ "食品メーカー":{cls:"r-maker",sub:["食品製造","食品加工","酒造・飲料"]},
+ "流通・小売":{cls:"r-dist",sub:["卸・商社","スーパー・小売","EC"]},
+ "飲食・ホテル":{cls:"r-shop",sub:["飲食店","飲食チェーン","ホテル"]},
+ "行政":{cls:"r-gov",sub:["地方自治体","省庁","JA"]},
+ "支援・その他":{cls:"r-sup",sub:["物流","採用","大学","研究機関","マーケティング","SaaSサービス"]}
+};
+const STANCES=["バイヤー","シェフ・料理人","生産者","一般（その他の担当者）"];
+
+const AXES=[
+ {id:"a1",from:"生産者",fc:"r-prod",to:"流通・小売",tc:"r-dist",cap:"出荷先と数量を先に決める。規格外や小ロットの引き取り先を探す。",n:"登録 312社"},
+ {id:"a2",from:"生産者",fc:"r-prod",to:"食品メーカー",tc:"r-maker",cap:"加工して商品にする。余っている食材と加工設備を突き合わせる。",n:"登録 268社"},
+ {id:"a3",from:"生産者",fc:"r-prod",to:"飲食・ホテル",tc:"r-shop",cap:"直接売る・出す。産地表示と少量配送が論点になる。",n:"登録 441社"},
+ {id:"a4",from:"食品メーカー",fc:"r-maker",to:"飲食・ホテル",tc:"r-shop",cap:"試作を実際の店で出して反応を見る。メニュー化まで一緒に。",n:"登録 386社"}
+];
+let axis=null;
+
+const LEDGER=[
+ {d:"g",c:"加工設備",it:"小ロット発酵タンク（50L〜）",sub:"14基のうち3基が通年で空いています",q:"月 3t まで",t:"通年",a:"長野県"},
+ {d:"g",c:"加工設備",it:"真空包装ライン",sub:"レトルトは外注で対応可",q:"月 8,000パック",t:"通年",a:"長野県"},
+ {d:"g",c:"技術・ノウハウ",it:"発酵条件の設計",sub:"糖度・水分が不安定な原料でも製品化できます",q:"—",t:"通年",a:"—"},
+ {d:"g",c:"技術・ノウハウ",it:"官能評価パネル",sub:"社内12名。他社の試作評価も受託します",q:"月 6回",t:"通年",a:"長野県"},
+ {d:"g",c:"販路・売り場",it:"自社EC",sub:"月商420万円。新商品の先行販売に使えます",q:"—",t:"通年",a:"全国"},
+ {d:"g",c:"販路・売り場",it:"県内スーパー120店",sub:"棚替えは年2回",q:"—",t:"3月・9月",a:"長野県"},
+ {d:"g",c:"食材・原料",it:"自家培養の麹菌 3系統",sub:"使用許諾の形で提供できます",q:"要相談",t:"通年",a:"—"},
+ {d:"g",c:"食材・原料",it:"もろみ粕",sub:"現在は産業廃棄物。飼料化を検討中",q:"年 6t",t:"通年",a:"長野県"},
+ {d:"g",c:"資金・補助",it:"共同開発の試作費",sub:"1件あたり上限200万円まで負担できます",q:"年 3件",t:"2026年度",a:"—"},
+ {d:"w",c:"食材・原料",it:"規格外の果実・野菜",sub:"糖度が低くても可。冷凍でも受けられます",q:"年 3t 以上",t:"収穫期",a:"全国"},
+ {d:"w",c:"実証の場",it:"首都圏の飲食店",sub:"4週間の限定メニューを出せる店",q:"2〜3店",t:"2026年秋",a:"関東"},
+ {d:"w",c:"物流",it:"小ロットの冷凍配送",sub:"1ケースから遠方に送れる手段がありません",q:"月 20ケース",t:"通年",a:"全国"},
+ {d:"w",c:"販路・売り場",it:"首都圏の売り場",sub:"百貨店以外の常設棚を開拓したい",q:"—",t:"2027年〜",a:"関東"},
+ {d:"w",c:"人材",it:"商品開発の副業人材",sub:"月8時間程度。レシピ設計を見てほしい",q:"1名",t:"2026年内",a:"—"}
+];
+
+const COS=[
+ {n:"丹波農園組合",t1:"生産者",t2:"野菜・青果",st:"生産者",a:"京都府南丹市",area:"近畿",axes:["a1","a2","a3"],cat:["食材・原料"],
+  p:"黒枝豆・小豆の生産組合（38戸）。毎年およそ12tが規格外となり、加工先を探しています。収穫前に数量を約束できる相手を優先します。",
+  g:["規格外の黒枝豆 年12t","収穫前契約","圃場の見学受入"],w:["小ロット加工先","通年売れる商品化"]},
+ {n:"三陸定置網 佐藤水産",t1:"生産者",t2:"水産",st:"生産者",a:"岩手県大船渡市",area:"北海道・東北",axes:["a1","a2"],cat:["食材・原料"],
+  p:"定置網に日々かかる未利用魚を、まとめて引き取ってくれる先を探しています。骨が多く手間がかかるため、加工技術のある相手を希望します。",
+  g:["未利用魚 年28t","朝どれの即日出荷","漁協との調整"],w:["骨処理の技術","継続して買う先"]},
+ {n:"十勝みどり牧場",t1:"生産者",t2:"酪農・乳業",st:"生産者",a:"北海道帯広市",area:"北海道・東北",axes:["a1","a2","a3"],cat:["食材・原料"],
+  p:"生産調整で行き場のない生乳が季節によって出ます。チーズやバターへの加工先、あるいは菓子原料としての引き取り先を探しています。",
+  g:["余剰生乳 年間ピーク時 日1.2t","牧場での撮影・視察","放牧の履歴データ"],w:["乳製品への加工先","菓子・飲料メーカー"]},
+ {n:"都城 鎌田製茶園",t1:"生産者",t2:"お茶",st:"生産者",a:"宮崎県都城市",area:"九州・沖縄",axes:["a1","a2"],cat:["食材・原料"],
+  p:"一番茶は売れますが、二番茶と粉茶が余ります。抹茶ブームで海外の引き合いはあるものの、加工と輸出の体制がありません。",
+  g:["二番茶 年6t","粉茶・茶殻","茶園の見学受入"],w:["飲料・菓子への加工先","海外販路"]},
+ {n:"房総フラワーファーム",t1:"生産者",t2:"生花",st:"生産者",a:"千葉県館山市",area:"関東",axes:["a1","a3"],cat:["食材・原料"],
+  p:"規格外の花と、食用に育てたエディブルフラワーがあります。飲食店やホテルのデザート・装飾用に、継続して使ってくれる先を探しています。",
+  g:["エディブルフラワー 通年","規格外の切り花","産地での撮影"],w:["飲食店・ホテルの定番採用","菓子メーカー"]},
+ {n:"越後製菓工房",t1:"食品メーカー",t2:"食品加工",st:"一般（その他の担当者）",a:"新潟県長岡市",area:"中部",axes:["a2","a4"],cat:["加工設備"],
+  p:"米菓のOEM製造。焙焼と乾燥のラインが冬季に空くため、その期間だけ他社の受託を受けられます。",
+  g:["焙焼・乾燥ライン","小袋包装","冬季の空きライン"],w:["冬に加工したい原料","新しい素材の相談"]},
+ {n:"築地中央青果",t1:"流通・小売",t2:"卸・商社",st:"バイヤー",a:"東京都江東区",area:"関東",axes:["a1"],cat:["販路・売り場"],
+  p:"都内の飲食店1,200店に配荷しています。産地から直接、少量でも特徴のある品を仕入れたい飲食店が増えています。",
+  g:["都内1,200店の配荷網","日次の需要データ","少量からの取扱"],w:["特徴のある産地","安定した出荷量"]},
+ {n:"スーパーとよた 12店舗",t1:"流通・小売",t2:"スーパー・小売",st:"バイヤー",a:"愛知県豊田市",area:"中部",axes:["a1","a3","a4"],cat:["販路・売り場","実証の場"],
+  p:"地域密着の食品スーパー。産直コーナーの棚を1本、テスト販売用に空けています。売れ行きはPOSで日次共有します。",
+  g:["テスト販売の棚","POSデータの共有","試食販売の実施"],w:["近隣の生産者","話題性のある商品"]},
+ {n:"Bistro KANATA",t1:"飲食・ホテル",t2:"飲食店",st:"シェフ・料理人",a:"東京都渋谷区",area:"関東",axes:["a3","a4"],cat:["実証の場"],
+  p:"渋谷の28席のビストロ。月替わりで試作メニューを出し、客の反応をレポートで返します。これまで11社の実証を受け入れました。",
+  g:["実証できる店舗","客の反応レポート","メニュー開発"],w:["珍しい原料","地方の生産者"]},
+ {n:"和食チェーン だんらん亭 120店",t1:"飲食・ホテル",t2:"飲食チェーン",st:"バイヤー",a:"大阪府大阪市",area:"近畿",axes:["a3","a4"],cat:["販路・売り場","実証の場"],
+  p:"全国120店の和食チェーン。季節フェアの食材を産地から直接仕入れたい。1品目あたり年間4t前後を安定して使います。",
+  g:["120店での定番採用","季節フェアの枠","本部での商品開発"],w:["年4t規模を出せる産地","話のある食材"]},
+ {n:"ホテル日向シーサイド",t1:"飲食・ホテル",t2:"ホテル",st:"シェフ・料理人",a:"宮崎県日向市",area:"九州・沖縄",axes:["a3","a4"],cat:["実証の場","販路・売り場"],
+  p:"朝食ビュッフェとレストランで、月替わりの試作メニューを出せます。宿泊客の反応をアンケートで返します。",
+  g:["実証の場（客席120）","宿泊客のアンケート","メニュー開発"],w:["珍しい県産原料","地元生産者との接点"]},
+ {n:"能登町役場 産業振興課",t1:"行政",t2:"地方自治体",st:"一般（その他の担当者）",a:"石川県能登町",area:"中部",axes:["a1","a2"],cat:["食材・原料","資金・補助","地域課題"],
+  p:"定置網にかかる未利用魚（年間約40t）の商品化パートナーを募集。加工試験の補助金枠と、町営加工施設を提供できます。",
+  g:["未利用魚 年40t","町営加工施設","補助制度の運用"],w:["加工技術","首都圏の販路"]},
+ {n:"JAみやざき中央",t1:"行政",t2:"JA",st:"一般（その他の担当者）",a:"宮崎県宮崎市",area:"九州・沖縄",axes:["a1","a2"],cat:["食材・原料","地域課題"],
+  p:"管内の生産者が抱える規格外品をまとめて扱えます。個々の農家では数量が足りない案件も、JA側で束ねて対応できます。",
+  g:["管内生産者の集荷","選果場・保管施設","産地情報の集約"],w:["まとまった数量を買う先","加工・商品化のパートナー"]},
+ {n:"株式会社ヤマト冷凍物流",t1:"支援・その他",t2:"物流",st:"一般（その他の担当者）",a:"大阪府堺市",area:"近畿",axes:["a1","a3","a4"],cat:["物流"],
+  p:"小ロット冷凍便の共同配送を立ち上げ中。1ケースから運べる仕組みを、実際の荷物で検証したい段階です。",
+  g:["冷凍車の空き枠","共同配送の枠","温度記録の仕組み"],w:["小ロットの冷凍荷物","産地からの帰り便"]},
+ {n:"東海大学 食品科学研究室",t1:"支援・その他",t2:"大学",st:"一般（その他の担当者）",a:"静岡県静岡市",area:"中部",axes:["a2"],cat:["技術・ノウハウ"],
+  p:"発酵制御と減塩に関する共同研究。分析機器と学生の実験工数を提供でき、研究費の一部は公的資金で賄えます。",
+  g:["分析・研究設備","成分分析","論文・データ"],w:["現場の課題","サンプル提供"]},
+ {n:"株式会社フードワークス",t1:"支援・その他",t2:"採用",st:"一般（その他の担当者）",a:"福岡県福岡市",area:"九州・沖縄",axes:["a2","a4"],cat:["人材"],
+  p:"食品工場と飲食店に特化した採用支援。外国人材の受入体制づくりから、定着までを見ます。繁忙期だけのスポット人材も扱います。",
+  g:["外国人材の受入支援","繁忙期のスポット人材","定着プログラム"],w:["人手が足りない加工現場","受入に前向きな企業"]},
+ {n:"株式会社トレサビ",t1:"支援・その他",t2:"SaaSサービス",st:"一般（その他の担当者）",a:"東京都港区",area:"関東",axes:["a1","a2"],cat:["技術・ノウハウ"],
+  p:"生産履歴とロット管理のSaaS。産地から加工、店頭までを1本の番号で追えます。共創案件の実証先を探しています。",
+  g:["ロット管理システム","産地情報の可視化","実証中は無償提供"],w:["複数社にまたがる案件","産地と加工が分かれた商流"]},
+ {n:"株式会社ミナモ",t1:"支援・その他",t2:"マーケティング",st:"一般（その他の担当者）",a:"東京都渋谷区",area:"関東",axes:["a2","a4"],cat:["技術・ノウハウ"],
+  p:"地域食材のブランディングとパッケージ設計。売り方が決まらないまま試作だけ進んでしまう案件に、早い段階から入ります。",
+  g:["ブランド設計","パッケージ制作","EC立ち上げ"],w:["これから売り方を決める商品","産地との共同案件"]}
+];
+
+const PROJ=[
+ {n:"未利用魚を学校給食の定番おかずにする",by:"能登町役場 産業振興課",area:"石川県",ax:"生産者 × 食品メーカー",
+  d:"骨の多い魚を子どもが食べられる形にしたい。加工技術と、給食向けの規格に詳しい事業者を探しています。",
+  g:["未利用魚 年40t","町営加工施設","補助制度"],w:["骨処理の技術","給食向け規格の知見"]},
+ {n:"帰り便を使った産地直送の冷凍ネットワーク",by:"株式会社ヤマト冷凍物流",area:"大阪府",ax:"生産者 × 飲食・ホテル",
+  d:"空で戻る冷凍車を産地に寄せ、小ロットでも運べる形を作ります。まず近畿〜関東の3ルートで実証します。",
+  g:["冷凍車の空き枠","温度記録の仕組み"],w:["定期的に出荷する産地","1ケース単位の荷物"]},
+ {n:"二番茶を、飲料と菓子の原料に変える",by:"都城 鎌田製茶園",area:"宮崎県",ax:"生産者 × 食品メーカー",
+  d:"一番茶しか値がつかない構造を変えたい。二番茶と粉茶を年6t、通年で使ってくれる加工先を探しています。",
+  g:["二番茶 年6t","粉茶・茶殻","茶園の見学受入"],w:["飲料・菓子への加工先","海外販路"]},
+ {n:"エディブルフラワーを、ホテルの通年メニューに",by:"房総フラワーファーム",area:"千葉県",ax:"生産者 × 飲食・ホテル",
+  d:"イベント需要だけでは作付けが読めません。通年で一定量を使ってくれる店・ホテルと組みたい。",
+  g:["エディブルフラワー 通年","規格外の切り花","産地での撮影"],w:["定番採用してくれる店","菓子メーカー"]}
+];
+
+const FAVS=[
+ {n:"丹波農園組合",t1:"生産者",t2:"野菜・青果",w:"規格外の黒枝豆 年12t",note:"9/17 商談枠あり"},
+ {n:"築地中央青果",t1:"流通・小売",t2:"卸・商社",w:"都内1,200店の配荷網",note:"EC以外の販路として"},
+ {n:"十勝みどり牧場",t1:"生産者",t2:"酪農・乳業",w:"余剰生乳",note:"乳製品の共同開発の可能性"},
+ {n:"和食チェーン だんらん亭 120店",t1:"飲食・ホテル",t2:"飲食チェーン",w:"120店での定番採用",note:"年4t規模を出せるか要検討"},
+ {n:"二番茶を飲料と菓子の原料に変える",t1:"案件",t2:"共創プロジェクト",w:"都城 鎌田製茶園",note:"発酵の技術が使えそう"}
+];
+
+const PHASES=["出会う","初回商談","条件整理","試作・PoC","実証","成約・商品化"];
+const DEALS=[
+ {n:"房総フラワーファーム",t1:"生産者",t2:"生花",ph:0,sub:"8/01 興味を受信",own:"佐野",due:"8/12",over:false,stale:false,
+  next:"返信して商談日を打診する",memo:"エディブルフラワー。通年で一定量を使ってほしいとのこと。当社の商品では使い道が限られるため、ホテル側とセットで考えたい。"},
+ {n:"株式会社トレサビ",t1:"支援・その他",t2:"SaaSサービス",ph:0,sub:"7/02 興味を送信",own:"佐野",due:"7/10",over:true,stale:true,
+  next:"再送するか、判断を打ち切る",memo:"ロット管理SaaS。35日返信なし。丹波の案件が複数社にまたがるので、実証先として組める可能性はある。"},
+ {n:"株式会社フードワークス",t1:"支援・その他",t2:"採用",ph:0,sub:"7/25 名刺交換のみ",own:"総務 中原",due:"8/20",over:false,stale:false,
+  next:"繁忙期の人員計画をまとめる",memo:"外国人材の受入支援。11〜3月の仕込み期に人手が足りない。まず必要人数と期間を社内で確定させる。"},
+ {n:"東海大学 食品科学研究室",t1:"支援・その他",t2:"大学",ph:1,sub:"7/21 初回商談済",own:"開発 山中",due:"7/31",over:true,stale:true,
+  next:"共同研究の枠組みを決める",memo:"減塩味噌の共同研究。公的資金の申請期限が10月末。それまでにテーマを1本に絞る必要がある。"},
+ {n:"JAみやざき中央",t1:"行政",t2:"JA",ph:1,sub:"8/03 初回商談済",own:"佐野",due:"8/25",over:false,stale:false,
+  next:"管内で出せる品目と数量のリストをもらう",memo:"個別農家では数量が足りない案件をJAで束ねられる。まず何がどれだけ出るかの一覧が要る。選果場の保管条件も確認する。"},
+ {n:"能登町役場 産業振興課",t1:"行政",t2:"地方自治体",ph:2,sub:"8/06 条件を整理中",own:"佐野",due:"8/18",over:false,stale:false,
+  next:"加工施設の利用条件を書面でもらう",memo:"未利用魚40t。町営加工施設は無償だが利用可能期間が11〜3月に限られる。当社の繁忙期と重なるため、人員の当て方を先に決める。"},
+ {n:"Bistro KANATA",t1:"飲食・ホテル",t2:"飲食店",ph:2,sub:"8/04 メニュー案を調整",own:"佐野",due:"8/22",over:false,stale:false,
+  next:"試作2案を送る",memo:"4週間の限定メニュー。店側は仕入原価1kg2,000円までなら成立するとのこと。試作3案のうち2案が候補。"},
+ {n:"丹波農園組合",t1:"生産者",t2:"野菜・青果",ph:3,sub:"8/05 試作3ロット完了",own:"佐野",due:"8/29",over:false,stale:false,
+  next:"買取価格の固定年数を決める",memo:"官能評価は3ロットとも合格。残る論点は買取価格。3年固定を提案しているが、組合内で豊凶時の扱いを協議中。"},
+ {n:"和食チェーン だんらん亭 120店",t1:"飲食・ホテル",t2:"飲食チェーン",ph:3,sub:"7/29 本部で試食",own:"営業 三宅",due:"9/05",over:false,stale:false,
+  next:"年4t分の供給計画を出す",memo:"季節フェアの候補に入った。年4tとなると丹波単独では足りない。JAみやざき中央と組み合わせる案を検討する。"},
+ {n:"株式会社ヤマト冷凍物流",t1:"支援・その他",t2:"物流",ph:4,sub:"実証2週目",own:"物流 三宅",due:"8/16",over:false,stale:false,
+  next:"温度記録のデータを受け取る",memo:"小ロット冷凍便。近畿→関東ルートで2週間実施中。1ケース単位で運賃が成立するかを実データで確認する。"},
+ {n:"信州りんご生産組合",t1:"生産者",t2:"野菜・青果",ph:5,sub:"2024年から通年販売",own:"佐野",due:"9/30",over:false,stale:false,
+  next:"2027年の数量を確定する",memo:"規格外りんごの発酵調味料。24年商品化、通年で回っている。今年の作付けから逆算して数量を決める。"},
+ {n:"越後製菓工房",t1:"食品メーカー",t2:"食品加工",ph:5,sub:"2025年 冬季OEM開始",own:"開発 山中",due:"10/10",over:false,stale:false,
+  next:"次の冬の枠を押さえる",memo:"冬季の空きラインで当社商品を受託製造。今年も同枠を確保したい。数量は前年比1.3倍で打診する。"}
+];
+
+const THREADS=[
+ {n:"丹波農園組合",ph:"試作・PoC",last:"買取価格の件、組合内で話しています",
+  msgs:[
+   {me:false,w:"丹波農園組合 上田",t:"試作品3種、こちらでも試食しました。2番目のものが黒枝豆の風味が一番残っていて良かったです。組合員からも好評でした。"},
+   {me:true,w:"まるみ食品 佐野",t:"ありがとうございます。2番は熟成期間を90日に伸ばしたものです。この条件で進める前提で、原料の買取価格を詰めさせてください。年間3tを3年固定でお願いできないでしょうか。"},
+   {me:false,w:"丹波農園組合 上田",t:"買取価格の件、組合内で話しています。豊作の年に規格外が想定より増えたときの扱いを決めたいという意見が出ていて、もう少し時間をいただきたいです。"},
+   {me:true,w:"まるみ食品 佐野",t:"承知しました。上振れ分は当社で受け取れる上限を年4.5tとして、超える分は別途相談という書き方でどうでしょう。"}]},
+ {n:"JAみやざき中央",ph:"初回商談",last:"管内で出せる品目をまとめています",
+  msgs:[
+   {me:false,w:"JAみやざき中央 黒木",t:"先日はありがとうございました。管内で規格外が出る品目を、いま各支所に確認しています。来週には一覧をお送りできる見込みです。"},
+   {me:true,w:"まるみ食品 佐野",t:"助かります。あわせて、選果場での保管条件も教えていただけますか。冷蔵か常温か、どのくらいの期間置けるかで、当社の受け入れ計画が変わります。"}]},
+ {n:"株式会社ヤマト冷凍物流",ph:"実証",last:"2週目の温度データを共有します",
+  msgs:[
+   {me:false,w:"ヤマト冷凍物流 三宅",t:"実証2週目の温度データを共有します。近畿→関東ルートは全便で -18℃ を維持できていました。積み替え時の上昇も1.5℃以内です。"},
+   {me:true,w:"まるみ食品 佐野",t:"問題なさそうですね。運賃はいかがでしょう。1ケース単位だと、どのくらいの積載率で成立しますか。"}]}
+];
+
+const REVIEWS=[
+ {n:"陸前高田 わかめ生産組合",t1:"生産者",t2:"水産",a:"岩手県／申請 8/04",
+  why:"法人番号は確認できました。組合の登記が個人代表名義のため、実態確認の書類を1点追加で求めるか判断が必要です。"},
+ {n:"合同会社ふるさとキッチン",t1:"飲食・ホテル",t2:"飲食店",a:"京都府／申請 8/05",
+  why:"設立3か月。事業実態のわかる資料がまだ提出されていません。"},
+ {n:"◯◯コンサルティング株式会社",t1:"支援・その他",t2:"マーケティング",a:"東京都／申請 8/05",
+  why:"食に直接関わる事業内容が確認できません。会員資格の対象外の可能性があります。",flag:true},
+ {n:"上田市 農政課",t1:"行政",t2:"地方自治体",a:"長野県／申請 8/06",
+  why:"公式ドメインのメールアドレスで申請。確認事項はありません。"}
+];
+
+/* ===== 権限 ===== */
+let ROLE="member";
+function applyRole(){
+  const isAdm=ROLE==="admin";
+  document.getElementById('navAdmin').style.display=isAdm?"flex":"none";
+  document.getElementById('adminLocked').hidden=isAdm;
+  document.getElementById('adminBody').hidden=!isAdm;
+  document.getElementById('userName').childNodes[0].nodeValue=isAdm?"Food Japan Summit 実行委員会":"株式会社まるみ食品";
+  document.getElementById('userSub').textContent=isAdm?"管理者（アドミニストレータ）／事務局 河西":"食品メーカー／長野県";
+  document.getElementById('userAv').textContent=isAdm?"事":"丸";
+  document.querySelectorAll('#roleswitch button').forEach(b=>b.classList.toggle('on',b.dataset.r===ROLE));
+  if(!isAdm && !document.getElementById('p-admin').hidden) go('dash');
+}
+document.getElementById('roleswitch').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return; ROLE=b.dataset.r; applyRole();
+  toast(ROLE==="admin"?"事務局アカウントで表示中":"会員アカウントで表示中");
+});
+
+/* ===== 画面遷移 ===== */
+const TITLES={dash:["MY PAGE","ダッシュボード"],profile:["MY PAGE","会員プロフィール"],ledger:["MY PAGE","持ち寄り台帳"],
+ search:["FIND","パートナーを探す"],deals:["DEALS","商談管理"],board:["DEALS","商談ステータス"],
+ projects:["FIND","共創プロジェクト"],favs:["FIND","お気に入り"],messages:["FIND","メッセージ"],
+ billing:["ACCOUNT","プラン・お支払い"],admin:["ADMIN","事務局管理"]};
+function go(p){
+  if(p==="admin"&&ROLE!=="admin"){toast("この画面を開く権限がありません");return;}
+  document.querySelectorAll('.page').forEach(s=>s.hidden=true);
+  document.getElementById('p-'+p).hidden=false;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  document.getElementById('crumb').textContent=TITLES[p][0];
+  document.getElementById('ptitle').textContent=TITLES[p][1];
+  window.scrollTo({top:0});
+}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.p)});
+
+/* ===== 会員種別セレクト ===== */
+function fillTypeSelect(id,withAll){
+  const s=document.getElementById(id); if(!s)return;
+  let h=withAll?'<option>すべて</option>':'';
+  Object.keys(TYPES).forEach(k=>{h+=`<option>${k}</option>`});
+  s.innerHTML=h;
+}
+fillTypeSelect('f-type',true); fillTypeSelect('d-type',true); fillTypeSelect('cat1',false);
+function fillSub(){
+  const k=document.getElementById('cat1').value;
+  document.getElementById('cat2').innerHTML=TYPES[k].sub.map(s=>`<option>${s}</option>`).join('');
+  document.getElementById('typeHint').textContent=
+    `「${k}／${document.getElementById('cat2').value}」向けの入力項目に切り替わります（プロトタイプでは表示のみ）。`;
+}
+document.getElementById('cat1').addEventListener('change',fillSub);
+document.getElementById('cat2').addEventListener('change',fillSub);
+document.getElementById('cat1').value="食品メーカー"; fillSub();
+document.getElementById('d-ph').innerHTML='<option>すべて</option>'+PHASES.map(p=>`<option>${p}</option>`).join('');
+
+/* ===== 組み方 ===== */
+function axisHTML(a,sel){
+  return `<button class="axis ${sel?'on':''}" data-a="${a.id}">
+   <span class="pair"><span class="role ${a.fc}">${a.from}</span><span class="arrow">→</span><span class="role ${a.tc}">${a.to}</span></span>
+   <span class="cap">${a.cap}</span><span class="cnt">${a.n}</span></button>`;
+}
+document.getElementById('axesDash').innerHTML=AXES.map(a=>axisHTML(a,false)).join('');
+document.getElementById('axesDash').addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]'); if(!b)return; axis=b.dataset.a; drawAxes(); go('search'); drawList();
+});
+function drawAxes(){document.getElementById('axesSearch').innerHTML=AXES.map(a=>axisHTML(a,axis===a.id)).join('')}
+drawAxes();
+document.getElementById('axesSearch').addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]'); if(!b)return;
+  axis=(axis===b.dataset.a)?null:b.dataset.a; drawAxes(); drawList();
+});
+
+/* ===== プロフィール ===== */
+document.getElementById('ptabs').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#ptabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['t1','t2','t3','t4'].forEach(id=>document.getElementById(id).hidden=(id!==b.dataset.t));
+});
+const GIVE=["余っている食材","規格外の原料","未利用魚","余剰生乳","加工設備","発酵・醸造技術","冷凍・冷蔵設備","HACCP工場","試験ライン","実証できる店舗","テスト販売の棚","販路（小売）","販路（EC）","販路（海外）","物流網","分析・研究設備","人材・採用支援","システム・SaaS","補助制度の運用","試作費の負担"];
+const WANT=["余っている食材","安定供給できる産地","小ロット加工先","OEM先","レシピ開発","パッケージ設計","実証店舗","テスト販売の棚","首都圏の販路","海外販路","小ロット冷凍配送","品質分析","フードロスの解決","廃棄を資源にする","地域が抱える課題","人材・採用","業務システム","資金調達"];
+const AXCHIP=["生産者と組む","流通・小売と組む","食品メーカーと組む","飲食・ホテルと組む","行政・JAと組む","大学・研究機関と組む","支援サービスと組む"];
+function chips(el,list,on,cls){
+  const box=document.getElementById(el);
+  box.innerHTML=list.map(t=>`<button class="chip ${on.has(t)?'on '+(cls||''):''}">${t}</button>`).join('');
+  box.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;
+    c.classList.toggle('on'); if(cls)c.classList.toggle(cls,c.classList.contains('on'));});
+}
+chips('giveTags',GIVE,new Set(["加工設備","発酵・醸造技術","HACCP工場","販路（小売）","販路（EC）","試作費の負担"]),'');
+chips('wantTags',WANT,new Set(["規格外の原料","実証店舗","小ロット冷凍配送","廃棄を資源にする"]),'want');
+chips('axisChips',AXCHIP,new Set(["生産者と組む","飲食・ホテルと組む"]),'');
+chips('stanceChips',STANCES,new Set(["バイヤー","生産者"]),'');
+
+/* ===== 台帳 ===== */
+document.getElementById('ledgerTbl').innerHTML=
+ `<thead><tr><th style="width:66px">区分</th><th style="width:94px">分類</th><th>内容</th><th style="width:104px">数量・規模</th><th style="width:84px">時期</th><th style="width:78px">地域</th></tr></thead>
+  <tbody>${LEDGER.map(l=>`<tr>
+   <td><span class="dir ${l.d}">${l.d==='g'?'提供':'募集'}</span></td>
+   <td style="font-size:11.5px;color:var(--muted)">${l.c}</td>
+   <td class="it">${l.it}<span>${l.sub}</span></td>
+   <td class="qty">${l.q}</td><td style="font-size:11.5px">${l.t}</td><td style="font-size:11.5px">${l.a}</td></tr>`).join('')}</tbody>`;
+
+/* ===== 検索 ===== */
+function roleTag(t1,t2){return `<span class="role ${TYPES[t1]?TYPES[t1].cls:'r-sup'}">${t1}</span><span class="meta">${t2}</span>`}
+function coCard(c){
+  return `<div class="co">
+    <div class="row1"><h3>${c.n}</h3>${roleTag(c.t1,c.t2)}<span class="stance">${c.st}</span><span class="meta">${c.a}</span></div>
+    <p class="pitch">${c.p}</p>
+    <div class="cols">
+      <div><h4>出せるもの</h4>${c.g.map(x=>`<span class="tag give">${x}</span>`).join('')}</div>
+      <div><h4>探しているもの</h4>${c.w.map(x=>`<span class="tag want">${x}</span>`).join('')}</div></div>
+    <div class="acts">
+      <button class="btn sm" data-int="${c.n}">興味・商談希望を送る</button>
+      <button class="btn sm quiet" data-fav="${c.n}">お気に入り</button>
+      <span class="lvl">${c.cat.join('／')}</span></div></div>`;
+}
+const val=id=>document.getElementById(id).value;
+function drawList(){
+  const cat=val('f-cat'),ty=val('f-type'),stn=val('f-stance'),ar=val('f-area'),kw=document.getElementById('f-kw').value.trim();
+  const r=COS.filter(c=>
+    (!axis||c.axes.includes(axis))&&(cat==='すべて'||c.cat.includes(cat))&&
+    (ty==='すべて'||c.t1===ty)&&(stn==='すべて'||c.st===stn)&&
+    (ar==='すべて'||c.area===ar)&&
+    (!kw||(c.n+c.p+c.t2+c.g.join()+c.w.join()).includes(kw)));
+  document.getElementById('hits').textContent=r.length;
+  const a=AXES.find(x=>x.id===axis);
+  document.getElementById('axisNote').innerHTML=a?`<span class="pill ok">${a.from} × ${a.to} で絞り込み中</span>`:'';
+  document.getElementById('colist').innerHTML=r.length?r.map(coCard).join('')
+    :`<div class="card"><div class="bd" style="text-align:center;color:var(--muted);padding:34px">
+       条件に合う会員がまだいません。<br>組み方の選択を外すか、地域を「すべて」に戻してみてください。</div></div>`;
+}
+['f-cat','f-type','f-stance','f-area'].forEach(i=>document.getElementById(i).addEventListener('change',drawList));
+document.getElementById('f-kw').addEventListener('input',drawList);
+document.getElementById('colist').addEventListener('click',e=>{
+  const i=e.target.closest('[data-int]'),v=e.target.closest('[data-fav]');
+  if(i){i.outerHTML='<span class="sent">✓ 送信しました（チケット残り6）</span>';toast('興味・商談希望を送りました');}
+  if(v){v.textContent='★ 保存済み';v.disabled=true;toast('お気に入りに保存しました');}
+});
+drawList();
+
+/* ===== 商談管理 ===== */
+function phaseCell(ph){return `<span class="phase-dot p${ph}"><i></i>${PHASES[ph]}</span>`}
+function drawDeals(){
+  const ph=val('d-ph'),ty=val('d-type'),st=val('d-st'),kw=document.getElementById('d-kw').value.trim();
+  const r=DEALS.filter(d=>
+    (ph==='すべて'||PHASES[d.ph]===ph)&&(ty==='すべて'||d.t1===ty)&&
+    (st==='すべて'||(st==='期限切れ・停滞のみ'?(d.over||d.stale):d.due<='8/16'))&&
+    (!kw||(d.n+d.memo+d.next).includes(kw)));
+  document.getElementById('dealCount').textContent=`${r.length}件を表示中／全${DEALS.length}件`;
+  document.getElementById('dealsTbl').innerHTML=
+   `<thead><tr><th style="width:230px">相手先</th><th style="width:118px">フェーズ</th><th>次にやること</th>
+     <th style="width:78px">期限</th><th style="width:80px">担当</th><th style="width:104px">最終更新</th></tr></thead>
+    <tbody>${r.length?r.map(d=>`<tr class="row" data-d="${d.n}">
+      <td class="who">${d.n}<span>${roleTag(d.t1,d.t2)}</span></td>
+      <td>${phaseCell(d.ph)}</td>
+      <td class="next">${d.next}${d.stale?'<span style="display:block;font-size:11px;color:var(--alert);margin-top:3px">30日以上動きなし</span>':''}</td>
+      <td class="due ${d.over?'over':''}">${d.due}</td>
+      <td style="font-size:12px">${d.own}</td>
+      <td style="font-size:11.5px;color:var(--muted)">${d.sub}</td></tr>`).join('')
+      :'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">条件に合う商談がありません。</td></tr>'}</tbody>`;
+}
+['d-ph','d-type','d-st'].forEach(i=>document.getElementById(i).addEventListener('change',drawDeals));
+document.getElementById('d-kw').addEventListener('input',drawDeals);
+document.getElementById('dealsTbl').addEventListener('click',e=>{
+  const r=e.target.closest('[data-d]'); if(!r)return;
+  openDrawer(DEALS.find(x=>x.n===r.dataset.d));
+});
+drawDeals();
+
+/* 止まっていること（ダッシュボード） */
+document.getElementById('stuckTbl').innerHTML='<tbody>'+
+ DEALS.filter(d=>d.over||d.stale).concat(DEALS.filter(d=>!d.over&&!d.stale).slice(0,3)).slice(0,5).map(d=>
+  `<tr><td style="padding-left:18px">${d.next}<span style="display:block;font-size:11px;color:var(--muted)">${d.n}</span></td>
+   <td class="n" style="padding-right:18px"><span class="pill ${d.over?'new':'warn'}">期限 ${d.due}</span></td></tr>`).join('')+'</tbody>';
+
+/* ===== 盤面 ===== */
+document.getElementById('board').innerHTML=PHASES.map((ph,i)=>{
+  const ds=DEALS.filter(d=>d.ph===i);
+  return `<div class="lane"><div class="lhd"><div class="st">STEP ${i+1}</div><div class="nm">${ph}</div><div class="ct">${ds.length}社</div></div>
+   <div class="ls">${ds.length?ds.map(d=>`<button class="mini ${d.stale?'stale':''}" data-d="${d.n}">
+     <span class="nm">${d.n}</span><span class="sub">${d.sub}</span></button>`).join(''):'<div class="lane-empty">まだありません</div>'}</div></div>`;
+}).join('');
+document.getElementById('board').addEventListener('click',e=>{
+  const b=e.target.closest('[data-d]'); if(!b)return;
+  openDrawer(DEALS.find(x=>x.n===b.dataset.d));
+});
+function openDrawer(d){
+  document.getElementById('dName').textContent=d.n;
+  document.getElementById('dMeta').innerHTML=`${roleTag(d.t1,d.t2)}　／　${PHASES[d.ph]}　／　${d.sub}`;
+  document.getElementById('dBody').innerHTML=`
+    <p class="eyebrow">次にやること</p>
+    <p style="margin:0 0 4px;font-size:13.5px;font-weight:600">${d.next}</p>
+    <p style="font-size:11.5px;color:var(--muted);margin:4px 0 0">期限 ${d.due}　／　担当 ${d.own}</p>
+    ${d.stale?'<p style="font-size:11.5px;color:var(--alert);margin:6px 0 0">30日以上動きがありません</p>':''}
+    <div class="memo" style="margin-top:15px"><h5>商談メモ</h5>${d.memo}</div>
+    <p class="eyebrow" style="margin-top:20px">フェーズ</p>
+    <ul class="ladder">${PHASES.map((p,i)=>
+      `<li class="${i<d.ph?'done':i===d.ph?'now done':''}"><span class="dot"></span>
+       <span class="tx">${p}${i===d.ph?'<span>現在</span>':''}</span></li>`).join('')}</ul>
+    <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+      <button class="btn sm" onclick="toast('次のフェーズに進めました')">次のフェーズへ</button>
+      <button class="btn sm quiet" onclick="toast('メモを追加します')">メモを追加</button>
+      <button class="btn sm quiet" onclick="closeDrawer();go('messages')">メッセージを見る</button></div>`;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('scrim').classList.add('on');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('scrim').classList.remove('on');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
+
+/* ===== プロジェクト / お気に入り ===== */
+document.getElementById('projlist').innerHTML=PROJ.map(p=>`
+ <div class="co"><div class="row1"><h3>${p.n}</h3><span class="pill">${p.ax}</span><span class="meta">${p.by}／${p.area}</span></div>
+ <p class="pitch">${p.d}</p>
+ <div class="cols">
+  <div><h4>出せるもの</h4>${p.g.map(x=>`<span class="tag give">${x}</span>`).join('')}</div>
+  <div><h4>探しているもの</h4>${p.w.map(x=>`<span class="tag want">${x}</span>`).join('')}</div></div>
+ <div class="acts"><button class="btn sm" onclick="toast('この案件に応募しました')">この案件に応募する</button>
+ <button class="btn sm quiet" onclick="toast('お気に入りに保存しました')">お気に入り</button></div></div>`).join('');
+
+document.getElementById('favTbl').innerHTML=
+ `<thead><tr><th style="padding-left:18px">相手・案件</th><th>注目している持ち寄り</th><th>メモ</th><th style="padding-right:18px"></th></tr></thead>
+  <tbody>${FAVS.map(f=>`<tr>
+   <td style="padding-left:18px"><b>${f.n}</b><span style="display:block;margin-top:3px">${f.t1==='案件'?`<span class="pill">${f.t2}</span>`:roleTag(f.t1,f.t2)}</span></td>
+   <td>${f.w}</td><td style="color:var(--muted);font-size:12px">${f.note}</td>
+   <td class="n" style="padding-right:18px"><button class="btn sm quiet" onclick="toast('お気に入りから外しました')">外す</button></td></tr>`).join('')}</tbody>`;
+
+/* ===== メッセージ ===== */
+let cur=0;
+function drawThreads(){
+  document.getElementById('threads').innerHTML=THREADS.map((t,i)=>
+   `<button class="${i===cur?'on':''}" data-i="${i}"><span class="t1">${t.n}</span><span class="t2">${t.last}</span></button>`).join('');
+  const t=THREADS[cur];
+  document.getElementById('convName').textContent=t.n;
+  document.getElementById('convPhase').textContent=t.ph;
+  document.getElementById('bubbles').innerHTML=t.msgs.map(m=>
+   `<div class="bub ${m.me?'me':''}"><div class="who">${m.w}</div>${m.t}</div>`).join('');
+  const b=document.getElementById('bubbles'); b.scrollTop=b.scrollHeight;
+}
+document.getElementById('threads').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return; cur=+b.dataset.i; drawThreads();
+});
+function send(){
+  const d=document.getElementById('draft'),v=d.value.trim(); if(!v)return;
+  THREADS[cur].msgs.push({me:true,w:"まるみ食品 佐野",t:v});
+  THREADS[cur].last=v; d.value=''; drawThreads(); toast('送信しました');
+}
+drawThreads();
+
+/* ===== 事務局 ===== */
+document.getElementById('reviewList').innerHTML=REVIEWS.map(r=>`
+ <div class="rev"><div class="info">
+   <div class="nm">${r.n}</div>
+   <div class="mt">${roleTag(r.t1,r.t2)}　${r.a}</div>
+   <div class="why">${r.why}</div>
+   ${r.flag?'<div class="flag">会員資格の確認が必要です</div>':''}</div>
+  <div class="ops">
+   <button class="btn sm adm" onclick="toast('承認しました')">承認</button>
+   <button class="btn sm quiet" onclick="toast('追加資料を依頼しました')">資料を依頼</button>
+   <button class="btn sm warn" onclick="toast('差し戻しました')">差し戻し</button></div></div>`).join('');
+
+/* ===== 課金 ===== */
+const PLANS=[
+ {tier:"FREE",n:"フリー",price:"¥0",per:"ずっと無料",cur:false,
+  f:["プロフィールの公開","持ち寄りの登録 5件まで","共創プロジェクト 1件","興味送信 月1件","受け取ったメッセージへの返信"],
+  off:["商談管理・ステータス","分析レポート","複数ユーザー"],cta:"ダウングレード"},
+ {tier:"STANDARD",n:"スタンダード",price:"¥15,000",per:"／月（税別）",cur:true,
+  f:["持ち寄りの登録 無制限","共創プロジェクト 3件","興味送信 月10件","商談管理・商談ステータス","ユーザー3名まで","CSV書き出し"],
+  off:["優先マッチング","分析レポート"],cta:"ご契約中"},
+ {tier:"PRO",n:"プロ",price:"¥30,000",per:"／月（税別）",cur:false,
+  f:["スタンダードのすべて","興味送信 月30件","共創プロジェクト 10件","優先マッチングの紹介","分析レポート","ユーザー10名まで","月1回の共創会議へ参加"],
+  off:["SSO・監査ログ"],cta:"このプランにする"},
+ {tier:"ENTERPRISE",n:"エンタープライズ",price:"個別見積",per:"年額契約・銀行振込可",cur:false,
+  f:["プロのすべて","ユーザー数 無制限","部署別アカウント・権限管理","SSO（SAML）","監査ログ","専任担当による伴走","外部CRMとの連携"],
+  off:[],cta:"問い合わせる"}
+];
+document.getElementById('planList').innerHTML=PLANS.map(p=>`
+ <div class="plan ${p.cur?'cur':''}">
+  <div class="tier">${p.tier}</div><h3>${p.n}</h3>
+  <div class="price">${p.price}<small>${p.per.startsWith('／')?p.per:''}</small></div>
+  <div class="per">${p.per.startsWith('／')?'':p.per}</div>
+  ${p.cur?'<span class="badge-cur">ご契約中</span>':''}
+  <ul>${p.f.map(x=>`<li>${x}</li>`).join('')}${p.off.map(x=>`<li class="off">${x}</li>`).join('')}</ul>
+  <button class="btn ${p.cur?'quiet':''}" ${p.cur?'disabled':''} onclick="toast('${p.cur?'':'Stripeの決済画面に移動します'}')">${p.cta}</button>
+ </div>`).join('');
+
+const USAGE=[
+ {n:"興味送信",v:3,max:10,u:"件"},
+ {n:"共創プロジェクトの掲載",v:1,max:3,u:"件"},
+ {n:"登録ユーザー",v:3,max:3,u:"名"},
+ {n:"持ち寄りの登録",v:14,max:null,u:"件"},
+ {n:"CSV書き出し",v:2,max:20,u:"回"}
+];
+document.getElementById('usageList').innerHTML=USAGE.map(u=>{
+  const pct=u.max?Math.min(u.v/u.max*100,100):0;
+  const cls=!u.max?'':(pct>=100?'r':pct>=70?'o':'');
+  return `<div class="usage"><span>${u.n}</span>
+   <span class="g">${u.max?`<i class="${cls}" style="width:${pct}%"></i>`:'<i style="width:0"></i>'}</span>
+   <span class="v">${u.v}${u.max?` / ${u.max}`:''} ${u.u}${!u.max?'（無制限）':''}</span></div>`;
+}).join('');
+
+const INVOICES=[
+ {d:"2026/08/01",no:"INV-2026-0801-0442",it:"スタンダード 月額",amt:"¥16,500",st:"支払済"},
+ {d:"2026/07/18",no:"INV-2026-0718-0391",it:"興味送信チケット 10枚",amt:"¥8,800",st:"支払済"},
+ {d:"2026/07/01",no:"INV-2026-0701-0377",it:"スタンダード 月額",amt:"¥16,500",st:"支払済"},
+ {d:"2026/06/01",no:"INV-2026-0601-0310",it:"スタンダード 月額",amt:"¥16,500",st:"支払済"},
+ {d:"2026/05/12",no:"INV-2026-0512-0288",it:"イベント出展ブース 1小間",amt:"¥220,000",st:"支払済"},
+ {d:"2026/05/01",no:"INV-2026-0501-0265",it:"スタンダード 月額",amt:"¥16,500",st:"返金済"}
+];
+document.getElementById('invoiceTbl').innerHTML=
+ `<thead><tr><th style="padding-left:18px">請求日</th><th>請求番号</th><th>内容</th><th class="n">金額（税込）</th><th class="n">状態</th><th class="n" style="padding-right:18px"></th></tr></thead>
+  <tbody>${INVOICES.map(v=>`<tr>
+   <td style="padding-left:18px;font-family:var(--num)">${v.d}</td>
+   <td style="font-family:var(--num);font-size:11.5px;color:var(--muted)">${v.no}</td>
+   <td>${v.it}</td><td class="n">${v.amt}</td>
+   <td class="n"><span class="pill ${v.st==='返金済'?'warn':'ok'}">${v.st}</span></td>
+   <td class="n" style="padding-right:18px"><button class="btn sm quiet" onclick="toast('領収書をダウンロードしました')">領収書</button></td></tr>`).join('')}</tbody>`;
+
+let tt;
+function toast(m){
+  const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on');
+  clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2000);
+}
+applyRole();
+</script>

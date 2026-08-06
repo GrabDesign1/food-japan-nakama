@@ -1,0 +1,80 @@
+// 生産者（会員）カード。サムネイル画像＋名前。クリックで詳細へ。
+import Link from "next/link";
+
+export type ProducerCardData = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  companyLogoUrl: string | null;
+  imageUrls: string[];
+  categoryL1: string;
+  categoryL2: string | null;
+  prefecture: string | null;
+  city: string | null;
+  productItems: string | null;
+  description: string | null;
+};
+
+export function ProducerCard({ p }: { p: ProducerCardData }) {
+  const initial = (p.name?.[0] ?? "?").toUpperCase();
+  const area = [p.prefecture, p.city].filter(Boolean).join(" ");
+  const thumb = p.imageUrls?.[0] ?? p.avatarUrl ?? null;
+
+  return (
+    <Link href={`/producers/${p.id}`} className="group block">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)]">
+        {thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumb}
+            alt=""
+            className="h-full w-full object-cover transition group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center font-serif text-[40px] text-[var(--green-d)]">
+            {initial}
+          </div>
+        )}
+        {p.companyLogoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <div className="absolute left-2 top-2 flex h-9 max-w-[104px] items-center justify-center overflow-hidden rounded-md bg-white/95 px-2 shadow-sm">
+            <img
+              src={p.companyLogoUrl}
+              alt=""
+              className="max-h-[26px] max-w-full object-contain"
+            />
+          </div>
+        ) : null}
+        <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+          {area ? (
+            <span className="rounded bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">
+              {p.prefecture}
+            </span>
+          ) : null}
+          <span className="rounded bg-[var(--green)] px-2 py-0.5 text-[11px] font-bold text-white">
+            生産者
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--muted)]">
+        <span>👤</span>
+        <span>
+          {p.categoryL1}
+          {p.categoryL2 ? ` / ${p.categoryL2}` : ""}
+        </span>
+      </div>
+      <div className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-5 text-[var(--ink)] group-hover:text-[var(--green-d)]">
+        {p.name || "（未入力）"}
+      </div>
+      {p.productItems ? (
+        <div className="mt-0.5 line-clamp-1 text-[11px] text-[var(--muted)]">
+          {p.productItems}
+        </div>
+      ) : null}
+      <span className="mt-1 inline-block text-[11px] text-[var(--green-d)] underline">
+        詳細を見る →
+      </span>
+    </Link>
+  );
+}

@@ -1,0 +1,377 @@
+// Food Japan Connect — データベース設計
+// 一次資料: docs/HANDOVER.md 第4章。未確定事項は docs/DECISIONS.md。
+// 今回のマイグレーション範囲: 認証・テナント・会員の土台（実装順1〜2）。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7 では接続URLは prisma.config.ts（CLI/マイグレーション用）と
+  // PrismaClient のアダプタ（実行時）で指定する。
+}
+
+// ── 区分（enum）─────────────────────────────
+
+// 担当者の立場（会員種別とは別軸。users に持つ）
+enum UserStance {
+  BUYER    // バイヤー
+  CHEF     // シェフ・料理人
+  PRODUCER // 生産者
+  GENERAL  // 一般
+}
+
+// 権限ロール（HANDOVER 第7章）
+enum UserRole {
+  TENANT_ADMIN
+  ADMIN
+  REVIEWER
+  VIEWER
+  MEMBER
+}
+
+// ユーザーの状態
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+// 会員（法人）の審査状態（HANDOVER 4-1）
+enum MemberStatus {
+  DRAFT             // 下書き
+  PENDING           // 審査中
+  APPROVED          // 承認
+  AWAITING_PAYMENT  // 課金してもらう（承認・要課金）
+  SUSPENDED         // 停止
+  REJECTED          // 非承認（情報記載を促す）
+}
+
+// 課金状態（当面は自社DBで管理。タスク9でStripe連携して自動更新）
+enum PaymentStatus {
+  FREE    // 無料
+  UNPAID  // 未決済
+  PAID    // 課金中
+}
+
+// 持ち寄り台帳の向き
+enum OfferingDirection {
+  GIVE // 譲りたい・出せる（提供）
+  WANT // あったらいいな・探している（募集）
+}
+
+// ── テーブル ───────────────────────────────
+
+/// テナント（実行委員会。将来の他イベント展開を想定）
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users   User[]
+  members Member[]
+
+  @@map("tenants")
+}
+
+/// ログインユーザー（個人）。Supabase Auth の user と authId で紐づく
+model User {
+  id       String     @id @default(cuid())
+  tenantId String     @map("tenant_id")
+  authId   String?    @unique @map("auth_id") // Supabase Auth の UUID
+  email    String
+  name     String
+  stance   UserStance @default(GENERAL)
+  role     UserRole   @default(MEMBER)
+  memberId String?    @map("member_id")
+  status   UserStatus @default(INVITED)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  member Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+/// 会員法人・団体（HANDOVER 4-1）
+model Member {
+  id          String       @id @default(cuid())
+  tenantId    String       @map("tenant_id")
+  name        String       // 事業者名
+  avatarUrl   String?      @map("avatar_url") // アイコン（プロフィール画像）
+  companyLogoUrl String?   @map("company_logo_url") // 会社ロゴ
+  brandLogoUrl   String?   @map("brand_logo_url")   // ブランドロゴ
+  contactName String?      @map("contact_name") // 担当者名（姓名）
+  contactKana String?      @map("contact_kana") // 担当者名（ひらがな）
+  categoryL1  String       @map("category_l1") // 大分類（HANDOVER 第5章）
+  categoryL2  String?      @map("category_l2") // 細分類
+  prefecture  String?
+  area        String?      // 地域7区分（検索用。将来 prefecture から自動導出）
+  city        String?      // 市区町村
+  postalCode  String?      @map("postal_code") // 郵便番号
+  address     String?      // 本店所在地（番地・建物）
+  website     String?
+  founded     String?
+  size        String?
+  description String?
+
+  imageUrls String[] @map("image_urls") // サムネイル画像URL（最大4枚。Supabase Storage）
+
+  hasLicense  Boolean @default(false) @map("has_license") // 許認可あり/なし
+  licenseName String? @map("license_name")                // 許認可名
+
+  productItems  String? @map("product_items")  // 生産品目名（例：リーフレタス、ネギ、ブロッコリー）
+  productVolume String? @map("product_volume") // 生産量（例：露地2ha／各品目50ケース/週）
+
+  // 事業の中身（自由記述。2-1 の項目出し分けは後日）
+  featureText   String? @map("feature_text")
+  equipmentText String? @map("equipment_text")
+  salesAreaText String? @map("sales_area_text")
+  logisticsText String? @map("logistics_text")
+  foodlossText  String? @map("foodloss_text")
+  challengeText String? @map("challenge_text")
+
+  collabStyle String? @map("collab_style") // 組みたい相手
+  startTiming String? @map("start_timing")
+
+  completionRate Int           @default(0) @map("completion_rate") // 記入率
+  level          Int           @default(0)
+  status         MemberStatus  @default(DRAFT)
+  paymentStatus  PaymentStatus @default(FREE) @map("payment_status")
+  approvedAt     DateTime?     @map("approved_at")
+  approvedBy     String?       @map("approved_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users     User[]
+  offerings Offering[]
+  favorites Favorite[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("members")
+}
+
+/// お知らせ（事務局が投稿し、会員ダッシュボードに表示）
+model Announcement {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  title     String
+  body      String?
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("announcements")
+}
+
+/// バナー（事務局が登録し、会員ダッシュボードに表示）
+model Banner {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  title     String? // 管理用の名前（任意）
+  imageUrl  String   @map("image_url") // バナー画像URL（Supabase Storage）
+  linkUrl   String?  @map("link_url") // クリック時のリンク先
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("banners")
+}
+
+/// 共創プロジェクト掲載（HANDOVER 4-1 / 画面7）
+model Project {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  memberId    String    @map("member_id")
+  title       String
+  body        String?
+  fromRole    String? @map("from_role") // あなたの立場（会員種別 大分類）
+  toRole      String? @map("to_role") // 相談したい相手（会員種別 大分類）
+  budget         String? // 予算感（例：10〜30万円 / 応相談）
+  imageUrls      String[] @map("image_urls")
+  bodyImageUrl   String?  @map("body_image_url") // 本文セクションの画像
+  tags        String[]
+  status      String    @default("draft") // draft / pending / published / closed
+  publishedAt DateTime? @map("published_at")
+  viewCount   Int       @default(0) @map("view_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  applications ProjectApplication[]
+
+  @@index([memberId])
+  @@index([status])
+  @@map("projects")
+}
+
+/// 共創プロジェクトへの応募
+model ProjectApplication {
+  id                String   @id @default(cuid())
+  projectId         String   @map("project_id")
+  applicantMemberId String   @map("applicant_member_id")
+  message           String?
+  status            String   @default("applied") // applied / accepted / declined
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, applicantMemberId])
+  @@index([projectId])
+  @@map("project_applications")
+}
+
+/// 商談（HANDOVER 4-1 / 第6章）。2会員間で1つ。フェーズ0〜5。
+model Deal {
+  id                  String    @id @default(cuid())
+  tenantId            String    @map("tenant_id")
+  ownerMemberId       String    @map("owner_member_id") // 起点になった側
+  counterpartMemberId String    @map("counterpart_member_id")
+  threadId            String?   @map("thread_id")
+  phase               Int       @default(0) // 0出会う 1初回商談 2条件整理 3試作・PoC 4実証 5成約・商品化
+  nextAction          String?   @map("next_action")
+  dueDate             DateTime? @map("due_date")
+  lastActivityAt      DateTime  @default(now()) @map("last_activity_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerMemberId])
+  @@index([counterpartMemberId])
+  @@map("deals")
+}
+
+/// メッセージスレッド（興味送信から発生。2会員間の会話）
+model Thread {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  fromMemberId  String   @map("from_member_id") // 興味を送った側
+  toMemberId    String   @map("to_member_id") // 送られた側
+  offeringId    String?  @map("offering_id") // きっかけの共創プロジェクト
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  messages Message[]
+
+  @@index([fromMemberId])
+  @@index([toMemberId])
+  @@map("threads")
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  threadId       String    @map("thread_id")
+  senderMemberId String    @map("sender_member_id")
+  body           String
+  attachmentUrl  String?   @map("attachment_url")
+  attachmentName String?   @map("attachment_name")
+  readAt         DateTime? @map("read_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@map("messages")
+}
+
+/// メッセージテンプレート（会員が作成・保存）
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  memberId  String   @map("member_id")
+  name      String
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([memberId])
+  @@map("message_templates")
+}
+
+/// メッセージ下書き（スレッド×会員ごとに1つ）
+model MessageDraft {
+  id        String   @id @default(cuid())
+  threadId  String   @map("thread_id")
+  memberId  String   @map("member_id")
+  body      String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([threadId, memberId])
+  @@map("message_drafts")
+}
+
+/// お気に入り（HANDOVER 4-1）。target は会員(member)またはプロジェクト(offering)
+model Favorite {
+  id         String   @id @default(cuid())
+  memberId   String   @map("member_id") // お気に入りした側の会員
+  targetType String   @map("target_type") // "member" | "offering"
+  targetId   String   @map("target_id")
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, targetType, targetId])
+  @@index([memberId])
+  @@map("favorites")
+}
+
+/// 持ち寄り台帳 ★システムの中心（HANDOVER 4-1）
+model Offering {
+  id       String            @id @default(cuid())
+  memberId String            @map("member_id")
+  direction OfferingDirection
+  category String // 台帳9分類（src/lib/offering-taxonomy.ts）
+
+  title       String
+  description String?
+
+  imageUrls String[] @map("image_urls") // サムネイル・ギャラリー画像
+  tags      String[] // タグ（チップ表示）
+  points    String? // おすすめポイント（改行区切り）
+
+  descriptionImageUrl String? @map("description_image_url") // 詳細セクションの画像
+  pointsImageUrl      String? @map("points_image_url") // おすすめポイントの画像
+
+  // 数量（DECISIONS 2-2 = C案）。食材・原料のみ構造化、それ以外は amountText に自由記述。
+  amountValue  Float?  @map("amount_value")
+  amountUnit   String? @map("amount_unit")
+  amountPeriod String? @map("amount_period")
+  amountText   String? @map("amount_text")
+
+  timing   String?
+  area     String?
+  isPublic Boolean @default(true) @map("is_public")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  views OfferingView[]
+
+  @@index([memberId])
+  @@index([direction])
+  @@index([category])
+  @@map("offerings")
+}
+
+/// 台帳の閲覧記録（「24時間以内に○人が閲覧」の集計用）
+model OfferingView {
+  id           String   @id @default(cuid())
+  offeringId   String   @map("offering_id")
+  viewerUserId String?  @map("viewer_user_id") // 閲覧したユーザー（最近閲覧の集計用）
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  offering Offering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+
+  @@index([offeringId, createdAt])
+  @@index([viewerUserId, createdAt])
+  @@map("offering_views")
+}
