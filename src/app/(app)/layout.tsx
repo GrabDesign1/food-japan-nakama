@@ -70,7 +70,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_1fr]">
       {/* サイドバー（PCのみ。スマホはヘッダーのメニューから） */}
       <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex">
-        <div className="flex items-center gap-2.5 border-b border-white/12 px-5 pb-4">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2.5 border-b border-white/12 px-5 pb-4 transition hover:opacity-80"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.png" alt="" width={32} height={32} />
           <div>
@@ -81,7 +84,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               FOOD JAPAN SUMMIT
             </div>
           </div>
-        </div>
+        </Link>
 
         <nav className="mt-3 flex flex-col gap-0.5 px-3">
           {items.map((item) =>
