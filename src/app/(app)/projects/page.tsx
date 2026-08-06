@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createDraftProject } from "./actions";
+import { ProjectCard } from "@/components/ProjectCard";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   draft: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -58,18 +59,10 @@ export default async function ProjectsPage() {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {published.map((p) => (
-              <Link key={p.id} href={`/projects/${p.id}`} className="group block">
-                <div className="aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)]">
-                  {p.imageUrls[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.imageUrls[0]} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center text-[36px] opacity-50">🤝</div>
-                  )}
-                </div>
-                <div className="mt-2 line-clamp-2 text-[13px] font-medium leading-5 text-[var(--ink)] group-hover:text-[var(--green-d)]">{p.title}</div>
-                <div className="mt-0.5 text-[11px] text-[var(--muted)]">{nameMap.get(p.memberId)}</div>
-              </Link>
+              <ProjectCard
+                key={p.id}
+                p={{ id: p.id, title: p.title, imageUrls: p.imageUrls, memberName: nameMap.get(p.memberId), budget: p.budget }}
+              />
             ))}
           </div>
         )}

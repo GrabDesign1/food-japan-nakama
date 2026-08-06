@@ -282,7 +282,7 @@ export default async function DashboardPage() {
               <Link
                 key={i}
                 href={t.href}
-                className={`group flex items-center gap-3 rounded-[10px] border px-4 py-3.5 transition hover:brightness-[0.98] ${t.cls}`}
+                className={`group flex items-center gap-3 rounded-[10px] border px-4 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${t.cls}`}
               >
                 <span className="text-[18px]">{t.icon}</span>
                 <span className="min-w-0 flex-1 text-[13px] font-semibold leading-5">{t.label}</span>
@@ -417,7 +417,7 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/deals"
-          className="group rounded-[10px] border border-[var(--line)] bg-white p-5 transition hover:border-[var(--green)]"
+          className="group rounded-[10px] border border-[var(--line)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
         >
           <div className="flex items-center text-[11px] text-[var(--muted)]">
             進行中の商談
@@ -433,7 +433,7 @@ export default async function DashboardPage() {
 
         <Link
           href="/messages"
-          className="group rounded-[10px] border border-[var(--line)] bg-white p-5 transition hover:border-[var(--green)]"
+          className="group rounded-[10px] border border-[var(--line)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
         >
           <div className="flex items-center text-[11px] text-[var(--muted)]">
             未読メッセージ

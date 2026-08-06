@@ -21,10 +21,10 @@ export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?
   const thumb = p.imageUrls?.[0] ?? p.avatarUrl ?? null;
 
   return (
-    <Link href={`/producers/${p.id}`} className="group block">
+    <Link href={`/producers/${p.id}`} className="group block transition-transform hover:-translate-y-0.5">
       <div
-        className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] ${
-          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)]"
+        className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] shadow-sm transition group-hover:shadow-md ${
+          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)] group-hover:border-[var(--green)]"
         }`}
       >
         {thumb ? (

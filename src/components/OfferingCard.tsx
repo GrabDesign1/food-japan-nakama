@@ -31,10 +31,10 @@ export function OfferingCard({ o, isOwn = false }: { o: OfferingCardData; isOwn?
     : false;
 
   return (
-    <Link href={`/ledger/${o.id}`} className="group block">
+    <Link href={`/ledger/${o.id}`} className="group block transition-transform hover:-translate-y-0.5">
       <div
-        className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] ${
-          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)]"
+        className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] shadow-sm transition group-hover:shadow-md ${
+          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)] group-hover:border-[var(--green)]"
         }`}
       >
         {thumb ? (
