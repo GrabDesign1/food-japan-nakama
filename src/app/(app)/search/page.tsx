@@ -38,10 +38,13 @@ export default async function SearchPage({
   let offerings: Awaited<ReturnType<typeof searchOfferings>> = [];
   let producers: Awaited<ReturnType<typeof searchProducers>> = [];
 
+  // 自分の事業者・自分の投稿は検索結果から除外する
+  const excludeMemberId = su.app.memberId ?? undefined;
+
   if (target === "producers") {
-    producers = await searchProducers({ tenantId, area, category, q });
+    producers = await searchProducers({ tenantId, area, category, q, excludeMemberId });
   } else {
-    offerings = await searchOfferings({ tenantId, area, category, q, direction });
+    offerings = await searchOfferings({ tenantId, area, category, q, direction, excludeMemberId });
   }
 
   const count = target === "producers" ? producers.length : offerings.length;
@@ -165,11 +168,13 @@ async function searchOfferings(f: {
   category: string;
   q: string;
   direction: string;
+  excludeMemberId?: string;
 }) {
   return prisma.offering.findMany({
     where: {
       isPublic: true,
       title: { not: "" },
+      ...(f.excludeMemberId ? { memberId: { not: f.excludeMemberId } } : {}),
       member: {
         tenantId: f.tenantId,
         ...(f.category ? { categoryL1: f.category } : {}),
@@ -197,11 +202,13 @@ async function searchProducers(f: {
   area: string;
   category: string;
   q: string;
+  excludeMemberId?: string;
 }) {
   return prisma.member.findMany({
     where: {
       tenantId: f.tenantId,
       status: "APPROVED",
+      ...(f.excludeMemberId ? { id: { not: f.excludeMemberId } } : {}),
       ...(f.category ? { categoryL1: f.category } : {}),
       ...(f.area ? { prefecture: { contains: f.area } } : {}),
       ...(f.q
