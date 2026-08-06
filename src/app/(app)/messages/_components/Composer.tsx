@@ -194,8 +194,8 @@ export function Composer({
               📎 ファイル添付
             </button>
           </div>
-          <button className="rounded-lg bg-[var(--green)] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[var(--green-d)]">
-            送信する
+          <button className="shrink-0 whitespace-nowrap rounded-lg bg-[var(--green)] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[var(--green-d)]">
+            送信
           </button>
         </div>
         <input ref={fileRef} type="file" hidden onChange={onPickFile} />
