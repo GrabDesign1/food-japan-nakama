@@ -73,7 +73,7 @@ export default async function SearchPage({
             value="producers"
             className={`px-4 py-2 ${target === "producers" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
           >
-            生産者
+            登録事業者
           </button>
         </div>
 

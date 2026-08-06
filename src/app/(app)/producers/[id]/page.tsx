@@ -164,7 +164,7 @@ export default async function ProducerDetailPage({
         ) : existingThread ? (
           <div className="flex items-center justify-between rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-4">
             <span className="text-[13px] text-[var(--green-d)]">
-              この生産者とはすでにやり取りがあります。
+              この事業者とはすでにやり取りがあります。
             </span>
             <Link
               href={`/messages/${existingThread.id}`}
@@ -179,7 +179,7 @@ export default async function ProducerDetailPage({
             className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5"
           >
             <div className="mb-2 text-[14px] font-semibold text-[var(--ink)]">
-              この生産者に興味を送る
+              この事業者に興味を送る
             </div>
             <textarea
               name="message"
@@ -248,7 +248,7 @@ export default async function ProducerDetailPage({
       {m.offerings.length ? (
         <div>
           <h2 className="mb-3 text-[16px] font-semibold text-[var(--ink)]">
-            この生産者の「売りたい・買いたい」
+            この事業者の「売りたい・買いたい」
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {m.offerings.map((o) => (

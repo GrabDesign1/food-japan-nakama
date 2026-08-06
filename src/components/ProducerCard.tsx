@@ -52,7 +52,7 @@ export function ProducerCard({ p }: { p: ProducerCardData }) {
             </span>
           ) : null}
           <span className="rounded bg-[var(--green)] px-2 py-0.5 text-[11px] font-bold text-white">
-            生産者
+            事業者
           </span>
         </div>
       </div>
