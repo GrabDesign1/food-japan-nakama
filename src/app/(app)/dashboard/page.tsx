@@ -280,7 +280,7 @@ export default async function DashboardPage() {
               <img
                 src={b.imageUrl}
                 alt={b.title ?? ""}
-                className="aspect-[5/1] w-full rounded-xl border border-[var(--line)] object-cover"
+                className="w-full rounded-xl border border-[var(--line)]"
               />
             );
             if (!b.linkUrl) return <div key={b.id}>{img}</div>;
