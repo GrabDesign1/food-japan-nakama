@@ -122,9 +122,10 @@ export default async function DashboardPage() {
   if (stalledDeals > 0) {
     todos.push({ icon: "⏳", label: `停滞している商談が ${stalledDeals}件（${STALL_DAYS}日以上）`, cta: "確認する", href: "/deals", cls: AMBER });
   }
-  // 記入率は3ステップと重複するので、オンボーディング非表示のときだけ出す
-  if (!showOnboarding && member && member.completionRate < 100) {
-    todos.push({ icon: "📋", label: `プロフィール記入率 ${member.completionRate}%`, cta: "完成させる", href: "/profile", cls: AMBER });
+  // 記入率は「まだ十分でない」ときだけ促す（ほぼ埋まっている人を催促しない）。
+  // 3ステップ表示中は重複するので出さない。
+  if (!showOnboarding && member && member.completionRate < 80) {
+    todos.push({ icon: "📋", label: `プロフィールをあと少しで完成（記入率 ${member.completionRate}%）`, cta: "続きを入力", href: "/profile", cls: AMBER });
   }
 
   // お気に入りの企業
