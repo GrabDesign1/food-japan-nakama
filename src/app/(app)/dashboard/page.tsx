@@ -203,6 +203,10 @@ export default async function DashboardPage() {
     ...recentOfferings.map((o) => o.id),
   ]);
 
+  // 売りたい(GIVE)・買いたい(WANT)で分けて、ダッシュボードで明確に見せる
+  const recentGives = recentOfferings.filter((o) => o.direction === "GIVE");
+  const recentWants = recentOfferings.filter((o) => o.direction === "WANT");
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -372,11 +376,11 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {/* 新着の持ち寄り台帳 */}
+      {/* 新着の持ち寄り台帳（売りたい・買いたいで明確に分ける） */}
       <div>
         <div className="mb-3 flex items-end justify-between">
           <h2 className="font-serif text-[18px] text-[var(--ink)]">
-            登録したプロジェクト
+            持ち寄り（売りたい・買いたい）
           </h2>
           <Link
             href="/ledger"
@@ -390,10 +394,36 @@ export default async function DashboardPage() {
             まだ公開された台帳がありません。「持ち寄り台帳」から登録してみましょう。
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {recentOfferings.map((o) => (
-              <OfferingCard key={o.id} o={{ ...o, memberName: o.member.name, views24h: dashViewMap.get(o.id) ?? 0 }} />
-            ))}
+          <div className="flex flex-col gap-6">
+            {/* 売りたい */}
+            {recentGives.length > 0 ? (
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="rounded bg-[var(--green)] px-2.5 py-0.5 text-[12px] font-bold text-white">売りたい</span>
+                  <span className="text-[12px] text-[var(--muted)]">提供できるもの（{recentGives.length}件）</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {recentGives.map((o) => (
+                    <OfferingCard key={o.id} o={{ ...o, memberName: o.member.name, views24h: dashViewMap.get(o.id) ?? 0 }} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* 買いたい */}
+            {recentWants.length > 0 ? (
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="rounded bg-[#B77F0B] px-2.5 py-0.5 text-[12px] font-bold text-white">買いたい</span>
+                  <span className="text-[12px] text-[var(--muted)]">探しているもの（{recentWants.length}件）</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {recentWants.map((o) => (
+                    <OfferingCard key={o.id} o={{ ...o, memberName: o.member.name, views24h: dashViewMap.get(o.id) ?? 0 }} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
