@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signIn, signUp, type AuthState } from "../actions";
+import { GoogleButton } from "./GoogleButton";
 
 const initial: AuthState = {};
 
@@ -39,6 +40,14 @@ export function AuthForm({
           {success}
         </p>
       ) : null}
+
+      <GoogleButton next={next} />
+
+      <div className="flex items-center gap-3 text-[11px] text-[var(--muted)]">
+        <div className="h-px flex-1 bg-[var(--line)]" />
+        または
+        <div className="h-px flex-1 bg-[var(--line)]" />
+      </div>
 
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
         メールアドレス

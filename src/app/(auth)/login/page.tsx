@@ -9,7 +9,9 @@ export default async function LoginPage({
   const notice =
     error === "confirm"
       ? "確認リンクが無効か、期限切れの可能性があります。もう一度お試しください。"
-      : undefined;
+      : error === "oauth"
+        ? "Googleログインに失敗しました。もう一度お試しください。"
+        : undefined;
   const success =
     reset === "done"
       ? "パスワードを更新しました。新しいパスワードでログインしてください。"
