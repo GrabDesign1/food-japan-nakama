@@ -45,6 +45,8 @@ export async function startCheckout(
       success_url: `${APP_URL}/billing?success=1`,
       cancel_url: `${APP_URL}/billing`,
       metadata: { memberId: me.id, planCode },
+      // 解約(subscription.deleted)時にも会員を特定できるよう、サブスク側にもIDを付与
+      subscription_data: { metadata: { memberId: me.id, planCode } },
     });
     url = session.url;
   } catch (e) {
