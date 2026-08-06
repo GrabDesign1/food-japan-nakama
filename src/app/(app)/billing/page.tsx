@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PLANS, stripe } from "@/lib/stripe";
 import { PlanButton } from "./_components/PlanButton";
+import { PortalButton } from "./_components/PortalButton";
 
 const PAY_LABEL: Record<string, { label: string; cls: string }> = {
   FREE: { label: "無料", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -46,6 +47,15 @@ export default async function BillingPage({
           <span className="text-[12px] text-[#B77F0B]">事務局よりお支払いのご案内が届いています。下記からお手続きください。</span>
         ) : null}
       </div>
+
+      {isPaid ? (
+        <div className="rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+          <p className="mb-2 text-[12px] text-[var(--muted)]">
+            解約・領収書のダウンロード・お支払い方法の変更は、こちらから行えます。
+          </p>
+          <PortalButton />
+        </div>
+      ) : null}
 
       {!stripe ? (
         <div className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-4 text-[12px] text-[var(--muted)]">
