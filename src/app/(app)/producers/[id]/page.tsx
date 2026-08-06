@@ -50,6 +50,8 @@ export default async function ProducerDetailPage({
     su.app.memberId && !isOwner
       ? await prisma.thread.findFirst({
           where: {
+            // メッセージが1通以上あるスレッドだけ「やり取りあり」とみなす
+            messages: { some: {} },
             OR: [
               { fromMemberId: su.app.memberId, toMemberId: m.id },
               { fromMemberId: m.id, toMemberId: su.app.memberId },

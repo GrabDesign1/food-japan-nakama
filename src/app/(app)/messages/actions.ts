@@ -85,16 +85,10 @@ export async function startConversation(toMemberId: string): Promise<void> {
     },
   });
 
+  // 会話（スレッド）だけ用意する。商談・「やり取りあり」はメッセージ送信をトリガーに成立させる。
   if (!thread) {
     thread = await prisma.thread.create({
       data: { tenantId: su!.app.tenantId, fromMemberId: me.id, toMemberId },
-    });
-    // 初回接触で商談を自動作成（phase 0 出会う）
-    await ensureDeal({
-      tenantId: su!.app.tenantId,
-      meId: me.id,
-      otherId: toMemberId,
-      threadId: thread.id,
     });
   }
 
@@ -134,9 +128,10 @@ export async function sendMessage(
     where: { id: threadId },
     data: { lastMessageAt: new Date() },
   });
-  // 商談の最終活動日を更新
+  // メッセージ送信をトリガーに、商談を作成（無ければ）＋最終活動日を更新
   const otherId =
     thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
+  await ensureDeal({ tenantId: su.app.tenantId, meId: me.id, otherId, threadId });
   await touchDealActivity(me.id, otherId);
   // 送信したら下書きを消す
   await prisma.messageDraft.deleteMany({ where: { threadId, memberId: me.id } });
