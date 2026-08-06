@@ -40,7 +40,7 @@ export default async function LedgerPage() {
             </button>
           </form>
           <form action={createDraftOffering.bind(null, "WANT")}>
-            <button className="rounded-md bg-[#B77F0B] px-4 py-2.5 text-[13px] font-medium text-white hover:opacity-90">
+            <button className={btn("amber")}>
               ＋ 買いたいを登録
             </button>
           </form>

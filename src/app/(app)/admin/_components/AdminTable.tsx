@@ -345,7 +345,7 @@ function DetailModal({
             type="button"
             disabled={pending}
             onClick={() => onAct(row.id, "require_payment")}
-            className={btn("primary", "md")}
+            className={btn("amber", "md")}
           >
             課金してもらう
           </button>
