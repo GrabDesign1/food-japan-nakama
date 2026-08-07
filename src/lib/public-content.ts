@@ -70,7 +70,16 @@ export async function getLandingContent() {
     : [];
   const projNameMap = new Map(projMembers.map((m) => [m.id, m.name]));
 
-  return { articles, announcements, projects, projNameMap, gives, wants };
+  // 同じURL/タイトルの記事が重複しないように除外
+  const seenArticle = new Set<string>();
+  const uniqueArticles = articles.filter((a) => {
+    const key = (a.url || a.title).trim().toLowerCase();
+    if (seenArticle.has(key)) return false;
+    seenArticle.add(key);
+    return true;
+  });
+
+  return { articles: uniqueArticles, announcements, projects, projNameMap, gives, wants };
 }
 
 /** 公開プレビュー用：掲載中プロジェクト1件（Projectにmemberリレーションが無いため名前は別引き）。 */

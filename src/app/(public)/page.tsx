@@ -41,15 +41,16 @@ export default async function PublicHome() {
               食の「譲りたい」<br />「あったらいいな」を、<br />共創でつなぐ。
             </h1>
             <p className="fjn-hero__lead">
-              生産者・食品メーカー・小売・飲食店・流通・物流・サービスをつなぐ共創CRM。余っている食材や規格外品、探している原料、いっしょに挑戦したい共創プロジェクトが集まります。
+              FOOD JAPAN NAKAMAは、生産者・食品メーカー・小売・飲食店・流通・自治体など、食に関わる人と企業をつなぐ共創プラットフォームです。売りたい食材、探している原料、解決したい課題、いっしょに取り組みたいプロジェクトを掲載し、新しい取引や事業の仲間と出会えます。
             </p>
             <span className="fjn-hero__tag">FOOD JAPAN SUMMIT</span>
             <div className="fjn-actions">
-              <Link className="fjn-button fjn-button--primary" href="/signup">無料ではじめる</Link>
-              <Link className="fjn-button" href="/login">ログイン</Link>
+              <Link className="fjn-button fjn-button--primary" href="/signup">月額会員に申し込む</Link>
+              <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
             </div>
             <p className="fjn-hero__note">
-              プロジェクトや募集の概要はどなたでも閲覧できます。詳細・連絡は無料登録でご覧いただけます。
+              月額22,000円（税込）。初回は申込日に決済、翌月以降は毎月5日に自動更新（月末まで解約できます）。
+              掲載案件の概要はどなたでも閲覧できます。詳細の閲覧・お問い合わせ・自社の掲載は月額会員でご利用いただけます。
             </p>
           </div>
         </div>
@@ -61,6 +62,34 @@ export default async function PublicHome() {
       </section>
 
       <div className="mx-auto flex max-w-[1100px] flex-col gap-14 px-4 py-14">
+        {/* サービス説明 */}
+        <section>
+          <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">
+            <h2 className="font-serif text-[20px] text-[var(--ink)]">食の課題を、全国のNAKAMAと解決する</h2>
+            <p className="mt-2 text-[14px] leading-7 text-[var(--ink-2)]">
+              余っている食材を活かしたい。新しい原料や商品を探したい。地域の食を全国へ届けたい。異業種と新しい事業を始めたい。
+              FOOD JAPAN NAKAMAでは、企業や地域が持つ「提供できるもの」と「求めているもの」を公開し、具体的な商談や共創プロジェクトにつなげます。
+            </p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-3">
+              {[
+                { icon: "🥬", t: "売りたい", d: "食材・規格外品・商品・設備・技術などを掲載" },
+                { icon: "🔎", t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
+                { icon: "🤝", t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
+              ].map((it) => (
+                <div key={it.t} className="rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4">
+                  <div className="text-[22px]">{it.icon}</div>
+                  <h3 className="mt-1 text-[14px] font-semibold text-[var(--ink)]">{it.t}</h3>
+                  <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">{it.d}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/signup" className={btn("primary")}>月額会員に申し込む（22,000円・税込／月）</Link>
+              <Link href="/about" className={btn("secondary")}>NAKAMAとは</Link>
+            </div>
+          </div>
+        </section>
+
         {/* 食の注目記事（キュレーション） */}
         {articles.length > 0 ? (
           <section>
@@ -165,11 +194,14 @@ export default async function PublicHome() {
         <section className="rounded-2xl border border-[var(--green)] bg-[var(--green-soft)] px-6 py-10 text-center">
           <h2 className="font-serif text-[22px] text-[var(--ink)]">気になる相手が見つかったら</h2>
           <p className="mt-2 text-[13px] text-[var(--ink-2)]">
-            無料登録すると、詳細の閲覧・メッセージでの問い合わせ・自社の掲載ができます。
+            月額会員（22,000円・税込）に申し込むと、詳細の閲覧・メッセージでの問い合わせ・自社の掲載ができます。
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--muted)]">
+            初回は申込日に決済、翌月以降は毎月5日に自動更新。月末まで解約できます。
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className={btn("primary", "lg")}>無料会員登録</Link>
-            <Link href="/login" className={btn("secondary", "lg")}>ログイン</Link>
+            <Link href="/signup" className={btn("primary", "lg")}>月額会員に申し込む</Link>
+            <Link href="/pricing" className={btn("secondary", "lg")}>利用料金を見る</Link>
           </div>
         </section>
       </div>

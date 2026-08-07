@@ -2,8 +2,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// ログイン不要で見られるパス（"/" は公開LP、"/preview" は記事プレビュー）
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/preview"];
+// ログイン不要で見られるパス（"/" は公開LP、"/preview" は記事プレビュー、以下は情報・法務ページ）
+const PUBLIC_PATHS = [
+  "/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/preview",
+  "/about", "/pricing", "/flow", "/faq", "/company", "/contact",
+  "/terms", "/privacy", "/tokushoho",
+];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
