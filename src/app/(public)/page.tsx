@@ -49,7 +49,6 @@ export default async function PublicHome() {
               <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
             </div>
             <p className="fjn-hero__note">
-              月額22,000円（税込）。初回は申込日に決済、翌月以降は毎月5日に自動更新（月末まで解約できます）。
               掲載案件の概要はどなたでも閲覧できます。詳細の閲覧・お問い合わせ・自社の掲載は月額会員でご利用いただけます。
             </p>
           </div>
