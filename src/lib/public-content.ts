@@ -25,9 +25,18 @@ export async function getLandingContent() {
     };
   }
 
+  const now = new Date();
   const [articles, announcements, projects, gives, wants] = await Promise.all([
     prisma.curatedArticle.findMany({
-      where: { tenantId, active: true },
+      where: {
+        tenantId,
+        active: true,
+        // 掲載期間内のみ（開始・終了は未設定なら制限なし）
+        AND: [
+          { OR: [{ publishStart: null }, { publishStart: { lte: now } }] },
+          { OR: [{ publishEnd: null }, { publishEnd: { gte: now } }] },
+        ],
+      },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       take: 6,
     }),

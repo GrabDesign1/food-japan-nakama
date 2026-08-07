@@ -232,11 +232,25 @@ export default async function AdminPage() {
                     {a.title}
                     {!a.active ? (
                       <span className="ml-2 rounded bg-[var(--line)] px-1.5 py-0.5 text-[10px] text-[var(--ink-2)]">非表示</span>
-                    ) : null}
+                    ) : (
+                      (() => {
+                        const now = new Date();
+                        if (a.publishStart && a.publishStart > now)
+                          return <span className="ml-2 rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] text-[#B77F0B]">掲載前</span>;
+                        if (a.publishEnd && a.publishEnd < now)
+                          return <span className="ml-2 rounded bg-[var(--line)] px-1.5 py-0.5 text-[10px] text-[var(--ink-2)]">掲載終了</span>;
+                        return <span className="ml-2 rounded bg-[var(--green-soft)] px-1.5 py-0.5 text-[10px] text-[var(--green-d)]">掲載中</span>;
+                      })()
+                    )}
                   </div>
                   <div className="truncate text-[11px] text-[var(--muted)]">
                     {a.source} ・ {a.url}
                   </div>
+                  {a.publishStart || a.publishEnd ? (
+                    <div className="text-[11px] text-[var(--muted)]">
+                      掲載期間：{fmtDate(a.publishStart)} 〜 {fmtDate(a.publishEnd)}
+                    </div>
+                  ) : null}
                 </div>
                 <form action={toggleArticle.bind(null, a.id, !a.active)}>
                   <button className={btn("secondary", "sm")}>
@@ -316,4 +330,10 @@ export default async function AdminPage() {
       </div>
     </div>
   );
+}
+
+// 掲載期間の日付表示（未設定は「—」）
+function fmtDate(d: Date | null): string {
+  if (!d) return "—";
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }

@@ -25,10 +25,18 @@ export async function createArticle(
   const url = normalizeUrl(String(formData.get("url") ?? ""));
   const imageUrl = normalizeUrl(String(formData.get("imageUrl") ?? ""));
   const excerpt = String(formData.get("excerpt") ?? "").trim();
+  // 掲載期間（date入力 "YYYY-MM-DD"）。開始は0時、終了はその日の23:59:59まで含める。
+  const startRaw = String(formData.get("publishStart") ?? "").trim();
+  const endRaw = String(formData.get("publishEnd") ?? "").trim();
+  const publishStart = startRaw ? new Date(`${startRaw}T00:00:00`) : null;
+  const publishEnd = endRaw ? new Date(`${endRaw}T23:59:59`) : null;
 
   if (!title) return { error: "タイトルを入力してください。" };
   if (!source) return { error: "出典（PR TIMES / note / 新聞名など）を入力してください。" };
   if (!url) return { error: "記事URLを入力してください。" };
+  if (publishStart && publishEnd && publishEnd < publishStart) {
+    return { error: "掲載終了日は開始日より後にしてください。" };
+  }
 
   const last = await prisma.curatedArticle.findFirst({
     where: { tenantId: su.app.tenantId },
@@ -44,6 +52,8 @@ export async function createArticle(
       url,
       imageUrl: imageUrl ?? null,
       excerpt: excerpt || null,
+      publishStart,
+      publishEnd,
       sortOrder: (last?.sortOrder ?? 0) + 1,
     },
   });

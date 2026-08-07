@@ -200,6 +200,8 @@ model CuratedArticle {
   excerpt   String? // 概要（任意）
   sortOrder Int      @default(0) @map("sort_order")
   active    Boolean  @default(true)
+  publishStart DateTime? @map("publish_start") // 掲載開始（未設定なら即時）
+  publishEnd   DateTime? @map("publish_end")   // 掲載終了（未設定なら無期限）
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])

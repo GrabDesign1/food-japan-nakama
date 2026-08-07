@@ -54,6 +54,17 @@ export function ArticleManager() {
         <textarea name="excerpt" rows={2} placeholder="記事の要約を1〜2行で" className={inputCls} />
       </label>
 
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+          掲載開始日（任意・未設定なら即時）
+          <input type="date" name="publishStart" className={inputCls} />
+        </label>
+        <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+          掲載終了日（任意・未設定なら無期限）
+          <input type="date" name="publishEnd" className={inputCls} />
+        </label>
+      </div>
+
       <div className="flex items-center gap-3">
         <button disabled={pending} className={`${btn("primary", "sm")} ml-auto`}>
           {pending ? "追加中…" : "記事を追加"}
