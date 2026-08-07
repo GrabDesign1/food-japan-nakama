@@ -10,6 +10,8 @@ import { revokeAdmin } from "./admin-account-actions";
 import { AdminAccountForm } from "./_components/AdminAccountForm";
 import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
+import { deleteArticle, toggleArticle } from "./article-actions";
+import { ArticleManager } from "./_components/ArticleManager";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function AdminPage() {
@@ -45,6 +47,11 @@ export default async function AdminPage() {
   const banners = await prisma.banner.findMany({
     where: { tenantId },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+
+  const curatedArticles = await prisma.curatedArticle.findMany({
+    where: { tenantId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
   });
 
   const adminUsers = await prisma.user.findMany({
@@ -186,6 +193,57 @@ export default async function AdminPage() {
                   </button>
                 </form>
                 <form action={deleteBanner.bind(null, b.id)}>
+                  <button className={btn("danger", "sm")}>削除</button>
+                </form>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {/* 記事キュレーション（公開トップに表示） */}
+      <div>
+        <h2 className={`${h2Cls} mb-1`}>記事キュレーション（公開トップに表示）</h2>
+        <p className="mb-3 text-[12px] text-[var(--muted)]">
+          PR TIMES・note・新聞などの食の記事を登録すると、ログイン不要の公開トップに「食の注目記事」として表示されます。
+        </p>
+
+        <ArticleManager />
+
+        {curatedArticles.length > 0 ? (
+          <div className="mt-3 flex flex-col gap-2">
+            {curatedArticles.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center gap-3 rounded-[10px] border border-[var(--line)] bg-white p-3"
+              >
+                {a.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.imageUrl}
+                    alt=""
+                    className="h-14 w-[100px] shrink-0 rounded-md border border-[var(--line)] object-cover"
+                  />
+                ) : (
+                  <div className="grid h-14 w-[100px] shrink-0 place-items-center rounded-md border border-[var(--line)] bg-[var(--green-soft)] text-[20px]">📰</div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-medium text-[var(--ink)]">
+                    {a.title}
+                    {!a.active ? (
+                      <span className="ml-2 rounded bg-[var(--line)] px-1.5 py-0.5 text-[10px] text-[var(--ink-2)]">非表示</span>
+                    ) : null}
+                  </div>
+                  <div className="truncate text-[11px] text-[var(--muted)]">
+                    {a.source} ・ {a.url}
+                  </div>
+                </div>
+                <form action={toggleArticle.bind(null, a.id, !a.active)}>
+                  <button className={btn("secondary", "sm")}>
+                    {a.active ? "非表示にする" : "表示する"}
+                  </button>
+                </form>
+                <form action={deleteArticle.bind(null, a.id)}>
                   <button className={btn("danger", "sm")}>削除</button>
                 </form>
               </div>

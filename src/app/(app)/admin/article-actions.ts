@@ -1,0 +1,72 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+
+export type ArticleState = { ok?: boolean; error?: string; message?: string };
+
+function normalizeUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) return v;
+  return `https://${v}`;
+}
+
+/** キュレーション記事を追加する。 */
+export async function createArticle(
+  _prev: ArticleState,
+  formData: FormData
+): Promise<ArticleState> {
+  const su = await requireAdmin();
+
+  const title = String(formData.get("title") ?? "").trim();
+  const source = String(formData.get("source") ?? "").trim();
+  const url = normalizeUrl(String(formData.get("url") ?? ""));
+  const imageUrl = normalizeUrl(String(formData.get("imageUrl") ?? ""));
+  const excerpt = String(formData.get("excerpt") ?? "").trim();
+
+  if (!title) return { error: "タイトルを入力してください。" };
+  if (!source) return { error: "出典（PR TIMES / note / 新聞名など）を入力してください。" };
+  if (!url) return { error: "記事URLを入力してください。" };
+
+  const last = await prisma.curatedArticle.findFirst({
+    where: { tenantId: su.app.tenantId },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+
+  await prisma.curatedArticle.create({
+    data: {
+      tenantId: su.app.tenantId,
+      title,
+      source,
+      url,
+      imageUrl: imageUrl ?? null,
+      excerpt: excerpt || null,
+      sortOrder: (last?.sortOrder ?? 0) + 1,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { ok: true, message: "記事を追加しました。" };
+}
+
+export async function deleteArticle(id: string): Promise<void> {
+  const su = await requireAdmin();
+  await prisma.curatedArticle.deleteMany({ where: { id, tenantId: su.app.tenantId } });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+/** 表示/非表示を切り替える。 */
+export async function toggleArticle(id: string, active: boolean): Promise<void> {
+  const su = await requireAdmin();
+  await prisma.curatedArticle.updateMany({
+    where: { id, tenantId: su.app.tenantId },
+    data: { active },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
