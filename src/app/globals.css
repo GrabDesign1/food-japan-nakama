@@ -199,7 +199,7 @@ body {
   top: 96px; /* ヘッダーの下から */
   right: 0;
   bottom: 0; /* 下端まで（縦を詰めても画像はこの範囲にフィット） */
-  aspect-ratio: 891 / 852; /* 高さに合わせて幅が決まる（切らずに全体表示） */
+  aspect-ratio: 891 / 832; /* 高さに合わせて幅が決まる（切らずに全体表示） */
   overflow: hidden;
   background: transparent;
   /* マスクなし：画像に焼き込まれた形をそのまま出し、クリームは背景に溶け込ませる */
@@ -250,7 +250,7 @@ body {
     right: auto;
     bottom: auto;
     width: 100%;
-    aspect-ratio: 891 / 852;
+    aspect-ratio: 891 / 832;
     height: auto;
     opacity: 1;
   }
