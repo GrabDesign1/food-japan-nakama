@@ -208,8 +208,8 @@ body {
   bottom: 0;
   width: 52%;
   overflow: hidden;
-  /* 左エッジを滑らかな1本の曲線に（TL/BLの縦半径を50%+50%=100%で連続させる）。TRは軽く丸める。 */
-  border-radius: 44% 12% 0 44% / 50% 14% 0 50%;
+  /* 左側をなめらかな半円（Dの字）に。右はビューポート端まで直線。 */
+  border-radius: 50% 0 0 50% / 50% 0 0 50%;
   background: #d9ded7;
 }
 
