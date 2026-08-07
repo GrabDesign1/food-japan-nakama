@@ -17,10 +17,10 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   closed: { label: "終了", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
 };
 
-export function ProjectCard({ p }: { p: ProjectCardData }) {
+export function ProjectCard({ p, href }: { p: ProjectCardData; href?: string }) {
   const s = p.status ? STATUS_LABEL[p.status] : undefined;
   return (
-    <Link href={`/projects/${p.id}`} className="group block transition-transform hover:-translate-y-0.5">
+    <Link href={href ?? `/projects/${p.id}`} className="group block transition-transform hover:-translate-y-0.5">
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)] shadow-sm transition group-hover:border-[var(--green)] group-hover:shadow-md">
         {p.imageUrls[0] ? (
           // eslint-disable-next-line @next/next/no-img-element

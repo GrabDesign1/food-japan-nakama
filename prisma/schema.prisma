@@ -189,6 +189,23 @@ model Banner {
   @@map("banners")
 }
 
+/// 事務局がキュレーションする外部の食の記事（PR TIMES / note / 新聞など）。公開トップに掲載。
+model CuratedArticle {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  title     String
+  url       String // 外部記事URL
+  source    String // 出典（PR TIMES / note / 日本経済新聞 など）
+  imageUrl  String?  @map("image_url") // サムネイル画像URL（任意）
+  excerpt   String? // 概要（任意）
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("curated_articles")
+}
+
 /// 共創プロジェクト掲載（HANDOVER 4-1 / 画面7）
 model Project {
   id          String    @id @default(cuid())

@@ -2,8 +2,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// ログイン不要で見られるパス
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/reset-password"];
+// ログイン不要で見られるパス（"/" は公開LP、"/preview" は記事プレビュー）
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/preview"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
+  const isPublic = path === "/" || PUBLIC_PATHS.some((p) => path.startsWith(p));
 
   // 未ログインで保護ページ → /login へ
   if (!user && !isPublic) {
