@@ -156,7 +156,7 @@ export default async function AdminPage() {
       <div>
         <h2 className={`${h2Cls} mb-1`}>バナー管理（会員トップに表示）</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">
-          バナー画像とリンク先URLを登録すると、ダッシュボードのお知らせの下に表示されます。
+          バナー画像とリンク先URLを登録すると、マイページトップのお知らせの下に表示されます。
         </p>
 
         <BannerManager />

@@ -255,7 +255,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className={eyebrowCls}>DASHBOARD</p>
+        <p className={eyebrowCls}>MY PAGE</p>
         <h1 className={h1Cls}>
           ようこそ、{su?.app.name} さん
         </h1>

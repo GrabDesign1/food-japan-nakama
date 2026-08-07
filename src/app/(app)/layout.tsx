@@ -11,7 +11,7 @@ import { btn } from "@/lib/ui";
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean };
 
 const NAV: NavItem[] = [
-  { label: "ダッシュボード", href: "/dashboard", ready: true },
+  { label: "マイページトップ", href: "/dashboard", ready: true },
   { label: "共創パートナーを探す", href: "/search", ready: true },
   { label: "会員プロフィール", href: "/profile", ready: true },
   { label: "持ち寄り（売りたい・買いたい）", href: "/ledger", ready: true },

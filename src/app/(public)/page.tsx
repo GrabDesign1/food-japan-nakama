@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getLandingContent } from "@/lib/public-content";
 import { OfferingCard } from "@/components/OfferingCard";
@@ -7,9 +6,9 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { btn, h2Cls } from "@/lib/ui";
 
 export default async function PublicHome() {
-  // ログイン済みは既存アプリ（ダッシュボード）へ
+  // ログイン済みでも公開トップは閲覧可能（ナビは「マイページトップへ」に切り替える）
   const su = await getSessionUser();
-  if (su) redirect("/dashboard");
+  const isLoggedIn = !!su;
 
   const { articles, projects, projNameMap, gives, wants } = await getLandingContent();
 
@@ -31,7 +30,11 @@ export default async function PublicHome() {
             <a href="#co-creation-projects">共創プロジェクト</a>
             <a href="#sell">売りたい</a>
             <a href="#buy">買いたい</a>
-            <Link className="fjn-nav__login" href="/login">ログイン</Link>
+            {isLoggedIn ? (
+              <Link className="fjn-nav__login" href="/dashboard">マイページトップへ</Link>
+            ) : (
+              <Link className="fjn-nav__login" href="/login">ログイン</Link>
+            )}
           </nav>
         </header>
 
@@ -45,7 +48,11 @@ export default async function PublicHome() {
             </p>
             <span className="fjn-hero__tag">FOOD JAPAN SUMMIT</span>
             <div className="fjn-actions">
-              <Link className="fjn-button fjn-button--primary" href="/signup">月額会員に申し込む</Link>
+              {isLoggedIn ? (
+                <Link className="fjn-button fjn-button--primary" href="/dashboard">マイページトップへ</Link>
+              ) : (
+                <Link className="fjn-button fjn-button--primary" href="/signup">月額会員に申し込む</Link>
+              )}
               <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
             </div>
             <p className="fjn-hero__note">
