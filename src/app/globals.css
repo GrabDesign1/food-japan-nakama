@@ -133,15 +133,7 @@ body {
 }
 
 .fjn-hero__copy::after {
-  content: "NAKAMA";
-  position: absolute;
-  left: -5vw;
-  bottom: -72px;
-  z-index: -1;
-  color: rgba(0,47,34,.035);
-  font: 800 clamp(110px, 13vw, 220px)/.8 "Roboto", sans-serif;
-  letter-spacing: -.05em;
-  pointer-events: none;
+  display: none; /* 背景の薄い「NAKAMA」透かしは非表示 */
 }
 
 .fjn-hero h1 {
