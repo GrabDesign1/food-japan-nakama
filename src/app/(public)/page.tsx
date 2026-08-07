@@ -43,7 +43,7 @@ export default async function PublicHome() {
             <p className="fjn-hero__lead">
               生産者・食品メーカー・小売・飲食店・流通・物流・サービスをつなぐ共創CRM。余っている食材や規格外品、探している原料、いっしょに挑戦したい共創プロジェクトが集まります。
             </p>
-            <span className="fjn-hero__tag">FOOD JAPAN SUMMIT 2026</span>
+            <span className="fjn-hero__tag">FOOD JAPAN SUMMIT</span>
             <div className="fjn-actions">
               <Link className="fjn-button fjn-button--primary" href="/signup">無料ではじめる</Link>
               <Link className="fjn-button" href="/login">ログイン</Link>
