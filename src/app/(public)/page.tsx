@@ -41,7 +41,7 @@ export default async function PublicHome() {
         <div className="fjn-hero__body">
           <div className="fjn-hero__copy">
             <h1 id="fjn-hero-title">
-              食の「譲りたい」<br />「あったらいいな」を、<br />共創でつなぐ。
+              食の「譲りたい」<br />「あったらいいな」を<br />共創でつなぐ。
             </h1>
             <p className="fjn-hero__lead">
               FOOD JAPAN NAKAMAは、生産者・食品メーカー・<br />
