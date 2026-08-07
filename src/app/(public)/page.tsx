@@ -49,35 +49,39 @@ export default async function PublicHome() {
         {articles.length > 0 ? (
           <section>
             <SectionHead title="食の注目記事" sub="PR TIMES・note・新聞などから、事務局がピックアップ" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               {articles.map((a) => (
                 <a
                   key={a.id}
                   href={a.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex flex-col overflow-hidden rounded-xl border border-[var(--line)] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
+                  className="group flex flex-col rounded-xl border border-[var(--line)] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
                 >
-                  <div className="aspect-[16/9] w-full overflow-hidden bg-[var(--green-soft)]">
-                    {a.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.imageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center text-[32px] opacity-40">📰</div>
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1.5 p-4">
-                    <span className="w-fit rounded bg-[var(--green-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--green-d)]">
-                      {a.source}
-                    </span>
-                    <div className="line-clamp-2 text-[14px] font-semibold leading-6 text-[var(--ink)] group-hover:text-[var(--green-d)]">
-                      {a.title}
+                  {/* 上段：タイトル（左）＋サムネイル（右） */}
+                  <div className="flex gap-4">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="w-fit rounded bg-[var(--green-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--green-d)]">
+                        {a.source}
+                      </span>
+                      <h3 className="line-clamp-3 text-[16px] font-bold leading-6 text-[var(--ink)] group-hover:text-[var(--green-d)]">
+                        {a.title}
+                      </h3>
                     </div>
-                    {a.excerpt ? (
-                      <p className="line-clamp-3 text-[12px] leading-5 text-[var(--muted)]">{a.excerpt}</p>
-                    ) : null}
-                    <span className="mt-auto pt-1 text-[11px] text-[var(--green-d)]">記事を読む ↗</span>
+                    <div className="aspect-[4/3] w-32 shrink-0 overflow-hidden rounded-lg bg-[var(--green-soft)] sm:w-44">
+                      {a.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.imageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-[28px] opacity-40">📰</div>
+                      )}
+                    </div>
                   </div>
+                  {/* 下段：概要（全幅） */}
+                  {a.excerpt ? (
+                    <p className="mt-3 line-clamp-3 text-[13px] leading-6 text-[var(--ink-2)]">{a.excerpt}</p>
+                  ) : null}
+                  <span className="mt-2 text-[11px] text-[var(--green-d)]">記事を読む ↗</span>
                 </a>
               ))}
             </div>
