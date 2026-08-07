@@ -15,32 +15,48 @@ export default async function PublicHome() {
 
   return (
     <div>
-      {/* ヒーロー */}
-      <section className="border-b border-[var(--line)] bg-[var(--green-soft)]">
-        <div className="mx-auto flex max-w-[1100px] flex-col items-start gap-5 px-4 py-14 sm:py-20">
-          <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold tracking-[0.1em] text-[var(--green-d)]">
-            FOOD JAPAN SUMMIT 2026
-          </span>
-          <h1 className="font-serif text-[30px] leading-tight text-[var(--ink)] sm:text-[42px]">
-            食の「譲りたい」「あったらいいな」を、
-            <br className="hidden sm:block" />
-            共創でつなぐ。
-          </h1>
-          <p className="max-w-[640px] text-[14px] leading-7 text-[var(--ink-2)] sm:text-[15px]">
-            生産者・食品メーカー・小売・飲食店・流通・物流・サービスをつなぐ共創CRM。
-            余っている食材や規格外品、探している原料、いっしょに挑戦したい共創プロジェクトが集まります。
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/signup" className={btn("primary", "lg")}>
-              無料ではじめる
-            </Link>
-            <Link href="/login" className={btn("secondary", "lg")}>
-              ログイン
-            </Link>
+      {/* ヒーロー（提供デザイン food-japan-nakama-hero）。ヘッダーもこの中に含む。 */}
+      <section className="fjn-hero" aria-labelledby="fjn-hero-title">
+        <header className="fjn-hero__header">
+          <Link className="fjn-brand" href="/" aria-label="FOOD JAPAN NAKAMA トップへ">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="fjn-brand__mark" src="/logo-mark.png" alt="" width={88} height={88} />
+            <span>
+              <span className="fjn-brand__name">FOOD JAPAN NAKAMA</span>
+              <span className="fjn-brand__sub">FOOD JAPAN SUMMIT</span>
+            </span>
+          </Link>
+
+          <nav className="fjn-nav" aria-label="メインナビゲーション">
+            <a href="#co-creation-projects">共創プロジェクト</a>
+            <a href="#sell">売りたい</a>
+            <a href="#buy">買いたい</a>
+            <Link className="fjn-nav__login" href="/login">ログイン</Link>
+          </nav>
+        </header>
+
+        <div className="fjn-hero__body">
+          <div className="fjn-hero__copy">
+            <h1 id="fjn-hero-title">
+              食の「譲りたい」<br />「あったらいいな」を、<br />共創でつなぐ。
+            </h1>
+            <p className="fjn-hero__lead">
+              生産者・食品メーカー・小売・飲食店・流通・物流・サービスをつなぐ共創CRM。余っている食材や規格外品、探している原料、いっしょに挑戦したい共創プロジェクトが集まります。
+            </p>
+            <span className="fjn-hero__tag">FOOD JAPAN SUMMIT 2026</span>
+            <div className="fjn-actions">
+              <Link className="fjn-button fjn-button--primary" href="/signup">無料ではじめる</Link>
+              <Link className="fjn-button" href="/login">ログイン</Link>
+            </div>
+            <p className="fjn-hero__note">
+              プロジェクトや募集の概要はどなたでも閲覧できます。詳細・連絡は無料登録でご覧いただけます。
+            </p>
           </div>
-          <p className="text-[12px] text-[var(--muted)]">
-            プロジェクトや募集の概要はどなたでも閲覧できます。詳細・連絡は無料登録でご覧いただけます。
-          </p>
+        </div>
+
+        <div className="fjn-hero__visual">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hero-nakama-visual.png" alt="生産者、企業、自治体が食の共創でつながる様子" />
         </div>
       </section>
 
@@ -90,6 +106,7 @@ export default async function PublicHome() {
 
         {/* 共創プロジェクト */}
         <PreviewSection
+          id="co-creation-projects"
           title="共創プロジェクト"
           sub="いっしょに挑戦したい相手を募集中"
           empty="現在募集中のプロジェクトはありません。"
@@ -108,6 +125,7 @@ export default async function PublicHome() {
 
         {/* 売りたい */}
         <PreviewSection
+          id="sell"
           title="売りたい（提供できるもの）"
           sub="余っている食材・規格外品・提供できる設備など"
           empty="現在「売りたい」の掲載はありません。"
@@ -126,6 +144,7 @@ export default async function PublicHome() {
 
         {/* 買いたい */}
         <PreviewSection
+          id="buy"
           title="買いたい（探しているもの）"
           sub="こんな食材・原料・パートナーを探しています"
           empty="現在「買いたい」の掲載はありません。"
@@ -168,12 +187,14 @@ function SectionHead({ title, sub }: { title: string; sub?: string }) {
 }
 
 function PreviewSection({
+  id,
   title,
   sub,
   empty,
   hasItems,
   children,
 }: {
+  id?: string;
   title: string;
   sub?: string;
   empty: string;
@@ -181,7 +202,7 @@ function PreviewSection({
   children: React.ReactNode;
 }) {
   return (
-    <section>
+    <section id={id} className="scroll-mt-6">
       <SectionHead title={title} sub={sub} />
       {hasItems ? (
         children

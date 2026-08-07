@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getPublicOffering } from "@/lib/public-content";
 import { Paywall } from "../../../_components/Paywall";
+import { PublicTopBar } from "../../../_components/PublicTopBar";
 import { categoryMeta, DIRECTION_SHORT, formatAmount } from "@/lib/offering-taxonomy";
 import { h1Cls } from "@/lib/ui";
 
@@ -31,7 +32,9 @@ export default async function PublicOfferingPreview({
   const hero = o.imageUrls[0] ?? null;
 
   return (
-    <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-4 py-10">
+    <>
+      <PublicTopBar />
+      <div className="mx-auto flex max-w-[760px] flex-col gap-6 px-4 py-10">
       <Link href="/" className="text-[12px] text-[var(--green-d)] underline">← トップに戻る</Link>
 
       <div className="flex flex-col gap-2">
@@ -64,6 +67,7 @@ export default async function PublicOfferingPreview({
       ) : null}
 
       <Paywall remaining={remaining} />
-    </div>
+      </div>
+    </>
   );
 }

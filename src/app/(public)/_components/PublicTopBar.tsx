@@ -1,0 +1,31 @@
+import Link from "next/link";
+import { btn } from "@/lib/ui";
+
+// 公開ゾーンの下層ページ（プレビュー等）用の軽量ヘッダー。
+// トップページのヒーローは独自のヘッダーを内蔵しているため使わない。
+export function PublicTopBar() {
+  return (
+    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white/95 backdrop-blur">
+      <div className="mx-auto flex max-w-[1100px] items-center gap-3 px-4 py-3">
+        <Link href="/" className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="" width={30} height={30} />
+          <div className="leading-tight">
+            <div className="font-serif text-[15px] tracking-[0.08em] text-[var(--ink)]">
+              FOOD JAPAN <span className="text-[var(--green-d)]">NAKAMA</span>
+            </div>
+            <div className="text-[9px] tracking-[0.2em] text-[var(--muted)]">FOOD JAPAN SUMMIT</div>
+          </div>
+        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <Link href="/login" className={btn("secondary", "sm")}>
+            ログイン
+          </Link>
+          <Link href="/signup" className={btn("primary", "sm")}>
+            無料登録
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
