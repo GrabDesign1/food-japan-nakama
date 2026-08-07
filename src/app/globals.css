@@ -153,7 +153,7 @@ body {
 }
 
 .fjn-hero__lead {
-  max-width: 650px;
+  max-width: 430px;
   margin: 25px 0 0;
   color: #102d26;
   font-size: clamp(15px, 1.2vw, 19px);
@@ -203,13 +203,13 @@ body {
 .fjn-hero__visual {
   position: absolute;
   z-index: 1;
-  top: 96px; /* ナビの下から始めて、上部はクリーム地（ナビが読みやすい） */
-  right: -1px;
-  bottom: 0;
-  width: 52%;
+  top: 92px; /* ナビ（クリーム地）の下から円を開始 */
+  right: 3%;
+  bottom: 24px;
+  width: 46%;
   overflow: hidden;
-  /* 左側をなめらかな半円（Dの字）に。右はビューポート端まで直線。 */
-  border-radius: 50% 0 0 50% / 50% 0 0 50%;
+  /* 楕円（丸）マスク。画像四隅の焼き込みクリームごと外周を切り落とすので二重ズレが出ない。 */
+  border-radius: 50%;
   background: #d9ded7;
 }
 
