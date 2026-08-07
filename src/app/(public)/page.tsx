@@ -44,7 +44,13 @@ export default async function PublicHome() {
               食の「譲りたい」<br />「あったらいいな」を、<br />共創でつなぐ。
             </h1>
             <p className="fjn-hero__lead">
-              FOOD JAPAN NAKAMAは、生産者・食品メーカー・小売・飲食店・流通・自治体など、食に関わる人と企業をつなぐ共創プラットフォームです。売りたい食材、探している原料、解決したい課題、いっしょに取り組みたいプロジェクトを掲載し、新しい取引や事業の仲間と出会えます。
+              FOOD JAPAN NAKAMAは、生産者・食品メーカー・<br />
+              小売・飲食店・流通・自治体など、食に関わる人と企業を<br />
+              つなぐ共創プラットフォームです。
+              <br /><br />
+              売りたい食材、探している原料、解決したい課題、<br />
+              いっしょに取り組みたいプロジェクトを掲載し、<br />
+              新しい取引や事業の仲間と出会えます。
             </p>
             <span className="fjn-hero__tag">FOOD JAPAN SUMMIT</span>
             <div className="fjn-actions">
