@@ -22,10 +22,10 @@ export function ArticleManager() {
       action={action}
       className="flex flex-col gap-3 rounded-[10px] border border-[var(--line)] bg-white p-4"
     >
-      <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-        記事タイトル
-        <input name="title" required placeholder="例：規格外野菜のアップサイクルが加速" className={inputCls} />
-      </label>
+      <div className="rounded-md bg-[var(--green-soft)] px-3 py-2 text-[11px] leading-5 text-[var(--green-d)]">
+        記事URLと出典を入れて「記事を追加」すると、<b>タイトル・サムネイル画像・概要はURLから自動取得</b>します。
+        うまく取得できない場合だけ、下の欄に手入力してください。
+      </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
@@ -45,13 +45,18 @@ export function ArticleManager() {
       </div>
 
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-        サムネイル画像URL（任意）
+        記事タイトル（任意・空欄ならURLから自動取得）
+        <input name="title" placeholder="例：規格外野菜のアップサイクルが加速" className={inputCls} />
+      </label>
+
+      <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+        サムネイル画像URL（任意・空欄ならURLから自動取得）
         <input name="imageUrl" placeholder="https://.../ogp.jpg" className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-        概要（任意）
-        <textarea name="excerpt" rows={2} placeholder="記事の要約を1〜2行で" className={inputCls} />
+        概要（任意・空欄ならURLから自動取得）
+        <textarea name="excerpt" rows={2} placeholder="記事の一部・要約を1〜2行で" className={inputCls} />
       </label>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -74,7 +74,7 @@ export default async function PublicHome() {
                       {a.title}
                     </div>
                     {a.excerpt ? (
-                      <p className="line-clamp-2 text-[12px] leading-5 text-[var(--muted)]">{a.excerpt}</p>
+                      <p className="line-clamp-3 text-[12px] leading-5 text-[var(--muted)]">{a.excerpt}</p>
                     ) : null}
                     <span className="mt-auto pt-1 text-[11px] text-[var(--green-d)]">記事を読む ↗</span>
                   </div>
