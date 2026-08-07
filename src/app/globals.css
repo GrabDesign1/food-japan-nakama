@@ -203,12 +203,11 @@ body {
 .fjn-hero__visual {
   position: absolute;
   z-index: 1;
-  top: 92px; /* ナビ（クリーム地）の下から円を開始 */
-  right: 3%;
-  bottom: 24px;
-  width: 46%;
+  top: 96px; /* ナビ（クリーム地）の下から円を開始 */
+  right: 4%;
+  width: min(46vw, 560px);
+  aspect-ratio: 1 / 1; /* 正方形にして border-radius:50% を「真円」にする */
   overflow: hidden;
-  /* 楕円（丸）マスク。画像四隅の焼き込みクリームごと外周を切り落とすので二重ズレが出ない。 */
   border-radius: 50%;
   background: #d9ded7;
 }
@@ -219,6 +218,8 @@ body {
   display: block;
   object-fit: cover;
   object-position: center;
+  /* 画像四隅の焼き込みクリームを円の外へ追い出すためズーム */
+  transform: scale(1.2);
 }
 
 .fjn-hero__visual::before {
