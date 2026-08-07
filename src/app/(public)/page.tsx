@@ -171,29 +171,29 @@ export default async function PublicHome() {
 
         {/* サービス説明 */}
         <section>
-          <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">
-            <h2 className="font-serif text-[20px] text-[var(--ink)]">食の課題を、全国のNAKAMAと解決する</h2>
-            <p className="mt-2 text-[14px] leading-7 text-[var(--ink-2)]">
-              余っている食材を活かしたい。新しい原料や商品を探したい。地域の食を全国へ届けたい。異業種と新しい事業を始めたい。
-              FOOD JAPAN NAKAMAでは、企業や地域が持つ「提供できるもの」と「求めているもの」を公開し、具体的な商談や共創プロジェクトにつなげます。
-            </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-3">
-              {[
-                { icon: "🥬", t: "売りたい", d: "食材・規格外品・商品・設備・技術などを掲載" },
-                { icon: "🔎", t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
-                { icon: "🤝", t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
-              ].map((it) => (
-                <div key={it.t} className="rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4">
-                  <div className="text-[22px]">{it.icon}</div>
-                  <h3 className="mt-1 text-[14px] font-semibold text-[var(--ink)]">{it.t}</h3>
-                  <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">{it.d}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/signup" className={btn("primary")}>月額会員に申し込む（22,000円・税込／月）</Link>
-              <Link href="/about" className={btn("secondary")}>NAKAMAとは</Link>
-            </div>
+          <h1 className="font-serif text-[26px] leading-tight text-[var(--ink)] sm:text-[32px]">
+            食の課題を、全国のNAKAMAと解決する
+          </h1>
+          <p className="mt-4 max-w-[860px] text-[15px] leading-8 text-[var(--ink-2)]">
+            余っている食材を活かしたい。新しい原料や商品を探したい。地域の食を全国へ届けたい。異業種と新しい事業を始めたい。
+            FOOD JAPAN NAKAMAでは、企業や地域が持つ「提供できるもの」と「求めているもの」を公開し、具体的な商談や共創プロジェクトにつなげます。
+          </p>
+          <div className="mt-7 grid gap-5 sm:grid-cols-3">
+            {[
+              { icon: "🥬", t: "売りたい", d: "食材・規格外品・商品・設備・技術などを掲載" },
+              { icon: "🔎", t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
+              { icon: "🤝", t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
+            ].map((it) => (
+              <div key={it.t}>
+                <div className="text-[26px]">{it.icon}</div>
+                <h2 className="mt-1.5 text-[16px] font-bold text-[var(--ink)]">{it.t}</h2>
+                <p className="mt-1 text-[13px] leading-6 text-[var(--ink-2)]">{it.d}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/signup" className={btn("primary")}>月額会員に申し込む（22,000円・税込／月）</Link>
+            <Link href="/about" className={btn("secondary")}>NAKAMAとは</Link>
           </div>
         </section>
 
