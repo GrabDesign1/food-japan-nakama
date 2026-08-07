@@ -56,7 +56,8 @@ export default async function PublicHome() {
               <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
             </div>
             <p className="fjn-hero__note">
-              掲載案件の概要はどなたでも閲覧できます。詳細の閲覧・お問い合わせ・自社の掲載は月額会員でご利用いただけます。
+              掲載案件の概要はどなたでも閲覧できます。<br />
+              詳細の閲覧・お問い合わせ・自社の掲載は月額会員でご利用いただけます。
             </p>
           </div>
         </div>
