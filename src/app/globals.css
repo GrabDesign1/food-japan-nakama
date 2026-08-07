@@ -56,9 +56,10 @@ body {
   min-height: 700px;
   overflow: hidden;
   color: var(--fjn-ink);
+  /* 右側は画像の焼き込みクリーム(#f4efe9)と同色にして、画像の形が背景に溶け込むようにする */
   background:
-    radial-gradient(circle at 23% 36%, rgba(255,255,255,.88), transparent 34%),
-    linear-gradient(120deg, #faf8f2 0%, var(--fjn-paper) 58%, #eee7dc 100%);
+    radial-gradient(circle at 20% 42%, rgba(255,255,255,.65), transparent 42%),
+    linear-gradient(120deg, #f9f5ee 0%, #f4efe9 50%, #f4efe9 100%);
   font-family: "Noto Sans JP", "Roboto", sans-serif;
 }
 
@@ -203,13 +204,14 @@ body {
 .fjn-hero__visual {
   position: absolute;
   z-index: 1;
-  top: 96px; /* ナビ（クリーム地）の下から円を開始 */
-  right: 4%;
-  width: min(46vw, 560px);
-  aspect-ratio: 1 / 1; /* 正方形にして border-radius:50% を「真円」にする */
+  top: auto;
+  right: 0;
+  bottom: 0; /* 下寄せ */
+  width: min(44vw, 620px); /* 多少小さめ。上部はクリーム地でナビが読める */
+  aspect-ratio: 891 / 852; /* 画像の縦横比で切らずに全体表示 */
   overflow: hidden;
-  border-radius: 50%;
-  background: #d9ded7;
+  background: transparent;
+  /* マスクなし：画像に焼き込まれた形をそのまま出し、クリームは背景に溶け込ませる */
 }
 
 .fjn-hero__visual img {
@@ -218,17 +220,10 @@ body {
   display: block;
   object-fit: cover;
   object-position: center;
-  /* 画像四隅の焼き込みクリームを円の外へ追い出すためズーム */
-  transform: scale(1.2);
 }
 
 .fjn-hero__visual::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(90deg, rgba(247,243,234,.28), transparent 17%);
-  pointer-events: none;
+  display: none; /* オーバーレイなし（画像はそのまま表示） */
 }
 
 @media (max-width: 1180px) {
@@ -264,11 +259,11 @@ body {
     right: auto;
     bottom: auto;
     width: 100%;
-    height: min(610px, 112vw);
-    border-radius: 46% 46% 0 0 / 9% 9% 0 0;
+    aspect-ratio: 891 / 852;
+    height: auto;
     opacity: 1;
   }
-  .fjn-hero__visual::before { background: linear-gradient(180deg, var(--fjn-paper), transparent 8%); }
+  .fjn-hero__visual::before { background: linear-gradient(180deg, #f4efe9, transparent 8%); }
 }
 
 @media (max-width: 440px) {
