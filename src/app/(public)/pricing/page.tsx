@@ -84,16 +84,20 @@ export default function PricingPage() {
               <li>・共創プロデュース／クラウドファンディング支援</li>
               <li>・商品代金、送料、決済、許認可、専門家、制作等の費用</li>
             </ul>
-            <p className="mt-3 text-[12px] text-[var(--muted)]">
-              企画・実証・事業化まで人が入って進めたい場合は、共創プロデュース（別料金）をご利用ください。
-            </p>
-            <Link href="/consultation?type=produce" className={`${btn("secondary", "sm")} mt-2`}>
-              共創プロデュースを問い合わせる
-            </Link>
           </div>
         </div>
-        <div className="mt-5">
+
+        {/* CTA（グリッド外で全幅に整列）*/}
+        <div className="mt-6">
           <Link href="/signup" className={btn("primary", "lg")}>月額会員に申し込む</Link>
+        </div>
+        <div className="mt-4 flex flex-col gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4 sm:flex-row sm:items-center">
+          <p className="flex-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            企画・実証・事業化まで人が入って進めたい場合は、共創プロデュース（別料金）をご利用ください。
+          </p>
+          <Link href="/consultation?type=produce" className={`${btn("secondary", "sm")} shrink-0`}>
+            共創プロデュースを問い合わせる
+          </Link>
         </div>
       </section>
 
