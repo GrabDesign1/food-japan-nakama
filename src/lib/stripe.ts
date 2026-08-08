@@ -7,36 +7,26 @@ export const stripe: Stripe | null = key ? new Stripe(key) : null;
 export type Plan = {
   code: string;
   name: string;
-  amount: number | null; // 月額（税別）。null は個別見積
-  unit: string; // 単位表記（月 / 団体・月額 など）
+  amount: number | null; // 月額（税込・円）。JPYはゼロ小数なのでStripe unit_amountと同値。null は個別見積
+  unit: string; // 単位表記（月 など）
   tagline?: string;
   features: string[];
 };
 
-// プラン構成（フリー ＋ 共創コミュニティ の2つ）
+// NAKAMA 月額会員（単一プラン）。¥20,000税抜＝¥22,000税込。
 export const PLANS: Plan[] = [
   {
-    code: "free",
-    name: "フリー",
-    amount: 0,
+    code: "nakama",
+    name: "NAKAMA 月額会員",
+    amount: 22000,
     unit: "月",
-    tagline: "まずは無料で始める",
-    features: ["台帳4件", "案件1件", "興味送信は有償"],
-  },
-  {
-    code: "community",
-    name: "共創コミュニティ",
-    amount: 30000,
-    unit: "団体・月額",
-    tagline: "年間を通じて共創コミュニティに属する",
+    tagline: "出会い・営業・マッチング・学び",
     features: [
-      "365日機能する共創関係（月次定例ミーティング）",
-      "事例・知見の高速循環（成功も失敗も共有）",
-      "優先マッチング（新規生産者・パートナー紹介の優先権）",
-      "月1回の共創会議に参加",
-      "共創ナビ（メディア）閲覧",
-      "1団体あたり2名まで登録",
-      "年間アクセラレータープログラム参加",
+      "自社プロフィール・案件（売りたい／買いたい／共創）の掲載",
+      "掲載案件の詳細閲覧",
+      "会員へのメッセージ・問い合わせ",
+      "会員向けセミナーへの参加",
+      "Food Japan Summit ネットワークとの接点",
     ],
   },
 ];

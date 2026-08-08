@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/preview",
   "/about", "/pricing", "/flow", "/faq", "/company", "/contact",
   "/terms", "/privacy", "/tokushoho",
+  "/produce", "/crowdfunding", "/consultation", "/learn",
 ];
 
 export async function middleware(request: NextRequest) {

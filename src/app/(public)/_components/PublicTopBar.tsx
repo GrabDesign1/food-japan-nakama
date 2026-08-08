@@ -17,12 +17,18 @@ export function PublicTopBar() {
             <div className="text-[9px] tracking-[0.2em] text-[var(--muted)]">FOOD JAPAN SUMMIT</div>
           </div>
         </Link>
-        <div className="ml-auto flex items-center gap-2">
+        <nav className="ml-auto hidden items-center gap-5 text-[13px] font-medium text-[var(--ink-2)] lg:flex">
+          <Link href="/about" className="hover:text-[var(--green-d)]">NAKAMAとは</Link>
+          <Link href="/produce" className="hover:text-[var(--green-d)]">共創プロデュース</Link>
+          <Link href="/crowdfunding" className="hover:text-[var(--green-d)]">クラファン支援</Link>
+          <Link href="/pricing" className="hover:text-[var(--green-d)]">料金</Link>
+        </nav>
+        <div className="ml-auto flex items-center gap-2 lg:ml-4">
           <Link href="/login" className={btn("secondary", "sm")}>
             ログイン
           </Link>
           <Link href="/signup" className={btn("primary", "sm")}>
-            無料登録
+            月額会員に申し込む
           </Link>
         </div>
       </div>

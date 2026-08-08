@@ -52,9 +52,9 @@ export async function signUp(
     return { error: error.message };
   }
 
-  // メール確認が無効なら即セッションが張られる → ダッシュボードへ
+  // メール確認が無効なら即セッションが張られる → 申込・決済（月額会員）へ
   if (data.session) {
-    redirect("/dashboard");
+    redirect("/billing");
   }
 
   // メール確認が有効な場合

@@ -26,18 +26,24 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
       {/* フッター */}
       <footer className="mt-16 border-t border-[var(--line)] bg-[var(--green-soft)]">
-        <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-6 px-4 py-10 text-[12px] text-[var(--ink-2)] sm:grid-cols-4">
-          <div className="col-span-2 sm:col-span-1">
+        <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-6 px-4 py-10 text-[12px] text-[var(--ink-2)] sm:grid-cols-3 lg:grid-cols-5">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <div className="font-serif text-[15px] text-[var(--ink)]">FOOD JAPAN NAKAMA</div>
             <p className="mt-1 text-[11px] text-[var(--muted)]">by FOOD JAPAN SUMMIT</p>
           </div>
-          <FooterCol title="サービス" links={[
-            ["FOOD JAPAN NAKAMAとは", "/about"],
+          <FooterCol title="NAKAMA" links={[
+            ["NAKAMAとは", "/about"],
+            ["学び・セミナー", "/learn"],
             ["利用の流れ", "/flow"],
-            ["利用料金", "/pricing"],
+            ["料金", "/pricing"],
             ["よくある質問", "/faq"],
           ]} />
-          <FooterCol title="会社・お問い合わせ" links={[
+          <FooterCol title="個別支援" links={[
+            ["共創プロデュース", "/produce"],
+            ["クラウドファンディング支援", "/crowdfunding"],
+            ["個別相談", "/consultation"],
+          ]} />
+          <FooterCol title="会社" links={[
             ["運営会社", "/company"],
             ["お問い合わせ", "/contact"],
           ]} />

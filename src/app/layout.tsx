@@ -19,9 +19,9 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "FOOD JAPAN NAKAMA",
+  title: "FOOD JAPAN NAKAMA｜食の出会い・学び・共創をつくる会員制ネットワーク",
   description:
-    "生産者、食品メーカー、小売、飲食店、流通、物流、サービスを繋ぐ！「譲りたい」「あったらいいな」を登録して共創事業を作ろう！",
+    "生産者、食品メーカー、小売、飲食店、流通、自治体など、食に関わる人と企業が営業先や共創相手と出会い、実践者から学べる会員制ネットワーク。共創プロデュースとクラウドファンディング支援にも対応します。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

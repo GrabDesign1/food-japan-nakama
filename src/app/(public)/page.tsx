@@ -27,9 +27,10 @@ export default async function PublicHome() {
           </Link>
 
           <nav className="fjn-nav" aria-label="メインナビゲーション">
-            <a href="#co-creation-projects">共創プロジェクト</a>
-            <a href="#sell">売りたい</a>
-            <a href="#buy">買いたい</a>
+            <a href="#co-creation-projects">案件を探す</a>
+            <Link href="/produce">共創プロデュース</Link>
+            <Link href="/crowdfunding">クラファン支援</Link>
+            <Link href="/pricing">料金</Link>
             {isLoggedIn ? (
               <Link className="fjn-nav__login" href="/dashboard">マイページトップへ</Link>
             ) : (
@@ -203,18 +204,52 @@ export default async function PublicHome() {
           </div>
         </PreviewSection>
 
-        {/* 下部CTA */}
-        <section className="rounded-2xl border border-[var(--green)] bg-[var(--green-soft)] px-6 py-10 text-center">
-          <h2 className="font-serif text-[22px] text-[var(--ink)]">気になる相手が見つかったら</h2>
-          <p className="mt-2 text-[13px] text-[var(--ink-2)]">
-            月額会員（22,000円・税込）に申し込むと、詳細の閲覧・メッセージでの問い合わせ・自社の掲載ができます。
-          </p>
-          <p className="mt-1 text-[12px] text-[var(--muted)]">
-            初回は申込日に決済、翌月以降は毎月5日に自動更新。月末まで解約できます。
-          </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className={btn("primary", "lg")}>月額会員に申し込む</Link>
-            <Link href="/pricing" className={btn("secondary", "lg")}>利用料金を見る</Link>
+        {/* 学び（月額の価値） */}
+        <section>
+          <SectionHead title="実践者から学ぶ" sub="会員向けセミナー・アーカイブ" />
+          <div className="flex flex-col items-start gap-3 rounded-[10px] border border-[var(--line)] bg-white p-6 sm:flex-row sm:items-center">
+            <p className="flex-1 text-[14px] leading-7 text-[var(--ink-2)]">
+              食のトップリーダーや現場の実践者から、商品開発、販路、地域共創、食品ロスなどを学べます。開催予定は順次公開します。
+            </p>
+            <Link href="/learn" className={btn("secondary")}>学び・セミナーを見る</Link>
+          </div>
+        </section>
+
+        {/* FOOD JAPAN の3サービス */}
+        <section>
+          <SectionHead title="FOOD JAPAN の3つのサービス" sub="役割と料金が混ざらないよう、目的で選べます" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { t: "NAKAMA", d: "自分で出会い、学ぶ月額会員サービス。", price: "月額20,000円（税抜）", href: "/pricing", cta: "料金を見る" },
+              { t: "共創プロデュース", d: "人が入り、企画・実証・事業化まで一緒に進める個別支援。", price: "15万円（税抜）〜", href: "/produce", cta: "詳細・相談" },
+              { t: "クラウドファンディング支援", d: "Makuake等を活用して販売しながら市場を検証。", price: "個別見積", href: "/crowdfunding", cta: "詳細・相談" },
+            ].map((s) => (
+              <div key={s.t} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
+                <h3 className="text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
+                <p className="mt-1 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{s.d}</p>
+                <div className="mt-2 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
+                <Link href={s.href} className="mt-3 text-[12px] text-[var(--green-d)] underline">{s.cta} →</Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 最終CTA（3択） */}
+        <section className="rounded-2xl border border-[var(--green)] bg-[var(--green-soft)] px-6 py-10">
+          <h2 className="text-center font-serif text-[22px] text-[var(--ink)]">目的に合わせて、次の一歩へ</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-[10px] bg-white p-5 text-center">
+              <p className="text-[13px] text-[var(--ink-2)]">自分で相手を探したい</p>
+              <Link href="/signup" className={`${btn("primary")} mt-3 w-full`}>NAKAMAに申し込む</Link>
+            </div>
+            <div className="rounded-[10px] bg-white p-5 text-center">
+              <p className="text-[13px] text-[var(--ink-2)]">企画から一緒に進めたい</p>
+              <Link href="/consultation?type=produce" className={`${btn("secondary")} mt-3 w-full`}>共創プロデュースを相談する</Link>
+            </div>
+            <div className="rounded-[10px] bg-white p-5 text-center">
+              <p className="text-[13px] text-[var(--ink-2)]">商品を販売して反応を試したい</p>
+              <Link href="/consultation?type=crowdfunding" className={`${btn("secondary")} mt-3 w-full`}>クラファン支援を相談する</Link>
+            </div>
           </div>
         </section>
       </div>

@@ -101,9 +101,12 @@ export default async function AdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className={eyebrowCls}>ADMIN ・ 事務局ダッシュボード</p>
-        <h1 className={h1Cls}>事務局管理</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className={eyebrowCls}>ADMIN ・ 事務局ダッシュボード</p>
+          <h1 className={h1Cls}>事務局管理</h1>
+        </div>
+        <Link href="/admin/consultations" className={btn("secondary", "sm")}>個別相談の管理 →</Link>
       </div>
 
       {/* 指標サマリ */}

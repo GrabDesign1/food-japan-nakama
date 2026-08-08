@@ -104,3 +104,60 @@ export async function notifyAdminMemberRegistered(params: {
     html,
   });
 }
+
+// 個別相談（共創プロデュース／クラファン支援）の通知＋自動返信。
+const CONSULT_LABEL: Record<string, string> = {
+  produce: "共創プロデュース",
+  crowdfunding: "クラウドファンディング支援",
+  unsure: "どちらが合うか相談",
+};
+const ADMIN_INBOX = "info@grab-design.com";
+
+export async function sendConsultationEmails(c: {
+  refNo: string;
+  serviceType: string;
+  company: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  area?: string | null;
+  industry?: string | null;
+  productSummary: string;
+  challenge: string;
+  desiredOutcome?: string | null;
+  desiredTiming?: string | null;
+  budget?: string | null;
+}): Promise<void> {
+  const label = CONSULT_LABEL[c.serviceType] ?? c.serviceType;
+  const rows: [string, string | null | undefined][] = [
+    ["受付番号", c.refNo],
+    ["相談種別", label],
+    ["会社・団体名", c.company],
+    ["氏名", c.name],
+    ["メール", c.email],
+    ["電話", c.phone],
+    ["所在地／対象地域", c.area],
+    ["業種", c.industry],
+    ["商品・地域資源・技術の概要", c.productSummary],
+    ["解決したい課題", c.challenge],
+    ["希望する成果", c.desiredOutcome],
+    ["希望開始時期", c.desiredTiming],
+    ["想定予算", c.budget],
+  ];
+  const table = rows
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<tr><th align="left" style="padding:6px 12px;background:#f2f5f0;white-space:nowrap;vertical-align:top">${k}</th><td style="padding:6px 12px;white-space:pre-wrap">${String(v)}</td></tr>`)
+    .join("");
+
+  await send({
+    to: [ADMIN_INBOX],
+    subject: `【個別相談】${label}｜${c.company}（${c.refNo}）`,
+    html: `<div style="font-family:sans-serif"><p>個別相談の申し込みがありました。</p><table style="border-collapse:collapse;font-size:14px">${table}</table></div>`,
+  });
+
+  await send({
+    to: [c.email],
+    subject: `【FOOD JAPAN NAKAMA】お問い合わせを受け付けました（${c.refNo}）`,
+    html: `<div style="font-family:sans-serif;font-size:14px;line-height:1.8"><p>${c.name} 様</p><p>この度は「${label}」についてお問い合わせいただき、ありがとうございます。<br>以下の内容で受け付けいたしました（受付番号：<b>${c.refNo}</b>）。</p><p>内容を確認のうえ、担当者よりご連絡いたします。<br>※ このメールは送信専用です。ご返信いただいても対応できない場合があります。</p><table style="border-collapse:collapse;font-size:13px">${table}</table><p>FOOD JAPAN NAKAMA（株式会社グラブデザイン）</p></div>`,
+  });
+}
