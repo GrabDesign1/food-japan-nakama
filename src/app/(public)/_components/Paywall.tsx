@@ -11,13 +11,13 @@ export function Paywall({ remaining }: { remaining?: number }) {
         <div className="mx-auto mb-2 grid h-9 w-9 place-items-center rounded-full bg-white text-[16px]">🔒</div>
         <div className="text-[15px] font-bold text-[var(--ink)]">この続きは会員限定です</div>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-          無料登録すると、詳細の閲覧と、メッセージでの問い合わせができます。
+          月額会員（22,000円・税込／月）になると、詳細の閲覧と、メッセージでの問い合わせができます。
         </p>
         {remaining && remaining > 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">残り約 {remaining} 文字</p>
         ) : null}
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Link href="/signup" className={btn("primary", "lg")}>無料会員登録する</Link>
+          <Link href="/signup" className={btn("primary", "lg")}>月額会員に申し込む</Link>
           <Link href="/login" className={btn("secondary", "lg")}>ログイン</Link>
         </div>
       </div>

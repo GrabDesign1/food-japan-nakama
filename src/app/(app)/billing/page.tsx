@@ -7,7 +7,7 @@ import { PortalButton } from "./_components/PortalButton";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 
 const PAY_LABEL: Record<string, { label: string; cls: string }> = {
-  FREE: { label: "無料", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
+  FREE: { label: "未加入", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
   UNPAID: { label: "未決済", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
   PAID: { label: "課金中", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
 };
@@ -65,7 +65,7 @@ export default async function BillingPage({
       ) : null}
 
       {/* プラン */}
-      <div className="grid max-w-[760px] gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 ${PLANS.length > 1 ? "max-w-[760px] sm:grid-cols-2" : "max-w-[420px]"}`}>
         {PLANS.map((p) => {
           const paid = p.amount != null && p.amount > 0;
           // このカードが利用者の「現在のプラン」か（有料枠は課金中なら現在、無料枠は未課金なら現在）
@@ -81,7 +81,7 @@ export default async function BillingPage({
               {p.tagline ? <div className="mt-0.5 text-[11px] text-[var(--muted)]">{p.tagline}</div> : null}
               <div className="mt-2 font-serif text-[26px] text-[var(--ink)]">
                 {p.amount == null ? "個別見積" : p.amount === 0 ? "¥0" : `¥${p.amount.toLocaleString()}`}
-                {paid ? <span className="text-[12px] text-[var(--muted)]">/{p.unit}（税別）</span> : null}
+                {paid ? <span className="text-[12px] text-[var(--muted)]">/{p.unit}（税込）</span> : null}
               </div>
               <ul className="mt-4 flex flex-1 flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
                 {p.features.map((f) => (
@@ -94,9 +94,9 @@ export default async function BillingPage({
                     現在ご利用中のプラン
                   </div>
                 ) : paid ? (
-                  <PlanButton planCode={p.code} label="アップグレードする" />
+                  <PlanButton planCode={p.code} label="お支払いへ進む" />
                 ) : (
-                  <div className="rounded-md bg-[var(--canvas)] py-2 text-center text-[12px] text-[var(--muted)]">無料プラン</div>
+                  <div className="rounded-md bg-[var(--canvas)] py-2 text-center text-[12px] text-[var(--muted)]">個別見積（事務局へお問い合わせ）</div>
                 )}
               </div>
             </div>
@@ -105,7 +105,7 @@ export default async function BillingPage({
       </div>
 
       <p className="text-[11px] text-[var(--muted)]">
-        ※ 価格は税別です。自治体・JA・大学など請求書払いをご希望の場合は、事務局が個別に対応します（銀行振込・年額可）。協賛プランとの併用も可能です。
+        ※ 価格は税込です。自治体・JA・大学など請求書払いをご希望の場合は、事務局が個別に対応します（銀行振込・年額可）。協賛プランとの併用も可能です。
       </p>
     </div>
   );
