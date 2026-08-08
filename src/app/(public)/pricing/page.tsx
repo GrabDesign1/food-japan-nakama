@@ -40,7 +40,7 @@ export default function PricingPage() {
             </tr>
             <tr className="border-b border-[#EDF0EA]">
               <th className="px-4 py-3 text-left font-medium text-[var(--ink)]">料金</th>
-              <td className="px-4 py-3 font-semibold text-[var(--green-d)]">月額20,000円（税抜）</td>
+              <td className="px-4 py-3 font-semibold text-[var(--green-d)]">月額22,000円（税込）</td>
               <td className="px-4 py-3">15万円（税抜）〜</td>
               <td className="px-4 py-3">個別見積</td>
             </tr>
@@ -58,9 +58,8 @@ export default function PricingPage() {
       <section className="rounded-[12px] border border-[var(--green)] bg-white p-6">
         <div className="text-[13px] text-[var(--muted)]">NAKAMA 月額会員</div>
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="font-serif text-[38px] text-[var(--green-d)]">20,000</span>
-          <span className="text-[14px] text-[var(--ink-2)]">円 / 月（税抜）</span>
-          <span className="text-[13px] text-[var(--muted)]">＝22,000円（税込）</span>
+          <span className="font-serif text-[38px] text-[var(--green-d)]">22,000</span>
+          <span className="text-[14px] text-[var(--ink-2)]">円 / 月（税込）</span>
         </div>
         <p className="mt-3 text-[13px] leading-7 text-[var(--ink-2)]">
           初回は<b>申込日に決済</b>し、翌月以降は<b>毎月5日</b>に自動決済（自動更新）します。<b>当月末日まで</b>に解約できます（日割り返金なし）。お支払いはクレジットカード（Stripe）。
