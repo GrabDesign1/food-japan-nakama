@@ -110,13 +110,12 @@ export default async function DashboardPage() {
           include: { member: { select: { name: true } } },
         })
       : Promise.resolve([]),
-    // 自分の公開中の売りたい・買いたい（進行中の活動に表示）
+    // 自分の公開中の売りたい・買いたい（カード表示用にフル取得）
     memberId
       ? prisma.offering.findMany({
           where: { memberId, isPublic: true, title: { not: "" } },
           orderBy: { updatedAt: "desc" },
-          take: 5,
-          select: { id: true, title: true, direction: true, updatedAt: true },
+          take: 4,
         })
       : Promise.resolve([]),
   ]);
@@ -189,24 +188,9 @@ export default async function DashboardPage() {
       at: p.updatedAt,
       priority: 1,
     })),
-    // 自分の公開中の売りたい・買いたい（閲覧・興味あり・問い合わせの反響つき）
-    ...myOfferings.map((o) => {
-      const views = viewsByOffering.get(o.id) ?? 0;
-      const favs = favsByOffering.get(o.id) ?? 0;
-      const inquiries = inquiriesByOffering.get(o.id) ?? 0;
-      return {
-        title: o.title,
-        meta: `${o.direction === "GIVE" ? "売りたい" : "買いたい"} ・ 閲覧 ${views}回 ・ 興味あり ${favs}人 ・ 最終更新 ${fmtShortDate(o.updatedAt)}`,
-        status: inquiries > 0 ? `問い合わせ ${inquiries}件` : "公開中",
-        statusCls: inquiries > 0 ? STATUS_ORANGE : STATUS_GREEN,
-        href: `/ledger/${o.id}`,
-        at: o.updatedAt,
-        priority: inquiries > 0 ? 0 : 1,
-      };
-    }),
   ]
     .sort((a, b) => a.priority - b.priority || b.at.getTime() - a.at.getTime())
-    .slice(0, 5);
+    .slice(0, 3);
 
   // ── プロフィール進捗（100%かつ審査済みなら非表示）──
   // 完成度が低いうち（40%未満）は1行ではなく目立つカードで促す（ユーザー指示 2026-08-10）。
@@ -258,7 +242,7 @@ export default async function DashboardPage() {
     alerts.push({ icon: "💳", label: "お支払いのお手続きが必要です", cta: "手続きへ", href: "/billing" });
   }
 
-  const viewMap = await views24hMap(recommended.map((o) => o.id));
+  const viewMap = await views24hMap([...recommended.map((o) => o.id), ...myOfferingIds]);
   const [newest, ...restAnnouncements] = announcements;
 
   return (
@@ -395,6 +379,42 @@ export default async function DashboardPage() {
               </div>
             )}
           </section>
+
+          {/* あなたの公開中の案件（台帳と同じカード表示＋反響） */}
+          {myOfferings.length > 0 ? (
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className={h2Cls}>あなたの公開中の案件</h2>
+                <Link href="/ledger" className="text-[13px] font-bold text-[var(--green-d)]">
+                  すべて見る →
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {myOfferings.map((o) => {
+                  const views = viewsByOffering.get(o.id) ?? 0;
+                  const favs = favsByOffering.get(o.id) ?? 0;
+                  const inquiries = inquiriesByOffering.get(o.id) ?? 0;
+                  return (
+                    <div key={o.id}>
+                      <OfferingCard o={{ ...o, views24h: viewMap.get(o.id) ?? 0 }} />
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--muted)]">
+                        {inquiries > 0 ? (
+                          <span className="rounded-full bg-[#FAF0D6] px-2.5 py-0.5 font-bold text-[#B77F0B]">
+                            📩 問い合わせ {inquiries}件
+                          </span>
+                        ) : null}
+                        <span>閲覧 {views}回</span>
+                        <span>興味あり {favs}人</span>
+                        <Link href={`/ledger/${o.id}/edit`} className="ml-auto font-bold text-[var(--green-d)] underline">
+                          編集
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           {/* おすすめ案件 */}
           <section>
