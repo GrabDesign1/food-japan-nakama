@@ -8,6 +8,7 @@
 import { useActionState, useState } from "react";
 import { saveOffering, createOffering, type OfferingState } from "../actions";
 import { OfferingImageUploader } from "./OfferingImageUploader";
+import { TempImageUploader } from "./TempImageUploader";
 import { OfferingSlotImage } from "./OfferingSlotImage";
 import {
   CATEGORY_KEYS,
@@ -103,6 +104,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const [itemCondition, setItemCondition] = useState(offering.itemCondition ?? "");
   const [storageType, setStorageType] = useState(offering.storageType ?? "");
   const [deadline, setDeadline] = useState(offering.applicationDeadline ?? "");
+  // 新規作成モード：一時アップロードした写真（保存時に案件へ紐付け）
+  const [tempImages, setTempImages] = useState<string[]>([]);
 
   const structured = isStructured(category);
   const food = isFoodCategory(category);
@@ -157,11 +160,14 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           </p>
         </div>
 
-        {/* 画像（新規作成時は保存後に追加） */}
+        {/* 画像（新規作成時は一時アップロード→保存時に自動で紐付け） */}
         {isCreate ? (
-          <div className="rounded-md border border-dashed border-[var(--line)] bg-[var(--canvas)] p-4 text-[12px] text-[var(--muted)]">
-            📷 写真は「下書きを保存」した後に追加できます（商品の状態や量が分かる写真を3枚程度推奨）。
-          </div>
+          <>
+            <TempImageUploader images={tempImages} onChange={setTempImages} />
+            {tempImages.map((u) => (
+              <input key={u} type="hidden" name="tempImageUrls" value={u} />
+            ))}
+          </>
         ) : (
           <OfferingImageUploader offeringId={offering.id as string} images={offering.imageUrls} />
         )}
@@ -562,7 +568,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-4">
           <button type="submit" disabled={pending} className={btn("primary")}>
-            {pending ? "保存中…" : isCreate ? "下書きを保存して写真の追加へ" : "保存する"}
+            {pending ? "保存中…" : isCreate ? "下書きを保存する" : "保存する"}
           </button>
           {state.ok ? <span className="text-[12px] text-[var(--green-d)]">保存しました。</span> : null}
           {state.error ? <span className="text-[12px] text-[var(--red)]">{state.error}</span> : null}
@@ -576,9 +582,13 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
       <aside className="h-fit rounded-[12px] border border-[var(--line)] bg-white p-5 lg:sticky lg:top-20">
         <h2 className="text-[15px] font-bold text-[var(--ink)]">買い手からの見え方</h2>
         <div className="mt-3 grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-[var(--green-soft)]">
-          {offering.imageUrls[0] ? (
+          {(isCreate ? tempImages[0] : offering.imageUrls[0]) ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={offering.imageUrls[0]} alt="" className="h-full w-full object-cover" />
+            <img
+              src={isCreate ? tempImages[0] : offering.imageUrls[0]}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : (
             <span className="text-[36px] opacity-60">{meta?.icon ?? "📦"}</span>
           )}

@@ -33,8 +33,71 @@ async function ownOfferingOr404(offeringId: string) {
   return { su, member, offering };
 }
 
+/** 新規登録フォーム用：一時領域へ画像をアップロード（保存時に案件フォルダへ移動して紐付け）。 */
+export async function uploadTempOfferingImage(
+  formData: FormData
+): Promise<{ url?: string; error?: string }> {
+  const su = await getSessionUser();
+  if (!su) return { error: "ログインが必要です。" };
+  const member = await getOrCreateMemberForUser(su);
+  const file = formData.get("file");
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
+  const path = `offerings/tmp/${member.id}/${crypto.randomUUID()}.${v.ext}`;
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.storage
+    .from(BUCKET)
+    .upload(path, file as File, { contentType: v.contentType });
+  if (error) return { error: `アップロード失敗：${error.message}` };
+  const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
+/** 新規登録フォーム用：一時画像の取消（自分の一時フォルダ配下のみ）。 */
+export async function removeTempOfferingImage(url: string): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  const member = await getOrCreateMemberForUser(su);
+  const path = storagePathFromUrl(url, BUCKET, `offerings/tmp/${member.id}/`);
+  if (!path) return;
+  const admin = createSupabaseAdminClient();
+  await admin.storage.from(BUCKET).remove([path]).catch(() => {});
+}
+
+/** 一時画像を案件フォルダへ移動して紐付ける（最大6枚・自分の一時フォルダ配下のみ）。 */
+async function attachTempImages(
+  memberId: string,
+  offeringId: string,
+  tempUrls: string[]
+): Promise<void> {
+  if (!tempUrls.length) return;
+  const admin = createSupabaseAdminClient();
+  const current = await prisma.offering.findUnique({
+    where: { id: offeringId },
+    select: { imageUrls: true },
+  });
+  const urls: string[] = [...(current?.imageUrls ?? [])];
+  for (const u of tempUrls) {
+    if (urls.length >= 6) break;
+    const from = storagePathFromUrl(u, BUCKET, `offerings/tmp/${memberId}/`);
+    if (!from) continue;
+    const name = from.split("/").pop();
+    if (!name) continue;
+    const to = `offerings/${offeringId}/${name}`;
+    const { error } = await admin.storage.from(BUCKET).move(from, to);
+    if (error) {
+      console.error("[attachTempImages] 移動失敗:", error.message);
+      continue;
+    }
+    urls.push(admin.storage.from(BUCKET).getPublicUrl(to).data.publicUrl);
+  }
+  if (urls.length) {
+    await prisma.offering.update({ where: { id: offeringId }, data: { imageUrls: urls } });
+  }
+}
+
 /** 新規登録（/ledger/new のフォーム初回保存時に呼ばれる）。
- * 画面を開くだけではDBレコードを作らない。作成後は編集ページへ（写真はそこで追加）。 */
+ * 画面を開くだけではDBレコードを作らない。写真は一時アップロード→保存時に案件へ紐付け。 */
 export async function createOffering(
   direction: "GIVE" | "WANT",
   _prev: OfferingState,
@@ -48,6 +111,11 @@ export async function createOffering(
   const parsed = parseOfferingForm(formData, "食材・原料");
   if (parsed.error || !parsed.data) return { error: parsed.error ?? "保存に失敗しました。" };
 
+  const tempUrls = formData
+    .getAll("tempImageUrls")
+    .map((v) => String(v))
+    .slice(0, 6);
+
   // 二重送信ガード：同じタイトルの案件を直近1分以内に作っていたら、新規作成せずそれを開く
   const dup = await prisma.offering.findFirst({
     where: {
@@ -58,11 +126,15 @@ export async function createOffering(
     },
     select: { id: true },
   });
-  if (dup) redirect(`/ledger/${dup.id}/edit?created=1`);
+  if (dup) {
+    await attachTempImages(member.id, dup.id, tempUrls);
+    redirect(`/ledger/${dup.id}/edit?created=1`);
+  }
 
   const created = await prisma.offering.create({
     data: { memberId: member.id, direction, isPublic: false, ...parsed.data },
   });
+  await attachTempImages(member.id, created.id, tempUrls);
   redirect(`/ledger/${created.id}/edit?created=1`);
 }
 
