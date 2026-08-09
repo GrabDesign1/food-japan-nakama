@@ -24,6 +24,7 @@ Food Japan Summit の参加者を会員とする、通年運用の食の共創�
 - ホスティング: Vercel（team food-japan）。`package.json` の `"postinstall": "prisma generate"` 必須。
 
 ## 開発・運用の作法（重要）
+- **指示されていない変更をしない（最重要・ユーザー指示 2026-08-09）**: 依頼された箇所以外のコード・文言・デザイン・CSSに手を加えない。「ついで」の改善や整理は実装せず、提案として報告だけする。共通CSS・共通コンポーネントなど影響が波及する変更は、事前に影響範囲を伝えてから行い、変更後は複数の画面幅（1520/1200/1120/1000/375px 目安）で表示確認する。レイアウト崩れの実害が出たことがある。
 - 開発はこのフォルダ **`~/Development/food-japan-connect`**（OneDrive外）。
 - コマンド前に必ず: `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"`
 - push: `GIT_TERMINAL_PROMPT=0 git push origin main`（osxkeychain に認証あり）
