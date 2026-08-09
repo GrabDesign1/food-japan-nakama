@@ -93,10 +93,26 @@ export function AuthForm({
               placeholder="••••••••"
             />
           </label>
-          <label className="flex items-start gap-2 text-[12px] leading-5 text-[var(--ink-2)]">
-            <input type="checkbox" name="businessPurpose" required className="mt-0.5 accent-[var(--green)]" />
-            本サービスを事業として、または事業のために申し込みます。
-          </label>
+          <div className="flex items-start gap-2 text-[12px] leading-5 text-[var(--ink-2)]">
+            <input
+              type="checkbox"
+              id="businessPurpose"
+              name="businessPurpose"
+              required
+              className="mt-0.5 accent-[var(--green)]"
+            />
+            <label htmlFor="businessPurpose">
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener"
+                className="text-[var(--green-d)] underline"
+              >
+                利用規約
+              </Link>
+              を読み、本サービスを事業として、または事業のために申し込みます。
+            </label>
+          </div>
         </>
       ) : null}
 
