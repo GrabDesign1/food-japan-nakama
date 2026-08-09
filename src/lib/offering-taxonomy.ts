@@ -30,7 +30,7 @@ export function isStructured(key: string): boolean {
 }
 
 // 数量の単位・期間（食材・原料の構造化用）
-export const AMOUNT_UNITS = ["t", "kg", "g", "ケース", "箱", "個", "本", "パック", "L"];
+export const AMOUNT_UNITS = ["t", "kg", "g", "ケース", "箱", "個", "本", "パック", "L", "人", "1ユーザー"];
 export const AMOUNT_PERIODS = ["年", "月", "週", "日", "一括"];
 
 // 提供時期・希望時期
