@@ -228,8 +228,14 @@ export default function ProducePage() {
               <br />
               つくった商品を、継続して売れるようにしたい。
             </p>
-            <p className="mt-4 max-w-[610px] text-[14px] leading-8 text-white/90 sm:text-[15px]">
-              FOOD JAPAN NAKAMAは、そんな食の事業に実務で入ります。課題を整理し、必要な相手を集め、商品企画、試作、ブランドづくり、テスト販売、販路開拓まで一緒に進める個別支援です。
+            <p className="mt-4 max-w-[610px] text-[14px] leading-7 text-white/90">
+              FOOD JAPAN NAKAMAの「共創プロデュース」は、食に関する商品・事業づくりを個別に支援するサービスです。
+            </p>
+            <p className="mt-3 max-w-[610px] text-[14px] leading-7 text-white/90">
+              課題を整理し、必要な企業や専門家をつなぎながら、商品企画、加工会社・OEM先探し、試作、パッケージ、テスト販売、販路開拓まで一緒に進めます。
+            </p>
+            <p className="mt-3 max-w-[610px] text-[14px] leading-7 text-white/90">
+              アイデアで終わらせず、実際に売れる商品と、継続できる事業をつくります。
             </p>
             <div className="mt-7">
               <Link href={CTA_HREF} className={btn("primary", "lg")}>今の課題を相談する</Link>
