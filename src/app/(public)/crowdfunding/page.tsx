@@ -159,10 +159,10 @@ export default function CrowdfundingPage() {
       <section className="bg-[#f8f8f5] px-5 py-16 sm:py-[88px]">
         <div className="mx-auto grid max-w-[1080px] items-center gap-8 sm:grid-cols-[1.15fr_.85fr] sm:gap-12">
           <Image
-            src="/crowdfunding/case-collaboration.jpg"
-            alt="食品企業2社による共同プロジェクトのデザイン案"
-            width={1020}
-            height={1320}
+            src="/crowdfunding/case-beer.jpg"
+            alt="宮崎・青島発クラフトビールの応援購入プロジェクト（目標を上回る応援購入を達成）"
+            width={1380}
+            height={1296}
             sizes="(max-width: 640px) 100vw, 55vw"
             className="h-auto w-full shadow-[0_18px_44px_rgba(0,0,0,0.12)]"
           />
@@ -171,12 +171,12 @@ export default function CrowdfundingPage() {
               共創事業プロジェクト事例
             </span>
             <h3 className="mt-4 font-serif text-[22px] leading-[1.55] text-[var(--ink)] sm:text-[26px]">
-              A社と食品企業による、
+              地方創生を目的とした、
               <br />
-              ブランド横断プロジェクト。
+              クラフトビールメーカーとのプロジェクト。
             </h3>
             <p className="mt-3 text-[14px] leading-8 text-[var(--ink-2)]">
-              異なる強みを持つ商品を一つの応援購入企画にまとめ、それぞれのファンへ新しい購入体験を提案。クラウドファンディングを、販売・認知拡大・新規顧客接点を同時につくる場として設計しました。
+              宮崎・青島のサーフカルチャーから生まれたクラフトビールを、Makuakeでの応援購入企画として展開。目標を上回る支援を集め、地域発ブランドの最初のファンづくりと販売実績につながりました。
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2 text-[12px]">
               <span className="border border-[var(--line)] bg-white px-3 py-2">商品・テーマ</span>
@@ -188,7 +188,7 @@ export default function CrowdfundingPage() {
               <span className="border border-[var(--line)] bg-white px-3 py-2">新しい市場</span>
             </div>
             <p className="mt-4 text-[11px] leading-6 text-[var(--muted)]">
-              ※掲載画面・数値・社名は企画検討用の表現です。実績値ではありません。
+              ※数値はMakuake掲載プロジェクト（終了済み）の公開情報です。
             </p>
           </div>
         </div>
