@@ -221,7 +221,7 @@ export default async function PublicHome() {
           <SectionHead title="FOOD JAPAN NAKAMA の3つのサービス" sub="役割と料金が混ざらないよう、目的で選べます" />
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { t: "NAKAMA", d: "自分で出会い、学ぶ月額会員サービス。", price: "月額22,000円（税込）", href: "/about", cta: "詳細はこちら" },
+              { t: "NAKAMAモデル", d: "自分で出会い、自分で学び共創相手を探す月額会員サービス。", price: "月額22,000円（税込）", href: "/about", cta: "詳細はこちら" },
               { t: "共創プロデュース", d: "事務局の人間がコーディネートし、企画・実証・事業化まで一緒に進める個別支援。", price: "", href: "/produce", cta: "詳細はこちら" },
               { t: "クラウドファンディング支援", d: "Makuake等を活用してマーケティングをしましょう！クラファン掲載の代行を行います。", price: "個別見積", href: "/crowdfunding", cta: "詳細はこちら" },
             ].map((s) => (
