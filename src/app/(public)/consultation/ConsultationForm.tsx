@@ -11,6 +11,7 @@ const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 const SERVICE_OPTIONS = [
   { value: "produce", label: "共創プロデュースを相談したい" },
   { value: "crowdfunding", label: "クラウドファンディング支援を相談したい" },
+  { value: "food-loss", label: "フードロスについて相談したい" },
   { value: "unsure", label: "どちらが合うか相談したい" },
 ];
 const BUDGETS = ["15万円未満", "15万〜40万円", "40万〜100万円", "100万円以上", "未定"];

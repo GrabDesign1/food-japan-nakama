@@ -6,7 +6,7 @@ import { sendConsultationEmails } from "@/lib/email";
 
 export type ConsultationState = { ok?: boolean; refNo?: string; error?: string };
 
-const SERVICE_TYPES = new Set(["produce", "crowdfunding", "unsure"]);
+const SERVICE_TYPES = new Set(["produce", "crowdfunding", "food-loss", "unsure"]);
 
 function makeRefNo(): string {
   const d = new Date();

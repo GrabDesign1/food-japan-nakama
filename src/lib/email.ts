@@ -108,6 +108,7 @@ export async function notifyAdminMemberRegistered(params: {
 // 個別相談（共創プロデュース／クラファン支援）の通知＋自動返信。
 const CONSULT_LABEL: Record<string, string> = {
   produce: "共創プロデュース",
+  "food-loss": "フードロス",
   crowdfunding: "クラウドファンディング支援",
   unsure: "どちらが合うか相談",
 };

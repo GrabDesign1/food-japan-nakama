@@ -7,6 +7,7 @@ import { updateConsultationStatus } from "../consultation-actions";
 
 const SERVICE_LABEL: Record<string, string> = {
   produce: "共創プロデュース",
+  "food-loss": "フードロス",
   crowdfunding: "クラファン支援",
   unsure: "どちらか相談",
 };
