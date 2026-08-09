@@ -9,7 +9,7 @@ const PUBLIC_PATHS = [
   "/terms", "/privacy", "/tokushoho",
   "/produce", "/crowdfunding", "/consultation", "/learn",
   // SEO/AIO: クローラ向けファイル（要公開）
-  "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg",
+  "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
 ];
 
 export async function middleware(request: NextRequest) {
