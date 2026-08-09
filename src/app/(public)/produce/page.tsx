@@ -72,15 +72,87 @@ const DOMAINS = [
   },
 ];
 
-// 6. プロジェクトの流れ（7段階）
+// 6. プロジェクトの流れ（7段階）— icon はシンプルな線画SVGのパス
 const FLOW = [
-  { no: "01", t: "NAKAMAで出会い、相談する", d: "課題、地域資源、実現したいことを共有します。" },
-  { no: "02", t: "共創テーマを見つける", d: "地域資源と市場のニーズを重ね、新しい商品や事業の可能性を探ります。" },
-  { no: "03", t: "共創相手を見つける", d: "必要な技術、製造機能、販路、知見を持つ企業や専門家とつながります。" },
-  { no: "04", t: "個別プロジェクトを組成する", d: "目的、成果、役割、予算、収益構造、スケジュールを整理し、実行チームをつくります。" },
-  { no: "05", t: "6次産業化・商品開発を実行する", d: "商品企画、試作、ブランド設計、製造・品質・物流体制を具体化します。" },
-  { no: "06", t: "テスト販売で市場性を検証する", d: "実際の購入行動から、需要、価格、顧客層、評価、改善点を確かめます。" },
-  { no: "07", t: "販路を開拓し、継続事業へ育てる", d: "小売、流通、飲食店、ECなどへの販路を広げ、持続的に利益を生む事業へ育てます。" },
+  {
+    no: "01",
+    t: "NAKAMAで出会い、相談する",
+    d: "課題、地域資源、実現したいことを共有します。",
+    icon: (
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    ),
+  },
+  {
+    no: "02",
+    t: "共創テーマを見つける",
+    d: "地域資源と市場のニーズを重ね、新しい商品や事業の可能性を探ります。",
+    icon: (
+      <>
+        <path d="M9 18h6" />
+        <path d="M10 21h4" />
+        <path d="M12 3a6 6 0 0 0-3.5 10.9c.7.6 1 1.3 1 2.1h5c0-.8.3-1.5 1-2.1A6 6 0 0 0 12 3z" />
+      </>
+    ),
+  },
+  {
+    no: "03",
+    t: "共創相手を見つける",
+    d: "必要な技術、製造機能、販路、知見を持つ企業や専門家とつながります。",
+    icon: (
+      <>
+        <circle cx="11" cy="11" r="7" />
+        <path d="m21 21-4.35-4.35" />
+      </>
+    ),
+  },
+  {
+    no: "04",
+    t: "個別プロジェクトを組成する",
+    d: "目的、成果、役割、予算、収益構造、スケジュールを整理し、実行チームをつくります。",
+    icon: (
+      <>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+        <rect x="8" y="2" width="8" height="4" rx="1" />
+        <path d="M9 12h6" />
+        <path d="M9 16h6" />
+      </>
+    ),
+  },
+  {
+    no: "05",
+    t: "6次産業化・商品開発を実行する",
+    d: "商品企画、試作、ブランド設計、製造・品質・物流体制を具体化します。",
+    icon: (
+      <>
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        <path d="m3.3 7 8.7 5 8.7-5" />
+        <path d="M12 22V12" />
+      </>
+    ),
+  },
+  {
+    no: "06",
+    t: "テスト販売で市場性を検証する",
+    d: "実際の購入行動から、需要、価格、顧客層、評価、改善点を確かめます。",
+    icon: (
+      <>
+        <path d="M12 20V10" />
+        <path d="M18 20V4" />
+        <path d="M6 20v-4" />
+      </>
+    ),
+  },
+  {
+    no: "07",
+    t: "販路を開拓し、継続事業へ育てる",
+    d: "小売、流通、飲食店、ECなどへの販路を広げ、持続的に利益を生む事業へ育てます。",
+    icon: (
+      <>
+        <path d="m23 6-9.5 9.5-5-5L1 18" />
+        <path d="M17 6h6v6" />
+      </>
+    ),
+  },
 ];
 
 // 7. こんな課題に対応します
@@ -386,10 +458,24 @@ export default function ProducePage() {
           </h2>
           <div className="mt-9 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
             {FLOW.map((f) => (
-              <div key={f.no} className="border border-white/25 bg-white/5 px-5 py-5">
-                <span className="font-serif text-[12px] text-[var(--orange)]">STEP {f.no}</span>
-                <h3 className="mt-2 text-[14px] font-bold leading-6">{f.t}</h3>
-                <p className="mt-2 text-[12px] leading-6 text-[#dce8e2]">{f.d}</p>
+              <div key={f.no} className="border border-white/25 bg-white/5 px-5 py-6 text-center">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-white/40 bg-white/10">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-7 w-7 text-white"
+                    aria-hidden
+                  >
+                    {f.icon}
+                  </svg>
+                </div>
+                <span className="mt-3 block font-serif text-[12px] text-[var(--orange)]">STEP {f.no}</span>
+                <h3 className="mt-1.5 text-[14px] font-bold leading-6">{f.t}</h3>
+                <p className="mt-2 text-left text-[12px] leading-6 text-[#dce8e2]">{f.d}</p>
               </div>
             ))}
           </div>
