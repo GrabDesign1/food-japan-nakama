@@ -333,7 +333,7 @@ export default function CrowdfundingPage() {
         <div className="mx-auto max-w-[1080px]">
           <Eyebrow>RESPONSIBILITY</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            実行前に、誰が何を担うかを決めます。
+            クラファンの役割分担
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="border border-[var(--line)] p-6">
