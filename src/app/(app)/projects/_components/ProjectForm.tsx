@@ -34,6 +34,7 @@ export function ProjectForm({ project }: { project: ProjectData }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [imgPending, startTransition] = useTransition();
   const [imgError, setImgError] = useState<string | null>(null);
+  const [imgWarning, setImgWarning] = useState<string | null>(null);
   const [imgList, setImgList] = useState<string[]>(project.imageUrls);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
@@ -53,9 +54,11 @@ export function ProjectForm({ project }: { project: ProjectData }) {
     if (!file) return;
     const fd = new FormData();
     fd.append("file", file);
+    setImgWarning(null);
     startTransition(async () => {
       const res = await uploadProjectImage(project.id, fd);
       if (res.error) setImgError(res.error);
+      if (res.warning) setImgWarning(res.warning);
       if (fileRef.current) fileRef.current.value = "";
     });
   }
@@ -139,6 +142,9 @@ export function ProjectForm({ project }: { project: ProjectData }) {
         </div>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPick} />
         {imgError ? <p className="text-[12px] text-[var(--red)]">{imgError}</p> : null}
+        {imgWarning ? (
+          <p className="rounded-md bg-[#FAF0D6] px-3 py-2 text-[12px] leading-5 text-[#7A5A0B]">⚠️ {imgWarning}</p>
+        ) : null}
       </div>
 
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">

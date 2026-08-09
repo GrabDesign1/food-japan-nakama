@@ -18,6 +18,7 @@ export function TempImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   function move(from: number, to: number) {
@@ -32,11 +33,13 @@ export function TempImageUploader({
     const file = e.target.files?.[0];
     if (!file) return;
     setError(null);
+    setWarning(null);
     const fd = new FormData();
     fd.append("file", file);
     startTransition(async () => {
       const res = await uploadTempOfferingImage(fd);
       if (res.error) setError(res.error);
+      if (res.warning) setWarning(res.warning);
       if (res.url) onChange([...images, res.url]);
       if (inputRef.current) inputRef.current.value = "";
     });
@@ -123,6 +126,9 @@ export function TempImageUploader({
       </div>
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={onPick} />
       {error ? <p className="text-[12px] text-[var(--red)]">{error}</p> : null}
+      {warning ? (
+        <p className="rounded-md bg-[#FAF0D6] px-3 py-2 text-[12px] leading-5 text-[#7A5A0B]">⚠️ {warning}</p>
+      ) : null}
     </div>
   );
 }

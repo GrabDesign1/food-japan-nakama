@@ -5,22 +5,65 @@
 
 export type DetectedImage = { ext: string; contentType: string };
 
+// 表示がぼやけない目安の横幅。これ未満は警告を返す（受け付けは許可する）
+export const RECOMMENDED_MIN_WIDTH = 800;
+
 export async function validateImageFile(
   file: unknown,
   maxBytes = 5 * 1024 * 1024
-): Promise<{ ok: true; ext: string; contentType: string } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; ext: string; contentType: string; width: number | null; warning?: string }
+  | { ok: false; error: string }
+> {
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: "画像ファイルを選んでください。" };
   }
   if (file.size > maxBytes) {
     return { ok: false, error: `画像は${Math.floor(maxBytes / (1024 * 1024))}MBまでにしてください。` };
   }
-  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  const sig = detectImage(head);
+  const buf = Buffer.from(await file.arrayBuffer());
+  const sig = detectImage(new Uint8Array(buf.subarray(0, 16)));
   if (!sig) {
     return { ok: false, error: "対応形式は JPEG / PNG / WebP / GIF / AVIF です。" };
   }
-  return { ok: true, ...sig };
+  const width = parseImageWidth(buf, sig.ext);
+  const warning =
+    width != null && width < RECOMMENDED_MIN_WIDTH
+      ? `この画像は横${width}pxと小さいため、拡大表示でぼやける可能性があります。横1200px以上の写真がきれいに表示されます。`
+      : undefined;
+  return { ok: true, ...sig, width, warning };
+}
+
+/** 画像の横幅（px）を取得。解析できない形式は null。 */
+function parseImageWidth(buf: Buffer, ext: string): number | null {
+  try {
+    if (ext === "png" && buf.length >= 24) return buf.readUInt32BE(16);
+    if (ext === "gif" && buf.length >= 10) return buf.readUInt16LE(6);
+    if (ext === "webp" && buf.length >= 30) {
+      const fmt = buf.subarray(12, 16).toString();
+      if (fmt === "VP8X") return 1 + buf.readUIntLE(24, 3);
+      if (fmt === "VP8 ") return buf.readUInt16LE(26) & 0x3fff;
+      if (fmt === "VP8L") return ((buf.readUInt32LE(21) & 0x3fff) >>> 0) + 1;
+    }
+    if (ext === "jpg") {
+      // SOFマーカーを走査して寸法を得る
+      let i = 2;
+      while (i + 9 < buf.length) {
+        if (buf[i] !== 0xff) {
+          i++;
+          continue;
+        }
+        const marker = buf[i + 1];
+        if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+          return buf.readUInt16BE(i + 7);
+        }
+        i += 2 + buf.readUInt16BE(i + 2);
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 function detectImage(b: Uint8Array): DetectedImage | null {

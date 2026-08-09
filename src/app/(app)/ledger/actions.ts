@@ -40,7 +40,7 @@ async function ownOfferingOr404(offeringId: string) {
 /** 新規登録フォーム用：一時領域へ画像をアップロード（保存時に案件フォルダへ移動して紐付け）。 */
 export async function uploadTempOfferingImage(
   formData: FormData
-): Promise<{ url?: string; error?: string }> {
+): Promise<{ url?: string; error?: string; warning?: string }> {
   const su = await getSessionUser();
   if (!su) return { error: "ログインが必要です。" };
   const member = await getOrCreateMemberForUser(su);
@@ -54,7 +54,7 @@ export async function uploadTempOfferingImage(
     .upload(path, file as File, { contentType: v.contentType });
   if (error) return { error: `アップロード失敗：${error.message}` };
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl };
+  return { url: data.publicUrl, warning: v.warning };
 }
 
 /** 新規登録フォーム用：一時画像の取消（自分の一時フォルダ配下のみ）。 */
@@ -142,7 +142,7 @@ export async function createOffering(
   redirect(`/ledger/${created.id}/edit?created=1`);
 }
 
-export type OfferingState = { ok?: boolean; error?: string };
+export type OfferingState = { ok?: boolean; error?: string; warning?: string };
 
 type ParsedOffering = {
   category: string;
@@ -362,7 +362,7 @@ export async function uploadOfferingImage(
     data: { imageUrls: [...offering.imageUrls, data.publicUrl] },
   });
   revalidatePath(`/ledger/${offeringId}/edit`);
-  return { ok: true };
+  return { ok: true, warning: v.warning };
 }
 
 type SlotKey = "description" | "points";

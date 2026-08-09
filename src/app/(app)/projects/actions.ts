@@ -40,7 +40,7 @@ export async function createDraftProject(): Promise<void> {
   redirect(`/projects/${created.id}/edit`);
 }
 
-export type ProjectState = { ok?: boolean; error?: string };
+export type ProjectState = { ok?: boolean; error?: string; warning?: string };
 
 export async function saveProject(
   projectId: string,
@@ -124,7 +124,7 @@ export async function uploadProjectImage(
     data: { imageUrls: [...owned.project.imageUrls, data.publicUrl] },
   });
   revalidatePath(`/projects/${projectId}/edit`);
-  return { ok: true };
+  return { ok: true, warning: v.warning };
 }
 
 /** 画像の並べ替え（1枚目=メイン画像）。既存URLの並べ替えのみ許可。 */
