@@ -22,6 +22,7 @@ export function PublicTopBar() {
           <Link href="/produce" className="hover:text-[var(--green-d)]">共創プロデュース</Link>
           <Link href="/food-loss" className="hover:text-[var(--green-d)]">食品ロス支援</Link>
           <Link href="/crowdfunding" className="hover:text-[var(--green-d)]">クラウドファンディング支援</Link>
+          <Link href="/pricing" className="hover:text-[var(--green-d)]">料金</Link>
         </nav>
         <div className="ml-auto flex items-center gap-2 lg:ml-4">
           <Link href="/login" className={`${btn("secondary", "sm")} max-sm:hidden`}>

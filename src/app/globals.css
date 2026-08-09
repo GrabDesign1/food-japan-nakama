@@ -67,7 +67,8 @@ body {
   position: relative;
   z-index: 4;
   width: min(1540px, calc(100% - 72px));
-  height: 96px;
+  min-height: 96px;
+  padding: 10px 0;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -97,7 +98,7 @@ body {
   letter-spacing: .13em;
 }
 
-.fjn-nav { display: flex; align-items: center; gap: clamp(14px, 1.8vw, 40px); }
+.fjn-nav { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px clamp(14px, 1.8vw, 40px); }
 .fjn-nav a {
   color: #101010;
   text-decoration: none;
@@ -218,9 +219,9 @@ body {
   display: none; /* オーバーレイなし（画像はそのまま表示） */
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1500px) {
   /* 項目が増えても1行で収まるよう、狭い幅では詰める */
-  .fjn-nav { gap: 12px; }
+  .fjn-nav { gap: 8px 12px; }
   .fjn-nav a { font-size: 13px; }
   .fjn-nav .fjn-nav__login { min-width: 0; padding: 14px 18px; }
 }
@@ -231,11 +232,9 @@ body {
   .fjn-hero__copy { padding-left: 0; }
 }
 
-@media (max-width: 1024px) {
-  .fjn-nav a:not(.fjn-nav__login) { display: none; }
-}
 
 @media (max-width: 820px) {
+  .fjn-nav a:not(.fjn-nav__login) { display: none; }
   .fjn-hero { min-height: auto; }
   .fjn-hero__header { width: calc(100% - 32px); height: 86px; }
   .fjn-brand { gap: 10px; }
