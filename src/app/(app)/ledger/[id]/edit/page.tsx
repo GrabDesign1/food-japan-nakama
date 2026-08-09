@@ -8,6 +8,7 @@ import { OfferingForm, type OfferingData } from "../../_components/OfferingForm"
 import { togglePublish, deleteOffering } from "../../actions";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { ConfirmActionButton } from "@/components/ConfirmActionButton";
+import { missingForPublish } from "@/lib/offering-publish";
 import { btn, h1Cls } from "@/lib/ui";
 
 function toDateInput(d: Date | null): string | null {
@@ -126,10 +127,23 @@ export default async function OfferingEditPage({
           下書きを保存しました。写真を追加し、内容を確認できたら右上の「公開する」で掲載できます。
         </p>
       ) : null}
-      {sp.missing ? (
-        <p className="rounded-[10px] border border-[#E7C7BE] bg-[#FBF1EE] px-4 py-3 text-[13px] leading-6 text-[var(--red)]">
-          公開するには、次の項目の入力が必要です：<b>{sp.missing}</b>
-        </p>
+      {/* 公開前チェック：URLのパラメータではなく、保存済みの現在値から毎回判定する（揃ったら消える） */}
+      {sp.missing && !offering.isPublic ? (
+        (() => {
+          const missingNow = missingForPublish(offering);
+          return missingNow.length ? (
+            <p className="rounded-[10px] border border-[#E7C7BE] bg-[#FBF1EE] px-4 py-3 text-[13px] leading-6 text-[var(--red)]">
+              公開するには、次の項目の入力が必要です：<b>{missingNow.join("・")}</b>
+              <span className="mt-1 block text-[12px] text-[var(--ink-2)]">
+                入力したら「保存する」を押すと、この表示が更新されます。
+              </span>
+            </p>
+          ) : (
+            <p className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[13px] text-[var(--green-d)]">
+              ✓ 必須項目がすべて入力されました。右上の「公開する」から公開できます。
+            </p>
+          );
+        })()
       ) : null}
 
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
