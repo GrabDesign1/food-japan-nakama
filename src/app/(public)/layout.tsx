@@ -64,7 +64,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         </div>
         <div className="border-t border-white/60">
           <div className="mx-auto flex max-w-[1100px] flex-col gap-2 px-4 py-4 text-[11px] text-[var(--muted)] sm:flex-row sm:items-center">
-            <span>© 株式会社グラブデザイン</span>
+            <span>© FOOD JAPAN SUMMIT実行委員会</span>
             <span className="sm:ml-auto flex items-center gap-4">
               <Link href="/login" className="hover:underline">ログイン</Link>
               <Link href="/signup" className="hover:underline">月額会員に申し込む</Link>
