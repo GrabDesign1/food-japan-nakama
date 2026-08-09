@@ -402,7 +402,7 @@ export default function CrowdfundingPage() {
           <div className="mt-7">
             <Link
               href={CTA_HREF}
-              className="inline-block rounded-lg bg-white px-7 py-3.5 text-[14px] font-semibold text-[var(--green-d)] transition hover:bg-[var(--green-soft)]"
+              className="inline-block rounded-lg bg-[var(--orange)] px-10 py-4 text-[16px] font-bold text-[var(--ink)] shadow-[0_10px_28px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:brightness-105"
             >
               クラファン活用支援を相談する
             </Link>
