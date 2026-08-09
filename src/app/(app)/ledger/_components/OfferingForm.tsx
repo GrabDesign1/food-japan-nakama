@@ -140,13 +140,19 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
     : null;
   const meta = categoryMeta(category);
 
-  const previewRows: [string, string | null][] = [
-    ["希望価格", previewPrice],
-    ["提供量", previewAmount],
-    ["最小取引量", minOrderText || null],
-    ["状態", previewCondition],
-    ["発送元", area || null],
-    ["募集期限", previewDeadline],
+  // プレビュー行はカテゴリに連動させる（入力欄が無い項目は表示しない）。
+  // 未入力時は該当の入力欄へジャンプできるリンクを出す。
+  const previewRows: { label: string; value: string | null; anchor: string }[] = [
+    { label: "希望価格", value: previewPrice, anchor: "f-price" },
+    { label: "提供量", value: previewAmount, anchor: "f-amount" },
+    ...(isGive && food
+      ? [{ label: "最小取引量", value: minOrderText || null, anchor: "f-minorder" }]
+      : []),
+    ...(isGive && goods
+      ? [{ label: "状態", value: previewCondition, anchor: "f-condition" }]
+      : []),
+    { label: "発送元", value: area || null, anchor: "f-area" },
+    { label: "募集期限", value: previewDeadline, anchor: "f-deadline" },
   ];
 
   return (
@@ -188,7 +194,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               ))}
             </select>
           </label>
-          <label className={labelCls}>
+          <label id="f-area" className={`${labelCls} scroll-mt-24`}>
             <span>
               発送元・受渡地域
               {isGive && goods ? <Req /> : <Opt />}
@@ -238,7 +244,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           desc={isGive ? "買い手が最初に確認する条件です。未確定の場合は「応相談」を選べます。" : undefined}
         />
 
-        <div>
+        <div id="f-price" className="scroll-mt-24">
           <div className="mb-1 text-[12px] text-[var(--ink-2)]">
             {isGive ? <span>希望価格<Req /></span> : <span>希望価格・予算感<Opt /></span>}
           </div>
@@ -291,7 +297,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         {/* 数量（C案：食材・原料は構造化） */}
         {structured ? (
-          <div>
+          <div id="f-amount" className="scroll-mt-24">
             <div className="mb-1 text-[12px] text-[var(--ink-2)]">
               提供可能量{isGive && food ? <Req /> : <Opt />}
               <span className="ml-2 text-[11px] text-[var(--muted)]">数値で登録すると範囲検索できます</span>
@@ -345,7 +351,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             </div>
           </div>
         ) : (
-          <label className={labelCls}>
+          <label id="f-amount" className={`${labelCls} scroll-mt-24`}>
             <span>数量・規模（自由記述）<Opt /></span>
             <input
               name="amountText"
@@ -359,7 +365,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         {isGive && food ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className={labelCls}>
+            <label id="f-minorder" className={`${labelCls} scroll-mt-24`}>
               <span>最小取引量<Req /></span>
               <input
                 name="minOrderText"
@@ -388,7 +394,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {isGive && goods ? (
-            <label className={labelCls}>
+            <label id="f-condition" className={`${labelCls} scroll-mt-24`}>
               <span>商品・原料の状態<Req /></span>
               <select
                 name="itemCondition"
@@ -434,7 +440,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               ))}
             </select>
           </label>
-          <label className={labelCls}>
+          <label id="f-deadline" className={`${labelCls} scroll-mt-24`}>
             <span>募集期限{isGive ? <Req /> : <Opt />}</span>
             <input
               name="applicationDeadline"
@@ -607,11 +613,17 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           {title || "（タイトル未入力）"}
         </div>
         <dl className="mt-3 border-t border-[var(--line)]">
-          {previewRows.map(([k, v]) => (
-            <div key={k} className="flex items-start justify-between gap-3 border-b border-[#EDF0EA] py-2">
-              <dt className="shrink-0 text-[12px] text-[var(--muted)]">{k}</dt>
-              <dd className={`m-0 text-right text-[12px] font-bold ${v ? "text-[var(--ink)]" : "text-[var(--muted)]"}`}>
-                {v ?? "未入力"}
+          {previewRows.map((r) => (
+            <div key={r.label} className="flex items-start justify-between gap-3 border-b border-[#EDF0EA] py-2">
+              <dt className="shrink-0 text-[12px] text-[var(--muted)]">{r.label}</dt>
+              <dd className="m-0 text-right text-[12px] font-bold">
+                {r.value ? (
+                  <span className="text-[var(--ink)]">{r.value}</span>
+                ) : (
+                  <a href={`#${r.anchor}`} className="font-bold text-[var(--green-d)] underline">
+                    入力する →
+                  </a>
+                )}
               </dd>
             </div>
           ))}
