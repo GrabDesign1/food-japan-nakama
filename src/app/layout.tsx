@@ -37,6 +37,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/og.jpg"],
   },
+  // サイト所有権の確認タグ（Bing Webmaster Tools。確認完了後も削除しない）
+  verification: {
+    other: { "msvalidate.01": "53A9B78DC52D0C4C5E9C7A7B9B4A982F" },
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
