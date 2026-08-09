@@ -10,16 +10,16 @@ import { btn } from "@/lib/ui";
 
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; section?: string };
 
-// 上位4項目＝利用者の主要行動。以下は「進行中の活動」「アカウント」にグループ化。
+// 上位＝利用者の主要行動。商談と商談ステータスの併記はやめ「進行中の活動」に一本化
+// （ボードは /deals 内の「ボードで見る」から到達）。
 const NAV: NavItem[] = [
   { label: "ホーム", href: "/dashboard", ready: true },
-  { label: "パートナーを探す", href: "/search", ready: true },
+  { label: "案件を探す", href: "/search", ready: true },
   { label: "案件を登録する", href: "/ledger", ready: true },
+  { label: "進行中の活動", href: "/deals", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
-  { label: "商談", href: "/deals", ready: true, section: "進行中の活動" },
-  { label: "商談ステータス", href: "/deals/board", ready: true, section: "進行中の活動" },
-  { label: "共創プロジェクト", href: "/projects", ready: true, section: "進行中の活動" },
-  { label: "お気に入り", href: "/favorites", ready: true, section: "進行中の活動" },
+  { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },
+  { label: "お気に入り", href: "/favorites", ready: true, section: "その他" },
   { label: "プロフィール", href: "/profile", ready: true, section: "アカウント" },
   { label: "プラン・お支払い", href: "/billing", ready: true, section: "アカウント" },
   { label: "事務局管理", href: "/admin", admin: true, ready: true, section: "アカウント" },

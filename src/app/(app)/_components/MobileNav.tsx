@@ -5,11 +5,11 @@ import Link from "next/link";
 
 type Item = { label: string; href: string; admin?: boolean; section?: string };
 
-// 下部固定ナビ（スマホ）。5項目・タップ領域44px以上。「その他」でドロワーを開く。
+// 下部固定ナビ（スマホ）。ホーム・探す・活動・メッセージの4項目＋その他（ドロワー）。タップ領域44px以上。
 const BOTTOM_ITEMS = [
   { href: "/dashboard", icon: "⌂", label: "ホーム" },
   { href: "/search", icon: "🔍", label: "探す" },
-  { href: "/ledger", icon: "＋", label: "登録" },
+  { href: "/deals", icon: "🤝", label: "活動" },
   { href: "/messages", icon: "✉️", label: "メッセージ" },
 ];
 
