@@ -168,7 +168,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-[760px]">
           <p className="text-[11px] tracking-[0.16em] text-[var(--green-d)]">MEMBERSHIP</p>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            一人では会えなかった人と、
+            一人では出会えなかった人と、
             <br className="hidden sm:block" />
             次の共創事業をつくろう。
           </h2>
@@ -177,8 +177,22 @@ export default function AboutPage() {
           </strong>
           <p className="mt-1 text-[13px] text-[var(--muted)]">税抜 20,000円</p>
           <p className="mx-auto mt-6 max-w-[560px] text-[14px] leading-7 text-[var(--ink-2)]">
-            プロフィール・商品・案件の掲載、相手探し、問い合わせ、会員向けセミナーをご利用いただけます。
+            会員になると、次のサービスをご利用いただけます。
           </p>
+          <ul className="mx-auto mt-4 inline-block max-w-[560px] text-left text-[14px] leading-7 text-[var(--ink-2)]">
+            {[
+              "会社・事業プロフィールの登録",
+              "商品・サービスのPR",
+              "商品情報・共創案件の掲載",
+              "共創相手の検索・問い合わせ",
+              "会員向けセミナーへの参加（オンライン・会場開催）",
+            ].map((s) => (
+              <li key={s} className="flex items-start gap-2.5">
+                <span aria-hidden className="mt-px font-bold text-[var(--green)]">✓</span>
+                {s}
+              </li>
+            ))}
+          </ul>
           <div className="mt-7">
             <Link href="/signup" className={btn("primary", "lg")}>月額会員に申し込む</Link>
           </div>
