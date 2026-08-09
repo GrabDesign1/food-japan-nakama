@@ -71,7 +71,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       {/* サイドバー（PCのみ。スマホはヘッダーのメニューから） */}
       <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex">
         <Link
-          href="/dashboard"
+          href="/"
           className="flex items-center gap-2.5 border-b border-white/12 px-5 pb-4 transition hover:opacity-80"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -126,7 +126,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--line)] bg-white px-4 py-3 md:px-8">
           {/* スマホ用：メニュー＋ブランド */}
           <MobileNav items={items.filter((i) => i.ready).map((i) => ({ label: i.label, href: i.href, admin: i.admin }))} unread={unread} />
-          <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
+          <Link href="/" className="flex items-center gap-2 md:hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.png" alt="" width={24} height={24} />
             <span className="font-serif text-[13px] tracking-[0.08em] text-[var(--ink)]">
