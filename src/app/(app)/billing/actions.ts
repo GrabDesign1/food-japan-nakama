@@ -65,7 +65,8 @@ export async function startCheckout(
         {
           price_data: {
             currency: "jpy",
-            product_data: { name: `FOOD JAPAN NAKAMA ${plan.name}プラン` },
+            // plan.name には既に NAKAMA を含むため、重複しないよう FOOD JAPAN のみ前置
+            product_data: { name: `FOOD JAPAN ${plan.name}` },
             unit_amount: plan.amount,
             recurring: { interval: "month" },
           },
