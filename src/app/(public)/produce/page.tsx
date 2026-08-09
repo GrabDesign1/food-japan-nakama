@@ -249,7 +249,7 @@ export default function ProducePage() {
           </h2>
           <ul className="mt-7 flex flex-col gap-2.5">
             {STUCK_POINTS.map((s) => (
-              <li key={s} className="flex items-start gap-2.5 border border-[var(--line)] bg-white px-4 py-3 text-[14px] leading-7 text-[var(--ink-2)]">
+              <li key={s} className="flex items-start gap-2.5 border border-[var(--line)] bg-white px-4 py-3 text-[14px] font-bold leading-7 text-[var(--ink)]">
                 <span aria-hidden className="mt-0.5 font-bold text-[var(--green)]">✓</span>
                 {s}
               </li>
