@@ -5,9 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
 import { EmptyState } from "@/components/EmptyState";
-import { PendingButton } from "@/components/PendingButton";
 import { views24hMap } from "@/lib/offering-views";
-import { createDraftOffering } from "./actions";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function LedgerPage() {
@@ -36,16 +34,12 @@ export default async function LedgerPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <form action={createDraftOffering.bind(null, "GIVE")}>
-            <PendingButton className={btn("primary")} pendingText="作成中…">
-              ＋ 売りたいを登録
-            </PendingButton>
-          </form>
-          <form action={createDraftOffering.bind(null, "WANT")}>
-            <PendingButton className={btn("amber")} pendingText="作成中…">
-              ＋ 買いたいを登録
-            </PendingButton>
-          </form>
+          <Link href="/ledger/new?direction=GIVE" className={btn("primary")}>
+            ＋ 売りたいを登録
+          </Link>
+          <Link href="/ledger/new?direction=WANT" className={btn("amber")}>
+            ＋ 買いたいを登録
+          </Link>
         </div>
       </div>
 
@@ -93,11 +87,12 @@ function Section({
               : "探している商品・原料・条件を登録すると、売りたい相手から連絡が届きやすくなります。"
           }
         >
-          <form action={createDraftOffering.bind(null, direction)}>
-            <PendingButton className={btn(direction === "GIVE" ? "primary" : "amber", "sm")} pendingText="作成中…">
-              ＋ {direction === "GIVE" ? "売りたい" : "買いたい"}を登録
-            </PendingButton>
-          </form>
+          <Link
+            href={`/ledger/new?direction=${direction}`}
+            className={btn(direction === "GIVE" ? "primary" : "amber", "sm")}
+          >
+            ＋ {direction === "GIVE" ? "売りたい" : "買いたい"}を登録
+          </Link>
         </EmptyState>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

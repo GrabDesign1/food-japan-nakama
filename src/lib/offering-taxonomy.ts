@@ -46,6 +46,56 @@ export const DIRECTION_SHORT: Record<string, string> = {
   WANT: "買いたい",
 };
 
+// ── 取引条件（2026-08-10 売りたい改善） ─────────────────────
+// 食品カテゴリ（保存・期限・品質などの食品固有項目を出す）
+export function isFoodCategory(key: string): boolean {
+  return key === "食材・原料";
+}
+// 物品カテゴリ（状態・受け渡し・発送元を必須にする）
+export function isGoodsCategory(key: string): boolean {
+  return key === "食材・原料" || key === "加工設備";
+}
+
+export const PRICE_TYPES: [string, string][] = [
+  ["fixed", "固定価格"],
+  ["free", "無償"],
+  ["negotiable", "応相談"],
+];
+export const PRICE_UNITS = [
+  "円/kg", "円/g", "円/t", "円/個", "円/箱", "円/ケース", "円/本", "円/パック", "円/L", "円/式", "円/月", "円/回",
+];
+export const ITEM_CONDITIONS = ["生鮮", "冷蔵", "冷凍", "乾燥", "加工直後・湿潤", "常温品", "中古", "その他"];
+export const STORAGE_TYPES = ["常温", "冷蔵", "冷凍", "乾燥", "その他"];
+export const SUPPLY_FREQUENCIES = ["今回限り", "毎週", "毎月", "季節限定", "応相談"];
+export const DELIVERY_METHODS = ["現地引取", "配送可能", "応相談"];
+export const SHIPPING_BEARERS = ["応相談", "売り手負担", "買い手負担"];
+
+// 希望価格を表示用テキストに整形
+export function formatPrice(o: {
+  priceType: string | null;
+  priceAmount: number | null;
+  priceUnit: string | null;
+}): string | null {
+  if (o.priceType === "free") return "無償";
+  if (o.priceType === "fixed" && o.priceAmount != null) {
+    return `${o.priceAmount.toLocaleString()}${o.priceUnit ?? "円"}`;
+  }
+  if (o.priceType === "negotiable") {
+    return o.priceAmount != null
+      ? `${o.priceAmount.toLocaleString()}${o.priceUnit ?? "円"}（応相談）`
+      : "価格応相談";
+  }
+  return null;
+}
+
+// 募集期限を表示用テキストに整形（切れている場合は目印）
+export function formatDeadline(d: Date | string | null): string | null {
+  if (!d) return null;
+  const date = new Date(d);
+  const label = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日まで`;
+  return date.getTime() < Date.now() ? `${label}（募集終了）` : label;
+}
+
 // 数量を表示用テキストに整形
 export function formatAmount(o: {
   amountValue: number | null;

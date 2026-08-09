@@ -1,6 +1,6 @@
 // 台帳カード（一覧・ダッシュボード共通）。レイアウトは一般的な案件カードを参考にした独自デザイン。
 import Link from "next/link";
-import { categoryMeta, DIRECTION_SHORT, formatAmount } from "@/lib/offering-taxonomy";
+import { categoryMeta, DIRECTION_SHORT, formatAmount, formatPrice } from "@/lib/offering-taxonomy";
 
 export type OfferingCardData = {
   id: string;
@@ -17,6 +17,14 @@ export type OfferingCardData = {
   createdAt?: string | Date | null;
   tags?: string[];
   views24h?: number | null;
+  // 取引条件（旧データはnull＝表示しない）
+  priceType?: string | null;
+  priceAmount?: number | null;
+  priceUnit?: string | null;
+  minOrderText?: string | null;
+  itemCondition?: string | null;
+  supplyFrequency?: string | null;
+  applicationDeadline?: string | Date | null;
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -29,6 +37,25 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
   const isNew = o.createdAt
     ? Date.now() - new Date(o.createdAt).getTime() < WEEK_MS
     : false;
+  const price = formatPrice({
+    priceType: o.priceType ?? null,
+    priceAmount: o.priceAmount ?? null,
+    priceUnit: o.priceUnit ?? null,
+  });
+  const deadline = o.applicationDeadline ? new Date(o.applicationDeadline) : null;
+  const deadlineText = deadline
+    ? deadline.getTime() < Date.now()
+      ? "募集終了"
+      : `〜${deadline.getMonth() + 1}/${deadline.getDate()}`
+    : null;
+  // 取引条件の要点（値があるものだけ・最大3つ）
+  const conditions = [
+    o.minOrderText ? `最小 ${o.minOrderText}` : null,
+    o.itemCondition,
+    o.supplyFrequency === "今回限り" ? null : o.supplyFrequency ? `${o.supplyFrequency}供給` : null,
+  ]
+    .filter((v): v is string => !!v)
+    .slice(0, 3);
 
   return (
     <Link href={href ?? `/ledger/${o.id}`} className="group block transition-transform hover:-translate-y-0.5">
@@ -78,11 +105,24 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
       <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--muted)]">
         <span>{meta?.icon}</span>
         <span>{o.category}</span>
-        {amount ? <span className="ml-auto text-[var(--green-d)]">{amount}</span> : null}
+        {deadlineText ? (
+          <span className={`ml-auto ${deadlineText === "募集終了" ? "text-[var(--red)]" : ""}`}>
+            {deadlineText}
+          </span>
+        ) : null}
       </div>
       <div className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-5 text-[var(--ink)] group-hover:text-[var(--green-d)]">
         {o.title || "（無題）"}
       </div>
+      {price || amount ? (
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[12px]">
+          {price ? <span className="font-bold text-[var(--green-d)]">{price}</span> : null}
+          {amount ? <span className="text-[var(--muted)]">{amount}</span> : null}
+        </div>
+      ) : null}
+      {conditions.length ? (
+        <div className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{conditions.join(" ・ ")}</div>
+      ) : null}
       {o.memberName ? (
         <div className="mt-0.5 text-[11px] text-[var(--muted)]">{o.memberName}</div>
       ) : null}

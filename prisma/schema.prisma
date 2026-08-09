@@ -422,8 +422,23 @@ model Offering {
   amountText   String? @map("amount_text")
 
   timing   String?
-  area     String?
+  area     String? // 発送元・受渡地域（自由記述）
   isPublic Boolean @default(true) @map("is_public")
+
+  // ── 取引条件（2026-08-10 売りたい改善。全てnullable＝既存データ互換） ──
+  priceType           String?   @map("price_type") // fixed / free / negotiable
+  priceAmount         Float?    @map("price_amount") // 金額（円）
+  priceUnit           String?   @map("price_unit") // 円/kg など
+  minOrderText        String?   @map("min_order_text") // 最小取引量（例：20kgから）
+  itemCondition       String?   @map("item_condition") // 商品・原料の状態
+  storageType         String?   @map("storage_type") // 保存状態
+  shelfLifeText       String?   @map("shelf_life_text") // 賞味・取扱期限
+  specification       String? // 品質・規格
+  supplyFrequency     String?   @map("supply_frequency") // 提供頻度
+  deliveryMethods     String[]  @map("delivery_methods") // 受け渡し方法（複数）
+  shippingCostBearer  String?   @map("shipping_cost_bearer") // 送料負担
+  applicationDeadline DateTime? @map("application_deadline") // 募集期限
+  desiredPartner      String?   @map("desired_partner") // 希望する相手・活用用途
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

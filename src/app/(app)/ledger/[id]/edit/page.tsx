@@ -8,12 +8,21 @@ import { OfferingForm, type OfferingData } from "../../_components/OfferingForm"
 import { togglePublish, deleteOffering } from "../../actions";
 import { btn, h1Cls } from "@/lib/ui";
 
+function toDateInput(d: Date | null): string | null {
+  if (!d) return null;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 export default async function OfferingEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ missing?: string; created?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const member = await getOrCreateMemberForUser(su);
@@ -38,10 +47,23 @@ export default async function OfferingEditPage({
     imageUrls: offering.imageUrls,
     descriptionImageUrl: offering.descriptionImageUrl,
     pointsImageUrl: offering.pointsImageUrl,
+    priceType: offering.priceType,
+    priceAmount: offering.priceAmount,
+    priceUnit: offering.priceUnit,
+    minOrderText: offering.minOrderText,
+    itemCondition: offering.itemCondition,
+    storageType: offering.storageType,
+    shelfLifeText: offering.shelfLifeText,
+    specification: offering.specification,
+    supplyFrequency: offering.supplyFrequency,
+    deliveryMethods: offering.deliveryMethods,
+    shippingCostBearer: offering.shippingCostBearer,
+    applicationDeadline: toDateInput(offering.applicationDeadline),
+    desiredPartner: offering.desiredPartner,
   };
 
   return (
-    <div className="flex max-w-[720px] flex-col gap-5">
+    <div className="flex max-w-[1100px] flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
           <Link href="/ledger" className={btn("secondary", "sm")}>
@@ -77,6 +99,17 @@ export default async function OfferingEditPage({
           )}
         </div>
       </div>
+
+      {sp.created ? (
+        <p className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[13px] text-[var(--green-d)]">
+          下書きを保存しました。写真を追加し、内容を確認できたら右上の「公開する」で掲載できます。
+        </p>
+      ) : null}
+      {sp.missing ? (
+        <p className="rounded-[10px] border border-[#E7C7BE] bg-[#FBF1EE] px-4 py-3 text-[13px] leading-6 text-[var(--red)]">
+          公開するには、次の項目の入力が必要です：<b>{sp.missing}</b>
+        </p>
+      ) : null}
 
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
         {/* updatedAt を key にして、保存後に最新値で再表示する */}

@@ -8,6 +8,8 @@ import {
   DIRECTION_LABEL,
   DIRECTION_SHORT,
   formatAmount,
+  formatPrice,
+  formatDeadline,
   TIMINGS,
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
@@ -100,6 +102,24 @@ export default async function OfferingDetailPage({
     ["数量・規模", amount],
     ["時期", offering.timing && TIMINGS.includes(offering.timing) ? offering.timing : offering.timing || null],
   ];
+
+  // 取引条件（値がある項目だけ表示。旧案件で「未設定」を並べない）
+  const price = formatPrice(offering);
+  const tradeRows: [string, string | null][] = (
+    [
+      ["希望価格", price],
+      ["提供可能量", amount],
+      ["最小取引量", offering.minOrderText],
+      ["商品・原料の状態", offering.itemCondition],
+      ["保存状態", offering.storageType],
+      ["賞味・取扱期限", offering.shelfLifeText],
+      ["提供頻度", offering.supplyFrequency],
+      ["受け渡し方法", offering.deliveryMethods.length ? offering.deliveryMethods.join("・") : null],
+      ["送料負担", offering.shippingCostBearer],
+      ["発送元・受渡地域", offering.area],
+      ["募集期限", formatDeadline(offering.applicationDeadline)],
+    ] as [string, string | null][]
+  ).filter(([, v]) => !!v);
 
   return (
     <div className="mx-auto flex max-w-[820px] flex-col gap-6">
@@ -207,6 +227,45 @@ export default async function OfferingDetailPage({
         </table>
       </div>
 
+      {/* 取引条件（買い手が問い合わせ前に判断するための情報） */}
+      {tradeRows.length ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>取引条件</h2>
+          <div className="overflow-hidden rounded-[10px] border border-[var(--line)]">
+            <table className="w-full text-[14px]">
+              <tbody>
+                {tradeRows.map(([k, v]) => (
+                  <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+                    <th className="w-[140px] bg-[var(--green-soft)] px-4 py-3 text-left align-top font-medium text-[var(--ink-2)]">
+                      {k}
+                    </th>
+                    <td className={`px-4 py-3 text-[var(--ink)] ${k === "希望価格" ? "font-bold text-[var(--green-d)]" : ""}`}>
+                      {v}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {offering.specification ? (
+            <p className="mt-2 whitespace-pre-wrap rounded-[10px] border border-[var(--line)] bg-white px-4 py-3 text-[13px] leading-6 text-[var(--ink-2)]">
+              <b className="text-[var(--ink)]">品質・規格：</b>
+              {offering.specification}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* 希望する相手・活用用途 */}
+      {offering.desiredPartner ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>希望する相手・活用用途</h2>
+          <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">
+            {offering.desiredPartner}
+          </p>
+        </div>
+      ) : null}
+
       {/* 連絡する（興味を送る） */}
       {!isOwner ? (
         member.paymentStatus !== "PAID" && !existingThread ? (
@@ -228,9 +287,12 @@ export default async function OfferingDetailPage({
             action={sendInterest.bind(null, offering.member.id, offering.id)}
             className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5"
           >
-            <div className="mb-2 text-[14px] font-semibold text-[var(--ink)]">
-              この{isGive ? "「売りたい」" : "「買いたい」"}について問い合わせる
+            <div className="text-[14px] font-semibold text-[var(--ink)]">
+              この案件について問い合わせる
             </div>
+            <p className="mb-2 mt-0.5 text-[12px] text-[var(--ink-2)]">
+              価格、数量、受け渡し方法などを{isGive ? "売り手" : "相手"}と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。
+            </p>
             <textarea
               name="message"
               required

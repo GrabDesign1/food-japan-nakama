@@ -6,7 +6,18 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { isStructured } from "@/lib/offering-taxonomy";
+import {
+  isStructured,
+  isFoodCategory,
+  isGoodsCategory,
+  CATEGORY_KEYS,
+  PRICE_TYPES,
+  ITEM_CONDITIONS,
+  STORAGE_TYPES,
+  SUPPLY_FREQUENCIES,
+  DELIVERY_METHODS,
+  SHIPPING_BEARERS,
+} from "@/lib/offering-taxonomy";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
 const BUCKET = "member-images";
@@ -22,33 +33,151 @@ async function ownOfferingOr404(offeringId: string) {
   return { su, member, offering };
 }
 
-/** 提供/募集の下書きを新規作成して編集ページへ。
- * 連打・二重送信対策：中身が空の下書きが既にあれば、新規作成せずそれを開く。 */
-export async function createDraftOffering(direction: "GIVE" | "WANT"): Promise<void> {
+/** 新規登録（/ledger/new のフォーム初回保存時に呼ばれる）。
+ * 画面を開くだけではDBレコードを作らない。作成後は編集ページへ（写真はそこで追加）。 */
+export async function createOffering(
+  direction: "GIVE" | "WANT",
+  _prev: OfferingState,
+  formData: FormData
+): Promise<OfferingState> {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const member = await getOrCreateMemberForUser(su!);
+  if (direction !== "GIVE" && direction !== "WANT") return { error: "不正な指定です。" };
 
-  const existingEmpty = await prisma.offering.findFirst({
+  const parsed = parseOfferingForm(formData, "食材・原料");
+  if (parsed.error || !parsed.data) return { error: parsed.error ?? "保存に失敗しました。" };
+
+  // 二重送信ガード：同じタイトルの案件を直近1分以内に作っていたら、新規作成せずそれを開く
+  const dup = await prisma.offering.findFirst({
     where: {
       memberId: member.id,
       direction,
-      title: "",
-      description: null,
-      imageUrls: { isEmpty: true },
+      title: parsed.data.title,
+      createdAt: { gte: new Date(Date.now() - 60_000) },
     },
-    orderBy: { createdAt: "desc" },
     select: { id: true },
   });
-  if (existingEmpty) redirect(`/ledger/${existingEmpty.id}/edit`);
+  if (dup) redirect(`/ledger/${dup.id}/edit?created=1`);
 
   const created = await prisma.offering.create({
-    data: { memberId: member.id, direction, category: "食材・原料", title: "", isPublic: false },
+    data: { memberId: member.id, direction, isPublic: false, ...parsed.data },
   });
-  redirect(`/ledger/${created.id}/edit`);
+  redirect(`/ledger/${created.id}/edit?created=1`);
 }
 
 export type OfferingState = { ok?: boolean; error?: string };
+
+type ParsedOffering = {
+  category: string;
+  title: string;
+  description: string | null;
+  points: string | null;
+  tags: string[];
+  amountValue: number | null;
+  amountUnit: string | null;
+  amountPeriod: string | null;
+  amountText: string | null;
+  timing: string | null;
+  area: string | null;
+  priceType: string | null;
+  priceAmount: number | null;
+  priceUnit: string | null;
+  minOrderText: string | null;
+  itemCondition: string | null;
+  storageType: string | null;
+  shelfLifeText: string | null;
+  specification: string | null;
+  supplyFrequency: string | null;
+  deliveryMethods: string[];
+  shippingCostBearer: string | null;
+  applicationDeadline: Date | null;
+  desiredPartner: string | null;
+};
+
+// フォーム値の共通パース（保存・新規作成で共用。公開時の必須チェックは togglePublish 側）
+function parseOfferingForm(
+  formData: FormData,
+  fallbackCategory: string
+): { data?: ParsedOffering; error?: string } {
+  const g = (k: string, max = 2000) => String(formData.get(k) ?? "").trim().slice(0, max);
+
+  const category = CATEGORY_KEYS.includes(g("category")) ? g("category") : fallbackCategory;
+  const structured = isStructured(category);
+
+  const title = g("title", 200);
+  if (!title) return { error: "タイトルは必須です。" };
+
+  const amountValueRaw = g("amountValue", 20);
+  let amountValue = structured && amountValueRaw !== "" ? Number(amountValueRaw) : null;
+  if (amountValue != null && (!Number.isFinite(amountValue) || amountValue < 0)) {
+    return { error: "数量は0以上の数値で入力してください。" };
+  }
+  if (amountValue != null && amountValue > 1e9) amountValue = null;
+
+  // 希望価格
+  const priceType = PRICE_TYPES.some(([v]) => v === g("priceType")) ? g("priceType") : null;
+  const priceAmountRaw = g("priceAmount", 20);
+  let priceAmount = priceAmountRaw !== "" ? Number(priceAmountRaw) : null;
+  if (priceAmount != null && (!Number.isFinite(priceAmount) || priceAmount < 0 || priceAmount > 1e9)) {
+    return { error: "価格は0以上の数値で入力してください。" };
+  }
+  if (priceType === "free") priceAmount = null; // 無償は金額なし
+  const priceUnit = g("priceUnit", 20) || null;
+
+  // 受け渡し方法（複数選択・ホワイトリスト）
+  const deliveryMethods = formData
+    .getAll("deliveryMethods")
+    .map((v) => String(v))
+    .filter((v) => DELIVERY_METHODS.includes(v));
+
+  // 募集期限（YYYY-MM-DD のみ受け付け、当日いっぱい有効）
+  const deadlineRaw = g("applicationDeadline", 10);
+  const applicationDeadline = /^\d{4}-\d{2}-\d{2}$/.test(deadlineRaw)
+    ? new Date(`${deadlineRaw}T23:59:59+09:00`)
+    : null;
+  if (applicationDeadline && Number.isNaN(applicationDeadline.getTime())) {
+    return { error: "募集期限の日付が正しくありません。" };
+  }
+
+  const pick = (k: string, list: string[]) => (list.includes(g(k)) ? g(k) : null);
+
+  const tags = g("tags", 400)
+    .split(/[,、\s]+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  return {
+    data: {
+      category,
+      title,
+      description: g("description", 4000) || null,
+      points: g("points") || null,
+      tags,
+      amountValue,
+      amountUnit: structured ? g("amountUnit", 20) || null : null,
+      amountPeriod: structured ? g("amountPeriod", 20) || null : null,
+      amountText: structured ? null : g("amountText", 200) || null,
+      timing: g("timing", 100) || null,
+      area: g("area", 200) || null,
+      // 取引条件
+      priceType,
+      priceAmount,
+      priceUnit,
+      minOrderText: g("minOrderText", 200) || null,
+      itemCondition: pick("itemCondition", ITEM_CONDITIONS),
+      storageType: pick("storageType", STORAGE_TYPES),
+      shelfLifeText: g("shelfLifeText", 300) || null,
+      specification: g("specification", 4000) || null,
+      supplyFrequency: pick("supplyFrequency", SUPPLY_FREQUENCIES),
+      deliveryMethods,
+      shippingCostBearer: pick("shippingCostBearer", SHIPPING_BEARERS),
+      applicationDeadline,
+      desiredPartner: g("desiredPartner", 4000) || null,
+    },
+  };
+}
 
 export async function saveOffering(
   offeringId: string,
@@ -56,44 +185,64 @@ export async function saveOffering(
   formData: FormData
 ): Promise<OfferingState> {
   const { offering } = await ownOfferingOr404(offeringId);
-  const g = (k: string) => String(formData.get(k) ?? "").trim();
-
-  const category = g("category") || offering.category;
-  const structured = isStructured(category);
-
-  const amountValueRaw = g("amountValue");
-  const amountValue =
-    structured && amountValueRaw !== "" ? Number(amountValueRaw) : null;
-
-  const title = g("title");
-  if (!title) return { error: "タイトルは必須です。" };
-
-  const tags = g("tags")
-    .split(/[,、\s]+/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 8);
+  const parsed = parseOfferingForm(formData, offering.category);
+  if (parsed.error || !parsed.data) return { error: parsed.error ?? "保存に失敗しました。" };
 
   await prisma.offering.update({
     where: { id: offeringId },
-    data: {
-      category,
-      title,
-      description: g("description") || null,
-      points: g("points") || null,
-      tags,
-      amountValue: Number.isFinite(amountValue as number) ? amountValue : null,
-      amountUnit: structured ? g("amountUnit") || null : null,
-      amountPeriod: structured ? g("amountPeriod") || null : null,
-      amountText: structured ? null : g("amountText") || null,
-      timing: g("timing") || null,
-      area: g("area") || null,
-    },
+    data: parsed.data,
   });
 
   revalidatePath(`/ledger/${offeringId}`);
   revalidatePath("/ledger");
   return { ok: true };
+}
+
+/** 公開時の必須チェック。新規公開時だけ適用する（既存の公開中案件は触らない）。 */
+function missingForPublish(o: {
+  direction: string;
+  category: string;
+  title: string;
+  area: string | null;
+  amountValue: number | null;
+  amountText: string | null;
+  priceType: string | null;
+  priceAmount: number | null;
+  priceUnit: string | null;
+  minOrderText: string | null;
+  itemCondition: string | null;
+  storageType: string | null;
+  shelfLifeText: string | null;
+  specification: string | null;
+  supplyFrequency: string | null;
+  deliveryMethods: string[];
+  applicationDeadline: Date | null;
+}): string[] {
+  const missing: string[] = [];
+  if (!o.title) missing.push("タイトル");
+  if (o.direction !== "GIVE") return missing; // 買いたいは従来どおりタイトルのみ
+
+  if (!o.priceType) missing.push("希望価格");
+  if (o.priceType === "fixed" && (o.priceAmount == null || !o.priceUnit)) {
+    missing.push("価格の金額と単位");
+  }
+  if (!o.applicationDeadline) missing.push("募集期限");
+  else if (o.applicationDeadline.getTime() < Date.now()) missing.push("募集期限（過去の日付です）");
+
+  if (isGoodsCategory(o.category)) {
+    if (!o.itemCondition) missing.push("商品・原料の状態");
+    if (!o.deliveryMethods?.length) missing.push("受け渡し方法");
+    if (!o.area) missing.push("発送元・受渡地域");
+  }
+  if (isFoodCategory(o.category)) {
+    if (o.amountValue == null && !o.amountText) missing.push("提供可能量");
+    if (!o.minOrderText) missing.push("最小取引量");
+    if (!o.storageType) missing.push("保存状態");
+    if (!o.shelfLifeText) missing.push("賞味・取扱期限");
+    if (!o.specification) missing.push("品質・規格");
+    if (!o.supplyFrequency) missing.push("提供頻度");
+  }
+  return missing;
 }
 
 export async function togglePublish(
@@ -103,8 +252,13 @@ export async function togglePublish(
   const { member, offering } = await ownOfferingOr404(offeringId);
   // 公開は月額会員のみ（下書き作成・編集・非公開化は誰でも可）
   if (isPublic && member.paymentStatus !== "PAID") redirect("/billing");
-  // 公開するにはタイトル必須
-  if (isPublic && !offering.title) return;
+  // 公開時のみ必須チェック（不足があれば編集画面へ戻して表示）
+  if (isPublic) {
+    const missing = missingForPublish(offering);
+    if (missing.length) {
+      redirect(`/ledger/${offeringId}/edit?missing=${encodeURIComponent(missing.join("・"))}`);
+    }
+  }
   await prisma.offering.update({
     where: { id: offeringId },
     data: { isPublic },
