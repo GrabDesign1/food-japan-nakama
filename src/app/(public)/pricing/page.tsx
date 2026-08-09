@@ -62,7 +62,7 @@ export default function PricingPage() {
           <span className="text-[14px] text-[var(--ink-2)]">円 / 月（税込）</span>
         </div>
         <p className="mt-3 text-[13px] leading-7 text-[var(--ink-2)]">
-          初回は<b>申込日に決済</b>し、翌月以降は<b>毎月5日</b>に自動決済（自動更新）します。<b>当月末日まで</b>に解約できます（日割り返金なし）。お支払いはクレジットカード（Stripe）。
+          初回は<b>申込日に決済</b>し、以後は<b>1か月ごと（毎月、申込日と同じ日）</b>に自動決済（自動更新）します。<b>次回更新日の前日まで</b>に解約できます（日割り返金なし）。お支払いはクレジットカード（Stripe）。
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
