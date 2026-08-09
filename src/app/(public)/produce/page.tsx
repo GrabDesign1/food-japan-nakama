@@ -412,6 +412,17 @@ export default function ProducePage() {
             <br />
             ※売上、利益、販売額、契約成立、資金調達などを保証するものではありません。
           </p>
+          <div className="mt-6 border border-[var(--line)] bg-white p-5">
+            <p className="text-[13px] font-bold text-[var(--ink)]">契約形態について（準委任契約）</p>
+            <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">本サービスは、次の特徴を持つ準委任契約です。</p>
+            <ul className="mt-2 list-disc pl-5 text-[12px] leading-6 text-[var(--ink-2)]">
+              <li>目的：仕事の完成ではなく、業務を遂行すること（プロセス）が目的</li>
+              <li>完成責任：成果物の納品や完成の義務（および契約不適合責任）は負わない</li>
+              <li>義務：専門家として妥当な注意を払って業務を行う「善管注意義務」を負う</li>
+              <li>具体例：システムの運用保守、コンサルティング、アドバイザリー業務など</li>
+            </ul>
+          </div>
+
           <div className="mt-7">
             <Link href={CTA_HREF} className={btn("primary", "lg")}>費用も含めて相談する</Link>
           </div>

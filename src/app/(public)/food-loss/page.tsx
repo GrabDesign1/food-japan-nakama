@@ -462,6 +462,17 @@ export default function FoodLossPage() {
           <p className="mt-6 text-[12px] leading-6 text-[var(--muted)]">
             検査、分析、試作、製造、容器、デザイン、撮影、Web制作、広告、出張、物流、専門家等の費用は別途お見積りします。商品化、販売、廃棄費削減、補助金採択その他の成果を保証・確約するものではありません。
           </p>
+          <div className="mt-6 border border-[var(--line)] bg-white p-5">
+            <p className="text-[13px] font-bold text-[var(--ink)]">契約形態について（準委任契約）</p>
+            <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">本サービスは、次の特徴を持つ準委任契約です。</p>
+            <ul className="mt-2 list-disc pl-5 text-[12px] leading-6 text-[var(--ink-2)]">
+              <li>目的：仕事の完成ではなく、業務を遂行すること（プロセス）が目的</li>
+              <li>完成責任：成果物の納品や完成の義務（および契約不適合責任）は負わない</li>
+              <li>義務：専門家として妥当な注意を払って業務を行う「善管注意義務」を負う</li>
+              <li>具体例：システムの運用保守、コンサルティング、アドバイザリー業務など</li>
+            </ul>
+          </div>
+
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { submitConsultation, type ConsultationState } from "./actions";
 import { btn } from "@/lib/ui";
 
@@ -18,6 +18,9 @@ const BUDGETS = ["15万円未満", "15万〜40万円", "40万〜100万円", "100
 
 export function ConsultationForm({ defaultType }: { defaultType: string }) {
   const [state, action, pending] = useActionState<ConsultationState, FormData>(submitConsultation, {});
+  const [serviceType, setServiceType] = useState(
+    SERVICE_OPTIONS.some((o) => o.value === defaultType) ? defaultType : ""
+  );
 
   if (state.ok) {
     return (
@@ -32,13 +35,17 @@ export function ConsultationForm({ defaultType }: { defaultType: string }) {
     );
   }
 
-  const initial = SERVICE_OPTIONS.some((o) => o.value === defaultType) ? defaultType : "";
-
   return (
     <form action={action} className="flex flex-col gap-4 rounded-[12px] border border-[var(--line)] bg-white p-5 sm:p-6">
       <label className={labelCls}>
         相談種別<span className="text-[var(--red)]"> ＊</span>
-        <select name="serviceType" defaultValue={initial} required className={inputCls}>
+        <select
+          name="serviceType"
+          value={serviceType}
+          onChange={(e) => setServiceType(e.target.value)}
+          required
+          className={inputCls}
+        >
           <option value="">選択してください</option>
           {SERVICE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -57,6 +64,24 @@ export function ConsultationForm({ defaultType }: { defaultType: string }) {
         商品・地域資源・技術の概要<span className="text-[var(--red)]"> ＊</span>
         <textarea name="productSummary" rows={3} required className={inputCls} />
       </label>
+
+      {serviceType === "food-loss" ? (
+        <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-4">
+          <p className="text-[12px] font-bold text-[var(--green-d)]">
+            フードロス相談の詳細（分かる範囲でご記入ください）
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={labelCls}>原料・食品の状態（常温／冷蔵／冷凍・鮮度など）<input name="flState" className={inputCls} /></label>
+            <label className={labelCls}>成分・原材料（分かる範囲）<input name="flIngredients" className={inputCls} /></label>
+            <label className={labelCls}>発生量の目安（1日・週・月あたり）<input name="flVolume" placeholder="例：1日約10kg" className={inputCls} /></label>
+            <label className={labelCls}>発生する地域・場所<input name="flArea" className={inputCls} /></label>
+            <label className={labelCls}>現在の処分方法と費用<input name="flCost" placeholder="例：産廃処理で月3万円" className={inputCls} /></label>
+            <label className={labelCls}>安全性で気になる点（保存状態・衛生・アレルゲン等）<input name="flSafety" className={inputCls} /></label>
+          </div>
+          <label className={labelCls}>過去に対策・検討したことはありますか？<textarea name="flPast" rows={2} placeholder="例：飼料化を検討したが輸送費が合わなかった 等" className={inputCls} /></label>
+          <label className={labelCls}>法規制などで確認済みの点・不明な点<textarea name="flLegal" rows={2} placeholder="例：飼料化に必要な手続きが分からない 等" className={inputCls} /></label>
+        </div>
+      ) : null}
       <label className={labelCls}>
         解決したい課題<span className="text-[var(--red)]"> ＊</span>
         <textarea name="challenge" rows={3} required className={inputCls} />

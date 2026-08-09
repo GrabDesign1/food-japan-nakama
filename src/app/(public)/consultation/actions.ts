@@ -38,6 +38,25 @@ export async function submitConsultation(
   if (!challenge) return { error: "解決したい課題を入力してください。" };
   if (!consent) return { error: "個人情報の取扱いにご同意ください。" };
 
+  // フードロス相談の詳細（任意項目）を概要に整形して追記
+  let productSummaryFull = productSummary;
+  if (serviceType === "food-loss") {
+    const flParts: [string, string][] = [
+      ["原料・食品の状態", g("flState")],
+      ["成分・原材料", g("flIngredients")],
+      ["発生量の目安", g("flVolume")],
+      ["発生する地域・場所", g("flArea")],
+      ["現在の処分方法と費用", g("flCost")],
+      ["安全性で気になる点", g("flSafety")],
+      ["過去の対策・検討", g("flPast")],
+      ["法規制の確認状況", g("flLegal")],
+    ].filter(([, v]) => v) as [string, string][];
+    if (flParts.length) {
+      productSummaryFull +=
+        "\n\n【フードロス相談の詳細】\n" + flParts.map(([k, v]) => `・${k}：${v}`).join("\n");
+    }
+  }
+
   const tenantId = await getPublicTenantId();
   if (!tenantId) return { error: "受付できませんでした。時間をおいて再度お試しください。" };
 
@@ -52,7 +71,7 @@ export async function submitConsultation(
     phone: g("phone") || null,
     area: g("area") || null,
     industry: g("industry") || null,
-    productSummary,
+    productSummary: productSummaryFull,
     challenge,
     desiredOutcome: g("desiredOutcome") || null,
     desiredTiming: g("desiredTiming") || null,
