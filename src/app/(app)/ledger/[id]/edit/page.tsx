@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { DIRECTION_LABEL } from "@/lib/offering-taxonomy";
 import { OfferingForm, type OfferingData } from "../../_components/OfferingForm";
 import { togglePublish, deleteOffering } from "../../actions";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { btn, h1Cls } from "@/lib/ui";
 
 function toDateInput(d: Date | null): string | null {
@@ -127,11 +128,12 @@ export default async function OfferingEditPage({
         ) : (
           <span />
         )}
-        <form action={deleteOffering.bind(null, offering.id)}>
-          <button className="text-[12px] text-[var(--red)] underline">
-            この台帳を削除
-          </button>
-        </form>
+        <ConfirmDeleteButton
+          action={deleteOffering.bind(null, offering.id)}
+          buttonLabel="この台帳を削除"
+          title="本当に削除しますか？"
+          description={`「${offering.title || "（無題）"}」と登録済みの写真がすべて削除されます。この操作は元に戻せません。`}
+        />
       </div>
     </div>
   );

@@ -127,6 +127,27 @@ export async function uploadProjectImage(
   return { ok: true };
 }
 
+/** 画像の並べ替え（1枚目=メイン画像）。既存URLの並べ替えのみ許可。 */
+export async function reorderProjectImages(
+  projectId: string,
+  urls: string[]
+): Promise<void> {
+  const owned = await ownProject(projectId);
+  if (!owned) return;
+  const current = owned.project.imageUrls;
+  const set = new Set(current);
+  if (
+    urls.length !== current.length ||
+    new Set(urls).size !== urls.length ||
+    !urls.every((u) => set.has(u))
+  ) {
+    return;
+  }
+  await prisma.project.update({ where: { id: projectId }, data: { imageUrls: urls } });
+  revalidatePath(`/projects/${projectId}/edit`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
 export async function removeProjectImage(
   projectId: string,
   url: string

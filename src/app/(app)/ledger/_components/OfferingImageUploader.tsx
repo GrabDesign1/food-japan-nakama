@@ -1,7 +1,8 @@
 "use client";
 
+// 台帳のギャラリー画像。ドラッグ＆ドロップ（スマホは◀▶ボタン）で並べ替え可能。1枚目=メイン画像。
 import { useRef, useState, useTransition } from "react";
-import { uploadOfferingImage, removeOfferingImage } from "../actions";
+import { uploadOfferingImage, removeOfferingImage, reorderOfferingImages } from "../actions";
 
 const MAX = 6;
 
@@ -15,6 +16,8 @@ export function OfferingImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [list, setList] = useState<string[]>(images);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -29,22 +32,48 @@ export function OfferingImageUploader({
     });
   }
 
+  function applyOrder(next: string[]) {
+    setList(next);
+    startTransition(async () => {
+      await reorderOfferingImages(offeringId, next);
+    });
+  }
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= list.length || from === to) return;
+    const next = [...list];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    applyOrder(next);
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="text-[12px] text-[var(--ink-2)]">
-        サムネイル・ギャラリー画像（最大{MAX}枚。1枚目が一覧のサムネイルになります）
+        サムネイル・ギャラリー画像（最大{MAX}枚。<b>1枚目がメイン画像</b>です。ドラッグ、または ◀ ▶ で並べ替えできます）
       </div>
       <div className="flex flex-wrap gap-3">
-        {images.map((url, i) => (
+        {list.map((url, i) => (
           <div
             key={url}
-            className="relative h-28 w-28 overflow-hidden rounded-md border border-[var(--line)]"
+            draggable
+            onDragStart={() => setDragIdx(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIdx !== null) move(dragIdx, i);
+              setDragIdx(null);
+            }}
+            onDragEnd={() => setDragIdx(null)}
+            className={`relative h-28 w-28 cursor-grab overflow-hidden rounded-md border active:cursor-grabbing ${
+              dragIdx === i ? "border-[var(--green)] opacity-60" : "border-[var(--line)]"
+            }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <img src={url} alt="" className="h-full w-full object-cover" draggable={false} />
             {i === 0 ? (
               <span className="absolute left-1 top-1 rounded bg-[var(--green)] px-1.5 py-0.5 text-[9px] text-white">
-                サムネ
+                メイン
               </span>
             ) : null}
             <button
@@ -52,6 +81,7 @@ export function OfferingImageUploader({
               onClick={() =>
                 startTransition(async () => {
                   await removeOfferingImage(offeringId, url);
+                  setList((cur) => cur.filter((u) => u !== url));
                 })
               }
               disabled={pending}
@@ -60,9 +90,29 @@ export function OfferingImageUploader({
             >
               ×
             </button>
+            <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/40 px-1">
+              <button
+                type="button"
+                onClick={() => move(i, i - 1)}
+                disabled={pending || i === 0}
+                className="px-1 py-0.5 text-[11px] text-white disabled:opacity-30"
+                aria-label="左へ移動"
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                onClick={() => move(i, i + 1)}
+                disabled={pending || i === list.length - 1}
+                className="px-1 py-0.5 text-[11px] text-white disabled:opacity-30"
+                aria-label="右へ移動"
+              >
+                ▶
+              </button>
+            </div>
           </div>
         ))}
-        {images.length < MAX ? (
+        {list.length < MAX ? (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

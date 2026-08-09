@@ -445,6 +445,27 @@ export async function clearOfferingSlotImage(
   return { ok: true };
 }
 
+/** 画像の並べ替え（1枚目=メイン画像）。既存URLの並べ替えのみ許可。 */
+export async function reorderOfferingImages(
+  offeringId: string,
+  urls: string[]
+): Promise<void> {
+  const { offering } = await ownOfferingOr404(offeringId);
+  const current = offering.imageUrls;
+  const set = new Set(current);
+  if (
+    urls.length !== current.length ||
+    new Set(urls).size !== urls.length ||
+    !urls.every((u) => set.has(u))
+  ) {
+    return; // 既存画像の並べ替え以外は受け付けない
+  }
+  await prisma.offering.update({ where: { id: offeringId }, data: { imageUrls: urls } });
+  revalidatePath(`/ledger/${offeringId}/edit`);
+  revalidatePath(`/ledger/${offeringId}`);
+  revalidatePath("/ledger");
+}
+
 export async function removeOfferingImage(
   offeringId: string,
   url: string

@@ -18,6 +18,15 @@ export function TempImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= images.length || from === to) return;
+    const next = [...images];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  }
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -36,19 +45,30 @@ export function TempImageUploader({
   return (
     <div className="flex flex-col gap-2">
       <div className="text-[12px] text-[var(--ink-2)]">
-        写真（最大{MAX}枚。1枚目が一覧のサムネイルになります。商品の状態や量が分かる写真を3枚程度推奨）
+        写真（最大{MAX}枚。<b>1枚目がメイン画像</b>です。ドラッグ、または ◀ ▶ で並べ替えできます）
       </div>
       <div className="flex flex-wrap gap-3">
         {images.map((url, i) => (
           <div
             key={url}
-            className="relative h-28 w-28 overflow-hidden rounded-md border border-[var(--line)]"
+            draggable
+            onDragStart={() => setDragIdx(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIdx !== null) move(dragIdx, i);
+              setDragIdx(null);
+            }}
+            onDragEnd={() => setDragIdx(null)}
+            className={`relative h-28 w-28 cursor-grab overflow-hidden rounded-md border active:cursor-grabbing ${
+              dragIdx === i ? "border-[var(--green)] opacity-60" : "border-[var(--line)]"
+            }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <img src={url} alt="" className="h-full w-full object-cover" draggable={false} />
             {i === 0 ? (
               <span className="absolute left-1 top-1 rounded bg-[var(--green)] px-1.5 py-0.5 text-[9px] text-white">
-                サムネ
+                メイン
               </span>
             ) : null}
             <button
@@ -65,6 +85,26 @@ export function TempImageUploader({
             >
               ×
             </button>
+            <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/40 px-1">
+              <button
+                type="button"
+                onClick={() => move(i, i - 1)}
+                disabled={i === 0}
+                className="px-1 py-0.5 text-[11px] text-white disabled:opacity-30"
+                aria-label="左へ移動"
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                onClick={() => move(i, i + 1)}
+                disabled={i === images.length - 1}
+                className="px-1 py-0.5 text-[11px] text-white disabled:opacity-30"
+                aria-label="右へ移動"
+              >
+                ▶
+              </button>
+            </div>
           </div>
         ))}
         {images.length < MAX ? (

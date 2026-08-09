@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { ProjectForm, type ProjectData } from "../../_components/ProjectForm";
 import { submitProject, closeProject, deleteProject } from "../../actions";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { btn, h1Cls } from "@/lib/ui";
 
 export default async function ProjectEditPage({
@@ -65,9 +66,13 @@ export default async function ProjectEditPage({
         {project.status === "published" ? (
           <Link href={`/projects/${project.id}`} className="text-[13px] text-[var(--green-d)] underline">掲載ページを見る →</Link>
         ) : <span />}
-        <form action={deleteProject.bind(null, project.id)}>
-          <button className={btn("danger", "sm")}>削除</button>
-        </form>
+        <ConfirmDeleteButton
+          action={deleteProject.bind(null, project.id)}
+          buttonLabel="削除"
+          buttonClassName={btn("danger", "sm")}
+          title="本当に削除しますか？"
+          description={`「${project.title || "（無題）"}」と写真・応募がすべて削除されます。この操作は元に戻せません。`}
+        />
       </div>
     </div>
   );

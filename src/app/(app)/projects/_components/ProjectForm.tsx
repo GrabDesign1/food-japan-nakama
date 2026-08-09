@@ -5,6 +5,7 @@ import {
   saveProject,
   uploadProjectImage,
   removeProjectImage,
+  reorderProjectImages,
   type ProjectState,
 } from "../actions";
 import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
@@ -33,6 +34,19 @@ export function ProjectForm({ project }: { project: ProjectData }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [imgPending, startTransition] = useTransition();
   const [imgError, setImgError] = useState<string | null>(null);
+  const [imgList, setImgList] = useState<string[]>(project.imageUrls);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  function moveImage(from: number, to: number) {
+    if (to < 0 || to >= imgList.length || from === to) return;
+    const next = [...imgList];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setImgList(next);
+    startTransition(async () => {
+      await reorderProjectImages(project.id, next);
+    });
+  }
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -50,23 +64,69 @@ export function ProjectForm({ project }: { project: ProjectData }) {
     <form action={formAction} className="flex flex-col gap-5">
       {/* 画像 */}
       <div className="flex flex-col gap-2">
-        <div className="text-[12px] text-[var(--ink-2)]">画像（最大6枚。1枚目が一覧サムネイル）</div>
+        <div className="text-[12px] text-[var(--ink-2)]">
+          画像（最大6枚。<b>1枚目がメイン画像</b>です。ドラッグ、または ◀ ▶ で並べ替えできます）
+        </div>
         <div className="flex flex-wrap gap-3">
-          {project.imageUrls.map((url) => (
-            <div key={url} className="relative h-28 w-28 overflow-hidden rounded-md border border-[var(--line)]">
+          {imgList.map((url, i) => (
+            <div
+              key={url}
+              draggable
+              onDragStart={() => setDragIdx(i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIdx !== null) moveImage(dragIdx, i);
+                setDragIdx(null);
+              }}
+              onDragEnd={() => setDragIdx(null)}
+              className={`relative h-28 w-28 cursor-grab overflow-hidden rounded-md border active:cursor-grabbing ${
+                dragIdx === i ? "border-[var(--green)] opacity-60" : "border-[var(--line)]"
+              }`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="h-full w-full object-cover" />
+              <img src={url} alt="" className="h-full w-full object-cover" draggable={false} />
+              {i === 0 ? (
+                <span className="absolute left-1 top-1 rounded bg-[var(--green)] px-1.5 py-0.5 text-[9px] text-white">
+                  メイン
+                </span>
+              ) : null}
               <button
                 type="button"
-                onClick={() => startTransition(async () => { await removeProjectImage(project.id, url); })}
+                onClick={() =>
+                  startTransition(async () => {
+                    await removeProjectImage(project.id, url);
+                    setImgList((cur) => cur.filter((u) => u !== url));
+                  })
+                }
                 disabled={imgPending}
                 className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white"
               >
                 ×
               </button>
+              <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/40 px-1">
+                <button
+                  type="button"
+                  onClick={() => moveImage(i, i - 1)}
+                  disabled={imgPending || i === 0}
+                  className="px-1 py-0.5 text-[11px] text-white disabled:opacity-30"
+                  aria-label="左へ移動"
+                >
+                  ◀
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveImage(i, i + 1)}
+                  disabled={imgPending || i === imgList.length - 1}
+                  className="px-1 py-0.5 text-[11px] text-white disabled:opacity-30"
+                  aria-label="右へ移動"
+                >
+                  ▶
+                </button>
+              </div>
             </div>
           ))}
-          {project.imageUrls.length < 6 ? (
+          {imgList.length < 6 ? (
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
