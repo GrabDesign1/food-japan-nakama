@@ -267,8 +267,14 @@ body {
   .fjn-hero__visual::before { background: linear-gradient(180deg, #f4efe9, transparent 8%); }
 }
 
+@media (max-width: 600px) {
+  /* ハンバーガー+ログインと共存できるよう、ロゴはマークのみ表示 */
+  .fjn-brand__name, .fjn-brand__sub { display: none; }
+  .fjn-brand__mark { width: 48px; height: 48px; }
+  .fjn-hero__header { gap: 12px; }
+}
+
 @media (max-width: 440px) {
-  .fjn-brand__sub { display: none; }
   .fjn-actions { flex-direction: column; }
   .fjn-button { width: 100%; }
 }

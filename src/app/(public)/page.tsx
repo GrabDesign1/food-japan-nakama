@@ -4,6 +4,7 @@ import { getLandingContent } from "@/lib/public-content";
 import { OfferingCard } from "@/components/OfferingCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { btn, h2Cls } from "@/lib/ui";
+import { HeroMobileMenu } from "./_components/HeroMobileMenu";
 
 export default async function PublicHome() {
   // ログイン済みでも公開トップは閲覧可能（ナビは「マイページトップへ」に切り替える）
@@ -17,6 +18,7 @@ export default async function PublicHome() {
       {/* ヒーロー（提供デザイン food-japan-nakama-hero）。ヘッダーもこの中に含む。 */}
       <section className="fjn-hero" aria-labelledby="fjn-hero-title">
         <header className="fjn-hero__header">
+          <HeroMobileMenu />
           <Link className="fjn-brand" href="/" aria-label="FOOD JAPAN NAKAMA トップへ">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="fjn-brand__mark" src="/logo-mark.png" alt="" width={88} height={88} />
