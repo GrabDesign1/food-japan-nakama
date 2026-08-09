@@ -28,7 +28,9 @@ export default async function PublicHome() {
 
           <nav className="fjn-nav" aria-label="メインナビゲーション">
             <a href="#co-creation-projects">案件を探す</a>
+            <Link href="/about">NAKAMAとは</Link>
             <Link href="/produce">共創プロデュース</Link>
+            <Link href="/food-loss">食品ロス支援</Link>
             <Link href="/crowdfunding">クラファン支援</Link>
             <Link href="/pricing">料金</Link>
             {isLoggedIn ? (
@@ -49,7 +51,7 @@ export default async function PublicHome() {
               小売・飲食店・流通・自治体など、食に関わる人と企業を<br />
               つなぐ共創プラットフォームです。
               <br /><br />
-              売りたい食材、探している原料、解決したい課題、<br />
+              売りたい食材、探している原料、食品ロス、解決したい課題、<br />
               いっしょに取り組みたいプロジェクトを掲載し、<br />
               新しい取引や事業の仲間と出会えます。
             </p>
@@ -79,7 +81,7 @@ export default async function PublicHome() {
         {/* サービス説明 */}
         <section>
           <h1 className="font-serif text-[26px] leading-tight text-[var(--ink)] sm:text-[32px]">
-            食の課題を、全国のNAKAMAと解決する
+            食の課題を、全国のNAKAMAと共創し解決する
           </h1>
           <p className="mt-4 max-w-[860px] text-[15px] leading-8 text-[var(--ink-2)]">
             余っている食材を活かしたい。新しい原料や商品を探したい。地域の食を全国へ届けたい。異業種と新しい事業を始めたい。
@@ -169,7 +171,7 @@ export default async function PublicHome() {
         <PreviewSection
           id="sell"
           title="売りたい（提供できるもの）"
-          sub="余っている食材・規格外品・提供できる設備など"
+          sub="余っている食材・規格外品・食品ロス・提供できる設備など"
           empty="現在「売りたい」の掲載はありません。"
           hasItems={gives.length > 0}
         >
@@ -219,7 +221,7 @@ export default async function PublicHome() {
           <SectionHead title="FOOD JAPAN の3つのサービス" sub="役割と料金が混ざらないよう、目的で選べます" />
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { t: "NAKAMA", d: "自分で出会い、学ぶ月額会員サービス。", price: "月額20,000円（税抜）", href: "/pricing", cta: "料金を見る" },
+              { t: "NAKAMA", d: "自分で出会い、学ぶ月額会員サービス。", price: "月額22,000円（税込）", href: "/pricing", cta: "料金を見る" },
               { t: "共創プロデュース", d: "人が入り、企画・実証・事業化まで一緒に進める個別支援。", price: "15万円（税抜）〜", href: "/produce", cta: "詳細・相談" },
               { t: "クラウドファンディング支援", d: "Makuake等を活用して販売しながら市場を検証。", price: "個別見積", href: "/crowdfunding", cta: "詳細・相談" },
             ].map((s) => (

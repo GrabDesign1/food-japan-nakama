@@ -7,7 +7,7 @@ const PUBLIC_PATHS = [
   "/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/preview",
   "/about", "/pricing", "/flow", "/faq", "/company", "/contact",
   "/terms", "/privacy", "/tokushoho",
-  "/produce", "/crowdfunding", "/consultation", "/learn",
+  "/produce", "/crowdfunding", "/consultation", "/learn", "/food-loss",
   // SEO/AIO: クローラ向けファイル（要公開）
   "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
 ];

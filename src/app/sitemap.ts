@@ -14,6 +14,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   { path: "/pricing", priority: 0.9, changeFrequency: "weekly" },
   { path: "/produce", priority: 0.9, changeFrequency: "weekly" },
   { path: "/crowdfunding", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/food-loss", priority: 0.9, changeFrequency: "weekly" },
   { path: "/learn", priority: 0.8, changeFrequency: "weekly" },
   { path: "/flow", priority: 0.7, changeFrequency: "monthly" },
   { path: "/faq", priority: 0.7, changeFrequency: "monthly" },

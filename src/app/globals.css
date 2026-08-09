@@ -97,13 +97,14 @@ body {
   letter-spacing: .13em;
 }
 
-.fjn-nav { display: flex; align-items: center; gap: clamp(28px, 3.4vw, 66px); }
+.fjn-nav { display: flex; align-items: center; gap: clamp(14px, 1.8vw, 40px); }
 .fjn-nav a {
   color: #101010;
   text-decoration: none;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: .04em;
+  white-space: nowrap;
 }
 .fjn-nav a:hover { color: var(--fjn-orange); }
 .fjn-nav .fjn-nav__login {

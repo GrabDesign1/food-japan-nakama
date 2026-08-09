@@ -48,6 +48,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           ]} />
           <FooterCol title="個別支援" links={[
             ["共創プロデュース", "/produce"],
+            ["食品ロス支援", "/food-loss"],
             ["クラウドファンディング支援", "/crowdfunding"],
             ["個別相談", "/consultation"],
           ]} />

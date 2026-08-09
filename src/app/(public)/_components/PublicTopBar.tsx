@@ -20,6 +20,7 @@ export function PublicTopBar() {
         <nav className="ml-auto hidden items-center gap-5 text-[13px] font-medium text-[var(--ink-2)] lg:flex">
           <Link href="/about" className="hover:text-[var(--green-d)]">NAKAMAとは</Link>
           <Link href="/produce" className="hover:text-[var(--green-d)]">共創プロデュース</Link>
+          <Link href="/food-loss" className="hover:text-[var(--green-d)]">食品ロス支援</Link>
           <Link href="/crowdfunding" className="hover:text-[var(--green-d)]">クラファン支援</Link>
           <Link href="/pricing" className="hover:text-[var(--green-d)]">料金</Link>
         </nav>
