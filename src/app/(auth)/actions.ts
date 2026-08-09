@@ -45,6 +45,9 @@ export async function signUp(
   if (password !== passwordConfirm) {
     return { error: "パスワードが一致しません。もう一度ご確認ください。", email };
   }
+  if (!formData.get("businessPurpose")) {
+    return { error: "事業目的での申込みであることをご確認ください。", email };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({ email, password });

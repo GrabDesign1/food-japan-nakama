@@ -94,7 +94,7 @@ export default async function BillingPage({
                     現在ご利用中のプラン
                   </div>
                 ) : paid ? (
-                  <PlanButton planCode={p.code} label="お支払いへ進む" />
+                  <PlanButton planCode={p.code} label={`月額¥${p.amount!.toLocaleString()}（税込）で申し込む`} />
                 ) : (
                   <div className="rounded-md bg-[var(--canvas)] py-2 text-center text-[12px] text-[var(--muted)]">個別見積（事務局へお問い合わせ）</div>
                 )}
@@ -103,6 +103,21 @@ export default async function BillingPage({
           );
         })}
       </div>
+
+      {/* 特商法12条の6対応：申込前に契約条件を一覧表示 */}
+      {!isPaid ? (
+        <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+          <p className="mb-2 text-[13px] font-semibold text-[var(--ink)]">お申し込み前にご確認ください（契約条件）</p>
+          <ul className="flex flex-col gap-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            <li>・料金：月額22,000円（税込）。初回は申込日に22,000円を決済します。</li>
+            <li>・契約期間：1か月。解約手続がない限り、1か月ごと（毎月、申込日と同じ日）に22,000円が自動決済される無期限の自動更新契約です。</li>
+            <li>・提供開始：決済完了後、すぐにご利用いただけます。</li>
+            <li>・解約：次回更新日の前日の午後11時59分（日本時間）までに、このページ（マイページ「プラン・お支払い」）から手続きできます。解約後も契約期間の満了までご利用いただけます。</li>
+            <li>・返金：契約期間途中の解約による日割り返金はありません。</li>
+            <li>・訂正・取消し：決済画面でお支払いを完了する前であれば、画面を戻ることで申込みを中止できます。</li>
+          </ul>
+        </div>
+      ) : null}
 
       <p className="text-[11px] text-[var(--muted)]">
         ※ 価格は税込です。自治体・JA・大学など請求書払いをご希望の場合は、事務局が個別に対応します（銀行振込・年額可）。協賛プランとの併用も可能です。

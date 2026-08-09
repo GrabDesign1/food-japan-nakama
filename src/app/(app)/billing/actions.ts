@@ -61,6 +61,13 @@ export async function startCheckout(
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       allow_promotion_codes: true, // 決済画面でクーポン（プロモーションコード）入力を可能にする
+      // 特商法12条の6対応：最終確認画面（Checkout）の申込ボタン直前に契約条件を表示する
+      custom_text: {
+        submit: {
+          message:
+            "月額22,000円（税込）の自動更新契約です。本日、初回分22,000円を決済し、以後は1か月ごと（毎月、申込日と同じ日）に22,000円を自動決済します（契約期間1か月・解約手続がない限り無期限で自動更新）。決済完了後すぐにご利用いただけます。解約は次回更新日の前日の23:59（日本時間）までにマイページの「プラン・お支払い」から手続きでき、解約後も契約期間の満了までご利用いただけます。日割り返金はありません。申込内容の訂正・取消しは、お支払い完了前にこの画面から戻ることで行えます。",
+        },
+      },
       line_items: [
         {
           price_data: {

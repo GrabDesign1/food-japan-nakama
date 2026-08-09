@@ -80,18 +80,24 @@ export function AuthForm({
       </label>
 
       {mode === "signup" ? (
-        <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-          パスワード（確認）
-          <input
-            type="password"
-            name="passwordConfirm"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
-            placeholder="••••••••"
-          />
-        </label>
+        <>
+          <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+            パスワード（確認）
+            <input
+              type="password"
+              name="passwordConfirm"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+              placeholder="••••••••"
+            />
+          </label>
+          <label className="flex items-start gap-2 text-[12px] leading-5 text-[var(--ink-2)]">
+            <input type="checkbox" name="businessPurpose" required className="mt-0.5 accent-[var(--green)]" />
+            本サービスを事業として、または事業のために申し込みます。
+          </label>
+        </>
       ) : null}
 
       {mode === "login" ? (
