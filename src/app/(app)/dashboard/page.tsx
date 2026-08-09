@@ -403,8 +403,8 @@ export default async function DashboardPage() {
                             📩 問い合わせ {inquiries}件
                           </span>
                         ) : null}
-                        <span>閲覧 {views}回</span>
-                        <span>興味あり {favs}人</span>
+                        <span className="font-bold text-[var(--ink)]">閲覧 {views}回</span>
+                        <span className="font-bold text-[var(--ink)]">興味あり {favs}人</span>
                         <Link href={`/ledger/${o.id}/edit`} className="ml-auto font-bold text-[var(--green-d)] underline">
                           編集
                         </Link>
