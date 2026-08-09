@@ -89,7 +89,7 @@ export default async function PublicHome() {
           </p>
           <div className="mt-7 grid gap-5 sm:grid-cols-3">
             {[
-              { t: "売りたい", d: "食材・規格外品・商品・設備・技術などを掲載" },
+              { t: "売りたい", d: "食材・規格外品・商品・設備・技術・物流などを掲載" },
               { t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
               { t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
             ].map((it) => (
@@ -108,7 +108,7 @@ export default async function PublicHome() {
         {/* 食の注目記事（キュレーション） */}
         {articles.length > 0 ? (
           <section>
-            <SectionHead title="食の注目記事" sub="PR TIMES・note・新聞などから、事務局がピックアップ" />
+            <SectionHead title="食の共創 注目記事" sub="PR TIMES・note・新聞などから、事務局がピックアップ" />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               {articles.map((a) => (
                 <a
@@ -222,8 +222,8 @@ export default async function PublicHome() {
           <div className="grid gap-4 sm:grid-cols-3">
             {[
               { t: "NAKAMA", d: "自分で出会い、学ぶ月額会員サービス。", price: "月額22,000円（税込）", href: "/pricing", cta: "料金を見る" },
-              { t: "共創プロデュース", d: "人が入り、企画・実証・事業化まで一緒に進める個別支援。", price: "15万円（税抜）〜", href: "/produce", cta: "詳細・相談" },
-              { t: "クラウドファンディング支援", d: "Makuake等を活用して販売しながら市場を検証。", price: "個別見積", href: "/crowdfunding", cta: "詳細・相談" },
+              { t: "共創プロデュース", d: "事務局の人間がコーディネートし、企画・実証・事業化まで一緒に進める個別支援。", price: "15万円（税抜）〜", href: "/produce", cta: "詳細・相談" },
+              { t: "クラウドファンディング支援", d: "Makuake等を活用してマーケティングをしましょう！クラファン掲載の代行を行います。", price: "個別見積", href: "/crowdfunding", cta: "詳細・相談" },
             ].map((s) => (
               <div key={s.t} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
                 <h3 className="text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
