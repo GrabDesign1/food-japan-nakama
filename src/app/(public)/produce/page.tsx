@@ -14,10 +14,34 @@ const CTA_HREF = "/consultation?type=produce";
 
 // 4. 共創プロデュースで行うこと
 const ACTIONS = [
-  { no: "01", t: "共創テーマを設計する", d: "資源、課題、顧客、実現したい未来を整理し、「誰と、何に取り組むのか」を明確にします。" },
-  { no: "02", t: "共創相手を見つける", d: "必要な技術、販路、知見、資源を持つ企業や専門家を探し、打診と面談を進めます。" },
-  { no: "03", t: "企画と実証を設計する", d: "事業の仕組み、役割分担、概算収支、実証方法、判断基準を整理し、共創企画書と実証計画にします。" },
-  { no: "04", t: "事業化まで推進する", d: "関係者の合意、交渉、進行管理、課題解決を担い、実証から契約、販売、資金調達など、合意した成果に向けて動きます。" },
+  {
+    no: "01",
+    t: "共創テーマを設計する",
+    d: "資源、課題、顧客、実現したい未来を整理し、「誰と、何に取り組むのか」を明確にします。",
+    img: "/produce/action-1.jpg",
+    alt: "生産者と事務局が野菜を前に課題を整理するイラスト",
+  },
+  {
+    no: "02",
+    t: "共創相手を見つける",
+    d: "必要な技術、販路、知見、資源を持つ企業や専門家を探し、打診と面談を進めます。",
+    img: "/produce/action-2.jpg",
+    alt: "生産者・料理人・企業を引き合わせるイラスト",
+  },
+  {
+    no: "03",
+    t: "企画と実証を設計する",
+    d: "事業の仕組み、役割分担、概算収支、実証方法、判断基準を整理し、共創企画書と実証計画にします。",
+    img: "/produce/action-3.jpg",
+    alt: "試作品を味見しながら企画書を確認するイラスト",
+  },
+  {
+    no: "04",
+    t: "事業化まで推進する",
+    d: "関係者の合意、交渉、進行管理、課題解決を担い、実証から契約、販売、資金調達など、合意した成果に向けて動きます。",
+    img: "/produce/action-4.jpg",
+    alt: "完成した商品を販売先へ届けるイラスト",
+  },
 ];
 
 // 5. 支援内容（6領域）
@@ -312,10 +336,15 @@ export default function ProducePage() {
           </p>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {ACTIONS.map((a) => (
-              <div key={a.no} className="border-t-[3px] border-[var(--green)] bg-[#f6f3ec] px-5 py-6">
-                <span className="font-serif text-[12px] text-[var(--orange)]">{a.no}</span>
-                <h3 className="mt-2 text-[15px] font-bold text-[var(--ink)]">{a.t}</h3>
-                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{a.d}</p>
+              <div key={a.no} className="overflow-hidden border-t-[3px] border-[var(--green)] bg-[#f6f3ec]">
+                <div className="relative aspect-[9/10] overflow-hidden">
+                  <Image src={a.img} alt={a.alt} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover" />
+                </div>
+                <div className="px-5 py-5">
+                  <span className="font-serif text-[12px] text-[var(--orange)]">{a.no}</span>
+                  <h3 className="mt-2 text-[15px] font-bold text-[var(--ink)]">{a.t}</h3>
+                  <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{a.d}</p>
+                </div>
               </div>
             ))}
           </div>
