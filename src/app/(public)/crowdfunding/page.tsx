@@ -115,10 +115,10 @@ export default function CrowdfundingPage() {
         <div className="mx-auto max-w-[1080px] text-center">
           <Eyebrow>WHY CROWDFUNDING?</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            クラファンは、販売に拍車をかけるためのマーケティングです。
+            クラファンは、「売れるか」を確かめるマーケティングです。
           </h2>
           <p className="mx-auto mt-4 max-w-[780px] text-[15px] leading-8 text-[var(--ink-2)]">
-            まだ売れるか分からない商品を、いきなり大量生産する必要はありません。テストマーケティングを行い、実際の購入行動から、市場投入に必要な答えを得ます。
+            商品を発売前から市場へ問いかけ、需要や価格を検証する。同時に、最初の顧客とファンをつくる。実際の購入行動を、本格販売の確かな一歩につなげます。商品を小さく市場へ出し、需要・価格・顧客の反応を検証します。実際の購入データを、本格販売や商品開発に生かします。
           </p>
           <div className="mt-10 grid grid-cols-2 gap-px border border-[var(--line)] bg-[var(--line)] text-left lg:grid-cols-4">
             {BENEFITS.map((b) => (
