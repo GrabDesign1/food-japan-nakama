@@ -282,10 +282,11 @@ export default function CrowdfundingPage() {
                 <li>在庫・品質・食品表示・発送</li>
                 <li>配送先情報に基づく履行</li>
                 <li>返品・再送・購入者対応の最終責任</li>
+                <li>入金、キャンセル等の対応</li>
               </ul>
             </div>
             <div className="border border-[var(--line)] p-6">
-              <h3 className="text-[17px] font-bold text-[var(--ink)]">グラブデザインが支援すること</h3>
+              <h3 className="text-[17px] font-bold text-[var(--ink)]">当事務局が支援すること</h3>
               <ul className="mt-3 list-disc pl-5 text-[13px] leading-8 text-[var(--ink-2)]">
                 <li>企画、収支、リターンの設計</li>
                 <li>掲載ページと広報素材の制作</li>
