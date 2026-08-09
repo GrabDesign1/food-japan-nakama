@@ -97,9 +97,9 @@ export const CROWDFUNDING_JSONLD = {
   "@type": "Service",
   "@id": `${APP_URL}/crowdfunding#service`,
   name: "クラウドファンディング支援",
-  serviceType: "クラウドファンディングを活用した販売・市場検証の支援",
+  serviceType: "クラウドファンディングを活用したマーケティング・テスト販売の支援",
   description:
-    "Makuake等のクラウドファンディングを活用し、商品の販売・需要検証・販売後の販路開拓までを支援するサービス。着手金＋制作費＋成功報酬（個別見積）。",
+    "Makuake等のクラウドファンディングを活用し、販売前に需要・価格・顧客を検証して最初のファンと販売実績をつくるマーケティング支援。企画設計からページ制作、公開中の運用、終了後の販路づくりまで伴走。料金は応援購入総額の35％（Makuake手数料20％＋当社支援手数料15％）。",
   provider: { "@id": `${APP_URL}/#org` },
   areaServed: "JP",
   url: `${APP_URL}/crowdfunding`,
