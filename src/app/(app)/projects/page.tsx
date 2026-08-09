@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createDraftProject } from "./actions";
 import { ProjectCard } from "@/components/ProjectCard";
+import { EmptyState } from "@/components/EmptyState";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -56,7 +57,15 @@ export default async function ProjectsPage() {
       <div>
         <h2 className={`${h2Cls} mb-3`}>掲載中のプロジェクト</h2>
         {published.length === 0 ? (
-          <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">まだ掲載中のプロジェクトはありません。</p>
+          <EmptyState
+            title="掲載中のプロジェクトはまだありません"
+            description="最初の1件を掲載してみませんか。困っていること・実現したいことを書くだけで、共創パートナー候補に届きます。"
+            actions={[{ label: "持ち寄り（売りたい・買いたい）から探す", href: "/search" }]}
+          >
+            <form action={createDraftProject}>
+              <button className={btn("primary", "sm")}>＋ 共創プロジェクトを企画する</button>
+            </form>
+          </EmptyState>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {published.map((p) => (
@@ -73,7 +82,15 @@ export default async function ProjectsPage() {
       <div>
         <h2 className={`${h2Cls} mb-3`}>自分の掲載</h2>
         {mine.length === 0 ? (
-          <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">まだ掲載していません。「＋ プロジェクトを掲載」から作成できます。</p>
+          <EmptyState
+            compact
+            title="まだ掲載していません"
+            description="「＋ 共創プロジェクトを企画する」から下書きを作成できます。掲載は事務局の承認後に公開されます。"
+          >
+            <form action={createDraftProject}>
+              <button className={btn("primary", "sm")}>＋ 共創プロジェクトを企画する</button>
+            </form>
+          </EmptyState>
         ) : (
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {mine.map((p) => {

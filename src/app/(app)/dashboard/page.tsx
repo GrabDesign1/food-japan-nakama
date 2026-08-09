@@ -11,6 +11,7 @@ import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { ProducerCard, type ProducerCardData } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
+import { EmptyState } from "@/components/EmptyState";
 import { eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
 
 // 商談が「停滞中」とみなす日数（最終活動からの経過）
@@ -488,9 +489,12 @@ export default async function DashboardPage() {
           </Link>
         </div>
         {recentOfferings.length === 0 ? (
-          <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
-            まだ公開された台帳がありません。「持ち寄り台帳」から登録してみましょう。
-          </p>
+          <EmptyState
+            compact
+            title="公開中の「売りたい・買いたい」はまだありません"
+            description="あなたの1件が最初の出会いになります。商品・食材・探しているものを登録してみましょう。"
+            actions={[{ label: "＋ 売りたい・買いたいを登録する", href: "/ledger", variant: "primary" }]}
+          />
         ) : (
           <div className="flex flex-col gap-6">
             {/* 売りたい */}
@@ -533,9 +537,12 @@ export default async function DashboardPage() {
           <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">企画する →</Link>
         </div>
         {publishedProjects.length === 0 ? (
-          <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
-            まだ掲載中の共創プロジェクトはありません。「共創プロジェクトを企画する」から募集できます。
-          </p>
+          <EmptyState
+            compact
+            title="掲載中の共創プロジェクトはまだありません"
+            description="困っていること・実現したいことを書いて掲載すると、共創パートナー候補に届きます。"
+            actions={[{ label: "＋ 共創プロジェクトを企画する", href: "/projects", variant: "primary" }]}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {publishedProjects.map((p) => (

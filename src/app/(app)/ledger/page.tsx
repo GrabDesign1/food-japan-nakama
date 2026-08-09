@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
+import { EmptyState } from "@/components/EmptyState";
 import { views24hMap } from "@/lib/offering-views";
 import { createDraftOffering } from "./actions";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
@@ -47,19 +48,19 @@ export default async function LedgerPage() {
         </div>
       </div>
 
-      <Section title="売りたい" empty="まだ登録がありません。" items={gives} />
-      <Section title="買いたい" empty="まだ登録がありません。" items={wants} />
+      <Section title="売りたい" direction="GIVE" items={gives} />
+      <Section title="買いたい" direction="WANT" items={wants} />
     </div>
   );
 }
 
 function Section({
   title,
-  empty,
+  direction,
   items,
 }: {
   title: string;
-  empty: string;
+  direction: "GIVE" | "WANT";
   items: {
     id: string;
     direction: string;
@@ -82,9 +83,21 @@ function Section({
         {title}
       </h2>
       {items.length === 0 ? (
-        <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
-          {empty}
-        </p>
+        <EmptyState
+          compact
+          title={direction === "GIVE" ? "「売りたい」はまだ登録がありません" : "「買いたい」はまだ登録がありません"}
+          description={
+            direction === "GIVE"
+              ? "商品・食材・規格外品など、動かせるものを1件ずつ登録すると、買いたい相手から見つけてもらえます。"
+              : "探している商品・原料・条件を登録すると、売りたい相手から連絡が届きやすくなります。"
+          }
+        >
+          <form action={createDraftOffering.bind(null, direction)}>
+            <button className={btn(direction === "GIVE" ? "primary" : "amber", "sm")}>
+              ＋ {direction === "GIVE" ? "売りたい" : "買いたい"}を登録
+            </button>
+          </form>
+        </EmptyState>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((o) => (

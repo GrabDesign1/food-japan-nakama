@@ -12,6 +12,7 @@ import {
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
+import { toggleFavorite } from "../../favorites/actions";
 import { UpgradeToMessage } from "@/components/UpgradeToMessage";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
@@ -70,6 +71,15 @@ export default async function OfferingDetailPage({
       })
     : null;
 
+  // お気に入り状態（非オーナーのみ）
+  const myFavorite = !isOwner
+    ? await prisma.favorite.findUnique({
+        where: {
+          memberId_targetType_targetId: { memberId: member.id, targetType: "offering", targetId: offering.id },
+        },
+      })
+    : null;
+
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";
   const amount = formatAmount(offering);
@@ -101,6 +111,12 @@ export default async function OfferingDetailPage({
           >
             編集する
           </Link>
+        ) : offering.isPublic ? (
+          <form action={toggleFavorite.bind(null, "offering", offering.id)}>
+            <button className={btn("secondary", "sm")}>
+              {myFavorite ? "★ お気に入り済み" : "☆ お気に入りに追加"}
+            </button>
+          </form>
         ) : null}
       </div>
 

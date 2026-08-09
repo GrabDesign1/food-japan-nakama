@@ -105,6 +105,86 @@ export async function notifyAdminMemberRegistered(params: {
   });
 }
 
+// 会員向け：新着メッセージ通知（相手が既読済みの状態で新しく届いたときのみ呼ぶ）。
+export async function notifyNewMessage(params: {
+  to: string[];
+  fromMemberName: string;
+  preview: string;
+  threadId: string;
+}): Promise<void> {
+  const { to, fromMemberName, preview, threadId } = params;
+  if (to.length === 0) return;
+  const short = preview.length > 80 ? `${preview.slice(0, 80)}…` : preview;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">新しいメッセージが届きました</h2>
+    <p style="font-size:14px;color:#3C4A62"><b>${fromMemberName}</b> さんからメッセージが届いています。</p>
+    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${short}</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/messages/${threadId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">メッセージを確認する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">このメールはFOOD JAPAN NAKAMAから自動送信されています。</p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】${fromMemberName}さんからメッセージが届きました`,
+    html,
+  });
+}
+
+// 会員向け：共創プロジェクトへの応募通知（掲載者へ）。
+export async function notifyProjectApplication(params: {
+  to: string[];
+  projectTitle: string;
+  applicantName: string;
+  projectId: string;
+}): Promise<void> {
+  const { to, projectTitle, applicantName, projectId } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">プロジェクトに応募がありました</h2>
+    <p style="font-size:14px;color:#3C4A62">あなたの共創プロジェクト「<b>${projectTitle}</b>」に、<b>${applicantName}</b> さんから応募が届きました。</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/projects/${projectId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">応募内容を確認する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">このメールはFOOD JAPAN NAKAMAから自動送信されています。</p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】「${projectTitle}」に応募がありました`,
+    html,
+  });
+}
+
+// 会員向け：掲載を事務局が非公開にしたときの通知。
+export async function notifyListingUnpublished(params: {
+  to: string[];
+  kind: "台帳" | "プロジェクト";
+  title: string;
+  reason: string;
+  editUrl: string;
+}): Promise<void> {
+  const { to, kind, title, reason, editUrl } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">掲載を一時非公開にしました</h2>
+    <p style="font-size:14px;color:#3C4A62">事務局にて内容を確認し、${kind}「<b>${title}</b>」を一時的に非公開にいたしました。</p>
+    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap"><b>理由：</b>${reason}</p>
+    <p style="font-size:14px;color:#3C4A62">内容を修正のうえ、再度公開いただけます。ご不明な点は事務局までご連絡ください。</p>
+    <p style="margin:22px 0">
+      <a href="${editUrl}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">内容を確認・修正する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">FOOD JAPAN NAKAMA 事務局（株式会社グラブデザイン）</p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】掲載「${title}」を一時非公開にしました`,
+    html,
+  });
+}
+
 // 個別相談（共創プロデュース／クラファン支援）の通知＋自動返信。
 const CONSULT_LABEL: Record<string, string> = {
   produce: "共創プロデュース",

@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { applyToProject } from "../actions";
+import { toggleFavorite } from "../../favorites/actions";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
 export default async function ProjectDetailPage({
@@ -35,6 +36,15 @@ export default async function ProjectDetailPage({
 
   const myApplication = project.applications.find((a) => a.applicantMemberId === me.id);
 
+  // お気に入り状態（非オーナーのみ）
+  const myFavorite = !isOwner
+    ? await prisma.favorite.findUnique({
+        where: {
+          memberId_targetType_targetId: { memberId: me.id, targetType: "project", targetId: project.id },
+        },
+      })
+    : null;
+
   // 応募者名（オーナー向け）
   const applicantIds = project.applications.map((a) => a.applicantMemberId);
   const applicants = isOwner && applicantIds.length
@@ -48,6 +58,12 @@ export default async function ProjectDetailPage({
         <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">← 一覧</Link>
         {isOwner ? (
           <Link href={`/projects/${project.id}/edit`} className={btn("secondary", "sm")}>編集する</Link>
+        ) : project.status === "published" ? (
+          <form action={toggleFavorite.bind(null, "project", project.id)}>
+            <button className={btn("secondary", "sm")}>
+              {myFavorite ? "★ お気に入り済み" : "☆ お気に入りに追加"}
+            </button>
+          </form>
         ) : null}
       </div>
 

@@ -1,6 +1,7 @@
 // メッセージ左ペインのスレッド一覧（2ペインで共通利用）。
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { EmptyState } from "@/components/EmptyState";
 
 export async function ThreadList({
   meId,
@@ -37,8 +38,13 @@ export async function ThreadList({
 
   if (threads.length === 0) {
     return (
-      <div className="p-5 text-[13px] text-[var(--muted)]">
-        まだメッセージはありません。
+      <div className="p-4">
+        <EmptyState
+          compact
+          title="まだメッセージはありません"
+          description="気になる相手に「興味を送る」と、ここでやり取りが始まります。"
+          actions={[{ label: "共創パートナーを探す", href: "/search" }]}
+        />
       </div>
     );
   }

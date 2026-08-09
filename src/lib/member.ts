@@ -153,3 +153,12 @@ export async function listReviewMembers(tenantId: string) {
     },
   });
 }
+
+/** 通知用：会員（法人）に紐づく利用ユーザーのメールアドレス一覧（停止中は除く）。 */
+export async function getMemberUserEmails(memberId: string): Promise<string[]> {
+  const users = await prisma.user.findMany({
+    where: { memberId, status: { not: "SUSPENDED" } },
+    select: { email: true },
+  });
+  return Array.from(new Set(users.map((u) => u.email).filter(Boolean)));
+}

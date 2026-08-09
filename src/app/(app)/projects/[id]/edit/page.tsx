@@ -25,6 +25,7 @@ export default async function ProjectEditPage({
     body: project.body,
     fromRole: project.fromRole,
     toRole: project.toRole,
+    area: project.area,
     budget: project.budget,
     tags: project.tags,
     imageUrls: project.imageUrls,

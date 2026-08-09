@@ -28,6 +28,8 @@ export default async function AdminPage() {
     dealCount,
     dealClosed,
     pendingProjects,
+    threadCount,
+    applicationCount,
   ] = await Promise.all([
     listReviewMembers(tenantId),
     prisma.member.count({ where: { tenantId, status: "APPROVED" } }),
@@ -36,6 +38,8 @@ export default async function AdminPage() {
     prisma.deal.count({ where: { tenantId } }),
     prisma.deal.count({ where: { tenantId, phase: 5 } }),
     prisma.project.findMany({ where: { tenantId, status: "pending" }, orderBy: { updatedAt: "desc" } }),
+    prisma.thread.count({ where: { tenantId } }),
+    prisma.projectApplication.count({ where: { project: { tenantId } } }),
   ]);
 
   const announcements = await prisma.announcement.findMany({
@@ -97,6 +101,8 @@ export default async function AdminPage() {
     { k: "掲載中プロジェクト", v: projectPublished },
     { k: "商談数", v: dealCount },
     { k: "成約（商品化）", v: dealClosed },
+    { k: "問い合わせ", v: threadCount },
+    { k: "プロジェクト応募", v: applicationCount },
   ];
 
   return (
@@ -106,11 +112,15 @@ export default async function AdminPage() {
           <p className={eyebrowCls}>ADMIN ・ 事務局ダッシュボード</p>
           <h1 className={h1Cls}>事務局管理</h1>
         </div>
-        <Link href="/admin/consultations" className={btn("secondary", "sm")}>個別相談の管理 →</Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/listings" className={btn("secondary", "sm")}>掲載の監視 →</Link>
+          <Link href="/admin/inquiries" className={btn("secondary", "sm")}>問い合わせ・応募の状況 →</Link>
+          <Link href="/admin/consultations" className={btn("secondary", "sm")}>個別相談の管理 →</Link>
+        </div>
       </div>
 
       {/* 指標サマリ */}
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.k} className="rounded-[10px] border border-[var(--line)] bg-white p-4">
             <div className="text-[10px] text-[var(--muted)]">{m.k}</div>

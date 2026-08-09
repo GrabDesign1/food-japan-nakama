@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
 import { ProducerCard } from "@/components/ProducerCard";
+import { ProjectCard } from "@/components/ProjectCard";
+import { EmptyState } from "@/components/EmptyState";
 import { views24hMap } from "@/lib/offering-views";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
@@ -14,10 +16,22 @@ type SP = {
   category?: string;
   q?: string;
   direction?: string;
+  page?: string;
 };
+
+type Target = "offerings" | "coprojects" | "producers";
+
+const PER_PAGE = 24;
 
 const inputCls =
   "rounded-lg border border-[var(--line)] bg-white px-3 py-2.5 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+
+function parseTarget(v: string | undefined): Target {
+  if (v === "producers") return "producers";
+  if (v === "coprojects") return "coprojects";
+  // 旧URL（target=projects）は台帳検索として扱う
+  return "offerings";
+}
 
 export default async function SearchPage({
   searchParams,
@@ -29,27 +43,63 @@ export default async function SearchPage({
   const tenantId = su.app.tenantId;
 
   const sp = await searchParams;
-  const target = sp.target === "producers" ? "producers" : "projects";
+  const target = parseTarget(sp.target);
   const area = sp.area?.trim() || "";
   const category = sp.category?.trim() || "";
   const q = sp.q?.trim() || "";
   const direction = sp.direction === "GIVE" || sp.direction === "WANT" ? sp.direction : "";
+  const page = Math.max(1, Math.trunc(Number(sp.page) || 1));
+  const skip = (page - 1) * PER_PAGE;
 
   // ── 検索実行 ──
-  let offerings: Awaited<ReturnType<typeof searchOfferings>> = [];
-  let producers: Awaited<ReturnType<typeof searchProducers>> = [];
+  let offerings: Awaited<ReturnType<typeof searchOfferings>>[0] = [];
+  let producers: Awaited<ReturnType<typeof searchProducers>>[0] = [];
+  let coprojects: Awaited<ReturnType<typeof searchProjects>>[0] = [];
+  let total = 0;
 
   // 自分の事業者・投稿は除外せず、「あなたの会社／あなたの投稿」バッジで区別する
   const ownMemberId = su.app.memberId ?? null;
 
   if (target === "producers") {
-    producers = await searchProducers({ tenantId, area, category, q });
+    const [items, t] = await searchProducers({ tenantId, area, category, q, skip });
+    producers = items;
+    total = t;
+  } else if (target === "coprojects") {
+    const [items, t] = await searchProjects({ tenantId, area, category, q, skip });
+    coprojects = items;
+    total = t;
   } else {
-    offerings = await searchOfferings({ tenantId, area, category, q, direction });
+    const [items, t] = await searchOfferings({ tenantId, area, category, q, direction, skip });
+    offerings = items;
+    total = t;
   }
 
-  const count = target === "producers" ? producers.length : offerings.length;
+  const count =
+    target === "producers" ? producers.length : target === "coprojects" ? coprojects.length : offerings.length;
+  const hasFilter = Boolean(area || category || q || direction);
   const viewMap = await views24hMap(offerings.map((o) => o.id));
+
+  // 共創プロジェクトの掲載者名
+  const projMemberIds = Array.from(new Set(coprojects.map((p) => p.memberId)));
+  const projMembers = projMemberIds.length
+    ? await prisma.member.findMany({ where: { id: { in: projMemberIds } }, select: { id: true, name: true } })
+    : [];
+  const projNameMap = new Map(projMembers.map((m) => [m.id, m.name]));
+
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const pageQuery = (p: number) => {
+    const params = new URLSearchParams();
+    params.set("target", target);
+    if (area) params.set("area", area);
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
+    if (direction) params.set("direction", direction);
+    if (p > 1) params.set("page", String(p));
+    return `/search?${params.toString()}`;
+  };
+
+  const toggleCls = (active: boolean) =>
+    `flex-1 whitespace-nowrap px-3 py-2 text-center ${active ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`;
 
   return (
     <div className="flex flex-col gap-5">
@@ -64,20 +114,15 @@ export default async function SearchPage({
         className="rounded-xl border border-[var(--line)] bg-[var(--green-soft)] p-4"
       >
         {/* 対象トグル */}
-        <div className="mb-3 flex w-full max-w-[440px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
-          <button
-            name="target"
-            value="projects"
-            className={`flex-1 whitespace-nowrap px-3 py-2 text-center ${target === "projects" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
-          >
-            プロジェクトから探す
+        <div className="mb-3 flex w-full max-w-[560px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
+          <button name="target" value="offerings" className={toggleCls(target === "offerings")}>
+            売りたい・買いたい
           </button>
-          <button
-            name="target"
-            value="producers"
-            className={`flex-1 whitespace-nowrap px-3 py-2 text-center ${target === "producers" ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`}
-          >
-            登録事業者から探す
+          <button name="target" value="coprojects" className={toggleCls(target === "coprojects")}>
+            共創プロジェクト
+          </button>
+          <button name="target" value="producers" className={toggleCls(target === "producers")}>
+            登録事業者
           </button>
         </div>
 
@@ -113,7 +158,7 @@ export default async function SearchPage({
             className={`${inputCls} min-w-[180px] flex-1`}
           />
 
-          {target === "projects" ? (
+          {target === "offerings" ? (
             <select name="direction" defaultValue={direction} className={inputCls}>
               <option value="">売り・買い両方</option>
               <option value="GIVE">売りたい</option>
@@ -128,22 +173,28 @@ export default async function SearchPage({
       </form>
 
       <p className="text-[13px] text-[var(--ink-2)]">
-        {count} 件見つかりました
+        {total} 件見つかりました
+        {totalPages > 1 ? `（${page} / ${totalPages}ページ）` : ""}
       </p>
 
       {/* 結果 */}
-      {target === "producers" ? (
-        producers.length === 0 ? (
-          <Empty />
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {producers.map((p) => (
-              <ProducerCard key={p.id} p={p} isOwn={p.id === ownMemberId} />
-            ))}
-          </div>
-        )
-      ) : offerings.length === 0 ? (
-        <Empty />
+      {count === 0 ? (
+        <Empty target={target} hasFilter={hasFilter} />
+      ) : target === "producers" ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {producers.map((p) => (
+            <ProducerCard key={p.id} p={p} isOwn={p.id === ownMemberId} />
+          ))}
+        </div>
+      ) : target === "coprojects" ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {coprojects.map((p) => (
+            <ProjectCard
+              key={p.id}
+              p={{ id: p.id, title: p.title, imageUrls: p.imageUrls, memberName: projNameMap.get(p.memberId), budget: p.budget }}
+            />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {offerings.map((o) => (
@@ -151,15 +202,42 @@ export default async function SearchPage({
           ))}
         </div>
       )}
+
+      {/* ページネーション */}
+      {totalPages > 1 ? (
+        <div className="flex items-center justify-center gap-3">
+          {page > 1 ? (
+            <Link href={pageQuery(page - 1)} className={btn("secondary", "sm")}>← 前のページ</Link>
+          ) : null}
+          <span className="text-[12px] text-[var(--muted)]">{page} / {totalPages}</span>
+          {page < totalPages ? (
+            <Link href={pageQuery(page + 1)} className={btn("secondary", "sm")}>次のページ →</Link>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function Empty() {
+function Empty({ target, hasFilter }: { target: Target; hasFilter: boolean }) {
+  const crossLinks: { label: string; href: string }[] = [];
+  if (target !== "offerings") crossLinks.push({ label: "売りたい・買いたいから探す", href: "/search?target=offerings" });
+  if (target !== "coprojects") crossLinks.push({ label: "共創プロジェクトから探す", href: "/search?target=coprojects" });
+  if (target !== "producers") crossLinks.push({ label: "登録事業者から探す", href: "/search?target=producers" });
   return (
-    <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-8 text-center text-[13px] text-[var(--muted)]">
-      条件に合うものが見つかりませんでした。条件を変えてお試しください。
-    </p>
+    <EmptyState
+      title="条件に合うものが見つかりませんでした"
+      description={
+        hasFilter
+          ? "条件を減らすか、別の言葉でお試しください。逆の立場（売りたい⇄買いたい）で探すと見つかることもあります。"
+          : "掲載は順次増えています。先にあなたの「売りたい・買いたい」を登録しておくと、相手から見つけてもらえます。"
+      }
+      actions={[
+        ...(hasFilter ? [{ label: "条件をクリアして再検索", href: `/search?target=${target}` }] : []),
+        ...crossLinks,
+        { label: "売りたい・買いたいを登録する", href: "/ledger", variant: "primary" as const },
+      ]}
+    />
   );
 }
 
@@ -169,31 +247,70 @@ async function searchOfferings(f: {
   category: string;
   q: string;
   direction: string;
+  skip: number;
 }) {
-  return prisma.offering.findMany({
-    where: {
-      isPublic: true,
-      title: { not: "" },
-      member: {
-        tenantId: f.tenantId,
-        ...(f.category ? { categoryL1: f.category } : {}),
-      },
-      ...(f.direction ? { direction: f.direction as "GIVE" | "WANT" } : {}),
-      ...(f.area ? { area: { contains: f.area } } : {}),
-      ...(f.q
-        ? {
-            OR: [
-              { title: { contains: f.q, mode: "insensitive" as const } },
-              { description: { contains: f.q, mode: "insensitive" as const } },
-              { tags: { has: f.q } },
-            ],
-          }
-        : {}),
+  const where = {
+    isPublic: true,
+    title: { not: "" },
+    member: {
+      tenantId: f.tenantId,
+      ...(f.category ? { categoryL1: f.category } : {}),
     },
-    orderBy: { createdAt: "desc" },
-    take: 40,
-    include: { member: { select: { name: true } } },
-  });
+    ...(f.direction ? { direction: f.direction as "GIVE" | "WANT" } : {}),
+    ...(f.area ? { area: { contains: f.area } } : {}),
+    ...(f.q
+      ? {
+          OR: [
+            { title: { contains: f.q, mode: "insensitive" as const } },
+            { description: { contains: f.q, mode: "insensitive" as const } },
+            { tags: { has: f.q } },
+          ],
+        }
+      : {}),
+  };
+  return Promise.all([
+    prisma.offering.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: f.skip,
+      take: PER_PAGE,
+      include: { member: { select: { name: true } } },
+    }),
+    prisma.offering.count({ where }),
+  ]);
+}
+
+async function searchProjects(f: {
+  tenantId: string;
+  area: string;
+  category: string;
+  q: string;
+  skip: number;
+}) {
+  const where = {
+    tenantId: f.tenantId,
+    status: "published",
+    ...(f.category ? { fromRole: f.category } : {}),
+    ...(f.area ? { area: { contains: f.area } } : {}),
+    ...(f.q
+      ? {
+          OR: [
+            { title: { contains: f.q, mode: "insensitive" as const } },
+            { body: { contains: f.q, mode: "insensitive" as const } },
+            { tags: { has: f.q } },
+          ],
+        }
+      : {}),
+  };
+  return Promise.all([
+    prisma.project.findMany({
+      where,
+      orderBy: { publishedAt: "desc" },
+      skip: f.skip,
+      take: PER_PAGE,
+    }),
+    prisma.project.count({ where }),
+  ]);
 }
 
 async function searchProducers(f: {
@@ -201,39 +318,45 @@ async function searchProducers(f: {
   area: string;
   category: string;
   q: string;
+  skip: number;
 }) {
-  return prisma.member.findMany({
-    where: {
-      tenantId: f.tenantId,
-      status: "APPROVED",
-      ...(f.category ? { categoryL1: f.category } : {}),
-      ...(f.area ? { prefecture: { contains: f.area } } : {}),
-      ...(f.q
-        ? {
-            OR: [
-              { name: { contains: f.q, mode: "insensitive" as const } },
-              { description: { contains: f.q, mode: "insensitive" as const } },
-              { productItems: { contains: f.q, mode: "insensitive" as const } },
-              { productVolume: { contains: f.q, mode: "insensitive" as const } },
-              { featureText: { contains: f.q, mode: "insensitive" as const } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { completionRate: "desc" },
-    take: 40,
-    select: {
-      id: true,
-      name: true,
-      avatarUrl: true,
-      companyLogoUrl: true,
-      imageUrls: true,
-      categoryL1: true,
-      categoryL2: true,
-      prefecture: true,
-      city: true,
-      productItems: true,
-      description: true,
-    },
-  });
+  const where = {
+    tenantId: f.tenantId,
+    status: "APPROVED" as const,
+    ...(f.category ? { categoryL1: f.category } : {}),
+    ...(f.area ? { prefecture: { contains: f.area } } : {}),
+    ...(f.q
+      ? {
+          OR: [
+            { name: { contains: f.q, mode: "insensitive" as const } },
+            { description: { contains: f.q, mode: "insensitive" as const } },
+            { productItems: { contains: f.q, mode: "insensitive" as const } },
+            { productVolume: { contains: f.q, mode: "insensitive" as const } },
+            { featureText: { contains: f.q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+  return Promise.all([
+    prisma.member.findMany({
+      where,
+      orderBy: { completionRate: "desc" },
+      skip: f.skip,
+      take: PER_PAGE,
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        companyLogoUrl: true,
+        imageUrls: true,
+        categoryL1: true,
+        categoryL2: true,
+        prefecture: true,
+        city: true,
+        productItems: true,
+        description: true,
+      },
+    }),
+    prisma.member.count({ where }),
+  ]);
 }

@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { PHASES, isStale, loadMemberDeals } from "@/lib/deal";
 import { PhaseSelect } from "./_components/PhaseSelect";
 import { setDealNext } from "./actions";
+import { EmptyState } from "@/components/EmptyState";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 function ymd(d: Date | null): string {
@@ -49,9 +50,11 @@ export default async function DealsPage({
       </div>
 
       {list.length === 0 ? (
-        <p className="rounded-md border border-dashed border-[var(--line)] bg-white p-8 text-center text-[13px] text-[var(--muted)]">
-          該当する商談はありません。共創パートナーに「興味を送る」と、ここに商談が作られます。
-        </p>
+        <EmptyState
+          title="該当する商談はありません"
+          description="共創パートナーに「興味を送る」と、ここに商談が作られ、進捗を管理できます。"
+          actions={[{ label: "共創パートナーを探す", href: "/search", variant: "primary" }]}
+        />
       ) : (
         <div className="flex flex-col gap-4">
           {list.map(({ deal, other }) => {

@@ -241,6 +241,7 @@ model Project {
   body        String?
   fromRole    String? @map("from_role") // あなたの立場（会員種別 大分類）
   toRole      String? @map("to_role") // 相談したい相手（会員種別 大分類）
+  area        String? // 対象地域（都道府県・任意）
   budget         String? // 予算感（例：10〜30万円 / 応相談）
   imageUrls      String[] @map("image_urls")
   bodyImageUrl   String?  @map("body_image_url") // 本文セクションの画像

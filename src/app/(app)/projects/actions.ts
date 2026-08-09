@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSessionUser, requireAdmin } from "@/lib/auth";
-import { getOrCreateMemberForUser } from "@/lib/member";
+import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { notifyProjectApplication } from "@/lib/email";
 
 const BUCKET = "member-images";
 
@@ -48,6 +49,7 @@ export async function saveProject(
       body: g("body") || null,
       fromRole: g("fromRole") || null,
       toRole: g("toRole") || null,
+      area: g("area") || null,
       budget: g("budget") || null,
       tags,
     },
@@ -203,10 +205,23 @@ export async function applyToProject(
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project || project.memberId === me.id || project.status !== "published") return;
   const message = String(formData.get("message") ?? "").trim();
+  const existing = await prisma.projectApplication.findUnique({
+    where: { projectId_applicantMemberId: { projectId, applicantMemberId: me.id } },
+  });
   await prisma.projectApplication.upsert({
     where: { projectId_applicantMemberId: { projectId, applicantMemberId: me.id } },
     create: { projectId, applicantMemberId: me.id, message: message || null },
     update: { message: message || null },
   });
+  // 新規応募のときだけ掲載者へ通知（内容更新では送らない）
+  if (!existing) {
+    const to = await getMemberUserEmails(project.memberId);
+    await notifyProjectApplication({
+      to,
+      projectTitle: project.title || "（無題）",
+      applicantName: me.name,
+      projectId,
+    });
+  }
   revalidatePath(`/projects/${projectId}`);
 }

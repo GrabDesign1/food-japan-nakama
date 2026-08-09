@@ -18,6 +18,7 @@ const NAV: NavItem[] = [
   { label: "商談管理", href: "/deals", ready: true },
   { label: "商談ステータス", href: "/deals/board", ready: true },
   { label: "共創プロジェクトを企画する", href: "/projects", ready: true },
+  { label: "お気に入り", href: "/favorites", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
   { label: "プラン・お支払い", href: "/billing", ready: true },
   { label: "事務局管理", href: "/admin", admin: true, ready: true },

@@ -7,7 +7,7 @@ import {
   removeProjectImage,
   type ProjectState,
 } from "../actions";
-import { CATEGORY_L1 } from "@/lib/member-taxonomy";
+import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { ProjectBodyImage } from "./ProjectBodyImage";
 import { btn } from "@/lib/ui";
 
@@ -17,6 +17,7 @@ export type ProjectData = {
   body: string | null;
   fromRole: string | null;
   toRole: string | null;
+  area: string | null;
   budget: string | null;
   tags: string[];
   imageUrls: string[];
@@ -108,10 +109,19 @@ export function ProjectForm({ project }: { project: ProjectData }) {
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-        予算感
-        <input name="budget" defaultValue={project.budget ?? ""} placeholder="例：10〜30万円 / 応相談" className={inputCls} />
-      </label>
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+          対象地域（都道府県）
+          <select name="area" defaultValue={project.area ?? ""} className={inputCls}>
+            <option value="">全国・未指定</option>
+            {PREFECTURES.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+          予算感
+          <input name="budget" defaultValue={project.budget ?? ""} placeholder="例：10〜30万円 / 応相談" className={inputCls} />
+        </label>
+      </div>
 
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
         タグ（カンマ区切り・最大8）

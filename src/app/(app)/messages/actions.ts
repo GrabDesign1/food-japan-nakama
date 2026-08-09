@@ -3,10 +3,30 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
-import { getOrCreateMemberForUser } from "@/lib/member";
+import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
+import { notifyNewMessage } from "@/lib/email";
+
+/** 相手が未読を溜めていないときだけメール通知する（連投で通知が洪水にならないように）。 */
+async function notifyRecipientIfCaughtUp(params: {
+  threadId: string;
+  senderId: string;
+  senderName: string;
+  recipientId: string;
+  body: string;
+  unreadBefore: number;
+}): Promise<void> {
+  if (params.unreadBefore > 0) return;
+  const to = await getMemberUserEmails(params.recipientId);
+  await notifyNewMessage({
+    to,
+    fromMemberName: params.senderName,
+    preview: params.body,
+    threadId: params.threadId,
+  });
+}
 
 const BUCKET = "member-images";
 
@@ -47,12 +67,26 @@ export async function sendInterest(
     });
   }
 
+  // 相手が既読済みか（通知判定は書き込み前に見る）
+  const unreadBefore = await prisma.message.count({
+    where: { threadId: thread.id, senderMemberId: me.id, readAt: null },
+  });
+
   await prisma.message.create({
     data: { threadId: thread.id, senderMemberId: me.id, body },
   });
   await prisma.thread.update({
     where: { id: thread.id },
     data: { lastMessageAt: new Date() },
+  });
+
+  await notifyRecipientIfCaughtUp({
+    threadId: thread.id,
+    senderId: me.id,
+    senderName: me.name,
+    recipientId: toMemberId,
+    body,
+    unreadBefore,
   });
 
   // 商談を自動作成（phase 0 出会う）
@@ -115,6 +149,10 @@ export async function sendMessage(
   const attachmentName = String(formData.get("attachmentName") ?? "").trim() || null;
   if (!body && !attachmentUrl) return;
 
+  const unreadBefore = await prisma.message.count({
+    where: { threadId, senderMemberId: me.id, readAt: null },
+  });
+
   await prisma.message.create({
     data: {
       threadId,
@@ -133,6 +171,15 @@ export async function sendMessage(
     thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
   await ensureDeal({ tenantId: su.app.tenantId, meId: me.id, otherId, threadId });
   await touchDealActivity(me.id, otherId);
+
+  await notifyRecipientIfCaughtUp({
+    threadId,
+    senderId: me.id,
+    senderName: me.name,
+    recipientId: otherId,
+    body: body || "（ファイルを送信しました）",
+    unreadBefore,
+  });
   // 送信したら下書きを消す
   await prisma.messageDraft.deleteMany({ where: { threadId, memberId: me.id } });
 
