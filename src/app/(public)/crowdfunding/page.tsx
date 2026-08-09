@@ -80,20 +80,32 @@ export default function CrowdfundingPage() {
       <JsonLd data={CROWDFUNDING_JSONLD} />
 
       {/* ヒーロー */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
-          <Eyebrow>CROWDFUNDING MARKETING</Eyebrow>
-          <h1 className="mt-4 font-serif text-[32px] leading-[1.4] tracking-[0.02em] text-[var(--ink)] sm:text-[44px]">
-            売る前に、
-            <br />
-            <em className="not-italic text-[var(--orange)]">売れる理由</em>をつくる。
-          </h1>
-          <p className="mt-5 max-w-[710px] text-[15px] leading-8 text-[var(--ink-2)] sm:text-[16px]">
-            クラウドファンディングを、資金集めだけで終わらせない。商品を世に出す前に、需要・価格・顧客を確かめ、最初のファンと販売実績をつくるマーケティング支援です。
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-4">
-            <Link href={CTA_HREF} className={btn("primary", "lg")}>クラファン活用を相談する</Link>
-            <span className="text-[12px] text-[var(--muted)]">初回相談無料</span>
+      <section className="relative grid min-h-[540px] items-center bg-[var(--ink)] px-5 py-16 sm:min-h-[600px] sm:py-[88px]">
+        <Image
+          src="/crowdfunding/hero-crowdfunding.jpg"
+          alt="応援購入プロジェクトのイメージ（料理写真と支援状況の画面例）"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[35%_center] sm:object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414d9] via-[#14141480] to-[#14141433] sm:bg-gradient-to-r sm:from-[#141414cc] sm:via-[#14141466] sm:to-transparent" />
+        <div className="relative mx-auto w-full max-w-[1080px]">
+          <div className="max-w-[640px]">
+            <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">CROWDFUNDING MARKETING</p>
+            <h1 className="mt-4 font-serif text-[32px] leading-[1.4] tracking-[0.02em] text-white sm:text-[44px]">
+              売る前に、
+              <br />
+              <em className="not-italic text-[var(--orange)]">売れる理由</em>をつくる。
+            </h1>
+            <p className="mt-5 max-w-[610px] text-[15px] leading-8 text-white/90 sm:text-[16px]">
+              クラウドファンディングを、資金集めだけで終わらせない。商品を世に出す前に、需要・価格・顧客を確かめ、最初のファンと販売実績をつくるマーケティング支援です。
+            </p>
+            <div className="mt-7 flex flex-wrap items-center gap-4">
+              <Link href={CTA_HREF} className={btn("primary", "lg")}>クラファン活用を相談する</Link>
+              <span className="text-[12px] text-white/70">初回相談無料</span>
+            </div>
+            <p className="mt-4 text-[10px] text-white/50">※画像内の金額・数値はイメージです。</p>
           </div>
         </div>
       </section>
@@ -103,10 +115,10 @@ export default function CrowdfundingPage() {
         <div className="mx-auto max-w-[1080px] text-center">
           <Eyebrow>WHY CROWDFUNDING?</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            クラファンは、小さく市場へ出す実験です。
+            クラファンは、小さく市場へ出すマーケティングです。
           </h2>
           <p className="mx-auto mt-4 max-w-[780px] text-[15px] leading-8 text-[var(--ink-2)]">
-            まだ売れるか分からない商品を、いきなり大量生産する必要はありません。実際の購入行動から、市場投入に必要な答えを得ます。
+            まだ売れるか分からない商品を、いきなり大量生産する必要はありません。テストマーケティングを行い、実際の購入行動から、市場投入に必要な答えを得ます。
           </p>
           <div className="mt-10 grid grid-cols-2 gap-px border border-[var(--line)] bg-[var(--line)] text-left lg:grid-cols-4">
             {BENEFITS.map((b) => (
