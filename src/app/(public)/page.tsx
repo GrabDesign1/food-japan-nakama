@@ -87,13 +87,12 @@ export default async function PublicHome() {
           </p>
           <div className="mt-7 grid gap-5 sm:grid-cols-3">
             {[
-              { icon: "🥬", t: "売りたい", d: "食材・規格外品・商品・設備・技術などを掲載" },
-              { icon: "🔎", t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
-              { icon: "🤝", t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
+              { t: "売りたい", d: "食材・規格外品・商品・設備・技術などを掲載" },
+              { t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
+              { t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
             ].map((it) => (
-              <div key={it.t}>
-                <div className="text-[26px]">{it.icon}</div>
-                <h2 className="mt-1.5 text-[16px] font-bold text-[var(--ink)]">{it.t}</h2>
+              <div key={it.t} className="border-t-2 border-[var(--green)] pt-3">
+                <h2 className={h2Cls}>{it.t}</h2>
                 <p className="mt-1 text-[13px] leading-6 text-[var(--ink-2)]">{it.d}</p>
               </div>
             ))}
