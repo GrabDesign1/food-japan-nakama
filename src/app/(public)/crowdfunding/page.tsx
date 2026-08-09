@@ -319,7 +319,7 @@ export default function CrowdfundingPage() {
         <div className="mx-auto max-w-[760px]">
           <Eyebrow light>START A PROJECT</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] sm:text-[30px]">
-            商品を売る前に、市場の答えを聞く。
+            商品を売る前に、共創の価値と市場の答えを聞く。
           </h2>
           <p className="mt-3 text-[14px] leading-7 text-[#dce8e2]">
             商品企画の段階でも、共創相手を探す段階でもご相談いただけます。
@@ -329,7 +329,7 @@ export default function CrowdfundingPage() {
               href={CTA_HREF}
               className="inline-block rounded-lg bg-white px-7 py-3.5 text-[14px] font-semibold text-[var(--green-d)] transition hover:bg-[var(--green-soft)]"
             >
-              クラファン活用を相談する
+              クラファン活用支援を相談する
             </Link>
           </div>
         </div>
