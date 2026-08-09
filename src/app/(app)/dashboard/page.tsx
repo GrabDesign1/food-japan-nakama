@@ -157,10 +157,12 @@ export default async function DashboardPage() {
     .sort((a, b) => a.priority - b.priority || b.at.getTime() - a.at.getTime())
     .slice(0, 3);
 
-  // ── プロフィール進捗（1行表示。100%かつ審査済みなら非表示）──
+  // ── プロフィール進捗（100%かつ審査済みなら非表示）──
+  // 完成度が低いうち（40%未満）は1行ではなく目立つカードで促す（ユーザー指示 2026-08-10）。
   const rate = member?.completionRate ?? 0;
   const missingCount = member ? countMissingProfileFields(member) : 0;
   const showSetupLine = !!member && !(rate >= 100 && member.status === "APPROVED");
+  const emphasizeSetup = showSetupLine && rate < 40;
 
   // ── 会員状態（表示は右カラムの利用状況1か所のみ）──
   const isPaid = member?.paymentStatus === "PAID";
@@ -234,8 +236,31 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {/* プロフィール進捗（1行） */}
-      {showSetupLine ? (
+      {/* プロフィール進捗。完成度が低いうちは目立つカード、進んだら1行表示 */}
+      {emphasizeSetup ? (
+        <div className="rounded-[14px] border-2 border-[var(--green)] bg-[var(--green-soft)] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className={h2Cls}>🌱 まずはプロフィールを入力しましょう</h2>
+              <p className="mt-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
+                プロフィールが空のままだと、相手から見つけてもらえず、審査の申請もできません。
+                事業者名や事業内容など、まずは基本の項目からで大丈夫です。
+              </p>
+            </div>
+            <Link href="/profile" className={`${btn("primary")} shrink-0`}>
+              プロフィールを入力する →
+            </Link>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-[8px] max-w-[360px] flex-1 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-[var(--green)]" style={{ width: `${Math.max(rate, 2)}%` }} />
+            </div>
+            <span className="shrink-0 text-[13px] font-bold text-[var(--green-d)]">
+              {rate}%{missingCount > 0 ? `・あと${missingCount}項目` : ""}
+            </span>
+          </div>
+        </div>
+      ) : showSetupLine ? (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] border border-[var(--line)] bg-white px-5 py-3.5">
           <span className="text-[13px] font-bold text-[var(--ink)]">プロフィール完成度</span>
           <div className="h-[7px] min-w-[120px] max-w-[300px] flex-1 overflow-hidden rounded-full bg-[var(--line)]">
