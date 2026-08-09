@@ -5,7 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendPasswordResetEmail } from "@/lib/email";
 
-export type AuthState = { error?: string; message?: string };
+// email: エラー時に入力値を保持してフォームへ戻す（React 19はaction後にフォームを既定値へリセットするため）
+export type AuthState = { error?: string; message?: string; email?: string };
 
 function safeNext(next: FormDataEntryValue | null): string {
   const n = typeof next === "string" ? next : "";
@@ -25,7 +26,7 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: "メールアドレスまたはパスワードが違います。" };
+    return { error: "メールアドレスまたはパスワードが違います。", email };
   }
   redirect(next);
 }
@@ -39,17 +40,17 @@ export async function signUp(
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
 
   if (password.length < 8) {
-    return { error: "パスワードは8文字以上にしてください。" };
+    return { error: "パスワードは8文字以上にしてください。", email };
   }
   if (password !== passwordConfirm) {
-    return { error: "パスワードが一致しません。もう一度ご確認ください。" };
+    return { error: "パスワードが一致しません。もう一度ご確認ください。", email };
   }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message, email };
   }
 
   // メール確認が無効なら即セッションが張られる → 申込・決済（月額会員）へ
@@ -77,7 +78,7 @@ export async function requestPasswordReset(
 ): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) {
-    return { error: "正しいメールアドレスを入力してください。" };
+    return { error: "正しいメールアドレスを入力してください。", email };
   }
 
   // Supabaseのメールテンプレに頼らず、リカバリー用リンクを生成してアプリから日本語で送る。
