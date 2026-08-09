@@ -223,10 +223,13 @@ export default function CrowdfundingPage() {
               費用は、応援購入総額の35％。
             </h2>
             <p className="mt-4 text-[15px] leading-8 text-[var(--ink-2)]">
-              Makuakeの利用手数料20％と、当社の企画・制作・運用手数料15％です。
+              Makuakeの利用手数料20％と、
+              <br className="hidden sm:block" />
+              当事務局の企画・制作・運用手数料15％です。
             </p>
             <p className="mt-3 text-[11px] leading-6 text-[var(--muted)]">
               当社手数料に含む範囲は、プロジェクトごとの実施内容を確認したうえで契約時に確定します。
+              さらに手付金10万円がかかります。
             </p>
           </div>
           <div className="border border-[var(--line)] bg-white p-6 sm:p-8">
@@ -235,7 +238,7 @@ export default function CrowdfundingPage() {
               <b className="text-[26px] text-[var(--green-d)]">20％</b>
             </div>
             <div className="flex items-end justify-between border-b border-[var(--line)] py-4">
-              <span className="text-[14px] text-[var(--ink-2)]">グラブデザイン支援手数料</span>
+              <span className="text-[14px] text-[var(--ink-2)]">当事務局マーケティング支援手数料</span>
               <b className="text-[26px] text-[var(--green-d)]">15％</b>
             </div>
             <div className="mt-5 flex items-center justify-between bg-[var(--green-d)] px-4 py-4 text-white">
