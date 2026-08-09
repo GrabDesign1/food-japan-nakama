@@ -229,7 +229,7 @@ export default function CrowdfundingPage() {
             </p>
             <p className="mt-3 text-[11px] leading-6 text-[var(--muted)]">
               当社手数料に含む範囲は、プロジェクトごとの実施内容を確認したうえで契約時に確定します。
-              上記の他、手付金10万円がかかります。
+              上記の他、着手金10万円がかかります。
             </p>
           </div>
           <div className="border border-[var(--line)] bg-white p-6 sm:p-8">
