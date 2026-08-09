@@ -30,8 +30,14 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <footer className="mt-16 border-t border-[var(--line)] bg-[var(--green-soft)]">
         <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-6 px-4 py-10 text-[12px] text-[var(--ink-2)] sm:grid-cols-3 lg:grid-cols-5">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <div className="font-serif text-[15px] text-[var(--ink)]">FOOD JAPAN NAKAMA</div>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">by FOOD JAPAN SUMMIT</p>
+            <div className="flex items-center gap-2.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-mark.png" alt="FOOD JAPAN SUMMIT ロゴ" width={36} height={36} />
+              <div>
+                <div className="font-serif text-[15px] text-[var(--ink)]">FOOD JAPAN NAKAMA</div>
+                <p className="mt-0.5 text-[11px] text-[var(--muted)]">by FOOD JAPAN SUMMIT</p>
+              </div>
+            </div>
           </div>
           <FooterCol title="NAKAMA" links={[
             ["NAKAMAとは", "/about"],
