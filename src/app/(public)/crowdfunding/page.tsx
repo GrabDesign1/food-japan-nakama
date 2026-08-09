@@ -115,7 +115,7 @@ export default function CrowdfundingPage() {
         <div className="mx-auto max-w-[1080px] text-center">
           <Eyebrow>WHY CROWDFUNDING?</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            クラファンは、小さく市場へ出すマーケティングです。
+            クラファンは、販売に拍車をかけるためのマーケティングです。
           </h2>
           <p className="mx-auto mt-4 max-w-[780px] text-[15px] leading-8 text-[var(--ink-2)]">
             まだ売れるか分からない商品を、いきなり大量生産する必要はありません。テストマーケティングを行い、実際の購入行動から、市場投入に必要な答えを得ます。
