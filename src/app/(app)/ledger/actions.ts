@@ -22,11 +22,26 @@ async function ownOfferingOr404(offeringId: string) {
   return { su, member, offering };
 }
 
-/** 提供/募集の下書きを新規作成して編集ページへ。 */
+/** 提供/募集の下書きを新規作成して編集ページへ。
+ * 連打・二重送信対策：中身が空の下書きが既にあれば、新規作成せずそれを開く。 */
 export async function createDraftOffering(direction: "GIVE" | "WANT"): Promise<void> {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const member = await getOrCreateMemberForUser(su!);
+
+  const existingEmpty = await prisma.offering.findFirst({
+    where: {
+      memberId: member.id,
+      direction,
+      title: "",
+      description: null,
+      imageUrls: { isEmpty: true },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (existingEmpty) redirect(`/ledger/${existingEmpty.id}/edit`);
+
   const created = await prisma.offering.create({
     data: { memberId: member.id, direction, category: "食材・原料", title: "", isPublic: false },
   });

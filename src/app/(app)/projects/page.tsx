@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { createDraftProject } from "./actions";
 import { ProjectCard } from "@/components/ProjectCard";
 import { EmptyState } from "@/components/EmptyState";
+import { PendingButton } from "@/components/PendingButton";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -47,9 +48,9 @@ export default async function ProjectsPage() {
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">困っていること・実現したいことを書いて、解決してくれる共創パートナーを募ります。</p>
         </div>
         <form action={createDraftProject}>
-          <button className={btn("primary")}>
+          <PendingButton className={btn("primary")} pendingText="作成中…">
             ＋ 共創プロジェクトを企画する
-          </button>
+          </PendingButton>
         </form>
       </div>
 
@@ -63,7 +64,7 @@ export default async function ProjectsPage() {
             actions={[{ label: "持ち寄り（売りたい・買いたい）から探す", href: "/search" }]}
           >
             <form action={createDraftProject}>
-              <button className={btn("primary", "sm")}>＋ 共創プロジェクトを企画する</button>
+              <PendingButton className={btn("primary", "sm")} pendingText="作成中…">＋ 共創プロジェクトを企画する</PendingButton>
             </form>
           </EmptyState>
         ) : (
@@ -88,7 +89,7 @@ export default async function ProjectsPage() {
             description="「＋ 共創プロジェクトを企画する」から下書きを作成できます。掲載は事務局の承認後に公開されます。"
           >
             <form action={createDraftProject}>
-              <button className={btn("primary", "sm")}>＋ 共創プロジェクトを企画する</button>
+              <PendingButton className={btn("primary", "sm")} pendingText="作成中…">＋ 共創プロジェクトを企画する</PendingButton>
             </form>
           </EmptyState>
         ) : (

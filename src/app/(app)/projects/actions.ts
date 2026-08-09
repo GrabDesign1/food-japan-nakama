@@ -25,6 +25,15 @@ export async function createDraftProject(): Promise<void> {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su!);
+
+  // 連打・二重送信対策：中身が空の下書きが既にあれば、新規作成せずそれを開く
+  const existingEmpty = await prisma.project.findFirst({
+    where: { memberId: me.id, status: "draft", title: "", body: null, imageUrls: { isEmpty: true } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (existingEmpty) redirect(`/projects/${existingEmpty.id}/edit`);
+
   const created = await prisma.project.create({
     data: { tenantId: su!.app.tenantId, memberId: me.id, title: "", status: "draft" },
   });

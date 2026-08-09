@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
 import { EmptyState } from "@/components/EmptyState";
+import { PendingButton } from "@/components/PendingButton";
 import { views24hMap } from "@/lib/offering-views";
 import { createDraftOffering } from "./actions";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
@@ -36,14 +37,14 @@ export default async function LedgerPage() {
         </div>
         <div className="flex gap-2">
           <form action={createDraftOffering.bind(null, "GIVE")}>
-            <button className={btn("primary")}>
+            <PendingButton className={btn("primary")} pendingText="作成中…">
               ＋ 売りたいを登録
-            </button>
+            </PendingButton>
           </form>
           <form action={createDraftOffering.bind(null, "WANT")}>
-            <button className={btn("amber")}>
+            <PendingButton className={btn("amber")} pendingText="作成中…">
               ＋ 買いたいを登録
-            </button>
+            </PendingButton>
           </form>
         </div>
       </div>
@@ -93,9 +94,9 @@ function Section({
           }
         >
           <form action={createDraftOffering.bind(null, direction)}>
-            <button className={btn(direction === "GIVE" ? "primary" : "amber", "sm")}>
+            <PendingButton className={btn(direction === "GIVE" ? "primary" : "amber", "sm")} pendingText="作成中…">
               ＋ {direction === "GIVE" ? "売りたい" : "買いたい"}を登録
-            </button>
+            </PendingButton>
           </form>
         </EmptyState>
       ) : (
