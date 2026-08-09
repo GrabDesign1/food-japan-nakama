@@ -233,6 +233,7 @@ export default function CrowdfundingPage() {
             </p>
           </div>
           <div className="border border-[var(--line)] bg-white p-6 sm:p-8">
+            <p className="text-[15px] font-bold text-[var(--ink)]">出品時のお見積り</p>
             <div className="flex items-end justify-between border-b border-[var(--line)] py-4">
               <span className="text-[14px] text-[var(--ink-2)]">Makuake手数料</span>
               <b className="text-[26px] text-[var(--green-d)]">20％</b>
@@ -240,6 +241,10 @@ export default function CrowdfundingPage() {
             <div className="flex items-end justify-between border-b border-[var(--line)] py-4">
               <span className="text-[14px] text-[var(--ink-2)]">当事務局マーケティング支援手数料</span>
               <b className="text-[26px] text-[var(--green-d)]">15％</b>
+            </div>
+            <div className="flex items-end justify-between border-b border-[var(--line)] py-4">
+              <span className="text-[14px] text-[var(--ink-2)]">初期着手金</span>
+              <b className="text-[26px] text-[var(--green-d)]">10万円</b>
             </div>
             <div className="mt-5 flex items-center justify-between bg-[var(--green-d)] px-4 py-4 text-white">
               <span className="text-[14px]">合計手数料</span>
@@ -253,6 +258,7 @@ export default function CrowdfundingPage() {
                 <span className="w-[15%] bg-[var(--orange)]">15万円</span>
               </div>
               <p>手数料差引後：65万円</p>
+              <p className="text-[11px] text-[var(--muted)]">※着手金を除く</p>
               <p className="mt-2 text-[11px] leading-6 text-[var(--muted)]">
                 ここから商品原価、梱包費、送料、広告費、返品・再送費等を支払います。消費税の取扱いやMakuakeの実際の料率・対象範囲は契約・審査時の条件を確認します。
               </p>
