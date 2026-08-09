@@ -173,7 +173,9 @@ export default function CrowdfundingPage() {
             <h3 className="mt-4 font-serif text-[22px] leading-[1.55] text-[var(--ink)] sm:text-[26px]">
               地方創生を目的とした、
               <br />
-              クラフトビールメーカーとのプロジェクト
+              クラフトビールメーカーとの
+              <br />
+              プロジェクト
             </h3>
             <p className="mt-3 text-[14px] leading-8 text-[var(--ink-2)]">
               宮崎・青島のサーフカルチャーから生まれたクラフトビールを、Makuakeでの応援購入企画として展開。目標を上回る支援を集め、地域発ブランドの最初のファンづくりと販売実績につながりました。
