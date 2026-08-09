@@ -105,6 +105,19 @@ export const CROWDFUNDING_JSONLD = {
   url: `${APP_URL}/crowdfunding`,
 };
 
+export const FOODLOSS_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": `${APP_URL}/food-loss#service`,
+  name: "食品ロス・食品副産物の活用支援",
+  serviceType: "食品ロス・規格外品・食品副産物の活用相談、再資源化・事業化支援",
+  description:
+    "規格外農産物、余剰在庫、売れ残り、ビール粕、コーヒーかす、食品加工残さなどの活用を支援。用途調査、相手探し、商品開発、飼料・肥料化、地域循環の実証まで相談可能。活用可能性の整理 着手金15万円〜、企画・実証設計 50万円〜、継続プロデュース 月額30万円〜（いずれも税抜）＋成功報酬（個別設定）。",
+  provider: { "@id": `${APP_URL}/#org` },
+  areaServed: "JP",
+  url: `${APP_URL}/food-loss`,
+};
+
 /** FAQページ用: Q&A配列から FAQPage を生成（回答は文字列のみ対象） */
 export function faqJsonLd(qa: [string, React.ReactNode][]) {
   return {

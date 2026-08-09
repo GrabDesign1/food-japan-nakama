@@ -95,7 +95,7 @@ export default function PricingPage() {
         </div>
         <div className="mt-4 flex flex-col gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4 sm:flex-row sm:items-center">
           <p className="flex-1 text-[12px] leading-6 text-[var(--ink-2)]">
-            企画・実証・事業化まで人が入って進めたい場合は、共創プロデュース（別料金）をご利用ください。
+            企画・実証・事業化まで当事務局を入れて進めたい場合は、共創プロデュース（別料金）をご利用ください。
           </p>
           <Link href="/consultation?type=produce" className={`${btn("secondary", "sm")} shrink-0`}>
             共創プロデュースを問い合わせる
