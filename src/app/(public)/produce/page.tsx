@@ -5,213 +5,185 @@ import { JsonLd, PRODUCE_JSONLD, faqJsonLd } from "../_components/JsonLd";
 import { btn } from "@/lib/ui";
 
 export const metadata = {
-  title: "食の共創プロデュース｜FOOD JAPAN NAKAMA",
+  title: "食の商品開発・事業化を伴走支援｜FOOD JAPAN NAKAMA",
   description:
-    "食の資源と課題を、動く事業へ。FOOD JAPAN NAKAMAが、新商品、ブランド、販路、地域事業を構想で終わらせず、適切な相手とつなぎ、企画、実証、事業化まで個別に支援します。",
+    "地域素材を商品にしたい、製造先が見つからない、販路が広がらない。FOOD JAPAN NAKAMAが、企画、相手探し、試作、ブランド、テスト販売、販路開拓まで実務に入って支援します。",
 };
 
 const CTA_HREF = "/consultation?type=produce";
 
-// 4. 共創プロデュースで行うこと
+// こんなところで、止まっていませんか？
+const STUCK_POINTS = [
+  "良い農産物や地域素材はあるが、商品にする方法が分からない",
+  "規格外品や未利用資源を活用したいが、採算が合うか判断できない",
+  "商品のアイデアはあるが、加工会社やOEM先が見つからない",
+  "試作品はできたが、価格、パッケージ、売り方が決まらない",
+  "商品はあるが、小売や飲食店との商談につながらない",
+  "生産者、企業、自治体など関係者はいるが、話が前へ進まない",
+  "補助事業で商品をつくったが、継続して売れる仕組みがない",
+];
+
+// 私たちは、助言だけで終わりません。（イラスト付き4ステップ）
 const ACTIONS = [
   {
-    no: "01",
-    t: "共創テーマを設計する",
-    d: "資源、課題、顧客、実現したい未来を整理し、「誰と、何に取り組むのか」を明確にします。",
+    t: "課題を整理する",
+    d: "素材、顧客、現在の課題、実現したいことを聞き、取り組むべきテーマを明確にします。",
     img: "/produce/action-1.jpg",
     alt: "生産者と事務局が野菜を前に課題を整理するイラスト",
   },
   {
-    no: "02",
-    t: "共創相手を見つける",
-    d: "必要な技術、販路、知見、資源を持つ企業や専門家を探し、打診と面談を進めます。",
+    t: "必要な相手を集める",
+    d: "生産者、加工会社、料理人、デザイナー、小売、流通、専門家など、実現に必要な相手を探し、打診します。",
     img: "/produce/action-2.jpg",
     alt: "生産者・料理人・企業を引き合わせるイラスト",
   },
   {
-    no: "03",
-    t: "企画と実証を設計する",
-    d: "事業の仕組み、役割分担、概算収支、実証方法、判断基準を整理し、共創企画書と実証計画にします。",
+    t: "売れる形を設計する",
+    d: "誰に、何を、いくらで届けるのかを決め、商品仕様、原価、販売方法、役割分担、実証方法を企画にします。",
     img: "/produce/action-3.jpg",
     alt: "試作品を味見しながら企画書を確認するイラスト",
   },
   {
-    no: "04",
-    t: "事業化まで推進する",
-    d: "関係者の合意、交渉、進行管理、課題解決を担い、実証から契約、販売、資金調達など、合意した成果に向けて動きます。",
+    t: "実行を前へ進める",
+    d: "関係者の合意形成、試作、制作、テスト販売、商談を進行し、途中で生じる課題を一つずつ解決します。",
     img: "/produce/action-4.jpg",
     alt: "完成した商品を販売先へ届けるイラスト",
   },
 ];
 
-// 5. 支援内容（6領域）
-const DOMAINS = [
+// ご相談後に、まず整理すること
+const FIRST_STEPS = [
+  "解決したい課題と、活用できる資源",
+  "想定する顧客と、届けたい価値",
+  "現在決まっていること、決まっていないこと",
+  "必要な協力事業者と役割",
+  "最初に検証すべきこと",
+  "想定する進め方、期間、予算",
+];
+
+// 必要なところから支援します
+const SUPPORTS = [
+  { no: "01", t: "素材や地域資源の可能性を見つける", d: "生産者や事業者へのヒアリング、市場・競合調査を行い、誰にどんな価値を届けられるのかを整理します。" },
+  { no: "02", t: "商品と事業の形を決める", d: "ターゲット、利用場面、商品コンセプト、仕様、容量、価格、原価、販売量を設計し、事業として成立する条件を確認します。" },
+  { no: "03", t: "試作品をつくり、製造できる状態にする", d: "加工会社、OEM、料理人、専門家と連携し、レシピ、試作、製造ロット、品質管理、食品表示などを整理します。" },
+  { no: "04", t: "選ばれるブランドと伝え方をつくる", d: "名称、物語、ロゴ、パッケージ、写真、動画、Web、営業資料、店頭販促物を、一つの戦略に沿って制作します。" },
+  { no: "05", t: "小さく売って、確かめる", d: "クラウドファンディング、EC、イベント、店舗などでテスト販売し、購入者、価格、評価、改善点を確認します。" },
+  { no: "06", t: "売り先を広げ、続く事業にする", d: "小売、流通、飲食店、商社、ギフト、ECなどへの提案と商談を進め、供給、物流、販促、収支を改善します。" },
+];
+
+// たとえば、こんなご相談です
+const CASES = [
   {
-    t: "地域資源・事業機会の発掘",
-    items: ["生産者、事業者、地域へのヒアリング", "素材、技術、文化、未利用資源の棚卸し", "顧客課題、市場、競合商品の調査", "商品化・事業化の可能性評価"],
+    t: "規格外の農産物を、新しい商品にしたい",
+    d: "発生量や時期、品質、原価を確認し、加工方法と売り先を検討します。加工会社や料理人と試作し、パッケージと販売方法を整え、小さなテスト販売から始めます。",
   },
   {
-    t: "商品企画・事業設計",
-    items: ["ターゲットと利用場面の設計", "商品コンセプト、仕様、容量、価格の設計", "原価、手数料、物流費を含む収支計画", "生産量、販売量、実施スケジュールの設計"],
+    t: "地域素材を使った商品を、企業と共同開発したい",
+    d: "企業側の顧客ニーズと産地側の強みを整理し、調達、製造、価格、販売方法、双方の役割を設計します。名ばかりの連携ではなく、双方に利益が残る事業を目指します。",
   },
   {
-    t: "試作・製造体制づくり",
-    items: ["加工会社、OEM、料理人、専門家との連携", "レシピ開発、試作、評価、改良", "原料調達、製造ロット、品質管理の整理", "食品表示、許認可、検査などの確認支援"],
+    t: "つくった商品が売れず、見直したい",
+    d: "商品、価格、顧客、売場、伝え方を確認します。必要に応じてコンセプトやパッケージを改め、テスト販売で反応を確かめてから販路へ提案します。",
   },
   {
-    t: "ブランド・クリエイティブ",
-    items: ["ブランドコンセプト、名称、物語の設計", "ロゴ、パッケージ、ラベルのデザイン", "商品写真、動画、Webページ、営業資料の制作", "POP、レシピ、店頭販促物の制作"],
-  },
-  {
-    t: "テストマーケティング",
-    items: ["クラウドファンディングの企画・制作・運用", "EC、イベント、店舗でのテスト販売", "顧客アンケート、購買データ、反応の分析", "商品、価格、訴求、販売方法の改善"],
-  },
-  {
-    t: "販路開拓・事業拡大",
-    items: ["小売、流通、飲食店、商社、ギフト、EC等への提案", "バイヤー向け商談資料と販売条件の整備", "商談、試食、導入テストの調整", "継続取引に向けた供給・物流・販促体制の改善"],
+    t: "地域事業を、補助金終了後も続けたい",
+    d: "誰が運営し、誰に販売し、どこで利益を生むのかを整理します。関係者の役割、収支、供給体制を見直し、自走できる形へ組み直します。",
   },
 ];
 
-// 6. プロジェクトの流れ（7段階）— アイコンは支給SVG（円形背景込み・白線）
-const FLOW = [
-  { no: "01", t: "NAKAMAで出会い、相談する", d: "課題、地域資源、実現したいことを共有します。", icon: "/produce/steps/step-01-consult.svg" },
-  { no: "02", t: "共創テーマを見つける", d: "地域資源と市場のニーズを重ね、新しい商品や事業の可能性を探ります。", icon: "/produce/steps/step-02-theme.svg" },
-  { no: "03", t: "共創相手を見つける", d: "必要な技術、製造機能、販路、知見を持つ企業や専門家とつながります。", icon: "/produce/steps/step-03-partner.svg" },
-  { no: "04", t: "個別プロジェクトを組成する", d: "目的、成果、役割、予算、収益構造、スケジュールを整理し、実行チームをつくります。", icon: "/produce/steps/step-04-project.svg" },
-  { no: "05", t: "6次産業化・商品開発を実行する", d: "商品企画、試作、ブランド設計、製造・品質・物流体制を具体化します。", icon: "/produce/steps/step-05-product.svg" },
-  { no: "06", t: "テスト販売で市場性を検証する", d: "実際の購入行動から、需要、価格、顧客層、評価、改善点を確かめます。", icon: "/produce/steps/step-06-test.svg" },
-  { no: "07", t: "販路を開拓し、継続事業へ育てる", d: "小売、流通、飲食店、ECなどへの販路を広げ、持続的に利益を生む事業へ育てます。", icon: "/produce/steps/step-07-growth.svg" },
-];
-
-// 7. こんな課題に対応します
-const AUDIENCES = [
+// FOOD JAPAN NAKAMAができる理由
+const REASONS = [
   {
-    t: "生産者・産地の方",
-    items: [
-      "良い農林水産物をつくっているが、価格だけで比較されてしまう",
-      "規格外品や未利用資源を、新しい商品に変えたい",
-      "加工品をつくりたいが、製造先や進め方が分からない",
-      "自分たちの価値を伝えるブランドやパッケージがない",
-    ],
+    t: "食に関わる人を、立場を越えてつなげられる",
+    d: "Food Japan Summitを通じて、生産者、食品メーカー、流通、小売、飲食店、自治体、大学、投資家、クリエイターとのつながりを築いてきました。案件に必要な相手を考え、個別に打診します。",
   },
   {
-    t: "食品メーカー・事業者の方",
-    items: [
-      "地域素材を使った新商品を開発したい",
-      "新しい商品を、いきなり大量生産せず市場で検証したい",
-      "商品はあるが、販売戦略や販路が弱い",
-      "生産者、自治体、小売などと共創プロジェクトを立ち上げたい",
-    ],
+    t: "事業づくりとクリエイティブを分けない",
+    d: "商品企画、収支、名称、パッケージ、Web、販促を別々に進めません。「誰に、どんな価値を届けるか」から一貫して設計します。",
   },
   {
-    t: "自治体・地域支援機関の方",
-    items: [
-      "地域資源を活用した新しい産業や雇用をつくりたい",
-      "単発の特産品開発で終わらせず、継続する事業にしたい",
-      "生産者、加工事業者、販売先をつなぐ推進役が必要",
-      "補助事業終了後も自走できる仕組みをつくりたい",
-    ],
+    t: "会議ではなく、市場で確かめる",
+    d: "最初から大量生産を目指さず、小さくつくり、小さく売ります。実際の購入行動と顧客の声をもとに、商品と事業を改善します。",
   },
   {
-    t: "小売・流通・飲食・企業の方",
-    items: [
-      "顧客に新しい価値を提供できる地域商品を探している",
-      "自社のニーズに合う生産者や産地と商品を共につくりたい",
-      "オリジナル商品、ギフト、フェア、地域連携企画を開発したい",
-      "必要な量・品質・価格を継続して供給できる体制をつくりたい",
-    ],
+    t: "完成ではなく、継続を目指す",
+    d: "商品をつくって終わりではありません。販路、供給、物流、販促、収支まで見直し、まじめにつくる人に利益が残る状態を目指します。",
   },
 ];
 
-// 8. 特徴
-const FEATURES = [
-  {
-    t: "食の多様な担い手をつなぐ",
-    d: "生産者、メーカー、流通、小売、飲食店、自治体、大学、投資家、クリエイターなど、Food Japan Summitで培ったつながりを生かし、課題に必要な相手とチームをつくります。",
-  },
-  {
-    t: "事業とクリエイティブを一体で考える",
-    d: "事業計画と、名称、パッケージ、Web、販促物を別々に考えません。誰に何を届けるかという一つの戦略から、商品と伝え方を設計します。",
-  },
-  {
-    t: "市場へ出して、購入行動から学ぶ",
-    d: "会議だけで答えを出さず、小さく販売し、実際の需要と顧客の声を確認します。思い込みではなく、購入データをもとに商品と事業を改善します。",
-  },
-  {
-    t: "売った後まで伴走する",
-    d: "商品完成や初回販売で終わらず、販路、供給、物流、販促、収支を見直し、継続して売れる状態を目指します。",
-  },
-];
-
-// 9. プロジェクト例（モデル例）
-const EXAMPLES = [
-  {
-    t: "例1　規格外農産物を新商品へ",
-    d: "規格外品や余剰品の発生状況を調査し、加工会社、料理人、デザイナー、販売先とチームを組成。商品企画、試作、パッケージ、テスト販売を経て、継続的な販路につなげます。",
-  },
-  {
-    t: "例2　地域素材を使った企業との共同開発",
-    d: "企業の顧客ニーズと産地の強みを整理し、共同商品のコンセプト、調達、製造、価格、販売方法を設計。双方に利益が残る共創事業をつくります。",
-  },
-  {
-    t: "例3　地域ブランドの再構築",
-    d: "商品だけでなく、生産者や地域の価値を再整理。ブランドコンセプト、名称、パッケージ、POP、レシピ、Webを一貫して設計し、価値を理解して選んでもらえる売場をつくります。",
-  },
-  {
-    t: "例4　クラウドファンディングで市場検証",
-    d: "新商品を大量生産する前に、購入型クラウドファンディングで需要、価格、顧客層を検証。支援実績と顧客の声を、小売・流通への提案材料として活用します。",
-  },
-];
-
-// 10. 料金
+// 料金（頼みたいことから選ぶ）
 const PRICING = [
-  { plan: "共創テーマ設計", content: "ヒアリング、課題・資源・顧客・相手像の整理", deliverable: "共創テーマシート", price: "着手金15万円〜" },
-  { plan: "企画・実証設計", content: "事業企画、連携先、実証方法、概算収支の設計", deliverable: "共創企画書・実証計画", price: "50万円〜" },
-  { plan: "継続プロデュース", content: "相手探し、打診、面談、交渉、進行管理、事業化支援", deliverable: "月次進捗・合意事項・実行管理", price: "月額30万円〜" },
-  { plan: "成功報酬", content: "売上、契約、資金調達等の合意した成果", deliverable: "契約時に定義", price: "個別設定" },
+  {
+    want: "まず課題と進め方を整理したい",
+    plan: "共創テーマ設計",
+    price: "着手金15万円〜",
+    tax: true,
+    d: "ヒアリングを行い、課題、資源、顧客、必要な相手、取り組むテーマを整理します。",
+    deliverable: "共創テーマシート",
+  },
+  {
+    want: "企画と実証方法まで設計したい",
+    plan: "企画・実証設計",
+    price: "50万円〜",
+    tax: true,
+    d: "事業の仕組み、連携先、役割、概算収支、実証方法、判断基準を設計します。",
+    deliverable: "共創企画書・実証計画",
+  },
+  {
+    want: "プロジェクトの実行を任せたい",
+    plan: "継続プロデュース",
+    price: "月額30万円〜",
+    tax: true,
+    d: "相手探し、打診、面談、交渉、合意形成、進行管理などを担い、事業化まで伴走します。",
+    deliverable: null,
+  },
+  {
+    want: "成果に応じた報酬",
+    plan: "成功報酬",
+    price: "個別設定",
+    tax: false,
+    d: "売上、契約、資金調達など、双方で合意した成果に対して設定します。",
+    deliverable: null,
+  },
 ];
 
-// 11. よくある質問（FAQPage構造化データと同一内容）
+// よくある質問（FAQPage構造化データと同一内容）
 const QA: [string, string][] = [
   [
-    "FOOD JAPAN NAKAMAの共創プロデュースとは何ですか？",
-    "食の資源や課題をもとに、新商品、ブランド、販路、地域事業などの構想を具体化し、適切な共創相手との接続、企画、実証、事業化までを進める有料の個別支援です。人がプロジェクトに入り、打診、交渉、合意形成、進行管理などの実務を担います。",
-  ],
-  [
-    "6次産業化とは何ですか？",
-    "6次産業化とは、農林漁業などの一次産業に、食品加工などの二次産業、販売・サービスなどの三次産業を組み合わせ、新しい付加価値と収益を生み出す取り組みです。FOOD JAPAN NAKAMAでは、商品をつくるだけでなく、ブランド、製造、物流、販売までを一つの事業として設計します。",
-  ],
-  [
-    "NAKAMAの月額会員サービスだけで商品開発を依頼できますか？",
-    "月額会員サービスには、本格的な商品開発や制作業務は含まれません。会員サービスでは、出会い、相談、情報交換、共創テーマや共創相手を見つける機会を提供します。調査、商品企画、試作、デザイン、製造・物流調整、テスト販売、販路開拓などの実働は、個別契約・個別見積りの共創プロデュースとして承ります。",
-  ],
-  [
-    "まだアイデアしかありませんが、相談できますか？",
-    "はい。地域資源や課題はあるものの、商品や事業の形が決まっていない段階から相談できます。ヒアリングと調査を通じて、顧客、提供価値、共創相手、実現方法を整理します。ただし、事業化の可能性や必要な条件を確認した結果、実施を見送る場合もあります。",
+    "まだアイデアしかありません。相談できますか？",
+    "はい。アイデアを事業にするために、何を調べ、誰と組み、何から試すべきかを整理するところからご相談いただけます。",
   ],
   [
     "試作品や製造先が決まっていなくても依頼できますか？",
-    "はい。商品企画に応じて、加工会社、OEM、料理人、専門家などの候補を探し、試作や製造体制づくりを支援します。製造可否、最小ロット、原価、品質、納期などの条件により、企画内容を調整する場合があります。",
+    "はい。必要な加工方法や製造条件を整理し、案件に合う加工会社、OEM、料理人、専門家などを探すところから支援します。ただし、必ず製造先が見つかることを保証するものではありません。",
   ],
   [
     "パッケージデザインだけを依頼できますか？",
-    "対応可能です。ただし、誰に、どの価値を、いくらで届けるかが不明確なままデザインだけを進めることは推奨していません。必要に応じて、商品コンセプト、価格、販路、表示、収支を確認したうえで、売場で価値が伝わるパッケージを設計します。",
+    "はい。ただし、見た目だけを整えるのではなく、顧客、価格、売場、商品の強みを確認したうえで設計します。デザイン制作費は個別見積りです。",
   ],
   [
     "販路を必ず紹介してもらえますか？",
-    "販売先候補の選定、提案資料の作成、商談調整、テスト導入などを支援しますが、取引成立や売上を保証するものではありません。価格、品質、供給量、物流、販売条件、市場の反応を確認しながら、採用される可能性を高めます。",
+    "商品の特徴、価格、供給量、品質、販売条件を確認したうえで、適切な候補先を探し、提案や商談を支援します。紹介、採用、取引成立を保証するサービスではありません。",
+  ],
+  [
+    "6次産業化とは何ですか？",
+    "生産だけでなく、加工や販売まで一体的に取り組み、農林水産物の価値と所得を高める考え方です。FOOD JAPAN NAKAMAでは、商品をつくること自体ではなく、販売後も利益が残り、継続できる事業にすることを重視します。",
+  ],
+  [
+    "NAKAMAの月額会員サービスとの違いは何ですか？",
+    "月額会員サービスは、出会い、相談、情報交換、学び、共創のきっかけを提供するものです。個別の商品企画、相手への打診、制作、交渉、進行管理など、人が実務に入る支援は共創プロデュースとして別契約になります。",
   ],
   [
     "どのくらいの期間がかかりますか？",
-    "期間は、商品の開発状況、試作回数、製造先、許認可、パッケージ制作、販売方法によって異なります。初回相談後に、実施工程とスケジュールをご提示します。食品の場合、表示、検査、賞味期限、製造ロットなどの確認に時間がかかることがあります。",
+    "テーマ設計だけなら数週間、試作やテスト販売を含む場合は数か月が目安です。原料の収穫時期、製造先、許認可、関係者数によって変わるため、初回相談後に想定スケジュールをご提示します。",
   ],
   [
-    "自治体や複数事業者によるプロジェクトにも対応できますか？",
-    "はい。自治体、生産者、加工会社、物流会社、販売先など、複数の関係者が参加するプロジェクトにも対応します。目的、意思決定方法、役割、費用、知的財産、販売責任を整理し、共創チームの進行を支援します。",
+    "自治体や複数事業者のプロジェクトにも対応できますか？",
+    "はい。複数の関係者が参加する案件では、目的、役割、費用、意思決定方法を整理し、合意形成と進行管理を支援します。",
   ],
   [
-    "補助金を活用したプロジェクトにも対応できますか？",
-    "補助金の条件と事業内容が合う場合は、事業計画や実施体制の整理を支援できます。ただし、補助金の採択は保証できません。申請代行や法令上の専門業務が必要な場合は、行政書士、税理士などの専門家と連携します。",
+    "補助金を活用できますか？",
+    "活用できる場合があります。ただし、採択を保証するものではありません。申請支援が必要な場合は、対応範囲と専門家費用を個別に確認します。",
   ],
 ];
 
@@ -230,8 +202,8 @@ export default function ProducePage() {
       <JsonLd data={PRODUCE_JSONLD} />
       <JsonLd data={faqJsonLd(QA)} />
 
-      {/* 1. ファーストビュー */}
-      <section className="relative grid min-h-[540px] items-center bg-[var(--ink)] px-5 py-16 sm:min-h-[600px] sm:py-[88px]">
+      {/* ファーストビュー */}
+      <section className="relative grid min-h-[560px] items-center bg-[var(--ink)] px-5 py-16 sm:min-h-[620px] sm:py-[88px]">
         <Image
           src="/produce/produce-hero.jpg"
           alt="食の事業化について意見を交わす参加者"
@@ -243,106 +215,74 @@ export default function ProducePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414d9] via-[#14141480] to-[#14141433] sm:bg-gradient-to-r sm:from-[#141414cc] sm:via-[#14141466] sm:to-transparent" />
         <div className="relative mx-auto w-full max-w-[1080px]">
           <div className="max-w-[640px]">
-            <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">FOOD BUSINESS PRODUCE</p>
+            <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">FOOD BUSINESS PRODUCE｜食の共創プロデュース</p>
             <h1 className="mt-4 font-serif text-[32px] leading-[1.4] tracking-[0.02em] text-white sm:text-[44px]">
               食の資源と課題を、
               <br />
               動く事業に変える。
             </h1>
-            <p className="mt-5 max-w-[610px] text-[15px] leading-8 text-white/90 sm:text-[16px]">
-              新商品、ブランド、販路、地域事業を構想だけで終わらせず、適切な相手とつなぎ、実証と事業化まで進める個別支援です。事務局の人間が支援に入り、企画し、動かします。
+            <p className="mt-5 text-[15px] font-semibold leading-8 text-white sm:text-[16px]">
+              商品をつくりたい。でも、何から始めればよいか分からない。
+              <br />
+              つくった商品を、どう売ればよいか分からない。
+            </p>
+            <p className="mt-4 max-w-[610px] text-[14px] leading-8 text-white/90 sm:text-[15px]">
+              FOOD JAPAN NAKAMAは、そんな食の事業に実務で入ります。課題を整理し、必要な相手を集め、商品企画、試作、ブランドづくり、テスト販売、販路開拓まで一緒に進める個別支援です。
             </p>
             <div className="mt-7">
-              <Link href={CTA_HREF} className={btn("primary", "lg")}>プロジェクトについて相談する</Link>
+              <Link href={CTA_HREF} className={btn("primary", "lg")}>今の課題を相談する</Link>
             </div>
-            <p className="mt-4 text-[11px] leading-6 text-white/60">
-              ※本サービスは、NAKAMAの月額会費とは別料金です。支援内容に応じて個別に契約します。
+            <p className="mt-4 text-[12px] leading-6 text-white/80">
+              まだ計画が固まっていなくても構いません。初回相談で、現状と次に進めるべきことを整理します。
             </p>
+            <p className="mt-1 text-[11px] leading-6 text-white/60">※NAKAMAの月額会費とは別料金のサービスです。</p>
           </div>
         </div>
       </section>
 
-      {/* 2. 導入メッセージ */}
+      {/* こんなところで、止まっていませんか？ */}
       <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[770px]">
-          <h2 className="font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            構想だけでは、事業は動かない。
+        <div className="mx-auto max-w-[820px]">
+          <Eyebrow>ARE YOU STUCK?</Eyebrow>
+          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+            こんなところで、止まっていませんか？
           </h2>
-          <p className="mt-5 text-[14px] leading-8 text-[var(--ink-2)] sm:text-[15px]">
-            良い資源がある。解決したい課題も、新しい構想もある。それでも、担い手、役割、収益、実証の方法が決まらなければ、事業は動きません。
+          <ul className="mt-7 flex flex-col gap-2.5">
+            {STUCK_POINTS.map((s) => (
+              <li key={s} className="flex items-start gap-2.5 border border-[var(--line)] bg-white px-4 py-3 text-[14px] leading-7 text-[var(--ink-2)]">
+                <span aria-hidden className="mt-0.5 font-bold text-[var(--green)]">✓</span>
+                {s}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-[14px] leading-8 text-[var(--ink-2)]">
+            一つでも当てはまるなら、ご相談ください。すべてを決めてから依頼する必要はありません。今どこで止まっているのかを整理し、必要な支援だけを組み立てます。
           </p>
-          <div className="mt-5 border-l-2 border-[var(--green)] pl-5 text-[14px] leading-8 text-[var(--ink)] sm:text-[15px]">
-            <p>誰の、どんな課題を解決するのか。</p>
-            <p>誰と組み、何を実証するのか。</p>
-            <p>どう収益を生み、継続させるのか。</p>
+          <div className="mt-6">
+            <Link href={CTA_HREF} className={btn("primary")}>この状態から相談する</Link>
           </div>
-          <p className="mt-5 text-[14px] leading-8 text-[var(--ink-2)] sm:text-[15px]">
-            新商品、ブランド、販路、地域事業を実現するには、必要な相手を集め、合意をつくり、実行を前へ進める役割が必要です。
-          </p>
-          <p className="mt-4 text-[14px] leading-8 text-[var(--ink-2)] sm:text-[15px]">
-            FOOD JAPAN NAKAMAは、相談や事業者紹介だけで終わりません。共創テーマを設計し、相手を探し、企画し、実証し、事業化まで進めます。必要に応じて、6次産業化、商品開発、ブランド設計、テスト販売、販路開拓などの個別プロジェクトへつなげます。
-          </p>
         </div>
       </section>
 
-      {/* 3. 共創支援との関係 */}
+      {/* 私たちは、助言だけで終わりません。 */}
       <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
         <div className="mx-auto max-w-[1080px]">
-          <div className="mx-auto max-w-[720px] text-center">
-            <Eyebrow>MEMBERSHIP → PRODUCE</Eyebrow>
-            <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-              NAKAMAで生まれた可能性を、本格的な事業へ。
-            </h2>
-            <p className="mt-4 text-[14px] leading-8 text-[var(--ink-2)]">
-              NAKAMAの会員サービスでは、出会い、相談、情報交換、共創テーマや共創相手を見つける機会を提供します。そこで見つかった可能性を、実際の事業として動かす段階が「共創プロデュース」です。ヒアリング、テーマ設計、企画、相手探し、打診、交渉、実証設計、進行管理など、人が入って動く支援のため、内容に応じた有料の個別契約で進めます。
-            </p>
-          </div>
-          <div className="mt-9 grid gap-4 sm:grid-cols-2">
-            <div className="border border-[var(--line)] bg-white p-6">
-              <h3 className="text-[15px] font-bold text-[var(--ink)]">NAKAMA会員向け共創支援</h3>
-              <ul className="mt-3 text-[13px] leading-8 text-[var(--ink-2)]">
-                <li>・出会い・相談・情報交換</li>
-                <li>・課題や地域資源の共有</li>
-                <li>・共創テーマの発見</li>
-                <li>・共創相手との接点づくり</li>
-                <li>・共創のきっかけづくり</li>
-              </ul>
-              <p className="mt-3 border-t border-[var(--line)] pt-3 text-[12px] font-semibold text-[var(--green-d)]">月額会員サービス</p>
-            </div>
-            <div className="border-2 border-[var(--green)] bg-white p-6">
-              <h3 className="text-[15px] font-bold text-[var(--green-d)]">共創プロデュース</h3>
-              <ul className="mt-3 text-[13px] leading-8 text-[var(--ink-2)]">
-                <li>・調査・戦略設計</li>
-                <li>・商品企画・収支設計</li>
-                <li>・試作・製造体制の構築</li>
-                <li>・ブランド・パッケージ制作</li>
-                <li>・テスト販売・販路開拓</li>
-              </ul>
-              <p className="mt-3 border-t border-[var(--line)] pt-3 text-[12px] font-semibold text-[var(--green-d)]">個別契約・個別見積り</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. 共創プロデュースで行うこと */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
-          <Eyebrow>WHAT WE DO</Eyebrow>
+          <Eyebrow>HANDS-ON SUPPORT</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            出会いを、合意と実行に変えます。
+            私たちは、助言だけで終わりません。
           </h2>
           <p className="mt-4 max-w-[780px] text-[14px] leading-8 text-[var(--ink-2)]">
-            共創相手と出会うだけでは、事業は始まりません。課題と目的を共有し、双方の役割、費用、成果、実証方法を決め、行動に移す必要があります。FOOD JAPAN NAKAMAは、次の4つを設計し、実行を支援します。
+            一般的なアドバイスや事業者の紹介だけでは、プロジェクトは動きません。FOOD JAPAN
+            NAKAMAは、事務局の人間がプロジェクトに入り、関係者への打診、面談の設定、企画書の作成、役割と費用の整理、試作や販売の進行管理まで担います。
           </p>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {ACTIONS.map((a) => (
-              <div key={a.no} className="overflow-hidden border-t-[3px] border-[var(--green)] bg-[#f6f3ec]">
+              <div key={a.t} className="overflow-hidden border-t-[3px] border-[var(--green)] bg-white">
                 <div className="relative aspect-[9/10] overflow-hidden">
                   <Image src={a.img} alt={a.alt} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover" />
                 </div>
                 <div className="px-5 py-5">
-                  <span className="font-serif text-[12px] text-[var(--orange)]">{a.no}</span>
-                  <h3 className="mt-2 text-[15px] font-bold text-[var(--ink)]">{a.t}</h3>
+                  <h3 className="text-[15px] font-bold text-[var(--ink)]">{a.t}</h3>
                   <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{a.d}</p>
                 </div>
               </div>
@@ -351,151 +291,127 @@ export default function ProducePage() {
         </div>
       </section>
 
-      {/* 5. 支援内容 */}
+      {/* ご相談後に、まず整理すること */}
+      <section className="px-5 py-16 sm:py-[88px]">
+        <div className="mx-auto max-w-[820px]">
+          <Eyebrow>FIRST CONSULTATION</Eyebrow>
+          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+            ご相談後に、まず整理すること
+          </h2>
+          <p className="mt-4 text-[14px] leading-8 text-[var(--ink-2)]">
+            初回相談の段階で、いきなり大きな契約をお願いすることはありません。お話を伺い、次の内容を整理します。
+          </p>
+          <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
+            {FIRST_STEPS.map((s) => (
+              <li key={s} className="flex items-start gap-2.5 border border-[var(--line)] bg-white px-4 py-3 text-[13px] leading-6 text-[var(--ink-2)]">
+                <span aria-hidden className="mt-0.5 font-bold text-[var(--green)]">・</span>
+                {s}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-[14px] leading-8 text-[var(--ink-2)]">
+            そのうえで、支援が必要な場合のみ、範囲、成果物、スケジュール、費用を記載した企画書・見積書をご提示します。
+          </p>
+        </div>
+      </section>
+
+      {/* 必要なところから支援します */}
       <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
         <div className="mx-auto max-w-[1080px]">
           <Eyebrow>SERVICES</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            事業化に必要な領域を、ひとつのプロジェクトとして支援します。
+            必要なところから支援します
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {DOMAINS.map((dm, i) => (
-              <div key={dm.t} className="border border-[var(--line)] bg-white p-6">
-                <span className="font-serif text-[12px] text-[var(--orange)]">{String(i + 1).padStart(2, "0")}</span>
-                <h3 className="mt-1.5 text-[15px] font-bold text-[var(--ink)]">{dm.t}</h3>
-                <ul className="mt-3 list-disc pl-5 text-[13px] leading-7 text-[var(--ink-2)]">
-                  {dm.items.map((it) => (
-                    <li key={it}>{it}</li>
-                  ))}
-                </ul>
+            {SUPPORTS.map((s) => (
+              <div key={s.no} className="border border-[var(--line)] bg-white p-6">
+                <span className="font-serif text-[12px] text-[var(--orange)]">{s.no}</span>
+                <h3 className="mt-1.5 text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
+                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{s.d}</p>
               </div>
             ))}
           </div>
           <p className="mt-6 text-[12px] leading-6 text-[var(--muted)]">
-            ※必要な支援だけを組み合わせてプロジェクトを設計します。すべての業務を一律に実施するものではありません。
+            ※すべてを一律に行うのではなく、現在地に合わせて必要な支援だけを組み合わせます。
           </p>
         </div>
       </section>
 
-      {/* 6. プロジェクトの流れ（7段階） */}
-      <section className="bg-[var(--green-d)] px-5 py-16 text-white sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
-          <Eyebrow light>PROJECT FLOW</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] sm:text-[30px]">
-            共創から、継続する事業が生まれるまで
-          </h2>
-          <div className="mt-9 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            {FLOW.map((f) => (
-              <div key={f.no} className="border border-white/25 bg-white/5 px-5 py-6 text-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={f.icon} alt="" width={64} height={64} aria-hidden className="mx-auto h-16 w-16" />
-                <span className="mt-3 block font-serif text-[12px] text-[var(--orange)]">STEP {f.no}</span>
-                <h3 className="mt-1.5 text-[14px] font-bold leading-6">{f.t}</h3>
-                <p className="mt-2 text-left text-[12px] leading-6 text-[#dce8e2]">{f.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. こんな課題に対応します */}
+      {/* たとえば、こんなご相談です */}
       <section className="px-5 py-16 sm:py-[88px]">
         <div className="mx-auto max-w-[1080px]">
-          <Eyebrow>FOR WHOM</Eyebrow>
+          <Eyebrow>EXAMPLES</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            こんな課題に対応します
+            たとえば、こんなご相談です
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-2">
-            {AUDIENCES.map((au) => (
-              <div key={au.t} className="border border-[var(--line)] p-6">
-                <h3 className="text-[15px] font-bold text-[var(--green-d)]">{au.t}</h3>
-                <ul className="mt-3 list-disc pl-5 text-[13px] leading-7 text-[var(--ink-2)]">
-                  {au.items.map((it) => (
-                    <li key={it}>{it}</li>
-                  ))}
-                </ul>
+            {CASES.map((c) => (
+              <div key={c.t} className="border border-[var(--line)] bg-white p-6">
+                <h3 className="text-[15px] font-bold text-[var(--green-d)]">{c.t}</h3>
+                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{c.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 8. FOOD JAPAN NAKAMAの特徴 */}
+      {/* FOOD JAPAN NAKAMAができる理由 */}
       <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
         <div className="mx-auto max-w-[1080px]">
-          <Eyebrow>OUR STRENGTH</Eyebrow>
+          <Eyebrow>WHY US</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            人を紹介するだけでなく、プロジェクトを動かします。
+            FOOD JAPAN NAKAMAができる理由
           </h2>
           <div className="mt-9 grid gap-x-10 gap-y-7 sm:grid-cols-2">
-            {FEATURES.map((ft) => (
-              <div key={ft.t} className="border-t-2 border-[var(--green)] pt-4">
-                <h3 className="font-serif text-[17px] text-[var(--ink)]">{ft.t}</h3>
-                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{ft.d}</p>
+            {REASONS.map((r) => (
+              <div key={r.t} className="border-t-2 border-[var(--green)] pt-4">
+                <h3 className="font-serif text-[17px] text-[var(--ink)]">{r.t}</h3>
+                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{r.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 9. プロジェクト例 */}
+      {/* 料金 */}
       <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
-          <Eyebrow>MODEL CASES</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            プロジェクト例
-          </h2>
-          <div className="mt-9 grid gap-4 sm:grid-cols-2">
-            {EXAMPLES.map((ex) => (
-              <div key={ex.t} className="border border-[var(--line)] bg-white p-6">
-                <h3 className="text-[15px] font-bold text-[var(--ink)]">{ex.t}</h3>
-                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{ex.d}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-[12px] leading-6 text-[var(--muted)]">
-            ※上記は支援内容を示すモデル例です。実際の支援範囲はプロジェクトごとに設計します。
-          </p>
-        </div>
-      </section>
-
-      {/* 10. 料金 */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
         <div className="mx-auto max-w-[1080px]">
           <Eyebrow>FEE</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            人が入り、企画し、動かす有料の個別支援です。
+            料金
           </h2>
-          <p className="mt-4 max-w-[780px] text-[14px] leading-8 text-[var(--ink-2)]">
-            共創プロデュースは、NAKAMAの月額会費には含まれません。初回相談後、取り組む範囲、成果物、役割分担、スケジュール、費用を明記した企画書・見積書をご提示します。
-          </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PRICING.map((p) => (
               <div key={p.plan} className="flex flex-col border border-[var(--line)] bg-white p-6">
-                <h3 className="text-[15px] font-bold text-[var(--ink)]">{p.plan}</h3>
-                <p className="mt-2 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{p.content}</p>
-                <p className="mt-3 text-[12px] text-[var(--muted)]">成果物：{p.deliverable}</p>
+                <p className="text-[12px] font-semibold text-[var(--green-d)]">{p.want}</p>
+                <h3 className="mt-2 text-[15px] font-bold text-[var(--ink)]">{p.plan}</h3>
+                <p className="mt-2 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{p.d}</p>
+                {p.deliverable ? (
+                  <p className="mt-3 text-[12px] text-[var(--muted)]">成果物:{p.deliverable}</p>
+                ) : null}
                 <p className="mt-3 border-t border-[var(--line)] pt-3 text-[17px] font-bold text-[var(--green-d)]">
                   {p.price}
-                  {p.price !== "個別設定" ? <span className="ml-1 text-[11px] font-normal text-[var(--muted)]">（税抜）</span> : null}
+                  {p.tax ? <span className="ml-1 text-[11px] font-normal text-[var(--muted)]">（税抜）</span> : null}
                 </p>
               </div>
             ))}
           </div>
           <p className="mt-6 text-[13px] leading-7 text-[var(--ink-2)]">
-            商品開発、試作、製造、デザイン、撮影、Web制作、広告、出張、専門家、物流などの費用は、プロジェクト内容に応じて別途お見積りします。
+            商品開発、試作、製造、デザイン、撮影、Web制作、広告、出張、専門家、物流などの費用は、内容に応じて別途お見積りします。
           </p>
-          <p className="mt-2 text-[13px] font-semibold leading-7 text-[var(--ink)]">
-            契約では、売上、利益、販売額、契約成立、資金調達などの成果を保証・確約するものではありません。
+          <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+            ※本サービスはNAKAMAの月額会費には含まれません。
+            <br />
+            ※売上、利益、販売額、契約成立、資金調達などを保証するものではありません。
           </p>
           <div className="mt-7">
-            <Link href={CTA_HREF} className={btn("primary", "lg")}>まずはプロジェクトについて相談する</Link>
+            <Link href={CTA_HREF} className={btn("primary", "lg")}>費用も含めて相談する</Link>
           </div>
         </div>
       </section>
 
-      {/* 11. よくある質問 */}
-      <section className="px-5 py-16 sm:py-[88px]">
+      {/* よくある質問 */}
+      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
         <div className="mx-auto max-w-[820px]">
           <Eyebrow>FAQ</Eyebrow>
           <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
@@ -512,7 +428,7 @@ export default function ProducePage() {
         </div>
       </section>
 
-      {/* 12. 最終CTA */}
+      {/* 最終CTA */}
       <section className="bg-[var(--green-d)] px-5 py-16 text-center text-white sm:py-[88px]">
         <div className="mx-auto max-w-[760px]">
           <Eyebrow light>START A PROJECT</Eyebrow>
@@ -521,24 +437,22 @@ export default function ProducePage() {
             <br />
             動くプロジェクトにしませんか。
           </h2>
-          <div className="mx-auto mt-5 max-w-[560px] text-left text-[14px] leading-8 text-[#dce8e2]">
-            <p>地域資源を生かしたいが、事業の形が見えない。</p>
-            <p>新商品や販路をつくりたいが、誰と組めばよいか分からない。</p>
-            <p>共創の構想はあるが、実証や事業化まで進める人がいない。</p>
-          </div>
-          <p className="mx-auto mt-5 max-w-[620px] text-[14px] leading-8 text-[#dce8e2]">
-            その資源、課題、構想を、FOOD JAPAN NAKAMAにお聞かせください。必要な共創相手とチームをつくり、企画し、実証し、継続する事業へ進めます。
+          <p className="mt-5 text-[15px] font-semibold leading-8 text-white">
+            「相談するには、まだ早い」と思う段階でも構いません。
+          </p>
+          <p className="mx-auto mt-3 max-w-[620px] text-[14px] leading-8 text-[#dce8e2]">
+            地域素材、現在困っていること、実現したいことをお聞かせください。できることと、今は難しいことを率直にお伝えし、次に進む方法を一緒に考えます。
           </p>
           <div className="mt-8">
             <Link
               href={CTA_HREF}
               className="inline-block rounded-lg bg-[var(--orange)] px-10 py-4 text-[16px] font-bold text-[var(--ink)] shadow-[0_10px_28px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:brightness-105"
             >
-              プロジェクトについて相談する
+              今の課題を相談する
             </Link>
           </div>
           <p className="mt-6 text-[12px] leading-6 text-[#bcd8ca]">
-            相談時にお聞きすること：地域・素材／現在の課題／実現したいこと／希望時期／想定予算／現在の協力事業者
+            相談時に分かる範囲でお聞かせください：地域・素材／現在の課題／実現したいこと／希望時期／想定予算／現在の協力事業者
           </p>
         </div>
       </section>
