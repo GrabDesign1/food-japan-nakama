@@ -71,7 +71,7 @@ export async function signUp(
 export async function signOut(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect("/");
 }
 
 /** パスワード再設定メールを送る。 */
