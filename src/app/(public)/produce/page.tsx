@@ -216,15 +216,17 @@ export default function ProducePage() {
         <div className="relative mx-auto w-full max-w-[1080px]">
           <div className="max-w-[640px]">
             <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">FOOD BUSINESS PRODUCE｜食の共創プロデュース</p>
-            <h1 className="mt-4 font-serif text-[32px] leading-[1.4] tracking-[0.02em] text-white sm:text-[44px]">
-              食の資源と課題を、
+            <h1 className="mt-4 font-serif text-[30px] leading-[1.45] tracking-[0.02em] text-white sm:text-[40px]">
+              食の商品づくりを、
               <br />
-              動く事業に変える。
+              企画から販売まで支援します。
             </h1>
             <p className="mt-5 text-[15px] font-semibold leading-8 text-white sm:text-[16px]">
-              商品をつくりたい。でも、何から始めればよいか分からない。
+              地域の農産物を商品にしたい。
               <br />
-              つくった商品を、どう売ればよいか分からない。
+              規格外品や食品ロスを、新しい事業に活用したい。
+              <br />
+              つくった商品を、継続して売れるようにしたい。
             </p>
             <p className="mt-4 max-w-[610px] text-[14px] leading-8 text-white/90 sm:text-[15px]">
               FOOD JAPAN NAKAMAは、そんな食の事業に実務で入ります。課題を整理し、必要な相手を集め、商品企画、試作、ブランドづくり、テスト販売、販路開拓まで一緒に進める個別支援です。
