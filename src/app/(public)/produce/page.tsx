@@ -141,7 +141,7 @@ const EXAMPLES = [
 
 // 10. 料金
 const PRICING = [
-  { plan: "共創テーマ設計", content: "ヒアリング、課題・資源・顧客・相手像の整理", deliverable: "共創テーマシート", price: "着手金10万円〜" },
+  { plan: "共創テーマ設計", content: "ヒアリング、課題・資源・顧客・相手像の整理", deliverable: "共創テーマシート", price: "着手金15万円〜" },
   { plan: "企画・実証設計", content: "事業企画、連携先、実証方法、概算収支の設計", deliverable: "共創企画書・実証計画", price: "50万円〜" },
   { plan: "継続プロデュース", content: "相手探し、打診、面談、交渉、進行管理、事業化支援", deliverable: "月次進捗・合意事項・実行管理", price: "月額30万円〜" },
   { plan: "成功報酬", content: "売上、契約、資金調達等の合意した成果", deliverable: "契約時に定義", price: "個別設定" },
