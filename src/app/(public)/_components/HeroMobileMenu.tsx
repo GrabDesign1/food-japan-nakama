@@ -5,7 +5,7 @@ import Link from "next/link";
 
 // 公開トップのヒーローヘッダー用ハンバーガーメニュー（モバイルのみ・左側）。
 const ITEMS: { label: string; href: string }[] = [
-  { label: "案件を探す", href: "#co-creation-projects" },
+  { label: "案件を探す", href: "/#co-creation-projects" },
   { label: "NAKAMAとは", href: "/about" },
   { label: "共創プロデュース", href: "/produce" },
   { label: "食品ロス支援", href: "/food-loss" },
@@ -13,11 +13,11 @@ const ITEMS: { label: string; href: string }[] = [
   { label: "料金", href: "/pricing" },
 ];
 
-export function HeroMobileMenu() {
+export function HeroMobileMenu({ className = "hidden max-[820px]:block" }: { className?: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="hidden max-[820px]:block">
+    <div className={className}>
       <button
         type="button"
         aria-label="メニューを開く"
@@ -58,27 +58,16 @@ export function HeroMobileMenu() {
               </button>
             </div>
             <nav className="flex flex-col overflow-y-auto">
-              {ITEMS.map((it) =>
-                it.href.startsWith("#") ? (
-                  <a
-                    key={it.href}
-                    href={it.href}
-                    onClick={() => setOpen(false)}
-                    className="border-b border-[var(--line)] px-5 py-4 text-[15px] font-bold text-[var(--ink)]"
-                  >
-                    {it.label}
-                  </a>
-                ) : (
-                  <Link
-                    key={it.href}
-                    href={it.href}
-                    onClick={() => setOpen(false)}
-                    className="border-b border-[var(--line)] px-5 py-4 text-[15px] font-bold text-[var(--ink)]"
-                  >
-                    {it.label}
-                  </Link>
-                )
-              )}
+              {ITEMS.map((it) => (
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  onClick={() => setOpen(false)}
+                  className="border-b border-[var(--line)] px-5 py-4 text-[15px] font-bold text-[var(--ink)]"
+                >
+                  {it.label}
+                </Link>
+              ))}
             </nav>
           </div>
         </div>

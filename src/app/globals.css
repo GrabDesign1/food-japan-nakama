@@ -43,6 +43,18 @@ body {
   font-weight: 700;
 }
 
+/* ── 下層ページ用ヘッダーバー（トップのヒーロー内ヘッダーと同一見た目にする） ── */
+.fjn-headerbar {
+  --fjn-ink: #002f22;
+  --fjn-paper: #f7f3ea;
+  --fjn-orange: #f39522;
+  --fjn-line: rgba(0, 47, 34, 0.2);
+  color: var(--fjn-ink);
+  background: #f9f5ee;
+  border-bottom: 1px solid rgba(0, 47, 34, 0.12);
+  font-family: "Noto Sans JP", "Roboto", sans-serif;
+}
+
 /* ── 公開トップのヒーロー（提供デザイン food-japan-nakama-hero）───────── */
 .fjn-hero,
 .fjn-hero * { box-sizing: border-box; }
