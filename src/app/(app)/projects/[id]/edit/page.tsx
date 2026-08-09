@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { ProjectForm, type ProjectData } from "../../_components/ProjectForm";
 import { submitProject, closeProject, deleteProject } from "../../actions";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { ConfirmActionButton } from "@/components/ConfirmActionButton";
 import { btn, h1Cls } from "@/lib/ui";
 
 export default async function ProjectEditPage({
@@ -42,9 +43,14 @@ export default async function ProjectEditPage({
         </div>
         <div className="flex items-center gap-2">
           {project.status === "draft" || project.status === "closed" ? (
-            <form action={submitProject.bind(null, project.id)}>
-              <button className={btn("primary", "sm")}>掲載を申請</button>
-            </form>
+            <ConfirmActionButton
+              action={submitProject.bind(null, project.id)}
+              buttonLabel="掲載を申請"
+              title="掲載を申請しますか？"
+              description="事務局が内容を確認し、承認されると公開されます。"
+              confirmLabel="申請する"
+              cancelLabel="今はしない"
+            />
           ) : project.status === "pending" ? (
             <span className="rounded-full bg-[#FAF0D6] px-3 py-1 text-[11px] text-[#B77F0B]">承認待ち</span>
           ) : (

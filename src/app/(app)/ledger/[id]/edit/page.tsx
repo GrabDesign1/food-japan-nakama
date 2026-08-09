@@ -7,6 +7,7 @@ import { DIRECTION_LABEL } from "@/lib/offering-taxonomy";
 import { OfferingForm, type OfferingData } from "../../_components/OfferingForm";
 import { togglePublish, deleteOffering } from "../../actions";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { ConfirmActionButton } from "@/components/ConfirmActionButton";
 import { btn, h1Cls } from "@/lib/ui";
 
 function toDateInput(d: Date | null): string | null {
@@ -103,11 +104,14 @@ export default async function OfferingEditPage({
               <span className="rounded-full bg-[var(--line)] px-3 py-1 text-[11px] text-[var(--ink-2)]">
                 下書き
               </span>
-              <form action={togglePublish.bind(null, offering.id, true)}>
-                <button className={btn("primary", "sm")}>
-                  公開する
-                </button>
-              </form>
+              <ConfirmActionButton
+                action={togglePublish.bind(null, offering.id, true)}
+                buttonLabel="公開する"
+                title="公開しますか？"
+                description="公開すると、会員の検索結果と公開プレビューに表示されます。必須項目が足りない場合は、不足している項目をご案内します。"
+                confirmLabel="公開する"
+                cancelLabel="公開しない"
+              />
             </>
           )}
         </div>
