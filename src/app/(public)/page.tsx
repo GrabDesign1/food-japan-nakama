@@ -62,7 +62,7 @@ export default async function PublicHome() {
               {isLoggedIn ? (
                 <Link className="fjn-button fjn-button--primary" href="/dashboard">マイページトップへ</Link>
               ) : (
-                <Link className="fjn-button fjn-button--primary" href="/signup">NAKAMA会員に申し込む</Link>
+                <Link className="fjn-button fjn-button--primary" href="/signup">NAKAMAに申し込む</Link>
               )}
               <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
             </div>
@@ -102,7 +102,7 @@ export default async function PublicHome() {
             ))}
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/signup" className={btn("primary")}>NAKAMA会員に申し込む（22,000円・税込／月）</Link>
+            <Link href="/signup" className={btn("primary")}>NAKAMAに申し込む（22,000円・税込／月）</Link>
             <Link href="/about" className={btn("secondary")}>NAKAMAとは</Link>
           </div>
         </section>

@@ -91,7 +91,7 @@ export default function PricingPage() {
 
         {/* CTA（グリッド外で全幅に整列）*/}
         <div className="mt-6">
-          <Link href="/signup" className={btn("primary", "lg")}>NAKAMA会員に申し込む</Link>
+          <Link href="/signup" className={btn("primary", "lg")}>NAKAMAに申し込む</Link>
         </div>
         <div className="mt-4 flex flex-col gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4 sm:flex-row sm:items-center">
           <p className="flex-1 text-[12px] leading-6 text-[var(--ink-2)]">

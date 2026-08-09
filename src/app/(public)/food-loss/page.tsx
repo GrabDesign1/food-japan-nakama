@@ -33,7 +33,7 @@ export default function FoodLossPage() {
 
       <div className="flex flex-wrap gap-3">
         <Link href="/consultation" className={btn("primary")}>個別相談する</Link>
-        <Link href="/signup" className={btn("secondary")}>NAKAMA会員に申し込む</Link>
+        <Link href="/signup" className={btn("secondary")}>NAKAMAに申し込む</Link>
       </div>
     </InfoPage>
   );

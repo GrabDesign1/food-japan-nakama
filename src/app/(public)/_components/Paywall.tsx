@@ -17,7 +17,7 @@ export function Paywall({ remaining }: { remaining?: number }) {
           <p className="mt-2 text-[12px] text-[var(--muted)]">残り約 {remaining} 文字</p>
         ) : null}
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Link href="/signup" className={btn("primary", "lg")}>NAKAMA会員に申し込む</Link>
+          <Link href="/signup" className={btn("primary", "lg")}>NAKAMAに申し込む</Link>
           <Link href="/login" className={btn("secondary", "lg")}>ログイン</Link>
         </div>
       </div>
