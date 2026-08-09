@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
+import { JsonLd, MEMBERSHIP_JSONLD } from "../_components/JsonLd";
 import { btn } from "@/lib/ui";
 
 export const metadata = {
@@ -14,6 +15,7 @@ export default function PricingPage() {
       title="料金"
       lead="FOOD JAPANのサービスは3つです。役割と料金が混ざらないよう、比較して選べます。"
     >
+      <JsonLd data={MEMBERSHIP_JSONLD} />
       {/* 3サービス比較 */}
       <div className="overflow-x-auto rounded-[10px] border border-[var(--line)] bg-white">
         <table className="w-full min-w-[640px] text-[13px]">

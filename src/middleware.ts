@@ -8,6 +8,8 @@ const PUBLIC_PATHS = [
   "/about", "/pricing", "/flow", "/faq", "/company", "/contact",
   "/terms", "/privacy", "/tokushoho",
   "/produce", "/crowdfunding", "/consultation", "/learn",
+  // SEO/AIO: クローラ向けファイル（要公開）
+  "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg",
 ];
 
 export async function middleware(request: NextRequest) {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
+import { JsonLd, CROWDFUNDING_JSONLD } from "../_components/JsonLd";
 import { btn } from "@/lib/ui";
 
 export const metadata = {
@@ -28,6 +29,7 @@ export default function CrowdfundingPage() {
       title="予約販売で、需要と次の販路をつくる。"
       lead="Makuakeなどを活用して販売前に市場の反応を確認し、売上・購入者の声・販売実績を、一般販売や小売・流通への提案につなげます。商品を売りながら、市場の可能性を確かめます。"
     >
+      <JsonLd data={CROWDFUNDING_JSONLD} />
       <div>
         <Link href="/consultation?type=crowdfunding" className={btn("primary", "lg")}>クラファン支援を相談する</Link>
       </div>

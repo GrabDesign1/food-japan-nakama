@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
+import { JsonLd, PRODUCE_JSONLD } from "../_components/JsonLd";
 import { btn } from "@/lib/ui";
 
 export const metadata = {
@@ -35,6 +36,7 @@ export default function ProducePage() {
       title="食の資源と課題を、動く事業に変える。"
       lead="新商品、ブランド、販路、地域事業を構想だけで終わらせず、適切な相手とつなぎ、実証と事業化まで進める個別支援です。人が入り、企画し、動かします。"
     >
+      <JsonLd data={PRODUCE_JSONLD} />
       <div>
         <Link href="/consultation?type=produce" className={btn("primary", "lg")}>共創プロデュースを相談する</Link>
       </div>

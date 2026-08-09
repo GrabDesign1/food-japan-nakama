@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JsonLd, ORG_WEBSITE_JSONLD } from "./_components/JsonLd";
 
 function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
   return (
@@ -22,6 +23,7 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white">
+      <JsonLd data={ORG_WEBSITE_JSONLD} />
       <main className="flex-1">{children}</main>
 
       {/* フッター */}

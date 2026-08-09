@@ -8,6 +8,17 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "8mb",
     },
   },
+  // SEO: vercel.appドメインでの重複コンテンツを避け、正規ドメインへ301
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "food-japan-nakama.vercel.app" }],
+        destination: "https://nakama.food-japan-summit.jp/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

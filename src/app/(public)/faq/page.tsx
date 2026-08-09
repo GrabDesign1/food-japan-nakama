@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
+import { JsonLd, faqJsonLd } from "../_components/JsonLd";
 
 export const metadata = { title: "よくある質問｜FOOD JAPAN NAKAMA" };
 
@@ -15,6 +16,7 @@ const QA: [string, React.ReactNode][] = [
 export default function FaqPage() {
   return (
     <InfoPage eyebrow="FAQ" title="よくある質問">
+      <JsonLd data={faqJsonLd(QA)} />
       <div className="flex flex-col gap-3">
         {QA.map(([q, a], i) => (
           <div key={i} className="rounded-[10px] border border-[var(--line)] bg-white p-5">
