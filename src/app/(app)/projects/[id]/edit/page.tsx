@@ -55,7 +55,13 @@ export default async function ProjectEditPage({
             <span className="rounded-full bg-[#FAF0D6] px-3 py-1 text-[11px] text-[#B77F0B]">承認待ち</span>
           ) : (
             <>
-              <span className="rounded-full bg-[var(--green-soft)] px-3 py-1 text-[11px] text-[var(--green-d)]">掲載中</span>
+              <span className="flex items-center gap-2 rounded-full bg-[var(--green)] px-4 py-2 text-[14px] font-bold text-white shadow-md">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+                </span>
+                掲載中
+              </span>
               <form action={closeProject.bind(null, project.id)}>
                 <button className={btn("secondary", "sm")}>終了する</button>
               </form>
