@@ -77,7 +77,7 @@ export default async function DashboardPage() {
   const tenantId = su?.app.tenantId;
   const memberId = member?.id;
 
-  const [announcements, banners, dealsWithOther, myProjects, recommended] = await Promise.all([
+  const [announcements, banners, dealsWithOther, myProjects, recommended, myOfferings] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
           where: { tenantId },
@@ -110,6 +110,15 @@ export default async function DashboardPage() {
           include: { member: { select: { name: true } } },
         })
       : Promise.resolve([]),
+    // 自分の公開中の売りたい・買いたい（進行中の活動に表示）
+    memberId
+      ? prisma.offering.findMany({
+          where: { memberId, isPublic: true, title: { not: "" } },
+          orderBy: { updatedAt: "desc" },
+          take: 5,
+          select: { id: true, title: true, direction: true, updatedAt: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   // 商談スレッドごとの未読数（「要返信」判定）
@@ -129,6 +138,33 @@ export default async function DashboardPage() {
         })
       : [];
   const unreadByThread = new Map(unreadGroups.map((g) => [g.threadId, g._count._all]));
+
+  // 自分の公開中案件の統計（閲覧数・興味あり人数・問い合わせ件数）
+  const myOfferingIds = myOfferings.map((o) => o.id);
+  const [viewGroups, favGroups, inquiryGroups] = myOfferingIds.length
+    ? await Promise.all([
+        prisma.offeringView.groupBy({
+          by: ["offeringId"],
+          where: { offeringId: { in: myOfferingIds } },
+          _count: { _all: true },
+        }),
+        prisma.favorite.groupBy({
+          by: ["targetId"],
+          where: { targetType: "offering", targetId: { in: myOfferingIds } },
+          _count: { _all: true },
+        }),
+        prisma.thread.groupBy({
+          by: ["offeringId"],
+          where: { offeringId: { in: myOfferingIds } },
+          _count: { _all: true },
+        }),
+      ])
+    : [[], [], []];
+  const viewsByOffering = new Map(viewGroups.map((g) => [g.offeringId, g._count._all]));
+  const favsByOffering = new Map(favGroups.map((g) => [g.targetId, g._count._all]));
+  const inquiriesByOffering = new Map(
+    inquiryGroups.filter((g) => g.offeringId).map((g) => [g.offeringId as string, g._count._all])
+  );
 
   // ── 進行中の活動（商談＋共創PJを更新順に統合・最大3件・要返信優先）──
   const activities: ActivityItem[] = [
@@ -153,9 +189,24 @@ export default async function DashboardPage() {
       at: p.updatedAt,
       priority: 1,
     })),
+    // 自分の公開中の売りたい・買いたい（閲覧・興味あり・問い合わせの反響つき）
+    ...myOfferings.map((o) => {
+      const views = viewsByOffering.get(o.id) ?? 0;
+      const favs = favsByOffering.get(o.id) ?? 0;
+      const inquiries = inquiriesByOffering.get(o.id) ?? 0;
+      return {
+        title: o.title,
+        meta: `${o.direction === "GIVE" ? "売りたい" : "買いたい"} ・ 閲覧 ${views}回 ・ 興味あり ${favs}人 ・ 最終更新 ${fmtShortDate(o.updatedAt)}`,
+        status: inquiries > 0 ? `問い合わせ ${inquiries}件` : "公開中",
+        statusCls: inquiries > 0 ? STATUS_ORANGE : STATUS_GREEN,
+        href: `/ledger/${o.id}`,
+        at: o.updatedAt,
+        priority: inquiries > 0 ? 0 : 1,
+      };
+    }),
   ]
     .sort((a, b) => a.priority - b.priority || b.at.getTime() - a.at.getTime())
-    .slice(0, 3);
+    .slice(0, 5);
 
   // ── プロフィール進捗（100%かつ審査済みなら非表示）──
   // 完成度が低いうち（40%未満）は1行ではなく目立つカードで促す（ユーザー指示 2026-08-10）。

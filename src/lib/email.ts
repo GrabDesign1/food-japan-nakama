@@ -116,19 +116,25 @@ export async function notifyAdminMemberRegistered(params: {
 }
 
 // 会員向け：新着メッセージ通知（相手が既読済みの状態で新しく届いたときのみ呼ぶ）。
+// listingTitle があれば「案件への問い合わせ」として件名・本文に案件名を入れる。
 export async function notifyNewMessage(params: {
   to: string[];
   fromMemberName: string;
   preview: string;
   threadId: string;
+  listingTitle?: string | null;
 }): Promise<void> {
-  const { to, fromMemberName, preview, threadId } = params;
+  const { to, fromMemberName, preview, threadId, listingTitle } = params;
   if (to.length === 0) return;
   const short = preview.length > 80 ? `${preview.slice(0, 80)}…` : preview;
+  const heading = listingTitle ? "お問い合わせがありました" : "新しいメッセージが届きました";
+  const lead = listingTitle
+    ? `あなたの案件「<b>${esc(listingTitle)}</b>」に、<b>${esc(fromMemberName)}</b> さんから問い合わせが届きました。`
+    : `<b>${esc(fromMemberName)}</b> さんからメッセージが届いています。`;
   const html = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
-    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">新しいメッセージが届きました</h2>
-    <p style="font-size:14px;color:#3C4A62"><b>${esc(fromMemberName)}</b> さんからメッセージが届いています。</p>
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">${heading}</h2>
+    <p style="font-size:14px;color:#3C4A62">${lead}</p>
     <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${esc(short)}</p>
     <p style="margin:22px 0">
       <a href="${APP_URL}/messages/${threadId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">メッセージを確認する</a>
@@ -137,7 +143,9 @@ export async function notifyNewMessage(params: {
   </div>`;
   await send({
     to,
-    subject: `【FOOD JAPAN NAKAMA】${fromMemberName}さんからメッセージが届きました`,
+    subject: listingTitle
+      ? `【FOOD JAPAN NAKAMA】「${listingTitle}」にお問い合わせがありました`
+      : `【FOOD JAPAN NAKAMA】${fromMemberName}さんからメッセージが届きました`,
     html,
   });
 }

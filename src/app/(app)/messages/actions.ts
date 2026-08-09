@@ -18,6 +18,7 @@ async function notifyRecipientIfCaughtUp(params: {
   recipientId: string;
   body: string;
   unreadBefore: number;
+  listingTitle?: string | null;
 }): Promise<void> {
   if (params.unreadBefore > 0) return;
   const to = await getMemberUserEmails(params.recipientId);
@@ -26,6 +27,7 @@ async function notifyRecipientIfCaughtUp(params: {
     fromMemberName: params.senderName,
     preview: params.body,
     threadId: params.threadId,
+    listingTitle: params.listingTitle,
   });
 }
 
@@ -90,6 +92,11 @@ export async function sendInterest(
     data: { lastMessageAt: new Date() },
   });
 
+  // 案件経由の問い合わせなら、メール件名に案件名を入れる
+  const listing = offeringId
+    ? await prisma.offering.findUnique({ where: { id: offeringId }, select: { title: true } })
+    : null;
+
   await notifyRecipientIfCaughtUp({
     threadId: thread.id,
     senderId: me.id,
@@ -97,6 +104,7 @@ export async function sendInterest(
     recipientId: toMemberId,
     body,
     unreadBefore,
+    listingTitle: listing?.title || null,
   });
 
   // 商談を自動作成（phase 0 出会う）
