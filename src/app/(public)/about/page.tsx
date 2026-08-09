@@ -194,7 +194,7 @@ export default function AboutPage() {
             ))}
           </ul>
           <div className="mt-7">
-            <Link href="/signup" className={btn("primary", "lg")}>月額会員に申し込む</Link>
+            <Link href="/signup" className={btn("primary", "lg")}>NAKAMA会員に申し込む</Link>
           </div>
         </div>
       </section>

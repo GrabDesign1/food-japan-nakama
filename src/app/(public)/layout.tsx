@@ -67,7 +67,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <span>© FOOD JAPAN SUMMIT実行委員会</span>
             <span className="sm:ml-auto flex items-center gap-4">
               <Link href="/login" className="hover:underline">ログイン</Link>
-              <Link href="/signup" className="hover:underline">月額会員に申し込む</Link>
+              <Link href="/signup" className="hover:underline">NAKAMA会員に申し込む</Link>
             </span>
           </div>
         </div>
