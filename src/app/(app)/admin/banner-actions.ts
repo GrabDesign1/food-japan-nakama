@@ -4,15 +4,17 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
 export type BannerState = { ok?: boolean; error?: string; message?: string };
 
 const BUCKET = "member-images";
 
-// リンク先を整える（http/https か、サイト内パス「/」のみ許可）
+// リンク先を整える（http/https か、サイト内パス「/」のみ許可。「//」始まりの外部誘導は不可）
 function normalizeLink(raw: string): string | null {
   const v = raw.trim();
   if (!v) return null;
+  if (v.startsWith("//")) return null;
   if (v.startsWith("/")) return v;
   if (/^https?:\/\//i.test(v)) return v;
   return `https://${v}`; // ドメインだけ入力された場合の補助
@@ -28,23 +30,15 @@ export async function createBanner(
   const title = String(formData.get("title") ?? "").trim();
   const linkUrl = normalizeLink(String(formData.get("linkUrl") ?? ""));
 
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "バナー画像を選んでください。" };
-  }
-  if (!file.type.startsWith("image/")) {
-    return { error: "画像ファイルのみアップロードできます。" };
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: "画像は5MBまでにしてください。" };
-  }
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
 
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `banners/${su.app.tenantId}/${crypto.randomUUID()}.${ext}`;
+  const path = `banners/${su.app.tenantId}/${crypto.randomUUID()}.${v.ext}`;
 
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false });
+    .upload(path, file as File, { contentType: v.contentType, upsert: false });
   if (upErr) return { error: `アップロードに失敗しました：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -79,12 +73,11 @@ export async function deleteBanner(id: string): Promise<void> {
   });
   if (!banner) return;
 
-  // ストレージの実ファイルも削除
-  const marker = `/${BUCKET}/`;
-  const idx = banner.imageUrl.indexOf(marker);
-  if (idx >= 0) {
+  // ストレージの実ファイルも削除（バナーフォルダ配下のみ）
+  const bpath = storagePathFromUrl(banner.imageUrl, BUCKET, `banners/${su.app.tenantId}/`);
+  if (bpath) {
     const admin = createSupabaseAdminClient();
-    await admin.storage.from(BUCKET).remove([banner.imageUrl.slice(idx + marker.length)]).catch(() => {});
+    await admin.storage.from(BUCKET).remove([bpath]).catch(() => {});
   }
 
   await prisma.banner.deleteMany({ where: { id, tenantId: su.app.tenantId } });

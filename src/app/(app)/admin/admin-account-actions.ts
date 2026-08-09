@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAudit } from "@/lib/audit";
 import type { UserRole } from "@/generated/prisma/client";
 
 export type AdminAccountState = { error?: string; message?: string };
@@ -19,7 +20,8 @@ export async function createAdminAccount(
   _prev: AdminAccountState,
   formData: FormData
 ): Promise<AdminAccountState> {
-  const su = await requireAdmin();
+  // 権限管理はREVIEWER不可（REVIEWERが自分用ADMINを作る昇格経路を塞ぐ）
+  const su = await requireSuperAdmin();
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const name = String(formData.get("name") ?? "").trim();
@@ -73,6 +75,7 @@ export async function createAdminAccount(
     return { error: "アカウント情報の保存に失敗しました。もう一度お試しください。" };
   }
 
+  await writeAudit(su, "admin.create", { targetType: "user", targetId: data.user.id, detail: `email=${email}, role=${role}` });
   revalidatePath("/admin");
   const roleLabel = role === "ADMIN" ? "事務局管理者" : "審査担当";
   return { message: `${name} さんの${roleLabel}アカウントを作成しました。初回はこのメール・パスワードでログインできます。` };
@@ -80,13 +83,20 @@ export async function createAdminAccount(
 
 /**
  * 管理者権限を解除する（一般会員に戻す）。認証アカウント自体は削除しない。
+ * 統括管理者（TENANT_ADMIN）は解除できない（事務局全体のロックアウト防止）。
  */
 export async function revokeAdmin(userId: string): Promise<void> {
-  const su = await requireAdmin();
+  const su = await requireSuperAdmin();
   if (userId === su.app.id) return; // 自分自身は解除できない
+  const target = await prisma.user.findFirst({
+    where: { id: userId, tenantId: su.app.tenantId },
+    select: { role: true, email: true },
+  });
+  if (!target || target.role === "TENANT_ADMIN") return;
   await prisma.user.updateMany({
     where: { id: userId, tenantId: su.app.tenantId },
     data: { role: "MEMBER" },
   });
+  await writeAudit(su, "admin.revoke", { targetType: "user", targetId: userId, detail: `email=${target.email}, was=${target.role}` });
   revalidatePath("/admin");
 }

@@ -11,6 +11,13 @@ export async function toggleFavoriteMember(targetMemberId: string): Promise<void
   const me = await getOrCreateMemberForUser(su);
   if (me.id === targetMemberId) return; // 自分はお気に入りにできない
 
+  // 対象が同一テナントの承認済み会員であることを確認
+  const target = await prisma.member.findFirst({
+    where: { id: targetMemberId, tenantId: su.app.tenantId, status: "APPROVED" },
+    select: { id: true },
+  });
+  if (!target) return;
+
   const existing = await prisma.favorite.findUnique({
     where: {
       memberId_targetType_targetId: {

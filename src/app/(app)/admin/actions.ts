@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { stripe } from "@/lib/stripe";
+import { writeAudit } from "@/lib/audit";
 import { setMemberReview, type ReviewDecision } from "@/lib/member";
 
 export async function reviewAction(
@@ -12,7 +14,8 @@ export async function reviewAction(
 ): Promise<void> {
   const su = await requireAdmin();
   if (!memberId) return;
-  await setMemberReview(memberId, decision, su.app.id);
+  await setMemberReview(memberId, decision, su.app.id, su.app.tenantId);
+  await writeAudit(su, `member.review.${decision}`, { targetType: "member", targetId: memberId });
   revalidatePath("/admin");
 }
 
@@ -21,7 +24,7 @@ export async function reviewAction(
  * Stripeを使わずにメッセージ等の有料機能を開放できる。
  */
 export async function markMemberPaid(memberId: string): Promise<void> {
-  const su = await requireAdmin();
+  const su = await requireSuperAdmin(); // 課金操作はREVIEWER不可
   if (!memberId) return;
   const tenantId = su.app.tenantId;
   const m = await prisma.member.findFirst({
@@ -39,17 +42,19 @@ export async function markMemberPaid(memberId: string): Promise<void> {
         : {}),
     },
   });
+  await writeAudit(su, "member.mark_paid", { targetType: "member", targetId: memberId });
   revalidatePath("/admin");
 }
 
 /** 課金を解除して無料(FREE)に戻す。 */
 export async function unmarkMemberPaid(memberId: string): Promise<void> {
-  const su = await requireAdmin();
+  const su = await requireSuperAdmin(); // 課金操作はREVIEWER不可
   if (!memberId) return;
   await prisma.member.updateMany({
     where: { id: memberId, tenantId: su.app.tenantId },
     data: { paymentStatus: "FREE" },
   });
+  await writeAudit(su, "member.unmark_paid", { targetType: "member", targetId: memberId });
   revalidatePath("/admin");
 }
 
@@ -62,6 +67,17 @@ export async function suspendMember(memberId: string): Promise<void> {
     prisma.member.updateMany({ where: { id: memberId, tenantId }, data: { status: "SUSPENDED" } }),
     prisma.user.updateMany({ where: { memberId, tenantId }, data: { status: "SUSPENDED" } }),
   ]);
+  // Supabase側でも新規トークン発行を止める（既存トークンは getSessionUser のSUSPENDED判定で遮断）
+  const users = await prisma.user.findMany({ where: { memberId, tenantId }, select: { authId: true } });
+  const admin = createSupabaseAdminClient();
+  for (const u of users) {
+    if (u.authId) {
+      await admin.auth.admin.updateUserById(u.authId, { ban_duration: "87600h" }).catch((e) =>
+        console.error("[suspendMember] Supabaseバン失敗:", e)
+      );
+    }
+  }
+  await writeAudit(su, "member.suspend", { targetType: "member", targetId: memberId });
   revalidatePath("/admin");
 }
 
@@ -74,6 +90,17 @@ export async function reactivateMember(memberId: string): Promise<void> {
     prisma.member.updateMany({ where: { id: memberId, tenantId }, data: { status: "APPROVED" } }),
     prisma.user.updateMany({ where: { memberId, tenantId }, data: { status: "ACTIVE" } }),
   ]);
+  // Supabase側のバンを解除
+  const users = await prisma.user.findMany({ where: { memberId, tenantId }, select: { authId: true } });
+  const admin = createSupabaseAdminClient();
+  for (const u of users) {
+    if (u.authId) {
+      await admin.auth.admin.updateUserById(u.authId, { ban_duration: "none" }).catch((e) =>
+        console.error("[reactivateMember] Supabaseバン解除失敗:", e)
+      );
+    }
+  }
+  await writeAudit(su, "member.reactivate", { targetType: "member", targetId: memberId });
   revalidatePath("/admin");
 }
 
@@ -83,13 +110,34 @@ export async function reactivateMember(memberId: string): Promise<void> {
  * 紐づくログインアカウントもまとめて削除する。
  */
 export async function deleteMember(memberId: string): Promise<void> {
-  const su = await requireAdmin();
+  const su = await requireSuperAdmin(); // 完全削除はREVIEWER不可
   if (!memberId) return;
   const tenantId = su.app.tenantId;
 
   // 対象がこのテナントの会員か確認
-  const member = await prisma.member.findFirst({ where: { id: memberId, tenantId }, select: { id: true } });
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, tenantId },
+    select: { id: true, name: true, paymentStatus: true, stripeCustomerId: true, stripeSubscriptionId: true },
+  });
   if (!member) return;
+
+  // 先にStripeサブスクを解約する（削除後は本人がポータルに入れず解約手段を失うため）。
+  // 解約に失敗した場合は会員を削除しない＝課金だけが生き残る事故を防ぐ。
+  if (stripe) {
+    try {
+      let subId = member.stripeSubscriptionId;
+      if (!subId && member.stripeCustomerId) {
+        const subs = await stripe.subscriptions.list({ customer: member.stripeCustomerId, status: "active", limit: 3 });
+        subId = subs.data[0]?.id ?? null;
+      }
+      if (subId) await stripe.subscriptions.cancel(subId);
+    } catch (e) {
+      console.error("[deleteMember] Stripe解約失敗のため削除を中止:", e);
+      throw new Error("Stripeサブスクリプションの解約に失敗したため、削除を中止しました。Stripeダッシュボードで解約後に再実行してください。");
+    }
+  } else if (member.paymentStatus === "PAID" && member.stripeSubscriptionId) {
+    throw new Error("Stripe未設定のため課金中の会員は削除できません。");
+  }
 
   // 紐づくログインユーザーの認証アカウントを削除
   const users = await prisma.user.findMany({ where: { memberId, tenantId }, select: { authId: true } });
@@ -106,5 +154,10 @@ export async function deleteMember(memberId: string): Promise<void> {
     prisma.user.deleteMany({ where: { memberId, tenantId } }),
     prisma.member.delete({ where: { id: memberId } }),
   ]);
+  await writeAudit(su, "member.delete", {
+    targetType: "member",
+    targetId: memberId,
+    detail: `name=${member.name}`,
+  });
   revalidatePath("/admin");
 }

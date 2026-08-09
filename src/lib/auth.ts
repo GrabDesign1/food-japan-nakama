@@ -1,4 +1,5 @@
 // ログインユーザーの取得と、初回ログイン時のアプリ側ユーザー自動作成（プロビジョニング）。
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { User as AppUser, UserRole } from "@/generated/prisma/client";
@@ -66,6 +67,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     }
   }
 
+  // 利用停止（SUSPENDED）ユーザーはアプリを利用させない（規約18条）
+  if (app.status === "SUSPENDED") {
+    redirect("/suspended");
+  }
+
   return { authId: user.id, email, app };
 }
 
@@ -74,10 +80,24 @@ export function isAdminRole(role: UserRole): boolean {
   return role === "TENANT_ADMIN" || role === "ADMIN" || role === "REVIEWER";
 }
 
+// 上位管理者（REVIEWERを含まない）。削除・課金操作・権限管理はこちらを要求する
+export function isSuperAdminRole(role: UserRole): boolean {
+  return role === "TENANT_ADMIN" || role === "ADMIN";
+}
+
 // 事務局ページを開ける最低権限を満たすか（満たさなければ例外）
 export async function requireAdmin(): Promise<SessionUser> {
   const su = await getSessionUser();
   if (!su || !isAdminRole(su.app.role)) {
+    throw new Error("FORBIDDEN");
+  }
+  return su;
+}
+
+// 破壊的操作・課金操作・権限管理用（REVIEWER不可）
+export async function requireSuperAdmin(): Promise<SessionUser> {
+  const su = await getSessionUser();
+  if (!su || !isSuperAdminRole(su.app.role)) {
     throw new Error("FORBIDDEN");
   }
   return su;

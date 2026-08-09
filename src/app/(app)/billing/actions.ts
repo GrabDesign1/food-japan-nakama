@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
+import { prisma } from "@/lib/db";
 import { stripe, PLANS } from "@/lib/stripe";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -21,14 +22,22 @@ export async function openBillingPortal(
 
   let url: string;
   try {
-    // 会員のメールからStripe顧客を特定
-    const customers = await stripe.customers.list({ email: su.app.email, limit: 1 });
-    const customer = customers.data[0];
-    if (!customer) {
+    // 保存済みのStripe顧客IDを最優先で使う（メール一致だけだと重複顧客で誤爆しうる）
+    const me = await getOrCreateMemberForUser(su);
+    let customerId = me.stripeCustomerId;
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: su.app.email, limit: 1 });
+      customerId = customers.data[0]?.id ?? null;
+      if (customerId) {
+        // 次回以降のためにIDを保存
+        await prisma.member.update({ where: { id: me.id }, data: { stripeCustomerId: customerId } });
+      }
+    }
+    if (!customerId) {
       return { error: "お支払い情報が見つかりません（まだご契約がない可能性があります）。" };
     }
     const session = await stripe.billingPortal.sessions.create({
-      customer: customer.id,
+      customer: customerId,
       return_url: `${APP_URL}/billing`,
     });
     url = session.url;
@@ -80,7 +89,10 @@ export async function startCheckout(
           quantity: 1,
         },
       ],
-      customer_email: su.app.email,
+      // 既存顧客がいれば再利用（申込のたびに新規Customerが作られて重複するのを防ぐ）
+      ...(me.stripeCustomerId
+        ? { customer: me.stripeCustomerId }
+        : { customer_email: su.app.email }),
       success_url: `${APP_URL}/billing?success=1`,
       cancel_url: `${APP_URL}/billing`,
       metadata: { memberId: me.id, planCode },

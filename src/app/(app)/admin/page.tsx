@@ -116,6 +116,7 @@ export default async function AdminPage() {
           <Link href="/admin/listings" className={btn("secondary", "sm")}>掲載の監視 →</Link>
           <Link href="/admin/inquiries" className={btn("secondary", "sm")}>問い合わせ・応募の状況 →</Link>
           <Link href="/admin/consultations" className={btn("secondary", "sm")}>個別相談の管理 →</Link>
+          <Link href="/admin/audit" className={btn("secondary", "sm")}>監査ログ →</Link>
         </div>
       </div>
 

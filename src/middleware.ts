@@ -7,7 +7,7 @@ const PUBLIC_PATHS = [
   "/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/preview",
   "/about", "/pricing", "/flow", "/faq", "/company", "/contact",
   "/terms", "/privacy", "/tokushoho",
-  "/produce", "/crowdfunding", "/consultation", "/learn", "/food-loss",
+  "/produce", "/crowdfunding", "/consultation", "/learn", "/food-loss", "/suspended",
   // SEO/AIO: クローラ向けファイル（要公開）
   "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
 ];
@@ -41,7 +41,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublic = path === "/" || PUBLIC_PATHS.some((p) => path.startsWith(p));
+  // 完全一致 or 「/」区切りの配下のみ公開扱い（"/produce" が "/producers" に誤マッチしないように）
+  const isPublic =
+    path === "/" || PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 
   // 未ログインで保護ページ → /login へ
   if (!user && !isPublic) {

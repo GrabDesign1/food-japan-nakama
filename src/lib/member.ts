@@ -115,12 +115,16 @@ export async function submitMemberForReview(memberId: string): Promise<Member> {
 
 export type ReviewDecision = "approve" | "reject" | "require_payment";
 
-/** 事務局の審査。承認／非承認／課金してもらう の3択。 */
+/** 事務局の審査。承認／非承認／課金してもらう の3択。tenantId で自テナントの会員に限定する。 */
 export async function setMemberReview(
   memberId: string,
   decision: ReviewDecision,
-  reviewerUserId: string
+  reviewerUserId: string,
+  tenantId: string
 ): Promise<Member> {
+  const target = await prisma.member.findFirst({ where: { id: memberId, tenantId } });
+  if (!target) throw new Error("会員が見つかりません");
+
   const data =
     decision === "approve"
       ? {

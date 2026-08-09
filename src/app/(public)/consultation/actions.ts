@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getPublicTenantId } from "@/lib/public-content";
 import { sendConsultationEmails } from "@/lib/email";
@@ -8,11 +9,18 @@ export type ConsultationState = { ok?: boolean; refNo?: string; error?: string }
 
 const SERVICE_TYPES = new Set(["produce", "crowdfunding", "food-loss", "unsure"]);
 
+// 濫用対策（公開・未認証フォームのため）：同一IP 1時間5件・全体 1時間30件まで
+const LIMIT_PER_IP_HOUR = 5;
+const LIMIT_TOTAL_HOUR = 30;
+
 function makeRefNo(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
   const ymd = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
-  const rand = Math.floor(1000 + Math.random() * 9000);
+  // 衝突しにくい乱数（4桁数値は再送などで衝突→@uniqueで500になるため廃止）
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const rand = Array.from(bytes, (b) => (b % 36).toString(36)).join("").toUpperCase();
   return `NK-${ymd}-${rand}`;
 }
 
@@ -20,12 +28,17 @@ export async function submitConsultation(
   _prev: ConsultationState,
   formData: FormData
 ): Promise<ConsultationState> {
-  const g = (k: string) => String(formData.get(k) ?? "").trim();
+  const g = (k: string, max = 4000) => String(formData.get(k) ?? "").trim().slice(0, max);
 
-  const serviceType = g("serviceType");
-  const company = g("company");
-  const name = g("name");
-  const email = g("email");
+  // honeypot（人間には見えない入力欄。埋まっていたらボット）
+  if (String(formData.get("website") ?? "").trim()) {
+    return { ok: true, refNo: makeRefNo() }; // 保存も送信もせず成功を装う
+  }
+
+  const serviceType = g("serviceType", 40);
+  const company = g("company", 200);
+  const name = g("name", 100);
+  const email = g("email", 320);
   const productSummary = g("productSummary");
   const challenge = g("challenge");
   const consent = formData.get("consent");
@@ -37,6 +50,20 @@ export async function submitConsultation(
   if (!productSummary) return { error: "商品・地域資源・技術の概要を入力してください。" };
   if (!challenge) return { error: "解決したい課題を入力してください。" };
   if (!consent) return { error: "個人情報の取扱いにご同意ください。" };
+
+  // レート制限（DBベース。任意アドレスへの自動返信を踏み台にされないように）
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const [ipCount, totalCount] = await Promise.all([
+    ip
+      ? prisma.consultation.count({ where: { ip, createdAt: { gte: oneHourAgo } } })
+      : Promise.resolve(0),
+    prisma.consultation.count({ where: { createdAt: { gte: oneHourAgo } } }),
+  ]);
+  if (ipCount >= LIMIT_PER_IP_HOUR || totalCount >= LIMIT_TOTAL_HOUR) {
+    return { error: "送信が混み合っています。しばらく時間をおいて再度お試しください。" };
+  }
 
   // フードロス相談の詳細（任意項目）を概要に整形して追記
   let productSummaryFull = productSummary;
@@ -68,17 +95,17 @@ export async function submitConsultation(
     company,
     name,
     email,
-    phone: g("phone") || null,
-    area: g("area") || null,
-    industry: g("industry") || null,
+    phone: g("phone", 50) || null,
+    area: g("area", 200) || null,
+    industry: g("industry", 200) || null,
     productSummary: productSummaryFull,
     challenge,
     desiredOutcome: g("desiredOutcome") || null,
-    desiredTiming: g("desiredTiming") || null,
-    budget: g("budget") || null,
+    desiredTiming: g("desiredTiming", 100) || null,
+    budget: g("budget", 100) || null,
   };
 
-  await prisma.consultation.create({ data });
+  await prisma.consultation.create({ data: { ...data, ip } });
   // メール送信は失敗しても受付自体は成立させる
   await sendConsultationEmails(data).catch((e) => console.error("[consultation] mail error", e));
 

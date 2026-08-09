@@ -7,6 +7,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isStructured } from "@/lib/offering-taxonomy";
+import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
 const BUCKET = "member-images";
 
@@ -97,14 +98,10 @@ export async function togglePublish(
 
 export async function deleteOffering(offeringId: string): Promise<void> {
   const { offering } = await ownOfferingOr404(offeringId);
-  // 画像も削除
+  // 画像も削除（自分の台帳フォルダ配下のみ）
   const admin = createSupabaseAdminClient();
-  const marker = `/${BUCKET}/`;
   const paths = offering.imageUrls
-    .map((u) => {
-      const idx = u.indexOf(marker);
-      return idx >= 0 ? u.slice(idx + marker.length) : null;
-    })
+    .map((u) => storagePathFromUrl(u, BUCKET, `offerings/${offeringId}/`))
     .filter((p): p is string => !!p);
   if (paths.length) await admin.storage.from(BUCKET).remove(paths);
 
@@ -119,21 +116,17 @@ export async function uploadOfferingImage(
 ): Promise<OfferingState> {
   const { offering } = await ownOfferingOr404(offeringId);
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "画像ファイルを選んでください。" };
-  }
-  if (!file.type.startsWith("image/")) return { error: "画像ファイルのみです。" };
-  if (file.size > 5 * 1024 * 1024) return { error: "画像は5MBまでです。" };
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
   if ((offering.imageUrls ?? []).length >= 6) {
     return { error: "画像は最大6枚までです。" };
   }
 
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `offerings/${offeringId}/${crypto.randomUUID()}.${ext}`;
+  const path = `offerings/${offeringId}/${crypto.randomUUID()}.${v.ext}`;
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type });
+    .upload(path, file as File, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -157,28 +150,24 @@ export async function setOfferingSlotImage(
   formData: FormData
 ): Promise<OfferingState> {
   const { offering } = await ownOfferingOr404(offeringId);
+  if (!(slot in SLOT_FIELD)) return { error: "不正な指定です。" };
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "画像ファイルを選んでください。" };
-  }
-  if (!file.type.startsWith("image/")) return { error: "画像ファイルのみです。" };
-  if (file.size > 5 * 1024 * 1024) return { error: "画像は5MBまでです。" };
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
 
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `offerings/${offeringId}/${slot}-${crypto.randomUUID()}.${ext}`;
+  const path = `offerings/${offeringId}/${slot}-${crypto.randomUUID()}.${v.ext}`;
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type });
+    .upload(path, file as File, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
-  // 旧画像を消す
+  // 旧画像を消す（自分の台帳フォルダ配下のみ）
   const field = SLOT_FIELD[slot];
   const old = offering[field];
   if (old) {
-    const marker = `/${BUCKET}/`;
-    const idx = old.indexOf(marker);
-    if (idx >= 0) await admin.storage.from(BUCKET).remove([old.slice(idx + marker.length)]);
+    const oldPath = storagePathFromUrl(old, BUCKET, `offerings/${offeringId}/`);
+    if (oldPath) await admin.storage.from(BUCKET).remove([oldPath]);
   }
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -195,14 +184,14 @@ export async function clearOfferingSlotImage(
   slot: SlotKey
 ): Promise<OfferingState> {
   const { offering } = await ownOfferingOr404(offeringId);
+  if (!(slot in SLOT_FIELD)) return { error: "不正な指定です。" };
   const field = SLOT_FIELD[slot];
   const old = offering[field];
   if (old) {
-    const marker = `/${BUCKET}/`;
-    const idx = old.indexOf(marker);
-    if (idx >= 0) {
+    const oldPath = storagePathFromUrl(old, BUCKET, `offerings/${offeringId}/`);
+    if (oldPath) {
       const admin = createSupabaseAdminClient();
-      await admin.storage.from(BUCKET).remove([old.slice(idx + marker.length)]);
+      await admin.storage.from(BUCKET).remove([oldPath]);
     }
   }
   await prisma.offering.update({
@@ -218,15 +207,16 @@ export async function removeOfferingImage(
   url: string
 ): Promise<OfferingState> {
   const { offering } = await ownOfferingOr404(offeringId);
+  // 自分の台帳に実際に登録されているURLしか消させない（任意ファイル削除の防止）
+  if (!offering.imageUrls.includes(url)) return { error: "対象の画像が見つかりません。" };
   await prisma.offering.update({
     where: { id: offeringId },
     data: { imageUrls: offering.imageUrls.filter((u) => u !== url) },
   });
-  const marker = `/${BUCKET}/`;
-  const idx = url.indexOf(marker);
-  if (idx >= 0) {
+  const path = storagePathFromUrl(url, BUCKET, `offerings/${offeringId}/`);
+  if (path) {
     const admin = createSupabaseAdminClient();
-    await admin.storage.from(BUCKET).remove([url.slice(idx + marker.length)]);
+    await admin.storage.from(BUCKET).remove([path]);
   }
   revalidatePath(`/ledger/${offeringId}/edit`);
   return { ok: true };

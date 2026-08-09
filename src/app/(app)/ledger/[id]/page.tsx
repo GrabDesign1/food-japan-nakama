@@ -33,6 +33,7 @@ export default async function OfferingDetailPage({
         select: {
           id: true,
           name: true,
+          status: true,
           prefecture: true,
           city: true,
           address: true,
@@ -49,6 +50,8 @@ export default async function OfferingDetailPage({
 
   const isOwner = offering.memberId === member.id;
   if (!offering.isPublic && !isOwner) notFound();
+  // 停止・未承認会員の掲載は本人以外に見せない
+  if (offering.member.status !== "APPROVED" && !isOwner) notFound();
 
   // 閲覧を記録し、直近24時間の閲覧数を集計
   await prisma.offeringView.create({

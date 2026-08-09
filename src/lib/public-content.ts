@@ -51,13 +51,13 @@ export async function getLandingContent() {
       take: 4,
     }),
     prisma.offering.findMany({
-      where: { isPublic: true, title: { not: "" }, direction: "GIVE", member: { tenantId } },
+      where: { isPublic: true, title: { not: "" }, direction: "GIVE", member: { tenantId, status: "APPROVED" } },
       orderBy: { createdAt: "desc" },
       take: 4,
       include: { member: { select: { name: true } } },
     }),
     prisma.offering.findMany({
-      where: { isPublic: true, title: { not: "" }, direction: "WANT", member: { tenantId } },
+      where: { isPublic: true, title: { not: "" }, direction: "WANT", member: { tenantId, status: "APPROVED" } },
       orderBy: { createdAt: "desc" },
       take: 4,
       include: { member: { select: { name: true } } },
@@ -93,10 +93,10 @@ export async function getPublicProject(id: string) {
   return { ...p, memberName: member?.name ?? "" };
 }
 
-/** 公開プレビュー用：公開中の持ち寄り1件。 */
+/** 公開プレビュー用：公開中の持ち寄り1件（停止・未承認会員の掲載は出さない）。 */
 export async function getPublicOffering(id: string) {
   return prisma.offering.findFirst({
-    where: { id, isPublic: true, title: { not: "" } },
+    where: { id, isPublic: true, title: { not: "" }, member: { status: "APPROVED" } },
     include: { member: { select: { name: true } } },
   });
 }

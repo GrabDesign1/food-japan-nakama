@@ -7,6 +7,8 @@ import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { notifyProjectApplication } from "@/lib/email";
+import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
+import { writeAudit } from "@/lib/audit";
 
 const BUCKET = "member-images";
 
@@ -82,9 +84,8 @@ export async function deleteProject(projectId: string): Promise<void> {
   const owned = await ownProject(projectId);
   if (!owned) return;
   const admin = createSupabaseAdminClient();
-  const marker = `/${BUCKET}/`;
   const paths = owned.project.imageUrls
-    .map((u) => (u.indexOf(marker) >= 0 ? u.slice(u.indexOf(marker) + marker.length) : null))
+    .map((u) => storagePathFromUrl(u, BUCKET, `projects/${projectId}/`))
     .filter((p): p is string => !!p);
   if (paths.length) await admin.storage.from(BUCKET).remove(paths);
   await prisma.project.delete({ where: { id: projectId } });
@@ -99,14 +100,12 @@ export async function uploadProjectImage(
   const owned = await ownProject(projectId);
   if (!owned) return { error: "権限がありません。" };
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return { error: "画像を選んでください。" };
-  if (!file.type.startsWith("image/")) return { error: "画像のみです。" };
-  if (file.size > 5 * 1024 * 1024) return { error: "5MBまでです。" };
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
   if (owned.project.imageUrls.length >= 6) return { error: "最大6枚です。" };
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `projects/${projectId}/${crypto.randomUUID()}.${ext}`;
+  const path = `projects/${projectId}/${crypto.randomUUID()}.${v.ext}`;
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+  const { error } = await admin.storage.from(BUCKET).upload(path, file as File, { contentType: v.contentType });
   if (error) return { error: error.message };
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
   await prisma.project.update({
@@ -123,14 +122,16 @@ export async function removeProjectImage(
 ): Promise<ProjectState> {
   const owned = await ownProject(projectId);
   if (!owned) return { error: "権限がありません。" };
+  // 自分のプロジェクトに実際に登録されているURLしか消させない（任意ファイル削除の防止）
+  if (!owned.project.imageUrls.includes(url)) return { error: "対象の画像が見つかりません。" };
   await prisma.project.update({
     where: { id: projectId },
     data: { imageUrls: owned.project.imageUrls.filter((u) => u !== url) },
   });
-  const marker = `/${BUCKET}/`;
-  if (url.indexOf(marker) >= 0) {
+  const path = storagePathFromUrl(url, BUCKET, `projects/${projectId}/`);
+  if (path) {
     const admin = createSupabaseAdminClient();
-    await admin.storage.from(BUCKET).remove([url.slice(url.indexOf(marker) + marker.length)]);
+    await admin.storage.from(BUCKET).remove([path]);
   }
   revalidatePath(`/projects/${projectId}/edit`);
   return { ok: true };
@@ -143,18 +144,16 @@ export async function setProjectBodyImage(
   const owned = await ownProject(projectId);
   if (!owned) return { error: "権限がありません。" };
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return { error: "画像を選んでください。" };
-  if (!file.type.startsWith("image/")) return { error: "画像のみです。" };
-  if (file.size > 5 * 1024 * 1024) return { error: "5MBまでです。" };
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `projects/${projectId}/body-${crypto.randomUUID()}.${ext}`;
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
+  const path = `projects/${projectId}/body-${crypto.randomUUID()}.${v.ext}`;
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+  const { error } = await admin.storage.from(BUCKET).upload(path, file as File, { contentType: v.contentType });
   if (error) return { error: error.message };
   const old = owned.project.bodyImageUrl;
   if (old) {
-    const marker = `/${BUCKET}/`;
-    if (old.indexOf(marker) >= 0) await admin.storage.from(BUCKET).remove([old.slice(old.indexOf(marker) + marker.length)]);
+    const oldPath = storagePathFromUrl(old, BUCKET, `projects/${projectId}/`);
+    if (oldPath) await admin.storage.from(BUCKET).remove([oldPath]);
   }
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
   await prisma.project.update({ where: { id: projectId }, data: { bodyImageUrl: data.publicUrl } });
@@ -167,10 +166,10 @@ export async function clearProjectBodyImage(projectId: string): Promise<ProjectS
   if (!owned) return { error: "権限がありません。" };
   const old = owned.project.bodyImageUrl;
   if (old) {
-    const marker = `/${BUCKET}/`;
-    if (old.indexOf(marker) >= 0) {
+    const oldPath = storagePathFromUrl(old, BUCKET, `projects/${projectId}/`);
+    if (oldPath) {
       const admin = createSupabaseAdminClient();
-      await admin.storage.from(BUCKET).remove([old.slice(old.indexOf(marker) + marker.length)]);
+      await admin.storage.from(BUCKET).remove([oldPath]);
     }
   }
   await prisma.project.update({ where: { id: projectId }, data: { bodyImageUrl: null } });
@@ -183,12 +182,16 @@ export async function adminReviewProject(
   projectId: string,
   approve: boolean
 ): Promise<void> {
-  await requireAdmin();
-  await prisma.project.update({
-    where: { id: projectId },
+  const su = await requireAdmin();
+  await prisma.project.updateMany({
+    where: { id: projectId, tenantId: su.app.tenantId },
     data: approve
       ? { status: "published", publishedAt: new Date() }
       : { status: "draft" },
+  });
+  await writeAudit(su, approve ? "project.approve" : "project.send_back", {
+    targetType: "project",
+    targetId: projectId,
   });
   revalidatePath("/admin");
   revalidatePath("/projects");
@@ -202,8 +205,16 @@ export async function applyToProject(
   const su = await getSessionUser();
   if (!su) return;
   const me = await getOrCreateMemberForUser(su);
+  // 応募（問い合わせ）は月額会員のみ（仕様11章の権限表に合わせる）
+  if (me.paymentStatus !== "PAID") redirect("/billing");
   const project = await prisma.project.findUnique({ where: { id: projectId } });
-  if (!project || project.memberId === me.id || project.status !== "published") return;
+  if (
+    !project ||
+    project.memberId === me.id ||
+    project.status !== "published" ||
+    project.tenantId !== su.app.tenantId
+  )
+    return;
   const message = String(formData.get("message") ?? "").trim();
   const existing = await prisma.projectApplication.findUnique({
     where: { projectId_applicantMemberId: { projectId, applicantMemberId: me.id } },

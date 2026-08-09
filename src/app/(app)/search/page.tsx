@@ -254,6 +254,7 @@ async function searchOfferings(f: {
     title: { not: "" },
     member: {
       tenantId: f.tenantId,
+      status: "APPROVED" as const, // 停止・未承認会員の掲載は出さない
       ...(f.category ? { categoryL1: f.category } : {}),
     },
     ...(f.direction ? { direction: f.direction as "GIVE" | "WANT" } : {}),

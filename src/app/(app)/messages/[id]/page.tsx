@@ -22,7 +22,7 @@ export default async function ThreadPage({
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
     notFound();
   }
-  await markThreadRead(thread.id, me.id);
+  await markThreadRead(thread.id);
 
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
   const other = await prisma.member.findUnique({

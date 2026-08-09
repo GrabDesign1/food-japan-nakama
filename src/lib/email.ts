@@ -9,6 +9,16 @@ const resend = apiKey ? new Resend(apiKey) : null;
 
 type SendArgs = { to: string[]; subject: string; html: string };
 
+// ユーザー入力をメールHTMLへ埋め込む前に必ずエスケープする（偽装リンク等の差し込み防止）
+function esc(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 async function send({ to, subject, html }: SendArgs): Promise<void> {
   if (!resend) {
     console.log(`[email] RESEND_API_KEY 未設定のため送信スキップ: ${subject} -> ${to.join(", ")}`);
@@ -79,7 +89,7 @@ export async function notifyAdminMemberRegistered(params: {
   if (adminEmails.length === 0) return;
 
   const row = (label: string, value: string | null) =>
-    `<tr><td style="padding:4px 12px 4px 0;color:#7C8899;font-size:13px;white-space:nowrap">${label}</td><td style="padding:4px 0;color:#141414;font-size:13px">${value || "—"}</td></tr>`;
+    `<tr><td style="padding:4px 12px 4px 0;color:#7C8899;font-size:13px;white-space:nowrap">${label}</td><td style="padding:4px 0;color:#141414;font-size:13px">${value ? esc(value) : "—"}</td></tr>`;
 
   const area = [prefecture, city].filter(Boolean).join(" ") || null;
 
@@ -118,8 +128,8 @@ export async function notifyNewMessage(params: {
   const html = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
     <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">新しいメッセージが届きました</h2>
-    <p style="font-size:14px;color:#3C4A62"><b>${fromMemberName}</b> さんからメッセージが届いています。</p>
-    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${short}</p>
+    <p style="font-size:14px;color:#3C4A62"><b>${esc(fromMemberName)}</b> さんからメッセージが届いています。</p>
+    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${esc(short)}</p>
     <p style="margin:22px 0">
       <a href="${APP_URL}/messages/${threadId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">メッセージを確認する</a>
     </p>
@@ -144,7 +154,7 @@ export async function notifyProjectApplication(params: {
   const html = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
     <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">プロジェクトに応募がありました</h2>
-    <p style="font-size:14px;color:#3C4A62">あなたの共創プロジェクト「<b>${projectTitle}</b>」に、<b>${applicantName}</b> さんから応募が届きました。</p>
+    <p style="font-size:14px;color:#3C4A62">あなたの共創プロジェクト「<b>${esc(projectTitle)}</b>」に、<b>${esc(applicantName)}</b> さんから応募が届きました。</p>
     <p style="margin:22px 0">
       <a href="${APP_URL}/projects/${projectId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">応募内容を確認する</a>
     </p>
@@ -170,8 +180,8 @@ export async function notifyListingUnpublished(params: {
   const html = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
     <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">掲載を一時非公開にしました</h2>
-    <p style="font-size:14px;color:#3C4A62">事務局にて内容を確認し、${kind}「<b>${title}</b>」を一時的に非公開にいたしました。</p>
-    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap"><b>理由：</b>${reason}</p>
+    <p style="font-size:14px;color:#3C4A62">事務局にて内容を確認し、${kind}「<b>${esc(title)}</b>」を一時的に非公開にいたしました。</p>
+    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap"><b>理由：</b>${esc(reason)}</p>
     <p style="font-size:14px;color:#3C4A62">内容を修正のうえ、再度公開いただけます。ご不明な点は事務局までご連絡ください。</p>
     <p style="margin:22px 0">
       <a href="${editUrl}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">内容を確認・修正する</a>
@@ -227,7 +237,7 @@ export async function sendConsultationEmails(c: {
   ];
   const table = rows
     .filter(([, v]) => v)
-    .map(([k, v]) => `<tr><th align="left" style="padding:6px 12px;background:#f2f5f0;white-space:nowrap;vertical-align:top">${k}</th><td style="padding:6px 12px;white-space:pre-wrap">${String(v)}</td></tr>`)
+    .map(([k, v]) => `<tr><th align="left" style="padding:6px 12px;background:#f2f5f0;white-space:nowrap;vertical-align:top">${k}</th><td style="padding:6px 12px;white-space:pre-wrap">${esc(v)}</td></tr>`)
     .join("");
 
   await send({
@@ -239,6 +249,6 @@ export async function sendConsultationEmails(c: {
   await send({
     to: [c.email],
     subject: `【FOOD JAPAN NAKAMA】お問い合わせを受け付けました（${c.refNo}）`,
-    html: `<div style="font-family:sans-serif;font-size:14px;line-height:1.8"><p>${c.name} 様</p><p>この度は「${label}」についてお問い合わせいただき、ありがとうございます。<br>以下の内容で受け付けいたしました（受付番号：<b>${c.refNo}</b>）。</p><p>内容を確認のうえ、担当者よりご連絡いたします。<br>※ このメールは送信専用です。ご返信いただいても対応できない場合があります。</p><table style="border-collapse:collapse;font-size:13px">${table}</table><p>FOOD JAPAN NAKAMA（株式会社グラブデザイン）</p></div>`,
+    html: `<div style="font-family:sans-serif;font-size:14px;line-height:1.8"><p>${esc(c.name)} 様</p><p>この度は「${label}」についてお問い合わせいただき、ありがとうございます。<br>以下の内容で受け付けいたしました（受付番号：<b>${c.refNo}</b>）。</p><p>内容を確認のうえ、担当者よりご連絡いたします。<br>※ このメールは送信専用です。ご返信いただいても対応できない場合があります。</p><table style="border-collapse:collapse;font-size:13px">${table}</table><p>FOOD JAPAN NAKAMA（株式会社グラブデザイン）</p></div>`,
   });
 }

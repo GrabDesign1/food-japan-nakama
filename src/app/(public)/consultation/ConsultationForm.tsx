@@ -37,6 +37,15 @@ export function ConsultationForm({ defaultType }: { defaultType: string }) {
 
   return (
     <form action={action} className="flex flex-col gap-4 rounded-[12px] border border-[var(--line)] bg-white p-5 sm:p-6">
+      {/* honeypot：人間には見えない欄。ボット対策のため入力されたら受け付けない */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-0 w-0 opacity-0"
+      />
       <label className={labelCls}>
         相談種別<span className="text-[var(--red)]"> ＊</span>
         <select

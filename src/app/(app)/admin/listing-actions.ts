@@ -6,6 +6,7 @@ import { getSessionUser, requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMemberUserEmails } from "@/lib/member";
 import { notifyListingUnpublished } from "@/lib/email";
+import { writeAudit } from "@/lib/audit";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -31,6 +32,7 @@ export async function adminUnpublishOffering(offeringId: string, formData: FormD
     reason,
     editUrl: `${APP_URL}/ledger/${offering.id}/edit`,
   });
+  await writeAudit(su, "offering.unpublish", { targetType: "offering", targetId: offering.id, detail: `reason=${reason}` });
 
   revalidatePath("/admin/listings");
   revalidatePath("/search");
@@ -58,6 +60,7 @@ export async function adminUnpublishProject(projectId: string, formData: FormDat
     reason,
     editUrl: `${APP_URL}/projects/${project.id}/edit`,
   });
+  await writeAudit(su, "project.unpublish", { targetType: "project", targetId: project.id, detail: `reason=${reason}` });
 
   revalidatePath("/admin/listings");
   revalidatePath("/projects");

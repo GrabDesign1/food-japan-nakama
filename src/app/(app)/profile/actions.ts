@@ -11,6 +11,7 @@ import {
 } from "@/lib/member";
 import { notifyAdminMemberRegistered } from "@/lib/email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
 export type ProfileState = { ok?: boolean; error?: string };
 
@@ -23,15 +24,8 @@ export async function uploadMemberImage(
   if (!su) return { error: "ログインが必要です。" };
 
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "画像ファイルを選んでください。" };
-  }
-  if (!file.type.startsWith("image/")) {
-    return { error: "画像ファイルのみアップロードできます。" };
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    return { error: "画像は5MBまでにしてください。" };
-  }
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
 
   const member = await getOrCreateMemberForUser(su);
   const current = member.imageUrls ?? [];
@@ -39,13 +33,12 @@ export async function uploadMemberImage(
     return { error: "画像は最大4枚までです。" };
   }
 
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `${member.id}/${crypto.randomUUID()}.${ext}`;
+  const path = `${member.id}/${crypto.randomUUID()}.${v.ext}`;
 
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false });
+    .upload(path, file as File, { contentType: v.contentType, upsert: false });
   if (upErr) return { error: `アップロードに失敗しました：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -65,27 +58,22 @@ export async function uploadMemberAvatar(
   if (!su) return { error: "ログインが必要です。" };
 
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "画像ファイルを選んでください。" };
-  }
-  if (!file.type.startsWith("image/")) return { error: "画像ファイルのみです。" };
-  if (file.size > 5 * 1024 * 1024) return { error: "画像は5MBまでです。" };
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
 
   const member = await getOrCreateMemberForUser(su);
   const admin = createSupabaseAdminClient();
 
-  // 旧アイコンを削除
+  // 旧アイコンを削除（自分のフォルダ配下のみ）
   if (member.avatarUrl) {
-    const marker = `/${BUCKET}/`;
-    const idx = member.avatarUrl.indexOf(marker);
-    if (idx >= 0) await admin.storage.from(BUCKET).remove([member.avatarUrl.slice(idx + marker.length)]);
+    const oldPath = storagePathFromUrl(member.avatarUrl, BUCKET, `avatars/${member.id}/`);
+    if (oldPath) await admin.storage.from(BUCKET).remove([oldPath]);
   }
 
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `avatars/${member.id}/${crypto.randomUUID()}.${ext}`;
+  const path = `avatars/${member.id}/${crypto.randomUUID()}.${v.ext}`;
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type });
+    .upload(path, file as File, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -103,11 +91,10 @@ export async function removeMemberAvatar(): Promise<ProfileState> {
   if (!su) return { error: "ログインが必要です。" };
   const member = await getOrCreateMemberForUser(su);
   if (member.avatarUrl) {
-    const marker = `/${BUCKET}/`;
-    const idx = member.avatarUrl.indexOf(marker);
-    if (idx >= 0) {
+    const oldPath = storagePathFromUrl(member.avatarUrl, BUCKET, `avatars/${member.id}/`);
+    if (oldPath) {
       const admin = createSupabaseAdminClient();
-      await admin.storage.from(BUCKET).remove([member.avatarUrl.slice(idx + marker.length)]);
+      await admin.storage.from(BUCKET).remove([oldPath]);
     }
   }
   await prisma.member.update({
@@ -133,30 +120,26 @@ export async function uploadMemberLogo(
   const su = await getSessionUser();
   if (!su) return { error: "ログインが必要です。" };
 
+  if (!(kind in LOGO_FIELD)) return { error: "不正な指定です。" };
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "画像ファイルを選んでください。" };
-  }
-  if (!file.type.startsWith("image/")) return { error: "画像ファイルのみです。" };
-  if (file.size > 5 * 1024 * 1024) return { error: "画像は5MBまでです。" };
+  const v = await validateImageFile(file);
+  if (!v.ok) return { error: v.error };
 
   const member = await getOrCreateMemberForUser(su);
   const field = LOGO_FIELD[kind];
   const admin = createSupabaseAdminClient();
 
-  // 旧ロゴを削除
+  // 旧ロゴを削除（自分のフォルダ配下のみ）
   const currentUrl = member[field];
   if (currentUrl) {
-    const marker = `/${BUCKET}/`;
-    const idx = currentUrl.indexOf(marker);
-    if (idx >= 0) await admin.storage.from(BUCKET).remove([currentUrl.slice(idx + marker.length)]).catch(() => {});
+    const oldPath = storagePathFromUrl(currentUrl, BUCKET, `logos/${member.id}/`);
+    if (oldPath) await admin.storage.from(BUCKET).remove([oldPath]).catch(() => {});
   }
 
-  const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `logos/${member.id}/${kind}-${crypto.randomUUID()}.${ext}`;
+  const path = `logos/${member.id}/${kind}-${crypto.randomUUID()}.${v.ext}`;
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type });
+    .upload(path, file as File, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -172,15 +155,15 @@ export async function uploadMemberLogo(
 export async function removeMemberLogo(kind: LogoKind): Promise<ProfileState> {
   const su = await getSessionUser();
   if (!su) return { error: "ログインが必要です。" };
+  if (!(kind in LOGO_FIELD)) return { error: "不正な指定です。" };
   const member = await getOrCreateMemberForUser(su);
   const field = LOGO_FIELD[kind];
   const currentUrl = member[field];
   if (currentUrl) {
-    const marker = `/${BUCKET}/`;
-    const idx = currentUrl.indexOf(marker);
-    if (idx >= 0) {
+    const oldPath = storagePathFromUrl(currentUrl, BUCKET, `logos/${member.id}/`);
+    if (oldPath) {
       const admin = createSupabaseAdminClient();
-      await admin.storage.from(BUCKET).remove([currentUrl.slice(idx + marker.length)]).catch(() => {});
+      await admin.storage.from(BUCKET).remove([oldPath]).catch(() => {});
     }
   }
   await prisma.member.update({
@@ -197,17 +180,19 @@ export async function removeMemberImage(url: string): Promise<ProfileState> {
   if (!su) return { error: "ログインが必要です。" };
 
   const member = await getOrCreateMemberForUser(su);
+  // 自分のプロフィールに実際に登録されているURLしか消させない（任意ファイル削除の防止）
+  if (!(member.imageUrls ?? []).includes(url)) {
+    return { error: "対象の画像が見つかりません。" };
+  }
   const next = (member.imageUrls ?? []).filter((u) => u !== url);
   await prisma.member.update({
     where: { id: member.id },
     data: { imageUrls: next },
   });
 
-  // ストレージからも削除（URLからパスを復元）
-  const marker = `/${BUCKET}/`;
-  const idx = url.indexOf(marker);
-  if (idx >= 0) {
-    const path = url.slice(idx + marker.length);
+  // ストレージからも削除（自分のフォルダ配下のみ）
+  const path = storagePathFromUrl(url, BUCKET, `${member.id}/`);
+  if (path) {
     const admin = createSupabaseAdminClient();
     await admin.storage.from(BUCKET).remove([path]);
   }

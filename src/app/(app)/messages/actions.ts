@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
+import { safeAttachmentContentType } from "@/lib/upload";
 
 /** 相手が未読を溜めていないときだけメール通知する（連投で通知が洪水にならないように）。 */
 async function notifyRecipientIfCaughtUp(params: {
@@ -29,6 +30,8 @@ async function notifyRecipientIfCaughtUp(params: {
 }
 
 const BUCKET = "member-images";
+// 添付URLとして受け付けるのは自ストレージの公開URLのみ（data:等のフィッシングURL差し込み防止）
+const STORAGE_PUBLIC_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/${BUCKET}/`;
 
 /** 興味を送る：スレッドが無ければ作成し、最初のメッセージを送る。 */
 export async function sendInterest(
@@ -43,6 +46,13 @@ export async function sendInterest(
 
   // フリープランはメッセージ送信不可。アップグレードへ誘導。
   if (me.paymentStatus !== "PAID") redirect("/billing");
+
+  // 相手が同一テナントの承認済み会員であることを確認
+  const target = await prisma.member.findFirst({
+    where: { id: toMemberId, tenantId: su!.app.tenantId, status: "APPROVED" },
+    select: { id: true },
+  });
+  if (!target) return;
 
   const body = String(formData.get("message") ?? "").trim();
   if (!body) return;
@@ -110,6 +120,13 @@ export async function startConversation(toMemberId: string): Promise<void> {
   // フリープランは問い合わせ不可 → アップグレードへ
   if (me.paymentStatus !== "PAID") redirect("/billing");
 
+  // 相手が同一テナントの承認済み会員であることを確認
+  const target = await prisma.member.findFirst({
+    where: { id: toMemberId, tenantId: su!.app.tenantId, status: "APPROVED" },
+    select: { id: true },
+  });
+  if (!target) return;
+
   let thread = await prisma.thread.findFirst({
     where: {
       OR: [
@@ -145,8 +162,10 @@ export async function sendMessage(
   // フリープランは送信・返信不可。アップグレードへ誘導。
   if (me.paymentStatus !== "PAID") redirect("/billing");
   const body = String(formData.get("message") ?? "").trim();
-  const attachmentUrl = String(formData.get("attachmentUrl") ?? "").trim() || null;
-  const attachmentName = String(formData.get("attachmentName") ?? "").trim() || null;
+  const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
+  const attachmentUrl =
+    attachmentUrlRaw && attachmentUrlRaw.startsWith(STORAGE_PUBLIC_PREFIX) ? attachmentUrlRaw : null;
+  const attachmentName = String(formData.get("attachmentName") ?? "").trim().slice(0, 200) || null;
   if (!body && !attachmentUrl) return;
 
   const unreadBefore = await prisma.message.count({
@@ -187,7 +206,7 @@ export async function sendMessage(
   revalidatePath("/messages");
 }
 
-/** 下書き保存 */
+/** 下書き保存（スレッド参加者のみ） */
 export async function saveDraft(
   threadId: string,
   body: string
@@ -195,6 +214,8 @@ export async function saveDraft(
   const su = await getSessionUser();
   if (!su) return {};
   const me = await getOrCreateMemberForUser(su);
+  const thread = await prisma.thread.findUnique({ where: { id: threadId } });
+  if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) return {};
   await prisma.messageDraft.upsert({
     where: { threadId_memberId: { threadId, memberId: me.id } },
     create: { threadId, memberId: me.id, body },
@@ -243,24 +264,31 @@ export async function uploadMessageAttachment(
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "ファイルを選んでください。" };
-  if (file.size > 10 * 1024 * 1024) return { error: "ファイルは10MBまでです。" };
+  // Server Action の bodySizeLimit(8MB) を超えるとここに届かないため、上限も8MBに合わせる
+  if (file.size > 8 * 1024 * 1024) return { error: "ファイルは8MBまでです。" };
 
   const safe = file.name.replace(/[^\w.\-一-龠ぁ-んァ-ヶ]/g, "_");
   const path = `messages/${threadId}/${crypto.randomUUID()}-${safe}`;
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type || "application/octet-stream" });
+    // contentType はクライアント申告値を使わない（text/html等を配信させない）
+    .upload(path, file, { contentType: safeAttachmentContentType(safe) });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
   return { url: data.publicUrl, name: file.name };
 }
 
-/** スレッドを開いたとき、相手からの未読を既読にする */
-export async function markThreadRead(threadId: string, myMemberId: string) {
+/** スレッドを開いたとき、相手からの未読を既読にする（本人＝スレッド参加者のみ） */
+export async function markThreadRead(threadId: string): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  const me = await getOrCreateMemberForUser(su);
+  const thread = await prisma.thread.findUnique({ where: { id: threadId } });
+  if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) return;
   await prisma.message.updateMany({
-    where: { threadId, senderMemberId: { not: myMemberId }, readAt: null },
+    where: { threadId, senderMemberId: { not: me.id }, readAt: null },
     data: { readAt: new Date() },
   });
 }

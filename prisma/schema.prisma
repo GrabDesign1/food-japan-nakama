@@ -148,6 +148,10 @@ model Member {
   approvedAt     DateTime?     @map("approved_at")
   approvedBy     String?       @map("approved_by")
 
+  // Stripe連携（解約・削除時にサブスクを確実に特定するため保存する）
+  stripeCustomerId     String? @map("stripe_customer_id")
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -158,7 +162,33 @@ model Member {
 
   @@index([tenantId])
   @@index([status])
+  @@index([stripeCustomerId])
   @@map("members")
+}
+
+/// Stripe Webhookの冪等化（同じイベントIDを二度処理しない）
+model StripeEvent {
+  id        String   @id // Stripeのevent.id（evt_...）
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("stripe_events")
+}
+
+/// 監査ログ（事務局の重要操作を追記専用で記録。HANDOVER 189/279・規約17条）
+model AuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  actorUserId String   @map("actor_user_id")
+  actorEmail  String?  @map("actor_email")
+  action      String   // 例: member.delete / member.mark_paid / admin.create / project.approve
+  targetType  String?  @map("target_type")
+  targetId    String?  @map("target_id")
+  detail      String?  // 補足（理由・変更前の値など）
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
 }
 
 /// お知らせ（事務局が投稿し、会員ダッシュボードに表示）
@@ -207,9 +237,11 @@ model Consultation {
   desiredTiming  String?  @map("desired_timing") // 希望開始時期
   budget         String? // 想定予算（選択式）
   status         String   @default("new") // new / reviewing / contacted / proposed / won / lost
+  ip             String?  // 送信元IP（レート制限・濫用対策用）
   createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
+  @@index([ip, createdAt])
   @@map("consultations")
 }
 
