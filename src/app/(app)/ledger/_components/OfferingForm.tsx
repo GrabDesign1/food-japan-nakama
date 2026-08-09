@@ -88,6 +88,9 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   // プレビューに使う項目は制御コンポーネントにする
   const [category, setCategory] = useState(offering.category);
   const [title, setTitle] = useState(offering.title);
+  const [description, setDescription] = useState(offering.description ?? "");
+  const [points, setPoints] = useState(offering.points ?? "");
+  const [tags, setTags] = useState(offering.tags.join(", "));
   const [area, setArea] = useState(offering.area ?? "");
   const [priceType, setPriceType] = useState(offering.priceType ?? "");
   const [priceAmount, setPriceAmount] = useState(
@@ -224,7 +227,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           <span>詳細説明<Req /></span>
           <textarea
             name="description"
-            defaultValue={offering.description ?? ""}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             rows={5}
             placeholder="内容の説明。背景・状態・条件など。"
             className={inputCls}
@@ -549,7 +553,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           おすすめポイント（1行に1つ）
           <textarea
             name="points"
-            defaultValue={offering.points ?? ""}
+            value={points}
+            onChange={(e) => setPoints(e.target.value)}
             rows={3}
             placeholder={"高品質な果実の生産ノウハウがあります\n少量からでも相談可能です"}
             className={inputCls}
@@ -566,7 +571,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           タグ（カンマ区切り・最大8）
           <input
             name="tags"
-            defaultValue={offering.tags.join(", ")}
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
             placeholder="規格外, 加工用, 少量可"
             className={inputCls}
           />
@@ -628,6 +634,58 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             </div>
           ))}
         </dl>
+        {/* 概要（詳細説明の冒頭） */}
+        {description.trim() ? (
+          <div className="mt-3">
+            <div className="text-[11px] font-bold text-[var(--muted)]">概要</div>
+            <p className="mt-1 line-clamp-4 whitespace-pre-wrap text-[12px] leading-5 text-[var(--ink-2)]">
+              {description.trim()}
+            </p>
+          </div>
+        ) : null}
+
+        {/* おすすめポイント */}
+        {points
+          .split("\n")
+          .map((p) => p.trim())
+          .filter(Boolean).length ? (
+          <div className="mt-3">
+            <div className="text-[11px] font-bold text-[var(--muted)]">おすすめポイント</div>
+            <ul className="mt-1 flex flex-col gap-1">
+              {points
+                .split("\n")
+                .map((p) => p.trim())
+                .filter(Boolean)
+                .slice(0, 4)
+                .map((p) => (
+                  <li key={p} className="flex gap-1.5 text-[12px] leading-5 text-[var(--ink-2)]">
+                    <span className="shrink-0 text-[var(--green-d)]">✓</span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {/* タグ */}
+        {tags.trim() ? (
+          <div className="mt-3 flex flex-wrap gap-1">
+            {tags
+              .split(/[,、\s]+/)
+              .map((t) => t.trim())
+              .filter(Boolean)
+              .slice(0, 8)
+              .map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full border border-[var(--line)] px-2 py-0.5 text-[10px] text-[var(--ink-2)]"
+                >
+                  #{t}
+                </span>
+              ))}
+          </div>
+        ) : null}
+
         <p className="mt-3 rounded-[8px] bg-[var(--green-soft)] p-3 text-[11px] leading-5 text-[var(--ink-2)]">
           価格・量・状態・時期・場所・受け渡しが揃うと、買い手が問い合わせを判断しやすくなります。
         </p>
