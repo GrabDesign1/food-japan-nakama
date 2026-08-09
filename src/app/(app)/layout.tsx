@@ -8,20 +8,21 @@ import { signOut } from "../(auth)/actions";
 import { MobileNav } from "./_components/MobileNav";
 import { btn } from "@/lib/ui";
 
-type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean };
+type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; section?: string };
 
+// 上位4項目＝利用者の主要行動。以下は「進行中の活動」「アカウント」にグループ化。
 const NAV: NavItem[] = [
-  { label: "マイページトップ", href: "/dashboard", ready: true },
-  { label: "共創パートナーを探す", href: "/search", ready: true },
-  { label: "会員プロフィール", href: "/profile", ready: true },
-  { label: "持ち寄り（売りたい・買いたい）", href: "/ledger", ready: true },
-  { label: "商談管理", href: "/deals", ready: true },
-  { label: "商談ステータス", href: "/deals/board", ready: true },
-  { label: "共創プロジェクトを企画する", href: "/projects", ready: true },
-  { label: "お気に入り", href: "/favorites", ready: true },
+  { label: "ホーム", href: "/dashboard", ready: true },
+  { label: "パートナーを探す", href: "/search", ready: true },
+  { label: "案件を登録する", href: "/ledger", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
-  { label: "プラン・お支払い", href: "/billing", ready: true },
-  { label: "事務局管理", href: "/admin", admin: true, ready: true },
+  { label: "商談", href: "/deals", ready: true, section: "進行中の活動" },
+  { label: "商談ステータス", href: "/deals/board", ready: true, section: "進行中の活動" },
+  { label: "共創プロジェクト", href: "/projects", ready: true, section: "進行中の活動" },
+  { label: "お気に入り", href: "/favorites", ready: true, section: "進行中の活動" },
+  { label: "プロフィール", href: "/profile", ready: true, section: "アカウント" },
+  { label: "プラン・お支払い", href: "/billing", ready: true, section: "アカウント" },
+  { label: "事務局管理", href: "/admin", admin: true, ready: true, section: "アカウント" },
 ];
 
 const ROLE_LABEL: Record<string, string> = {
@@ -68,7 +69,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_1fr]">
+    // minmax(0,1fr)：中身が広くても列を押し広げない＝ページ全体の横スクロールを防ぐ
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_minmax(0,1fr)]">
       {/* サイドバー（PCのみ。スマホはヘッダーのメニューから） */}
       <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex">
         <Link
@@ -88,45 +90,38 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </Link>
 
         <nav className="mt-3 flex flex-col gap-0.5 px-3">
-          {items.map((item) =>
-            item.ready ? (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-[13px] transition hover:bg-white/8 ${
-                  item.admin ? "mt-3 border-t border-white/12 pt-3.5" : ""
-                }`}
-              >
-                <span>{item.label}</span>
-                {item.href === "/messages" && unread > 0 ? (
-                  <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {unread}
-                  </span>
+          {items.map((item, idx) => {
+            const prev = idx > 0 ? items[idx - 1] : undefined;
+            const showLabel = item.section && item.section !== prev?.section;
+            return (
+              <div key={item.href} className="flex flex-col gap-0.5">
+                {showLabel ? (
+                  <div className="mb-0.5 mt-4 px-3 text-[10px] tracking-[0.18em] text-[#8F9BAB]">
+                    {item.section}
+                  </div>
                 ) : null}
-              </Link>
-            ) : (
-              <span
-                key={item.href}
-                className={`flex items-center justify-between rounded-md px-3 py-2 text-[13px] text-[var(--muted)] ${
-                  item.admin ? "mt-3 border-t border-white/12 pt-3.5" : ""
-                }`}
-                title="準備中"
-              >
-                {item.label}
-                <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9px] tracking-wider">
-                  準備中
-                </span>
-              </span>
-            )
-          )}
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-[13px] transition hover:bg-white/8"
+                >
+                  <span>{item.label}</span>
+                  {item.href === "/messages" && unread > 0 ? (
+                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {unread}
+                    </span>
+                  ) : null}
+                </Link>
+              </div>
+            );
+          })}
         </nav>
       </aside>
 
       {/* メイン */}
-      <div className="flex min-h-screen flex-col bg-[var(--canvas)]">
+      <div className="flex min-h-screen min-w-0 flex-col bg-[var(--canvas)]">
         <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--line)] bg-white px-4 py-3 md:px-8">
           {/* スマホ用：メニュー＋ブランド */}
-          <MobileNav items={items.filter((i) => i.ready).map((i) => ({ label: i.label, href: i.href, admin: i.admin }))} unread={unread} />
+          <MobileNav items={items.filter((i) => i.ready).map((i) => ({ label: i.label, href: i.href, admin: i.admin, section: i.section }))} unread={unread} />
           <Link href="/" className="flex items-center gap-2 md:hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.png" alt="" width={24} height={24} />
@@ -165,7 +160,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="max-w-[1200px] px-4 py-6 md:px-8">{children}</main>
+        {/* スマホは下部固定ナビ分の余白を確保 */}
+        <main className="max-w-[1200px] px-4 py-6 pb-24 md:px-8 md:pb-6">{children}</main>
       </div>
     </div>
   );

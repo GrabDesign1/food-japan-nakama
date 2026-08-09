@@ -24,8 +24,9 @@ export default async function DealBoardPage() {
         </Link>
       </div>
 
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4" style={{ minWidth: `${PHASES.length * 260}px` }}>
+      {/* 列コンテナのみ横スクロール（ページ全体は横スクロールさせない） */}
+      <div className="min-w-0 max-w-full overflow-x-auto pb-4">
+        <div className="flex w-max gap-4">
           {PHASES.map((label, i) => {
             const cards = all.filter((d) => d.deal.phase === i);
             return (

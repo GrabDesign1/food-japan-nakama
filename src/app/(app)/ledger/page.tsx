@@ -28,10 +28,10 @@ export default async function LedgerPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between">
         <div>
-          <p className={eyebrowCls}>MOCHIYORI</p>
-          <h1 className={h1Cls}>持ち寄り（売りたい・買いたい）</h1>
+          <p className={eyebrowCls}>LISTINGS</p>
+          <h1 className={h1Cls}>案件を登録する（売りたい・買いたい）</h1>
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-            「売りたい」「買いたい」を1件ずつ登録します。
+            商品・原料・食品副産物・協業テーマなど、「売りたい」「買いたい」を1件ずつ登録します。
           </p>
         </div>
         <div className="flex gap-2">

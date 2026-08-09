@@ -65,6 +65,8 @@ export async function saveProject(
 export async function submitProject(projectId: string): Promise<void> {
   const owned = await ownProject(projectId);
   if (!owned) return;
+  // 掲載申請は月額会員のみ（下書き作成・編集は誰でも可）
+  if (owned.me.paymentStatus !== "PAID") redirect("/billing");
   if (!owned.project.title) return;
   if (owned.project.status === "draft" || owned.project.status === "closed") {
     await prisma.project.update({ where: { id: projectId }, data: { status: "pending" } });

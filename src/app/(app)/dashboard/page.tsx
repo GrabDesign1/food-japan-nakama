@@ -12,7 +12,8 @@ import { views24hMap } from "@/lib/offering-views";
 import { ProducerCard, type ProducerCardData } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { EmptyState } from "@/components/EmptyState";
-import { eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
+import { countMissingProfileFields } from "@/lib/member";
+import { btn, eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
 
 // 商談が「停滞中」とみなす日数（最終活動からの経過）
 const STALL_DAYS = 14;
@@ -35,13 +36,48 @@ type RecentlyViewed = {
   views24h?: number;
 };
 
-// クイック操作ボタン（丸アイコンバッジ＋太字ラベル）
-const QUICK_ACTIONS = [
-  { href: "/search", icon: "🔍", label: "パートナーを探す", bg: "bg-[var(--green-soft)]" },
-  { href: "/ledger", icon: "📝", label: "台帳を登録", bg: "bg-[#FAF0D6]" },
-  { href: "/messages", icon: "💬", label: "メッセージ", bg: "bg-[#E4EEF7]" },
-  { href: "/deals", icon: "🤝", label: "商談を見る", bg: "bg-[#F3E7DA]" },
+// 主要4アクション（利用者の目的で表示。機能名を覚えなくても選べるように）
+const MAIN_ACTIONS = [
+  {
+    href: "/ledger",
+    icon: "＋",
+    label: "売りたい・買いたい・相談したい",
+    desc: "商品、原料、食品副産物、協業テーマなどの案件を登録します。",
+    bg: "bg-[var(--green-soft)]",
+  },
+  {
+    href: "/search",
+    icon: "🔍",
+    label: "一緒に取り組む相手を探す",
+    desc: "業種、地域、フリーワードからパートナーを探します。",
+    bg: "bg-[#FAF0D6]",
+  },
+  {
+    href: "/messages",
+    icon: "✉️",
+    label: "届いた連絡を確認する",
+    desc: "問い合わせを確認し、返信します。",
+    bg: "bg-[#E4EEF7]",
+  },
+  {
+    href: "/deals",
+    icon: "🤝",
+    label: "共創プロジェクトを進める",
+    desc: "商談・共創プロジェクトの進捗と次の行動を管理します。",
+    bg: "bg-[#F3E7DA]",
+  },
 ];
+
+// 事務局への相談入口（相談種別つきで既存フォームへ）
+const CONSULT_LINKS = [
+  { href: "/consultation?type=unsure", label: "相手探しを依頼する" },
+  { href: "/consultation?type=produce", label: "共創企画を相談する" },
+  { href: "/consultation?type=food-loss", label: "食品ロス活用を相談する" },
+  { href: "/consultation?type=crowdfunding", label: "クラウドファンディングを相談する" },
+];
+
+// 「最近の動き」の1イベント
+type ActivityEvent = { at: Date; icon: string; text: string; href: string };
 
 export default async function DashboardPage() {
   const su = await getSessionUser();
@@ -67,6 +103,7 @@ export default async function DashboardPage() {
     myProjects,
     published,
     recentOfferings,
+    recentActivity,
   ] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
@@ -192,12 +229,75 @@ export default async function DashboardPage() {
     // 新着の持ち寄り台帳（公開中）
     tenantId
       ? prisma.offering.findMany({
-          where: { isPublic: true, title: { not: "" }, member: { tenantId } },
+          where: { isPublic: true, title: { not: "" }, member: { tenantId, status: "APPROVED" } },
           orderBy: { createdAt: "desc" },
           take: 8,
           include: { member: { select: { name: true } } },
         })
       : Promise.resolve([]),
+    // 最近の動き（未読メッセージ・商談更新・プロジェクト応募を統合）
+    (async (): Promise<ActivityEvent[]> => {
+      if (!memberId) return [];
+      const [unreadMsgs, recentDeals, apps] = await Promise.all([
+        prisma.message.findMany({
+          where: {
+            thread: { OR: [{ fromMemberId: memberId }, { toMemberId: memberId }] },
+            senderMemberId: { not: memberId },
+            readAt: null,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
+        prisma.deal.findMany({
+          where: { OR: [{ ownerMemberId: memberId }, { counterpartMemberId: memberId }] },
+          orderBy: { lastActivityAt: "desc" },
+          take: 3,
+        }),
+        prisma.projectApplication.findMany({
+          where: { project: { memberId } },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          include: { project: { select: { id: true, title: true } } },
+        }),
+      ]);
+      const nameIds = new Set<string>();
+      unreadMsgs.forEach((m) => nameIds.add(m.senderMemberId));
+      recentDeals.forEach((d) =>
+        nameIds.add(d.ownerMemberId === memberId ? d.counterpartMemberId : d.ownerMemberId)
+      );
+      apps.forEach((a) => nameIds.add(a.applicantMemberId));
+      const names = nameIds.size
+        ? await prisma.member.findMany({
+            where: { id: { in: Array.from(nameIds) } },
+            select: { id: true, name: true },
+          })
+        : [];
+      const nmap = new Map(names.map((n) => [n.id, n.name]));
+      const events: ActivityEvent[] = [
+        ...unreadMsgs.map((m) => ({
+          at: m.createdAt,
+          icon: "✉️",
+          text: `${nmap.get(m.senderMemberId) ?? "会員"}さんから新しいメッセージが届いています`,
+          href: `/messages/${m.threadId}`,
+        })),
+        ...recentDeals.map((d) => {
+          const other = d.ownerMemberId === memberId ? d.counterpartMemberId : d.ownerMemberId;
+          return {
+            at: d.lastActivityAt,
+            icon: "🤝",
+            text: `${nmap.get(other) ?? "会員"}さんとの商談が更新されました`,
+            href: "/deals",
+          };
+        }),
+        ...apps.map((a) => ({
+          at: a.createdAt,
+          icon: "📩",
+          text: `「${a.project.title || "（無題）"}」に ${nmap.get(a.applicantMemberId) ?? "会員"}さんから応募がありました`,
+          href: `/projects/${a.project.id}`,
+        })),
+      ];
+      return events.sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, 8);
+    })(),
   ]);
 
   const { activeDeals, stalledDeals } = dealCounts;
@@ -211,12 +311,21 @@ export default async function DashboardPage() {
     ...recentOfferings.map((o) => o.id),
   ]);
 
-  // ── はじめの3ステップ（新規会員向けオンボーディング）─────────
-  const offeringCount = giveCount + wantCount;
-  const step1 = (member?.completionRate ?? 0) >= 80; // プロフィール
-  const step2 = offeringCount > 0; // 持ち寄り
-  const step3 = myThreadCount > 0; // パートナーへコンタクト
-  const showOnboarding = !!member && !(step1 && step2 && step3);
+  // ── 初回セットアップ（4ステップ）とプラン状態 ─────────
+  const isPaid = member?.paymentStatus === "PAID";
+  const planTag = isPaid
+    ? { label: "NAKAMA会員", cls: "border-[var(--green)] bg-[var(--green-soft)] text-[var(--green-d)]" }
+    : member?.paymentStatus === "UNPAID" || member?.status === "AWAITING_PAYMENT"
+      ? { label: "お支払い待ち", cls: "border-[#E7D9A6] bg-[#FAF0D6] text-[#7A5A0B]" }
+      : { label: "未加入", cls: "border-[#E7D9A6] bg-[#FAF0D6] text-[#7A5A0B]" };
+  const rate = member?.completionRate ?? 0;
+  const missingCount = member ? countMissingProfileFields(member) : 0;
+  const setup2 = !!(member?.name && member?.contactName && member?.categoryL1); // 基本情報
+  const setup3 = rate >= 80; // 会社情報の充実
+  const setup4 = !!member && member.status !== "DRAFT" && member.status !== "REJECTED"; // 審査申請
+  const showSetup = !!member && !(setup2 && setup3 && setup4);
+  // 3ステップ判定の名残（未使用警告回避のため参照を残す）
+  void myThreadCount;
 
   // ── あなたのやること（対応が必要な時だけ）───────────────
   type Todo = { icon: string; label: string; cta: string; href: string; cls: string };
@@ -242,8 +351,8 @@ export default async function DashboardPage() {
     todos.push({ icon: "⏳", label: `停滞している商談が ${stalledDeals}件（${STALL_DAYS}日以上）`, cta: "確認する", href: "/deals", cls: AMBER });
   }
   // 記入率は「まだ十分でない」ときだけ促す（ほぼ埋まっている人を催促しない）。
-  // 3ステップ表示中は重複するので出さない。
-  if (!showOnboarding && member && member.completionRate < 80) {
+  // セットアップ表示中は重複するので出さない。
+  if (!showSetup && member && member.completionRate < 80) {
     todos.push({ icon: "📋", label: `プロフィールをあと少しで完成（記入率 ${member.completionRate}%）`, cta: "続きを入力", href: "/profile", cls: AMBER });
   }
 
@@ -255,30 +364,22 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className={eyebrowCls}>MY PAGE</p>
-        <h1 className={h1Cls}>
-          ようこそ、{su?.app.name} さん
-        </h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className={eyebrowCls}>MY PAGE</p>
+          <h1 className={h1Cls}>
+            {su?.app.name} さん、今日は何を進めますか？
+          </h1>
+          <p className="mt-1 text-[13px] text-[var(--ink-2)]">
+            出会いを、具体的な商談や共創事業につなげましょう。
+          </p>
+        </div>
+        <span className={`rounded-full border px-3 py-1.5 text-[12px] font-bold ${planTag.cls}`}>
+          現在：{planTag.label}
+        </span>
       </div>
 
-      {/* ① クイック操作 */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {QUICK_ACTIONS.map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="flex items-center gap-3 rounded-full border border-[var(--line)] bg-white px-3.5 py-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
-          >
-            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[19px] ${a.bg}`}>
-              {a.icon}
-            </span>
-            <span className="text-[14px] font-bold text-[var(--ink)]">{a.label}</span>
-          </Link>
-        ))}
-      </div>
-
-      {/* ② あなたのやること */}
+      {/* ① あなたのやること */}
       {todos.length > 0 ? (
         <div>
           <h2 className={`${h2Cls} mb-3 flex items-center gap-2`}>
@@ -302,22 +403,155 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {/* ③ はじめの3ステップ（新規会員向け）*/}
-      {showOnboarding ? (
+      {/* ② 初回セットアップ（4ステップ・完成度つき）*/}
+      {showSetup ? (
         <div className="rounded-[12px] border border-[var(--green)] bg-white p-5">
-          <h2 className={`${h2Cls} flex items-center gap-2`}>
-            <span>🌱</span> はじめの3ステップ
-          </h2>
-          <p className="mt-1 text-[12px] text-[var(--muted)]">
-            この3つを終えると、共創パートナー探しがスムーズになります。
-          </p>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <OnboardingStep n={1} done={step1} title="プロフィールを完成" desc="事業内容を登録して信頼されるページに" href="/profile" cta="編集する" />
-            <OnboardingStep n={2} done={step2} title="持ち寄りを登録" desc="売りたい・買いたいを掲載" href="/ledger" cta="登録する" />
-            <OnboardingStep n={3} done={step3} title="パートナーを探す" desc="気になる事業者へ問い合わせ" href="/search" cta="探す" />
+          <div className="flex items-center justify-between gap-3">
+            <h2 className={`${h2Cls} flex items-center gap-2`}>
+              <span>🌱</span> まずは利用準備を完了しましょう
+            </h2>
+            <span className="shrink-0 text-[15px] font-bold text-[var(--green-d)]">{rate}%</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--line)]">
+            <div className="h-full rounded-full bg-[var(--green)]" style={{ width: `${rate}%` }} />
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <SetupStep done title="アカウント登録" desc="完了しました" href="/profile" />
+            <SetupStep
+              done={setup2}
+              title="基本情報を入力"
+              desc={setup2 ? "入力済み" : "事業者名・担当者名・会員種別"}
+              href="/profile"
+            />
+            <SetupStep
+              done={setup3}
+              title="会社情報を充実"
+              desc={setup3 ? "入力済み" : `あと${missingCount}項目です`}
+              href="/profile"
+            />
+            <SetupStep
+              done={setup4}
+              title="審査を申請"
+              desc={
+                setup4
+                  ? member?.status === "PENDING"
+                    ? "審査中です"
+                    : "申請済み"
+                  : "公開前に事務局が確認します"
+              }
+              href="/profile"
+            />
           </div>
         </div>
       ) : null}
+
+      {/* ③ 主要アクション＋事務局相談（2カラム） */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          {/* NAKAMAでできること */}
+          <div className="rounded-[12px] border border-[var(--line)] bg-white p-5">
+            <h2 className={h2Cls}>NAKAMAでできること</h2>
+            <p className="mt-0.5 text-[12px] text-[var(--muted)]">目的から選んでください。</p>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {MAIN_ACTIONS.map((a) => (
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  className="rounded-[10px] border border-[var(--line)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--green)] hover:shadow-md"
+                >
+                  <span className={`relative grid h-9 w-9 place-items-center rounded-[9px] text-[16px] ${a.bg}`}>
+                    {a.icon}
+                    {a.href === "/messages" && unreadCount > 0 ? (
+                      <span className="absolute -right-1.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
+                        {unreadCount}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="mt-2.5 block text-[14px] font-bold text-[var(--ink)]">{a.label}</span>
+                  <span className="mt-1 block text-[12px] leading-5 text-[var(--muted)]">{a.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* 最近の動き */}
+          <div className="rounded-[12px] border border-[var(--line)] bg-white p-5">
+            <h2 className={h2Cls}>最近の動き</h2>
+            <p className="mt-0.5 text-[12px] text-[var(--muted)]">
+              メッセージ・商談・プロジェクトの更新をまとめて表示します。
+            </p>
+            {recentActivity.length === 0 ? (
+              <div className="mt-3">
+                <EmptyState
+                  compact
+                  title="まだ新しい動きはありません"
+                  description="まずはプロフィールを完成させるか、パートナーを探してみましょう。"
+                  actions={[{ label: "パートナーを探す", href: "/search", variant: "primary" }]}
+                />
+              </div>
+            ) : (
+              <div className="mt-2 flex flex-col divide-y divide-[#EDF0EA]">
+                {recentActivity.map((e, i) => (
+                  <Link key={i} href={e.href} className="flex items-center gap-3 py-2.5 transition hover:bg-[var(--green-soft)]">
+                    <span className="text-[15px]">{e.icon}</span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ink)]">{e.text}</span>
+                    <span className="shrink-0 text-[11px] text-[var(--muted)]">{fmtShortDate(e.at)}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <aside className="flex min-w-0 flex-col gap-5">
+          {/* 事務局と一緒に進める */}
+          <div className="rounded-[12px] bg-[var(--green)] p-5 text-white">
+            <h2 className="font-serif text-[17px]">事務局と一緒に進める</h2>
+            <p className="mt-1 text-[12px] text-white/70">まだ内容が固まっていなくても相談できます。</p>
+            <div className="mt-3 flex flex-col gap-2">
+              {CONSULT_LINKS.map((c) => (
+                <Link
+                  key={c.href}
+                  href={c.href}
+                  className="rounded-[9px] bg-white px-3.5 py-2.5 text-[13px] font-bold text-[var(--green-d)] transition hover:opacity-90"
+                >
+                  {c.label} →
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* ご利用プラン */}
+          <div className="rounded-[12px] border border-[var(--line)] bg-white p-5">
+            <h2 className={h2Cls}>ご利用プラン</h2>
+            <div className="mt-2 flex items-center justify-between text-[13px]">
+              <span className="text-[var(--muted)]">現在の状態</span>
+              <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-bold ${planTag.cls}`}>
+                {planTag.label}
+              </span>
+            </div>
+            {isPaid ? (
+              <>
+                <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">
+                  案件の公開・メッセージ・商談をご利用いただけます。
+                </p>
+                <Link href="/billing" className={`${btn("secondary", "sm")} mt-3 block w-full text-center`}>
+                  プラン・お支払いを確認する
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">
+                  案件の公開・相手への連絡・商談開始には、NAKAMA会員（月額22,000円 税込）への加入が必要です。
+                </p>
+                <Link href="/billing" className={`${btn("amber", "sm")} mt-3 block w-full text-center`}>
+                  会員プランを確認する
+                </Link>
+              </>
+            )}
+          </div>
+        </aside>
+      </div>
 
       {/* ④ お知らせ（コンパクト：最新1件＋折りたたみ）*/}
       {newest ? (
@@ -479,13 +713,13 @@ export default async function DashboardPage() {
       <div>
         <div className="mb-3 flex items-end justify-between">
           <h2 className={h2Cls}>
-            持ち寄り（売りたい・買いたい）
+            みんなの案件（売りたい・買いたい）
           </h2>
           <Link
             href="/ledger"
             className="text-[12px] text-[var(--green-d)] underline"
           >
-            台帳を登録する →
+            案件を登録する →
           </Link>
         </div>
         {recentOfferings.length === 0 ? (
@@ -581,46 +815,41 @@ export default async function DashboardPage() {
   );
 }
 
-// はじめの3ステップの各ステップ
-function OnboardingStep({
-  n,
+// 初回セットアップの各ステップ（クリックで該当画面へ）
+function SetupStep({
   done,
   title,
   desc,
   href,
-  cta,
 }: {
-  n: number;
-  done: boolean;
+  done?: boolean;
   title: string;
   desc: string;
   href: string;
-  cta: string;
 }) {
   return (
-    <div
-      className={`flex flex-col rounded-[10px] border p-4 ${
-        done ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)] bg-white"
+    <Link
+      href={href}
+      className={`rounded-[10px] border p-3.5 transition hover:-translate-y-0.5 hover:shadow-sm ${
+        done ? "border-[var(--green-soft)] bg-[var(--green-soft)]" : "border-[var(--line)] bg-white"
       }`}
     >
-      <div className="flex items-center gap-2">
-        <span
-          className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-bold ${
-            done ? "bg-[var(--green)] text-white" : "bg-[var(--canvas)] text-[var(--ink-2)]"
-          }`}
-        >
-          {done ? "✓" : n}
-        </span>
-        <span className="text-[14px] font-semibold text-[var(--ink)]">{title}</span>
-      </div>
-      <p className="mt-1.5 flex-1 text-[12px] leading-5 text-[var(--muted)]">{desc}</p>
-      {done ? (
-        <span className="mt-2 text-[12px] font-semibold text-[var(--green-d)]">完了 ✓</span>
-      ) : (
-        <Link href={href} className="mt-2 text-[12px] font-bold text-[var(--green-d)] underline">
-          {cta} →
-        </Link>
-      )}
-    </div>
+      <span className={`block text-[13px] font-bold ${done ? "text-[var(--green-d)]" : "text-[var(--ink)]"}`}>
+        {done ? "✓ " : ""}
+        {title}
+      </span>
+      <span className="mt-1 block text-[12px] leading-5 text-[var(--muted)]">{desc}</span>
+    </Link>
   );
+}
+
+// 今日なら時刻、それ以外は 月/日
+function fmtShortDate(d: Date): string {
+  const now = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  return sameDay ? `${p(d.getHours())}:${p(d.getMinutes())}` : `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
 }

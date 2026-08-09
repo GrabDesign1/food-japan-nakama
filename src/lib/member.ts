@@ -38,6 +38,14 @@ export function levelFromRate(rate: number): number {
   return Math.min(5, Math.max(1, Math.ceil(rate / 20)));
 }
 
+/** 未入力のプロフィール項目数（ダッシュボードの「あと◯項目」表示用）。 */
+export function countMissingProfileFields(m: Member): number {
+  return RATE_FIELDS.filter((f) => {
+    const v = m[f];
+    return !(typeof v === "string" && v.trim() !== "");
+  }).length;
+}
+
 /** ログインユーザーの会員を返す。無ければ下書きを作成して users に紐付ける。 */
 export async function getOrCreateMemberForUser(su: SessionUser): Promise<Member> {
   if (su.app.memberId) {

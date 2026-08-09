@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 
-type Item = { label: string; href: string; admin?: boolean };
+type Item = { label: string; href: string; admin?: boolean; section?: string };
+
+// 下部固定ナビ（スマホ）。5項目・タップ領域44px以上。「その他」でドロワーを開く。
+const BOTTOM_ITEMS = [
+  { href: "/dashboard", icon: "⌂", label: "ホーム" },
+  { href: "/search", icon: "🔍", label: "探す" },
+  { href: "/ledger", icon: "＋", label: "登録" },
+  { href: "/messages", icon: "✉️", label: "メッセージ" },
+];
 
 export function MobileNav({ items, unread }: { items: Item[]; unread: number }) {
   const [open, setOpen] = useState(false);
@@ -22,6 +30,35 @@ export function MobileNav({ items, unread }: { items: Item[]; unread: number }) 
         </svg>
       </button>
 
+      {/* 下部固定ナビ（スマホのみ） */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-[var(--line)] bg-white pb-[max(env(safe-area-inset-bottom),6px)] pt-1.5 md:hidden">
+        {BOTTOM_ITEMS.map((b) => (
+          <Link
+            key={b.href}
+            href={b.href}
+            className="relative flex min-h-[44px] min-w-[52px] flex-col items-center justify-center gap-0.5 px-2 text-[var(--ink-2)]"
+          >
+            <span className="text-[16px] leading-none">
+              {b.icon}
+              {b.href === "/messages" && unread > 0 ? (
+                <span className="absolute right-1 top-0 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-[var(--red)] px-1 text-[9px] font-bold text-white">
+                  {unread}
+                </span>
+              ) : null}
+            </span>
+            <span className="text-[10px]">{b.label}</span>
+          </Link>
+        ))}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex min-h-[44px] min-w-[52px] flex-col items-center justify-center gap-0.5 px-2 text-[var(--ink-2)]"
+        >
+          <span className="text-[16px] leading-none">☰</span>
+          <span className="text-[10px]">その他</span>
+        </button>
+      </nav>
+
       {/* ドロワー */}
       {open ? (
         <div className="fixed inset-0 z-50 md:hidden">
@@ -39,30 +76,38 @@ export function MobileNav({ items, unread }: { items: Item[]; unread: number }) 
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="閉じる"
-                className="text-[20px] leading-none text-white/70"
+                className="grid h-11 w-11 place-items-center text-[20px] leading-none text-white/70"
               >
                 ×
               </button>
             </div>
 
             <nav className="mt-3 flex flex-col gap-0.5 px-3">
-              {items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-[14px] transition hover:bg-white/8 ${
-                    item.admin ? "mt-3 border-t border-white/12 pt-3.5" : ""
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {item.href === "/messages" && unread > 0 ? (
-                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      {unread}
-                    </span>
-                  ) : null}
-                </Link>
-              ))}
+              {items.map((item, idx) => {
+                const prev = idx > 0 ? items[idx - 1] : undefined;
+                const showLabel = item.section && item.section !== prev?.section;
+                return (
+                  <div key={item.href} className="flex flex-col gap-0.5">
+                    {showLabel ? (
+                      <div className="mb-0.5 mt-4 px-3 text-[10px] tracking-[0.18em] text-[#8F9BAB]">
+                        {item.section}
+                      </div>
+                    ) : null}
+                    <Link
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className="flex min-h-[44px] items-center gap-2 rounded-md px-3 py-2.5 text-[14px] transition hover:bg-white/8"
+                    >
+                      <span>{item.label}</span>
+                      {item.href === "/messages" && unread > 0 ? (
+                        <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          {unread}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </div>
+                );
+              })}
             </nav>
           </aside>
         </div>

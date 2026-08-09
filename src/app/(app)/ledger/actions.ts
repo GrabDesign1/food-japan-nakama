@@ -85,7 +85,9 @@ export async function togglePublish(
   offeringId: string,
   isPublic: boolean
 ): Promise<void> {
-  const { offering } = await ownOfferingOr404(offeringId);
+  const { member, offering } = await ownOfferingOr404(offeringId);
+  // 公開は月額会員のみ（下書き作成・編集・非公開化は誰でも可）
+  if (isPublic && member.paymentStatus !== "PAID") redirect("/billing");
   // 公開するにはタイトル必須
   if (isPublic && !offering.title) return;
   await prisma.offering.update({
