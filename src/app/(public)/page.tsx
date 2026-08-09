@@ -222,13 +222,15 @@ export default async function PublicHome() {
           <div className="grid gap-4 sm:grid-cols-3">
             {[
               { t: "NAKAMA", d: "自分で出会い、学ぶ月額会員サービス。", price: "月額22,000円（税込）", href: "/about", cta: "詳細はこちら" },
-              { t: "共創プロデュース", d: "事務局の人間がコーディネートし、企画・実証・事業化まで一緒に進める個別支援。", price: "15万円（税抜）〜", href: "/produce", cta: "詳細はこちら" },
+              { t: "共創プロデュース", d: "事務局の人間がコーディネートし、企画・実証・事業化まで一緒に進める個別支援。", price: "", href: "/produce", cta: "詳細はこちら" },
               { t: "クラウドファンディング支援", d: "Makuake等を活用してマーケティングをしましょう！クラファン掲載の代行を行います。", price: "個別見積", href: "/crowdfunding", cta: "詳細はこちら" },
             ].map((s) => (
               <div key={s.t} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
                 <h3 className="text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
                 <p className="mt-1 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{s.d}</p>
-                <div className="mt-2 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
+                {s.price ? (
+                  <div className="mt-2 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
+                ) : null}
                 <Link href={s.href} className="mt-3 text-[12px] text-[var(--green-d)] underline">{s.cta} →</Link>
               </div>
             ))}
