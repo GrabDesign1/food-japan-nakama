@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { requestPasswordReset, type AuthState } from "../actions";
 import { btn, h1Cls } from "@/lib/ui";
@@ -9,6 +9,8 @@ const initial: AuthState = {};
 
 export function ForgotPasswordForm() {
   const [state, formAction, pending] = useActionState(requestPasswordReset, initial);
+  // 制御コンポーネントにして、action後のフォーム自動リセットでメールアドレスが消えないようにする
+  const [email, setEmail] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -24,7 +26,8 @@ export function ForgotPasswordForm() {
           name="email"
           required
           autoComplete="email"
-          defaultValue={state.email}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
           placeholder="you@example.com"
         />
