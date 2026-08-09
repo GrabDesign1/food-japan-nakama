@@ -104,7 +104,10 @@ export default async function OfferingDetailPage({
   ];
 
   // 取引条件（値がある項目だけ表示。旧案件で「未設定」を並べない）
-  const price = formatPrice(offering);
+  const priceBase = formatPrice(offering);
+  const price = priceBase
+    ? `${priceBase}${offering.priceTaxType ? `（${offering.priceTaxType}）` : ""}`
+    : null;
   const tradeRows: [string, string | null][] = (
     [
       ["希望価格", price],
@@ -116,6 +119,7 @@ export default async function OfferingDetailPage({
       ["提供頻度", offering.supplyFrequency],
       ["受け渡し方法", offering.deliveryMethods.length ? offering.deliveryMethods.join("・") : null],
       ["送料負担", offering.shippingCostBearer],
+      ["サンプル提供", offering.sampleAvailability],
       ["発送元・受渡地域", offering.area],
       ["募集期限", formatDeadline(offering.applicationDeadline)],
     ] as [string, string | null][]
@@ -156,6 +160,11 @@ export default async function OfferingDetailPage({
           <span className="rounded bg-[var(--green-soft)] px-2.5 py-1 text-[12px] text-[var(--green-d)]">
             {meta?.icon} {offering.category}
           </span>
+          {offering.listingPurpose === "challenge" ? (
+            <span className="rounded bg-[#FAF0D6] px-2.5 py-1 text-[12px] font-bold text-[#B77F0B]">
+              課題を一緒に解決したい
+            </span>
+          ) : null}
           {!offering.isPublic ? (
             <span className="rounded bg-[var(--line)] px-2.5 py-1 text-[12px] text-[var(--ink-2)]">
               下書き（未公開）
@@ -165,6 +174,9 @@ export default async function OfferingDetailPage({
         <h1 className={`${h1Cls} leading-tight`}>
           {offering.title || "（無題）"}
         </h1>
+        {offering.tagline ? (
+          <p className="mt-1.5 text-[14px] leading-6 text-[var(--ink-2)]">{offering.tagline}</p>
+        ) : null}
 
         {/* サブタイトル：所在地・関連カテゴリ */}
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-[var(--ink-2)]">
@@ -182,6 +194,11 @@ export default async function OfferingDetailPage({
           <b className="text-[var(--red)]">{views24h}</b>
           人が閲覧しています
         </div>
+        {!isOwner && offering.isPublic ? (
+          <a href="#inquiry" className={`${btn("primary", "sm")} mt-3 inline-block`}>
+            この案件について問い合わせる ↓
+          </a>
+        ) : null}
 
         {offering.tags.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -267,6 +284,7 @@ export default async function OfferingDetailPage({
       ) : null}
 
       {/* 連絡する（興味を送る） */}
+      <div id="inquiry" className="scroll-mt-24">
       {!isOwner ? (
         member.paymentStatus !== "PAID" && !existingThread ? (
           <UpgradeToMessage targetName={offering.member.name} />
@@ -311,11 +329,12 @@ export default async function OfferingDetailPage({
           </form>
         )
       ) : null}
+      </div>
 
-      {/* 本文 */}
+      {/* この商品・原料について */}
       {offering.description || offering.descriptionImageUrl ? (
         <div>
-          <h2 className={`${h2Cls} mb-2`}>詳細</h2>
+          <h2 className={`${h2Cls} mb-2`}>この商品・原料について</h2>
           {offering.description ? (
             <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">
               {offering.description}
@@ -329,6 +348,55 @@ export default async function OfferingDetailPage({
               className="mt-3 max-h-[400px] w-full rounded-xl border border-[var(--line)] object-cover"
             />
           ) : null}
+        </div>
+      ) : null}
+
+      {/* 特徴・こだわり（他との違い） */}
+      {offering.featureDiff ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>特徴・こだわり</h2>
+          <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{offering.featureDiff}</p>
+        </div>
+      ) : null}
+
+      {/* 生まれた背景・販売したい理由 */}
+      {offering.backgroundStory ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>生まれた背景・販売したい理由</h2>
+          <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{offering.backgroundStory}</p>
+        </div>
+      ) : null}
+
+      {/* 課題（課題解決型のみ・入力がある項目だけ表示） */}
+      {offering.challengeCurrent || offering.challengeAsk || offering.challengeValue ? (
+        <div className="rounded-[12px] border border-[#E7D9A6] bg-[#FFFBF0] p-5">
+          <h2 className={`${h2Cls} mb-3`}>いま起きている課題と、求めている協力</h2>
+          <div className="flex flex-col gap-4">
+            {(
+              [
+                ["いま起きている課題", offering.challengeCurrent],
+                ["課題の規模・期限", offering.challengeScale],
+                ["これまで試したこと", offering.challengeTried],
+                ["求めている協力・提案", offering.challengeAsk],
+                ["解決後に生まれる価値", offering.challengeValue],
+              ] as [string, string | null][]
+            )
+              .filter(([, v]) => !!v)
+              .map(([k, v]) => (
+                <div key={k}>
+                  <h3 className="text-[13px] font-bold text-[#7A5A0B]">{k}</h3>
+                  <p className="mt-1 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{v}</p>
+                </div>
+              ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* おすすめの使い方・売り場 */}
+      {offering.usageIdeas ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>おすすめの使い方・売り場</h2>
+          <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{offering.usageIdeas}</p>
         </div>
       ) : null}
 
@@ -405,6 +473,13 @@ export default async function OfferingDetailPage({
           </table>
         </div>
       </div>
+
+      {/* 末尾CTA（問い合わせフォームへ戻る） */}
+      {!isOwner && offering.isPublic ? (
+        <a href="#inquiry" className={`${btn("primary")} block w-full text-center`}>
+          この案件について問い合わせる
+        </a>
+      ) : null}
     </div>
   );
 }

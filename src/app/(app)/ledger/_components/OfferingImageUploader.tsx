@@ -4,7 +4,7 @@
 import { useRef, useState, useTransition } from "react";
 import { uploadOfferingImage, removeOfferingImage, reorderOfferingImages } from "../actions";
 
-const MAX = 6;
+const MAX = 10;
 
 export function OfferingImageUploader({
   offeringId,
@@ -51,6 +51,9 @@ export function OfferingImageUploader({
     <div className="flex flex-col gap-2">
       <div className="text-[12px] text-[var(--ink-2)]">
         サムネイル・ギャラリー画像（最大{MAX}枚。<b>1枚目がメイン画像</b>です。ドラッグ、または ◀ ▶ で並べ替えできます）
+        <div className="mt-0.5 text-[11px] text-[var(--muted)]">
+          おすすめ：①商品全体 ②パッケージ ③中身・提供シーン ④製造風景 ⑤作り手 ⑥原料や産地の風景
+        </div>
       </div>
       <div className="flex flex-wrap gap-3">
         {list.map((url, i) => (

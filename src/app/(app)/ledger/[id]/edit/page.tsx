@@ -61,6 +61,18 @@ export default async function OfferingEditPage({
     shippingCostBearer: offering.shippingCostBearer,
     applicationDeadline: toDateInput(offering.applicationDeadline),
     desiredPartner: offering.desiredPartner,
+    listingPurpose: offering.listingPurpose,
+    tagline: offering.tagline,
+    featureDiff: offering.featureDiff,
+    backgroundStory: offering.backgroundStory,
+    usageIdeas: offering.usageIdeas,
+    challengeCurrent: offering.challengeCurrent,
+    challengeScale: offering.challengeScale,
+    challengeTried: offering.challengeTried,
+    challengeAsk: offering.challengeAsk,
+    challengeValue: offering.challengeValue,
+    sampleAvailability: offering.sampleAvailability,
+    priceTaxType: offering.priceTaxType,
   };
 
   return (

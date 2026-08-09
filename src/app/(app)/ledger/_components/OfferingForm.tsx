@@ -25,6 +25,9 @@ import {
   SUPPLY_FREQUENCIES,
   DELIVERY_METHODS,
   SHIPPING_BEARERS,
+  LISTING_PURPOSES,
+  SAMPLE_AVAILABILITY,
+  PRICE_TAX_TYPES,
   categoryMeta,
 } from "@/lib/offering-taxonomy";
 import { btn } from "@/lib/ui";
@@ -59,6 +62,18 @@ export type OfferingData = {
   shippingCostBearer: string | null;
   applicationDeadline: string | null; // YYYY-MM-DD
   desiredPartner: string | null;
+  listingPurpose: string | null;
+  tagline: string | null;
+  featureDiff: string | null;
+  backgroundStory: string | null;
+  usageIdeas: string | null;
+  challengeCurrent: string | null;
+  challengeScale: string | null;
+  challengeTried: string | null;
+  challengeAsk: string | null;
+  challengeValue: string | null;
+  sampleAvailability: string | null;
+  priceTaxType: string | null;
 };
 
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
@@ -86,8 +101,10 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const isGive = offering.direction === "GIVE";
 
   // プレビューに使う項目は制御コンポーネントにする
+  const [listingPurpose, setListingPurpose] = useState(offering.listingPurpose ?? "trade");
   const [category, setCategory] = useState(offering.category);
   const [title, setTitle] = useState(offering.title);
+  const [tagline, setTagline] = useState(offering.tagline ?? "");
   const [description, setDescription] = useState(offering.description ?? "");
   const [points, setPoints] = useState(offering.points ?? "");
   const [tags, setTags] = useState(offering.tags.join(", "));
@@ -161,8 +178,42 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_290px]">
       <form action={formAction} className="flex min-w-0 flex-col gap-5">
+        {/* ── 掲載タイプ（売りたいのみ） ── */}
+        {isGive ? (
+          <div>
+            <h2 className="text-[16px] font-bold text-[var(--ink)]">今回、何をしたいですか？</h2>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {LISTING_PURPOSES.map(([value, label, desc]) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer flex-col gap-1 rounded-[10px] border p-4 transition ${
+                    listingPurpose === value
+                      ? "border-[var(--green)] bg-[var(--green-soft)]"
+                      : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="listingPurpose"
+                      value={value}
+                      checked={listingPurpose === value}
+                      onChange={() => setListingPurpose(value)}
+                      className="accent-[var(--green)]"
+                    />
+                    <span className={`text-[14px] font-bold ${listingPurpose === value ? "text-[var(--green-d)]" : "text-[var(--ink)]"}`}>
+                      {label}
+                    </span>
+                  </span>
+                  <span className="text-[12px] leading-5 text-[var(--muted)]">{desc}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* ── 基本情報 ── */}
-        <div>
+        <div className={isGive ? "border-t border-[var(--line)] pt-5" : ""}>
           <h2 className="text-[16px] font-bold text-[var(--ink)]">基本情報</h2>
           <p className="mt-0.5 text-[12px] text-[var(--muted)]">
             カテゴリに合わせて、必要な入力項目が切り替わります。
@@ -218,19 +269,35 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例：クラフトビール製造時に出る麦芽粕を活用しませんか"
+            placeholder="例：宮崎産の柑橘を使った香り豊かなクラフトビール"
             className={inputCls}
           />
         </label>
 
+        {isGive ? (
+          <label className={labelCls}>
+            <span>一言で伝わる特徴<Opt /></span>
+            <input
+              name="tagline"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="例：地域の素材とストーリーを一緒に届けられるクラフトビールです"
+              className={inputCls}
+            />
+            <span className="text-[11px] text-[var(--muted)]">一覧カードと詳細ページの冒頭に表示されます。</span>
+          </label>
+        ) : null}
+
         <div className={labelCls}>
-          <span>詳細説明<Req /></span>
+          <span>
+            この商品・原料について{isGive ? <Req /> : <Req />}
+          </span>
           <textarea
             name="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
-            placeholder="内容の説明。背景・状態・条件など。"
+            placeholder={isGive ? "どのような商品・原料ですか？ 産地・製法・味わい・用途などを紹介してください。" : "探している商品・原料・条件を書いてください。"}
             className={inputCls}
           />
           {!isCreate ? (
@@ -241,6 +308,121 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             />
           ) : null}
         </div>
+
+        {/* ── 魅力と背景（質問に答える形式・売りたいのみ） ── */}
+        {isGive ? (
+          <>
+            <SectionHead
+              title="魅力と背景"
+              desc="質問に答えるだけで、買い手に伝わる掲載ページになります。1問2〜3行でも十分です。"
+            />
+
+            <div className={labelCls}>
+              <span>他の商品と何が違いますか？<Req /></span>
+              <textarea
+                name="featureDiff"
+                defaultValue={offering.featureDiff ?? ""}
+                rows={3}
+                placeholder="例：地元産の日向夏を果皮ごと使用。香りが強く、柑橘系クラフトビールの中でも苦味が控えめです。"
+                className={inputCls}
+              />
+            </div>
+
+            <div className={labelCls}>
+              <span>なぜこの商品を作った・販売したいのですか？<Opt /></span>
+              <textarea
+                name="backgroundStory"
+                defaultValue={offering.backgroundStory ?? ""}
+                rows={3}
+                placeholder="例：規格外で出荷できない日向夏を活かすため、地元農家と一緒に開発しました。作り手の紹介もどうぞ。"
+                className={inputCls}
+              />
+            </div>
+
+            <div className={labelCls}>
+              <span>どのような売り場・料理・用途に合いますか？<Req /></span>
+              <textarea
+                name="usageIdeas"
+                defaultValue={offering.usageIdeas ?? ""}
+                rows={3}
+                placeholder="例：地元食材を扱う飲食店のペアリング、ホテルのミニバー、ふるさとギフト、イベントでの提供など。"
+                className={inputCls}
+              />
+            </div>
+
+            <div className={labelCls}>
+              <span>どのような相手と取引したいですか？<Req /></span>
+              <textarea
+                name="desiredPartner"
+                defaultValue={offering.desiredPartner ?? ""}
+                rows={3}
+                placeholder="例：飲食店、小売・酒販店、ホテル・観光施設、ギフト事業者、イベント主催者、共同開発したい企業など。"
+                className={inputCls}
+              />
+            </div>
+
+            {listingPurpose === "challenge" ? (
+              <div className="flex flex-col gap-4 rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] p-4">
+                <div>
+                  <div className="text-[13px] font-bold text-[#7A5A0B]">課題について教えてください</div>
+                  <p className="mt-0.5 text-[11px] text-[var(--muted)]">
+                    背景が伝わると、協力したい相手が動きやすくなります。
+                  </p>
+                </div>
+                <div className={labelCls}>
+                  <span>いま、どのような課題が起きていますか？<Req /></span>
+                  <textarea
+                    name="challengeCurrent"
+                    defaultValue={offering.challengeCurrent ?? ""}
+                    rows={3}
+                    placeholder="例：ビール製造のたびに麦芽粕が週200kg発生し、大半を有償で廃棄しています。"
+                    className={inputCls}
+                  />
+                </div>
+                <div className={labelCls}>
+                  <span>課題の規模や期限はどのくらいですか？<Opt /></span>
+                  <textarea
+                    name="challengeScale"
+                    defaultValue={offering.challengeScale ?? ""}
+                    rows={2}
+                    placeholder="例：年間約10t。廃棄費用は年間約50万円。通年で発生します。"
+                    className={inputCls}
+                  />
+                </div>
+                <div className={labelCls}>
+                  <span>これまでに試したことはありますか？<Opt /></span>
+                  <textarea
+                    name="challengeTried"
+                    defaultValue={offering.challengeTried ?? ""}
+                    rows={2}
+                    placeholder="例：近隣の畜産農家へ飼料として少量提供。ただし水分が多く運搬がネックでした。"
+                    className={inputCls}
+                  />
+                </div>
+                <div className={labelCls}>
+                  <span>どのような協力・提案を求めていますか？<Req /></span>
+                  <textarea
+                    name="challengeAsk"
+                    defaultValue={offering.challengeAsk ?? ""}
+                    rows={3}
+                    placeholder="例：菓子・パン・発酵食品などへの加工パートナー。小規模な試作からの相談も歓迎です。"
+                    className={inputCls}
+                  />
+                </div>
+                <div className={labelCls}>
+                  <span>解決できると、誰にどのような価値が生まれますか？<Req /></span>
+                  <textarea
+                    name="challengeValue"
+                    defaultValue={offering.challengeValue ?? ""}
+                    rows={3}
+                    placeholder="例：廃棄コストの削減に加え、地域の食品ロス削減と新商品づくりにつながります。"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : null}
 
         {/* ── 価格と数量 ── */}
         <SectionHead
@@ -288,6 +470,14 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                   {PRICE_UNITS.map((u) => (
                     <option key={u} value={u}>
                       {u}
+                    </option>
+                  ))}
+                </select>
+                <select name="priceTaxType" defaultValue={offering.priceTaxType ?? ""} className={inputCls}>
+                  <option value="">税区分</option>
+                  {PRICE_TAX_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
                     </option>
                   ))}
                 </select>
@@ -532,18 +722,18 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                   />
                 </label>
               ) : null}
+              <label className={labelCls}>
+                <span>サンプル提供<Opt /></span>
+                <select name="sampleAvailability" defaultValue={offering.sampleAvailability ?? ""} className={inputCls}>
+                  <option value="">未選択</option>
+                  {SAMPLE_AVAILABILITY.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
-
-            <label className={labelCls}>
-              <span>希望する相手・活用用途<Opt /></span>
-              <textarea
-                name="desiredPartner"
-                defaultValue={offering.desiredPartner ?? ""}
-                rows={3}
-                placeholder="例：飼料、菓子、パン、発酵食品などへの活用を検討できる事業者。まずは小規模な実証から相談可能です。"
-                className={inputCls}
-              />
-            </label>
           </>
         ) : null}
 
@@ -605,7 +795,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             <span className="text-[36px] opacity-60">{meta?.icon ?? "📦"}</span>
           )}
         </div>
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--muted)]">
           <span
             className={`rounded px-1.5 py-0.5 font-bold text-white ${
               isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
@@ -613,11 +803,17 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           >
             {isGive ? "売りたい" : "買いたい"}
           </span>
+          {isGive && listingPurpose === "challenge" ? (
+            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">課題解決</span>
+          ) : null}
           <span>{meta?.icon} {category}</span>
         </div>
         <div className="mt-1 line-clamp-2 text-[14px] font-semibold leading-5 text-[var(--ink)]">
           {title || "（タイトル未入力）"}
         </div>
+        {tagline.trim() ? (
+          <div className="mt-0.5 line-clamp-2 text-[12px] leading-5 text-[var(--ink-2)]">{tagline.trim()}</div>
+        ) : null}
         <dl className="mt-3 border-t border-[var(--line)]">
           {previewRows.map((r) => (
             <div key={r.label} className="flex items-start justify-between gap-3 border-b border-[#EDF0EA] py-2">

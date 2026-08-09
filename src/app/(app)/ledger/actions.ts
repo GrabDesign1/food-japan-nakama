@@ -17,6 +17,9 @@ import {
   SUPPLY_FREQUENCIES,
   DELIVERY_METHODS,
   SHIPPING_BEARERS,
+  LISTING_PURPOSES,
+  SAMPLE_AVAILABILITY,
+  PRICE_TAX_TYPES,
 } from "@/lib/offering-taxonomy";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
@@ -78,7 +81,7 @@ async function attachTempImages(
   });
   const urls: string[] = [...(current?.imageUrls ?? [])];
   for (const u of tempUrls) {
-    if (urls.length >= 6) break;
+    if (urls.length >= 10) break;
     const from = storagePathFromUrl(u, BUCKET, `offerings/tmp/${memberId}/`);
     if (!from) continue;
     const name = from.split("/").pop();
@@ -114,7 +117,7 @@ export async function createOffering(
   const tempUrls = formData
     .getAll("tempImageUrls")
     .map((v) => String(v))
-    .slice(0, 6);
+    .slice(0, 10);
 
   // 二重送信ガード：同じタイトルの案件を直近1分以内に作っていたら、新規作成せずそれを開く
   const dup = await prisma.offering.findFirst({
@@ -165,6 +168,18 @@ type ParsedOffering = {
   shippingCostBearer: string | null;
   applicationDeadline: Date | null;
   desiredPartner: string | null;
+  listingPurpose: string | null;
+  tagline: string | null;
+  featureDiff: string | null;
+  backgroundStory: string | null;
+  usageIdeas: string | null;
+  challengeCurrent: string | null;
+  challengeScale: string | null;
+  challengeTried: string | null;
+  challengeAsk: string | null;
+  challengeValue: string | null;
+  sampleAvailability: string | null;
+  priceTaxType: string | null;
 };
 
 // フォーム値の共通パース（保存・新規作成で共用。公開時の必須チェックは togglePublish 側）
@@ -247,6 +262,21 @@ function parseOfferingForm(
       shippingCostBearer: pick("shippingCostBearer", SHIPPING_BEARERS),
       applicationDeadline,
       desiredPartner: g("desiredPartner", 4000) || null,
+      // 掲載タイプと物語（質問形式）
+      listingPurpose: LISTING_PURPOSES.some(([v]) => v === g("listingPurpose"))
+        ? g("listingPurpose")
+        : null,
+      tagline: g("tagline", 120) || null,
+      featureDiff: g("featureDiff", 4000) || null,
+      backgroundStory: g("backgroundStory", 4000) || null,
+      usageIdeas: g("usageIdeas", 4000) || null,
+      challengeCurrent: g("challengeCurrent", 4000) || null,
+      challengeScale: g("challengeScale", 2000) || null,
+      challengeTried: g("challengeTried", 4000) || null,
+      challengeAsk: g("challengeAsk", 4000) || null,
+      challengeValue: g("challengeValue", 4000) || null,
+      sampleAvailability: pick("sampleAvailability", SAMPLE_AVAILABILITY),
+      priceTaxType: pick("priceTaxType", PRICE_TAX_TYPES),
     },
   };
 }
@@ -289,10 +319,29 @@ function missingForPublish(o: {
   supplyFrequency: string | null;
   deliveryMethods: string[];
   applicationDeadline: Date | null;
+  description: string | null;
+  listingPurpose: string | null;
+  featureDiff: string | null;
+  usageIdeas: string | null;
+  desiredPartner: string | null;
+  challengeCurrent: string | null;
+  challengeAsk: string | null;
+  challengeValue: string | null;
 }): string[] {
   const missing: string[] = [];
   if (!o.title) missing.push("タイトル");
   if (o.direction !== "GIVE") return missing; // 買いたいは従来どおりタイトルのみ
+
+  // 物語部（質問形式）。通常取引型=商品説明・特徴・使い方・相手、課題解決型=＋課題・協力・価値
+  if (!o.description) missing.push("この商品・原料について（詳細説明）");
+  if (!o.featureDiff) missing.push("他の商品との違い・特徴");
+  if (!o.usageIdeas) missing.push("おすすめの使い方・売り場");
+  if (!o.desiredPartner) missing.push("希望する相手");
+  if (o.listingPurpose === "challenge") {
+    if (!o.challengeCurrent) missing.push("いま起きている課題");
+    if (!o.challengeAsk) missing.push("求める協力・提案");
+    if (!o.challengeValue) missing.push("解決後に生まれる価値");
+  }
 
   if (!o.priceType) missing.push("希望価格");
   if (o.priceType === "fixed" && (o.priceAmount == null || !o.priceUnit)) {
@@ -361,8 +410,8 @@ export async function uploadOfferingImage(
   const file = formData.get("file");
   const v = await validateImageFile(file);
   if (!v.ok) return { error: v.error };
-  if ((offering.imageUrls ?? []).length >= 6) {
-    return { error: "画像は最大6枚までです。" };
+  if ((offering.imageUrls ?? []).length >= 10) {
+    return { error: "画像は最大10枚までです。" };
   }
 
   const path = `offerings/${offeringId}/${crypto.randomUUID()}.${v.ext}`;

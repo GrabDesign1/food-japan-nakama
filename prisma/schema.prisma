@@ -440,6 +440,20 @@ model Offering {
   applicationDeadline DateTime? @map("application_deadline") // 募集期限
   desiredPartner      String?   @map("desired_partner") // 希望する相手・活用用途
 
+  // ── 掲載タイプと物語（2026-08-10 第2次改善。質問に答える形式。全てnullable＝旧案件互換） ──
+  listingPurpose   String? @map("listing_purpose") // trade（商品・原料を売りたい）/ challenge（課題を一緒に解決したい）
+  tagline          String? // 一言で伝わる特徴（カード・詳細ファーストビューに表示）
+  featureDiff      String? @map("feature_diff") // 他の商品と何が違うか（特徴・こだわり）
+  backgroundStory  String? @map("background_story") // なぜ作った・売りたいのか（作り手の紹介もここに）
+  usageIdeas       String? @map("usage_ideas") // おすすめの売り場・使い方
+  challengeCurrent String? @map("challenge_current") // いま何が起きているか（課題解決型）
+  challengeScale   String? @map("challenge_scale") // 課題の規模・期限
+  challengeTried   String? @map("challenge_tried") // これまで試したこと
+  challengeAsk     String? @map("challenge_ask") // 求める協力・提案
+  challengeValue   String? @map("challenge_value") // 解決後に生まれる価値
+  sampleAvailability String? @map("sample_availability") // サンプル提供：可/応相談/不可
+  priceTaxType     String? @map("price_tax_type") // 税込/税別
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

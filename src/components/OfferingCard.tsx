@@ -25,6 +25,9 @@ export type OfferingCardData = {
   itemCondition?: string | null;
   supplyFrequency?: string | null;
   applicationDeadline?: string | Date | null;
+  // 掲載タイプ・一言特徴（第2次改善）
+  listingPurpose?: string | null;
+  tagline?: string | null;
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -105,6 +108,9 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
       <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--muted)]">
         <span>{meta?.icon}</span>
         <span>{o.category}</span>
+        {o.listingPurpose === "challenge" ? (
+          <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] font-bold text-[#B77F0B]">課題解決</span>
+        ) : null}
         {deadlineText ? (
           <span className={`ml-auto ${deadlineText === "募集終了" ? "text-[var(--red)]" : ""}`}>
             {deadlineText}
@@ -114,6 +120,9 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
       <div className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-5 text-[var(--ink)] group-hover:text-[var(--green-d)]">
         {o.title || "（無題）"}
       </div>
+      {o.tagline ? (
+        <div className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[var(--ink-2)]">{o.tagline}</div>
+      ) : null}
       {price || amount ? (
         <div className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[12px]">
           {price ? <span className="font-bold text-[var(--green-d)]">{price}</span> : null}

@@ -47,6 +47,18 @@ export default async function NewOfferingPage({
     shippingCostBearer: null,
     applicationDeadline: null,
     desiredPartner: null,
+    listingPurpose: null,
+    tagline: null,
+    featureDiff: null,
+    backgroundStory: null,
+    usageIdeas: null,
+    challengeCurrent: null,
+    challengeScale: null,
+    challengeTried: null,
+    challengeAsk: null,
+    challengeValue: null,
+    sampleAvailability: null,
+    priceTaxType: null,
   };
 
   return (
