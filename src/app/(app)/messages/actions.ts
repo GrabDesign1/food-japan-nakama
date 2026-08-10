@@ -184,10 +184,11 @@ export async function sendMessage(
   const gate = await getInquiryGate({
     threadId,
     offeringId: thread.offeringId,
+    threadFromMemberId: thread.fromMemberId,
     viewerMemberId: me.id,
     viewerIsPremium: me.paymentStatus === "PAID",
   });
-  if (gate.limited) redirect("/billing");
+  if (gate.limited && !gate.canReplyFree) redirect("/billing");
 
   const body = String(formData.get("message") ?? "").trim();
   const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
@@ -221,7 +222,7 @@ export async function sendMessage(
 
   // 受信者が非Premiumの売り手（受信問い合わせ制限の対象）なら、メール通知に本文を含めない
   let mailPreview = body || "（ファイルを送信しました）";
-  if (thread.offeringId) {
+  {
     const recipient = await prisma.member.findUnique({
       where: { id: otherId },
       select: { paymentStatus: true },
@@ -229,10 +230,11 @@ export async function sendMessage(
     const recipientGate = await getInquiryGate({
       threadId,
       offeringId: thread.offeringId,
+      threadFromMemberId: thread.fromMemberId,
       viewerMemberId: otherId,
       viewerIsPremium: recipient?.paymentStatus === "PAID",
     });
-    if (recipientGate.limited) {
+    if (recipientGate.limited && recipientGate.freeUntil) {
       mailPreview = "新しいメッセージが届きました。（内容の閲覧・返信はNAKAMA Premium会員の特典です）";
     }
   }
@@ -337,6 +339,7 @@ export async function markThreadRead(threadId: string): Promise<void> {
   const gate = await getInquiryGate({
     threadId,
     offeringId: thread.offeringId,
+    threadFromMemberId: thread.fromMemberId,
     viewerMemberId: me.id,
     viewerIsPremium: me.paymentStatus === "PAID",
   });
@@ -345,7 +348,8 @@ export async function markThreadRead(threadId: string): Promise<void> {
       threadId,
       senderMemberId: { not: me.id },
       readAt: null,
-      ...(gate.limited ? { id: gate.firstMessageId ?? "__none__" } : {}),
+      // 制限中は、自分の初回返信までに届いた分（＝実際に読める分）だけ既読化する
+      ...(gate.limited && gate.freeUntil ? { createdAt: { lte: gate.freeUntil } } : {}),
     },
     data: { readAt: new Date() },
   });

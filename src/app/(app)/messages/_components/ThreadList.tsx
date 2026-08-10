@@ -24,30 +24,38 @@ export async function ThreadList({
     const offeringIds = Array.from(
       new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
     );
-    if (offeringIds.length) {
-      const giveMine = await prisma.offering.findMany({
-        where: { id: { in: offeringIds }, direction: "GIVE", memberId: meId },
-        select: { id: true },
-      });
+    {
+      const giveMine = offeringIds.length
+        ? await prisma.offering.findMany({
+            where: { id: { in: offeringIds }, direction: "GIVE", memberId: meId },
+            select: { id: true },
+          })
+        : [];
       const giveSet = new Set(giveMine.map((o) => o.id));
       const limitedThreadIds = threads
-        .filter((t) => t.offeringId && giveSet.has(t.offeringId))
+        .filter(
+          (t) =>
+            (t.offeringId && giveSet.has(t.offeringId)) ||
+            // 案件に紐づかない直接会話：自分が受信側のスレッド
+            (!t.offeringId && t.fromMemberId !== meId)
+        )
         .map((t) => t.id);
       if (limitedThreadIds.length) {
-        // 各スレッドの1通目（無料枠）を特定し、それ以外の相手メッセージが最新ならマスク
-        const firsts = await prisma.message.findMany({
-          where: { threadId: { in: limitedThreadIds } },
+        // 各スレッドの「自分の初回返信」時刻を特定し、それより後に届いた相手メッセージが最新ならマスク
+        const myFirstReplies = await prisma.message.findMany({
+          where: { threadId: { in: limitedThreadIds }, senderMemberId: meId },
           orderBy: { createdAt: "asc" },
           distinct: ["threadId"],
-          select: { id: true, threadId: true },
+          select: { threadId: true, createdAt: true },
         });
-        const firstMap = new Map(firsts.map((f) => [f.threadId, f.id]));
+        const replyMap = new Map(myFirstReplies.map((f) => [f.threadId, f.createdAt]));
         maskedThreadIds = new Set(
           threads
             .filter((t) => {
               if (!limitedThreadIds.includes(t.id)) return false;
               const last = t.messages[0];
-              return !!last && last.senderMemberId !== meId && last.id !== firstMap.get(t.id);
+              const freeUntil = replyMap.get(t.id);
+              return !!last && last.senderMemberId !== meId && !!freeUntil && last.createdAt > freeUntil;
             })
             .map((t) => t.id)
         );
