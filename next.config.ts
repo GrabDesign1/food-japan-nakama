@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "8mb",
     },
   },
+  // next/image でSupabase Storageの画像を最適化配信するための許可リスト
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "zbyxhtswjrrhlcnzouew.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
   // SEO: vercel.appドメインでの重複コンテンツを避け、正規ドメインへ301
   async redirects() {
     return [

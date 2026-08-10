@@ -1,5 +1,6 @@
 // 生産者（会員）カード。サムネイル画像＋名前。クリックで詳細へ。
 import Link from "next/link";
+import Image from "next/image";
 
 export type ProducerCardData = {
   id: string;
@@ -28,13 +29,13 @@ export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?
         }`}
       >
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // next/image: 表示サイズに合わせて縮小・WebP変換した画像を配信（fill=親のaspect枠いっぱい）
+          <Image
             src={thumb}
             alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition group-hover:scale-[1.03]"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition group-hover:scale-[1.03]"
           />
         ) : (
           <div className="grid h-full w-full place-items-center font-serif text-[40px] text-[var(--green-d)]">

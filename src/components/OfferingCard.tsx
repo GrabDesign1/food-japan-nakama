@@ -1,5 +1,6 @@
 // 台帳カード（一覧・ダッシュボード共通）。レイアウトは一般的な案件カードを参考にした独自デザイン。
 import Link from "next/link";
+import Image from "next/image";
 import { categoryMeta, DIRECTION_SHORT, formatAmount, formatPrice } from "@/lib/offering-taxonomy";
 
 export type OfferingCardData = {
@@ -71,13 +72,13 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
         }`}
       >
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // next/image: 表示サイズに合わせて縮小・WebP変換した画像を配信（fill=親のaspect枠いっぱい）
+          <Image
             src={thumb}
             alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition group-hover:scale-[1.03]"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition group-hover:scale-[1.03]"
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-[40px] opacity-60">

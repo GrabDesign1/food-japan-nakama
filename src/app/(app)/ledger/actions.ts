@@ -51,7 +51,7 @@ export async function uploadTempOfferingImage(
   const admin = createSupabaseAdminClient();
   const { error } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType });
+    .upload(path, v.body, { contentType: v.contentType });
   if (error) return { error: `アップロード失敗：${error.message}` };
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
   return { url: data.publicUrl, warning: v.warning };
@@ -353,7 +353,7 @@ export async function uploadOfferingImage(
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType });
+    .upload(path, v.body, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -386,7 +386,7 @@ export async function setOfferingSlotImage(
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType });
+    .upload(path, v.body, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   // 旧画像を消す（自分の台帳フォルダ配下のみ）

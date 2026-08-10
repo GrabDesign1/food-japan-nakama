@@ -220,7 +220,7 @@ export async function uploadTempProjectImage(
   const admin = createSupabaseAdminClient();
   const { error } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType });
+    .upload(path, v.body, { contentType: v.contentType });
   if (error) return { error: `アップロード失敗：${error.message}` };
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
   return { url: data.publicUrl, warning: v.warning };
@@ -387,7 +387,7 @@ export async function uploadProjectImage(
   if (owned.project.imageUrls.length >= MAX_IMAGES) return { error: "最大6枚です。" };
   const path = `projects/${projectId}/${crypto.randomUUID()}.${v.ext}`;
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.storage.from(BUCKET).upload(path, file as File, { contentType: v.contentType });
+  const { error } = await admin.storage.from(BUCKET).upload(path, v.body, { contentType: v.contentType });
   if (error) return { error: error.message };
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
   await prisma.project.update({
@@ -451,7 +451,7 @@ export async function setProjectBodyImage(
   if (!v.ok) return { error: v.error };
   const path = `projects/${projectId}/body-${crypto.randomUUID()}.${v.ext}`;
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.storage.from(BUCKET).upload(path, file as File, { contentType: v.contentType });
+  const { error } = await admin.storage.from(BUCKET).upload(path, v.body, { contentType: v.contentType });
   if (error) return { error: error.message };
   const old = owned.project.bodyImageUrl;
   if (old) {

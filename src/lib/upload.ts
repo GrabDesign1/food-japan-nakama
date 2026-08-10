@@ -1,18 +1,23 @@
 // アップロード・ストレージ操作の共通検証。
 // - 画像はマジックバイトで実形式を判定し、JPEG/PNG/WebP/GIF/AVIF のみ許可（SVGはスクリプト実行可能なため不可）
 // - contentType・拡張子はクライアント申告値ではなくサーバー判定値を使う
+// - 横1600px超の画像はアップロード時に自動縮小する（配信の軽量化。GIFはアニメ保護のため対象外）
 // - 削除はURL文字列を信用せず、期待プレフィックス配下のパスのみ許可する
+import sharp from "sharp";
 
 export type DetectedImage = { ext: string; contentType: string };
 
 // 表示がぼやけない目安の横幅。これ未満は警告を返す（受け付けは許可する）
 export const RECOMMENDED_MIN_WIDTH = 800;
 
+// 保存する最大横幅。これを超える画像は縦横比を保って縮小する（詳細ヒーロー表示にも十分な幅）
+export const MAX_UPLOAD_WIDTH = 1600;
+
 export async function validateImageFile(
   file: unknown,
   maxBytes = 5 * 1024 * 1024
 ): Promise<
-  | { ok: true; ext: string; contentType: string; width: number | null; warning?: string }
+  | { ok: true; ext: string; contentType: string; width: number | null; body: Buffer; warning?: string }
   | { ok: false; error: string }
 > {
   if (!(file instanceof File) || file.size === 0) {
@@ -26,12 +31,30 @@ export async function validateImageFile(
   if (!sig) {
     return { ok: false, error: "対応形式は JPEG / PNG / WebP / GIF / AVIF です。" };
   }
-  const width = parseImageWidth(buf, sig.ext);
+  let width = parseImageWidth(buf, sig.ext);
+
+  // 横1600px超は縮小して保存（EXIFの回転を反映してから。失敗時は原本のまま受け付ける）
+  let body = buf;
+  if (sig.ext !== "gif") {
+    try {
+      const img = sharp(buf).rotate(); // .rotate()=EXIF Orientationを画素に反映（メタデータ除去で回転が失われるのを防ぐ）
+      const meta = await img.metadata();
+      if (width == null && meta.width != null) width = meta.width;
+      if (meta.width != null && meta.width > MAX_UPLOAD_WIDTH) {
+        body = await img.resize({ width: MAX_UPLOAD_WIDTH, withoutEnlargement: true }).toBuffer();
+        width = MAX_UPLOAD_WIDTH;
+      }
+    } catch (e) {
+      console.error("[validateImageFile] 縮小に失敗（原本のまま保存）:", e);
+      body = buf;
+    }
+  }
+
   const warning =
     width != null && width < RECOMMENDED_MIN_WIDTH
       ? `この画像は横${width}pxと小さいため、拡大表示でぼやける可能性があります。横1200px以上の写真がきれいに表示されます。`
       : undefined;
-  return { ok: true, ...sig, width, warning };
+  return { ok: true, ...sig, width, body, warning };
 }
 
 /** 画像の横幅（px）を取得。解析できない形式は null。 */

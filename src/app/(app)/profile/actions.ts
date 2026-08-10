@@ -38,7 +38,7 @@ export async function uploadMemberImage(
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType, upsert: false });
+    .upload(path, v.body, { contentType: v.contentType, upsert: false });
   if (upErr) return { error: `アップロードに失敗しました：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -73,7 +73,7 @@ export async function uploadMemberAvatar(
   const path = `avatars/${member.id}/${crypto.randomUUID()}.${v.ext}`;
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType });
+    .upload(path, v.body, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
@@ -139,7 +139,7 @@ export async function uploadMemberLogo(
   const path = `logos/${member.id}/${kind}-${crypto.randomUUID()}.${v.ext}`;
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType });
+    .upload(path, v.body, { contentType: v.contentType });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);

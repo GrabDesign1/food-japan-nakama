@@ -38,7 +38,7 @@ export async function createBanner(
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file as File, { contentType: v.contentType, upsert: false });
+    .upload(path, v.body, { contentType: v.contentType, upsert: false });
   if (upErr) return { error: `アップロードに失敗しました：${upErr.message}` };
 
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);

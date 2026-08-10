@@ -1,6 +1,7 @@
 // 共創プロジェクトのカード（ダッシュボード・一覧・検索共通）。
 // 新項目（一言目的・主目的・段階・募集役割・期限）は値がある場合のみ表示（旧データ互換）。
 import Link from "next/link";
+import Image from "next/image";
 import {
   PURPOSE_LABEL,
   STAGE_LABEL,
@@ -38,8 +39,14 @@ export function ProjectCard({ p, href }: { p: ProjectCardData; href?: string }) 
     <Link href={href ?? `/projects/${p.id}`} className="group block transition-transform hover:-translate-y-0.5">
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)] shadow-sm transition group-hover:border-[var(--green)] group-hover:shadow-md">
         {p.imageUrls[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.imageUrls[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+          // next/image: 表示サイズに合わせて縮小・WebP変換した画像を配信（fill=親のaspect枠いっぱい）
+          <Image
+            src={p.imageUrls[0]}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition group-hover:scale-[1.03]"
+          />
         ) : (
           <div className="grid h-full w-full place-items-center text-[36px] opacity-50">🤝</div>
         )}
