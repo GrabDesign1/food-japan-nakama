@@ -210,7 +210,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
     ...(isGive && goods
       ? [{ label: "状態", value: previewCondition, anchor: "f-condition" }]
       : []),
-    { label: "発送元", value: area || null, anchor: "f-area" },
+    { label: isGive ? "発送元" : "発送先", value: area || null, anchor: "f-area" },
     { label: "募集期限", value: previewDeadline, anchor: "f-deadline" },
   ];
 
@@ -330,15 +330,16 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             </select>
           </label>
           <label id="f-area" className={`${labelCls} scroll-mt-24`}>
+            {/* 売りたい＝送り出す側なので「発送元」、探している＝受け取る側なので「発送先」 */}
             <span>
-              発送元・受渡地域
+              {isGive ? "発送元・受渡地域" : "発送先・受取地域"}
               {isGive && goods ? <Req /> : <Opt />}
             </span>
             <input
               name="area"
               value={area}
               onChange={(e) => setArea(e.target.value)}
-              placeholder="例：宮崎県 宮崎市"
+              placeholder={isGive ? "例：宮崎県 宮崎市" : "例：東京都 千代田区（納品先）"}
               className={inputCls}
             />
           </label>

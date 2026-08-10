@@ -129,7 +129,8 @@ export default async function OfferingDetailPage({
       ["受け渡し方法", offering.deliveryMethods.length ? offering.deliveryMethods.join("・") : null],
       ["送料負担", offering.shippingCostBearer],
       ["サンプル提供", offering.sampleAvailability],
-      ["発送元・受渡地域", offering.area],
+      // 売りたい＝送り出す側なので「発送元」、探している＝受け取る側なので「発送先」
+      [isGive ? "発送元・受渡地域" : "発送先・受取地域", offering.area],
       ["募集期限", formatDeadline(offering.applicationDeadline)],
     ] as [string, string | null][]
   ).filter(([, v]) => !!v);
