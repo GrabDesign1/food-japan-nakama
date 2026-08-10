@@ -67,7 +67,7 @@ export default async function PublicHome() {
               FOOD JAPAN SUMMIT
             </a>
             <div className="fjn-actions">
-              <a className="fjn-button fjn-button--primary" href="#buyer-listings">探している案件を見る</a>
+              <a className="fjn-button fjn-button--primary" href="#buyer-listings">仕入れたい企業を見る</a>
               {isLoggedIn ? (
                 <Link className="fjn-button" href="/ledger">商品を無料で掲載する</Link>
               ) : (
