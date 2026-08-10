@@ -72,7 +72,8 @@ export default async function ProposePage({
   const price = (p: { priceAmount: number; memberDiscountPercent: number } | undefined) =>
     p ? discountedUnitAmount(p.priceAmount, p.memberDiscountPercent, isMember) : null;
 
-  const canSendFree = isMember || !!existingUnlock;
+  // ビジネス会員もチケットを消費する（毎月20件付与）。無料で送れるのは解放済みの案件だけ。
+  const canSendFree = !!existingUnlock;
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-6">
@@ -127,8 +128,8 @@ export default async function ProposePage({
             </ul>
             <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-3 text-[13px]">
               {canSendFree ? (
-                <span className={`font-semibold ${existingUnlock ? "text-[var(--green-d)]" : "text-[#A87F2F]"}`}>
-                  {existingUnlock ? "この案件は解放済みです（継続メッセージ無料）" : "NAKAMA Premium会員のため提案は無制限・無料です"}
+                <span className="font-semibold text-[var(--green-d)]">
+                  この案件は解放済みです（継続メッセージ無料）
                 </span>
               ) : (
                 <>
@@ -140,6 +141,7 @@ export default async function ProposePage({
                   </span>
                   <span className="text-[var(--muted)]">
                     残高：{balance}件
+                    {isMember ? "（ビジネス会員：毎月20件付与・繰越なし）" : ""}
                   </span>
                 </>
               )}
@@ -172,7 +174,7 @@ export default async function ProposePage({
                 />
               )}
               <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-                NAKAMA Premium会員（22,000円・税込／月）は通常・優良案件への提案が無制限、掲載オプションが20%割引になります。
+                NAKAMAビジネス会員（22,000円・税込／月）は毎月20件の提案チケットが付与され、追加チケットと掲載オプションが20%割引になります。
                 <Link href="/billing" className="ml-1 text-[var(--green-d)] underline">詳しく見る →</Link>
               </p>
             </div>

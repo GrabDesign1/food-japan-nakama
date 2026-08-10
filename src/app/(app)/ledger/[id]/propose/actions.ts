@@ -57,7 +57,8 @@ export async function sendProposal(
   const body = String(formData.get("message") ?? "").trim().slice(0, MESSAGE_MAX);
   if (!body) return { error: "提案内容を入力してください。" };
 
-  const isMember = me.paymentStatus === "PAID"; // 月額会員は提案無制限（クレジット消費なし）
+  // ビジネス会員も提案チケットを消費する（毎月20件付与・繰越なし。2026-08-11確定）。
+  // 会員特典は「追加チケットと掲載オプションの20%割引」に集約した。
   const tier = pricingTierFor(offering.verifiedLeadAt, new Date());
   const creditType = creditTypeForTier(tier);
 
@@ -83,25 +84,22 @@ export async function sendProposal(
             seekerMemberId: offering.memberId,
             pricingTier: tier,
             status: "unlocked",
-            // 会員（無制限）はクレジットを消費しないため未読返還の対象外
-            unreadRefundDueAt: isMember ? null : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            unreadRefundDueAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
           },
         });
         unlockId = unlock.id;
 
-        if (!isMember) {
-          const consumed = await consumeOneCreditTx(tx, {
-            tenantId: su!.app.tenantId,
-            memberId: me.id,
-            creditType,
-            contactUnlockId: unlock.id,
-          });
-          if (!consumed) throw new Error("NO_CREDIT");
-          await tx.contactUnlock.update({
-            where: { id: unlock.id },
-            data: { creditLedgerEntryId: consumed.ledgerEntryId },
-          });
-        }
+        const consumed = await consumeOneCreditTx(tx, {
+          tenantId: su!.app.tenantId,
+          memberId: me.id,
+          creditType,
+          contactUnlockId: unlock.id,
+        });
+        if (!consumed) throw new Error("NO_CREDIT");
+        await tx.contactUnlock.update({
+          where: { id: unlock.id },
+          data: { creditLedgerEntryId: consumed.ledgerEntryId },
+        });
       }
 
       // スレッド（会員ペアで1本）を用意

@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import { stripe, PLANS } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { fulfillPaidOrder, revokeRefundedOrder } from "@/lib/billing";
+import { grantMonthlyMemberCredits } from "@/lib/contact-credits";
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
@@ -117,14 +118,32 @@ export async function POST(req: NextRequest) {
       }
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        // 自社の月額プラン（NAKAMA Premium）の請求書に限る。
+        // 自社の月額プラン（NAKAMAビジネス会員）の請求書に限る。
         // 金額を見ずに昇格させると、割引コードや手動発行の少額請求で特典を得られてしまう。
-        if (!isPremiumInvoice(invoice)) {
+        if (!isBusinessPlanInvoice(invoice)) {
           console.warn(`[stripe webhook] 対象外のinvoice.paidを無視しました invoice=${invoice.id}`);
           break;
         }
         const memberId = await memberIdFromInvoice(invoice);
-        if (memberId) await markPaid(memberId, { customerId: idOf(invoice.customer) });
+        if (!memberId) break;
+        await markPaid(memberId, { customerId: idOf(invoice.customer) });
+
+        // ビジネス会員の月次チケット（20件・繰越なし）を請求書ごとに一度だけ付与する
+        const member = await prisma.member.findUnique({
+          where: { id: memberId },
+          select: { tenantId: true },
+        });
+        if (member) {
+          const periodEndSec = (invoice as unknown as { period_end?: number | null }).period_end;
+          const nextPeriodEnd = periodEndSec ? new Date(periodEndSec * 1000) : null;
+          await grantMonthlyMemberCredits({
+            tenantId: member.tenantId,
+            memberId,
+            invoiceId: invoice.id ?? `inv_${event.id}`,
+            // 有効期限は今回の請求期間の終わり（＝次回請求日）。繰越なしは付与側でも担保する
+            periodEnd: nextPeriodEnd,
+          });
+        }
         break;
       }
       case "invoice.payment_failed": {
@@ -186,8 +205,8 @@ export async function POST(req: NextRequest) {
   return new Response("ok");
 }
 
-/** 自社の月額プラン（NAKAMA Premium）の請求書か。金額と定期課金であることの両方で判定する。 */
-function isPremiumInvoice(invoice: Stripe.Invoice): boolean {
+/** 自社の月額プラン（NAKAMAビジネス会員）の請求書か。金額と定期課金であることの両方で判定する。 */
+function isBusinessPlanInvoice(invoice: Stripe.Invoice): boolean {
   const expected = PLANS.find((p) => p.code === "nakama")?.amount ?? null;
   if (expected === null) return false;
   const inv = invoice as unknown as {

@@ -57,7 +57,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const PAYMENT: Record<string, { label: string; cls: string }> = {
   FREE: { label: "無料", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
   UNPAID: { label: "未決済", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
-  PAID: { label: "Premium会員（課金中）", cls: "bg-[#F7EED9] text-[#A87F2F]" },
+  PAID: { label: "ビジネス会員（課金中）", cls: "bg-[#F7EED9] text-[#A87F2F]" },
 };
 
 function Badge({ map, value }: { map: typeof STATUS; value: string }) {
@@ -379,12 +379,12 @@ function DetailModal({
                 onClick={() => onMarkPaid(row.id)}
                 className={btn("primary", "md")}
               >
-                入金確認済み → Premium会員（課金中）にする
+                入金確認済み → ビジネス会員（課金中）にする
               </button>
             )}
           </div>
           <p className="mt-2 text-[11px] text-[var(--muted)]">
-            銀行振込・請求書払いなどで入金を確認したら「Premium会員（課金中）」にします。Premium会員になると、提案の無制限送信、受信した問い合わせへの応対（2往復目以降）、掲載オプション20%割引が使えるようになります。
+            銀行振込・請求書払いなどで入金を確認したら「ビジネス会員（課金中）」にします。Premium会員になると、提案の無制限送信、受信した問い合わせへの応対（2往復目以降）、掲載オプション20%割引が使えるようになります。
           </p>
         </div>
 

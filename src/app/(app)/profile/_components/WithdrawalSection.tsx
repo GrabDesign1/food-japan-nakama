@@ -46,7 +46,7 @@ export function WithdrawalSection({ requestedAt }: { requestedAt: Date | null })
         <form action={formAction} className="mt-3 flex flex-col gap-3">
           <p className="text-[12px] leading-6 text-[var(--ink-2)]">
             退会をご希望の場合は、下のボタンからお申し出ください。事務局で
-            <b>ご契約（Premium会員）の解約</b>と<b>登録情報・掲載案件・画像の削除</b>を確認のうえ手続きし、
+            <b>ご契約（ビジネス会員）の解約</b>と<b>登録情報・掲載案件・画像の削除</b>を確認のうえ手続きし、
             完了後にご連絡します。お申し出だけでは即時に削除されません。
           </p>
           <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">

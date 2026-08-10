@@ -186,7 +186,7 @@ export default function AboutPage() {
                   "案件（売りたい・探している・共創したい）の掲載",
                   "公開案件の閲覧・検索",
                   "案件への応募・問い合わせ",
-                  "問い合わせの送信・受信（受信した問い合わせは1往復目まで無料）",
+                  "問い合わせの送信・受信と、届いた問い合わせへの返信（何往復でも無料）",
                 ].map((s) => (
                   <li key={s} className="flex items-start gap-2.5">
                     <span aria-hidden className="mt-px font-bold text-[var(--green)]">✓</span>

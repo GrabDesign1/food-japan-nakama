@@ -276,7 +276,7 @@ export default async function DashboardPage() {
 
   // ── 会員状態（表示は右カラムの利用状況1か所のみ。登録・掲載・応募は無料＝2026-08-10 最終決定書）──
   const isPaid = member?.paymentStatus === "PAID";
-  const memberStateLabel = isPaid ? "NAKAMA Premium会員" : "無料会員";
+  const memberStateLabel = isPaid ? "NAKAMAビジネス会員" : "無料会員";
   const reviewLabel =
     member?.status === "APPROVED"
       ? "承認済み"
@@ -306,14 +306,11 @@ export default async function DashboardPage() {
       {/* あいさつ */}
       <div>
         <p className={eyebrowCls}>MY PAGE</p>
-        {/* Premium会員バッジ（ユーザー名の上に表示） */}
+        {/* ビジネス会員バッジ（ユーザー名の上に表示） */}
         {isPaid ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src="/premium-badge.png"
-            alt="NAKAMA Premium会員"
-            className="mb-1 mt-0.5 h-[20px] w-auto"
-          />
+          <span className="mb-1 mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-[#C9A053] bg-[#FDF9EF] px-3 py-1 text-[11px] font-bold tracking-wide text-[#A87F2F]">
+            NAKAMA <span className="font-normal">ビジネス会員</span>
+          </span>
         ) : null}
         <h1 className={h1Cls}>{su?.app.name} さん、こんにちは</h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">今日も新しい食のつながりを見つけましょう。</p>
@@ -628,15 +625,15 @@ export default async function DashboardPage() {
                 <p className="mt-2 rounded-[8px] bg-[var(--green-soft)] p-2.5 text-[12px] leading-5 text-[var(--green-d)]">
                   登録・掲載・応募は無料でご利用いただけます。
                 </p>
-                {/* Premiumアップグレード（ゴールド） */}
+                {/* ビジネス会員へのアップグレード（ゴールド） */}
                 <Link
                   href="/billing"
                   className="mt-3 block rounded-md bg-[#C9A053] py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[#B58C3D]"
                 >
-                  Premium会員へアップグレード
+                  ビジネス会員になる
                 </Link>
                 <p className="mt-1.5 text-[11px] leading-5 text-[var(--muted)]">
-                  提案し放題・届いた問い合わせに応対し放題・オプション20%OFF（月額22,000円・税込）
+                  毎月20件の提案チケット・追加チケットと掲載オプションが20%OFF（月額22,000円・税込）
                 </p>
               </>
             )}

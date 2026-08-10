@@ -2,15 +2,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/EmptyState";
-import { getInquiryGate } from "@/lib/inquiry-gate";
 
 export async function ThreadList({
   meId,
-  viewerIsPremium,
   activeId,
 }: {
   meId: string;
-  viewerIsPremium: boolean;
   activeId?: string;
 }) {
   const threads = await prisma.thread.findMany({
@@ -19,25 +16,6 @@ export async function ThreadList({
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 
-  // 受信問い合わせ制限（非Premiumは2通目以降を秘匿）を一覧プレビューにも適用。
-  // 判定は必ず getInquiryGate に委ねる（ここで条件を書き写すと、片方だけ直したときに本文が漏れる）。
-  const maskedThreadIds = new Set<string>();
-  if (!viewerIsPremium) {
-    const gates = await Promise.all(
-      threads.map((t) =>
-        getInquiryGate({
-          threadId: t.id,
-          threadFromMemberId: t.fromMemberId,
-          viewerMemberId: meId,
-          viewerIsPremium: false,
-        }).then((g) => ({ threadId: t.id, gate: g }))
-      )
-    );
-    for (const { threadId, gate } of gates) {
-      const last = threads.find((t) => t.id === threadId)?.messages[0];
-      if (last && gate.maskedMessageIds.has(last.id)) maskedThreadIds.add(threadId);
-    }
-  }
 
   const otherIds = Array.from(
     new Set(threads.map((t) => (t.fromMemberId === meId ? t.toMemberId : t.fromMemberId)))
@@ -80,11 +58,9 @@ export async function ThreadList({
         const last = t.messages[0];
         const unreadN = unreadMap.get(t.id) ?? 0;
         const active = activeId === t.id;
-        const preview = maskedThreadIds.has(t.id)
-          ? "🔒 新しいメッセージ（Premium会員で閲覧できます）"
-          : last
-            ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
-            : "（メッセージはまだありません）";
+        const preview = last
+          ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
+          : "（メッセージはまだありません）";
         return (
           <Link
             key={t.id}

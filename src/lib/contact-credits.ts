@@ -9,6 +9,7 @@ import {
   pickLotToConsume,
   CREDIT_PACK_EXPIRY_DAYS,
   SIGNUP_FREE_CREDITS,
+  MEMBER_MONTHLY_CREDITS,
 } from "@/lib/billing-core";
 
 type Tx = Prisma.TransactionClient;
@@ -104,7 +105,75 @@ export async function grantSignupCredits(tenantId: string, memberId: string): Pr
   });
 }
 
-// 月額会員は提案無制限（クレジット消費なし）のため、月次付与は行わない（ユーザー確定 2026-08-10）。
+/**
+ * ビジネス会員の月次チケット付与（請求書1通につき一度だけ）。
+ * 「未使用分は翌月へ繰り越さない」ため、新しい月の付与に成功したら、
+ * 前月までの月次ロットの未使用分をその場で失効させる。
+ * （有効期限だけに頼ると、Stripeの請求期間の丸めで前月分が数日残ってしまう）
+ */
+export async function grantMonthlyMemberCredits(params: {
+  tenantId: string;
+  memberId: string;
+  invoiceId: string;
+  periodEnd: Date | null;
+}): Promise<{ granted: boolean }> {
+  const expiresAt = params.periodEnd ?? new Date(Date.now() + 31 * 24 * 60 * 60 * 1000);
+  const result = await grantCredits({
+    tenantId: params.tenantId,
+    memberId: params.memberId,
+    creditType: "standard",
+    quantity: MEMBER_MONTHLY_CREDITS,
+    entryType: "member_monthly",
+    expiresAt,
+    idempotencyKey: `member_monthly:${params.invoiceId}`,
+    note: "NAKAMAビジネス会員 月次チケット（繰越なし）",
+  });
+  if (result.granted) {
+    await expirePreviousMonthlyLots(params.memberId, params.invoiceId);
+  }
+  return result;
+}
+
+/** 今回付与した月次ロット以外の、未使用の月次ロットを失効させる（繰越なしの担保）。 */
+async function expirePreviousMonthlyLots(memberId: string, currentInvoiceId: string): Promise<void> {
+  const lots = await prisma.contactCreditLedger.findMany({
+    where: {
+      memberId,
+      entryType: "member_monthly",
+      quantity: { gt: 0 },
+      lotEntryId: null,
+      idempotencyKey: { not: `member_monthly:${currentInvoiceId}` },
+    },
+    select: { id: true, tenantId: true, quantity: true, creditType: true },
+  });
+  for (const lot of lots) {
+    const used = await prisma.contactCreditLedger.aggregate({
+      where: { lotEntryId: lot.id },
+      _sum: { quantity: true },
+    });
+    const remaining = lot.quantity + (used._sum.quantity ?? 0);
+    if (remaining <= 0) continue;
+    await prisma.contactCreditLedger
+      .create({
+        data: {
+          tenantId: lot.tenantId,
+          memberId,
+          creditType: lot.creditType,
+          quantity: -remaining,
+          entryType: "expire",
+          lotEntryId: lot.id,
+          idempotencyKey: `monthly_reset:${lot.id}`,
+          note: "翌月分の付与に伴う失効（繰越なし）",
+        },
+      })
+      .catch((e) => {
+        // 既に失効済み（再送）なら何もしない
+        if (!(typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002")) {
+          throw e;
+        }
+      });
+  }
+}
 
 /**
  * トランザクション内でクレジットを1件消費する。

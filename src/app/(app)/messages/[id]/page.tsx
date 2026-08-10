@@ -4,7 +4,6 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { markThreadRead } from "../actions";
-import { getInquiryGate } from "@/lib/inquiry-gate";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
 import { h1Cls } from "@/lib/ui";
@@ -23,17 +22,8 @@ export default async function ThreadPage({
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
     notFound();
   }
-  // 「売りたい」への受信問い合わせは1通目のみ無料（2通目以降はPremium特典）
-  const gate = await getInquiryGate({
-    threadId: thread.id,
-    threadFromMemberId: thread.fromMemberId,
-    viewerMemberId: me.id,
-    viewerIsPremium: me.paymentStatus === "PAID",
-  });
-
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
   // 既読化はサイドバーの未読バッジ表示と競合しないよう先に完了させる
-  // （ゲート判定はcache()済みのため再計算されない）
   await markThreadRead(thread.id);
   // 取得系の独立クエリはまとめて並列実行（直列4往復→1往復）
   const [other, messages, draft, templates] = await Promise.all([
@@ -62,7 +52,7 @@ export default async function ThreadPage({
       <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white lg:grid-cols-[300px_1fr]">
         {/* 左：一覧（スマホ・タブレットでは非表示） */}
         <div className="hidden max-h-[74vh] overflow-y-auto border-r border-[var(--line)] lg:block">
-          <ThreadList meId={me.id} viewerIsPremium={me.paymentStatus === "PAID"} activeId={thread.id} />
+          <ThreadList meId={me.id} activeId={thread.id} />
         </div>
 
         {/* 右：会話 */}
@@ -96,26 +86,6 @@ export default async function ThreadPage({
             <div className="flex flex-col gap-4">
               {messages.map((msg) => {
                 const mine = msg.senderMemberId === me.id;
-                // マスク対象：無料枠（相手からの1通目）より後に届いた受信メッセージ
-                // （本文・添付はHTMLに出さない）
-                const masked = gate.maskedMessageIds.has(msg.id);
-                if (masked) {
-                  return (
-                    <div key={msg.id} className="text-left">
-                      <div className="mb-1 text-[11px] text-[var(--muted)]">
-                        {other?.name} ・ {timeStr(msg.createdAt)}
-                      </div>
-                      <div className="inline-block max-w-[80%] rounded-2xl border border-[#E8DCC0] bg-[#FDF9EF] px-4 py-3 text-left">
-                        <div className="select-none text-[14px] leading-7 text-[var(--muted)] blur-[5px]" aria-hidden>
-                          このメッセージはPremium会員限定です。このメッセージはPremium会員限定です。
-                        </div>
-                        <div className="mt-1 text-[11px] font-bold text-[#A87F2F]">
-                          🔒 2往復目以降のメッセージの閲覧はNAKAMA Premium会員の特典です
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
                 return (
                   <div key={msg.id} className={mine ? "text-right" : "text-left"}>
                     <div className="mb-1 text-[11px] text-[var(--muted)]">
@@ -149,41 +119,13 @@ export default async function ThreadPage({
           </div>
 
           {/* 入力欄（下書き・テンプレート・面談日程・添付） */}
-          {gate.limited && !gate.canReplyFree ? (
-            <div className="border-t border-[var(--line)] p-4">
-              <div className="rounded-[10px] border-2 border-[#C9A053] bg-[#FDF9EF] p-5">
-                <div className="mb-1 flex items-center gap-2 text-[14px] font-bold text-[var(--ink)]">
-                  <span>🔒</span>
-                  お問い合わせへの応対はNAKAMA Premium会員の特典です
-                </div>
-                <p className="mb-3 text-[12px] leading-6 text-[var(--ink-2)]">
-                  届いた問い合わせは、1往復（相手からの1通目の閲覧と、最初のご返信1通）まで無料です。
-                  2往復目以降のやり取り（相手の2通目以降の閲覧・返信）は、NAKAMA Premium会員（月額22,000円・税込）でご利用いただけます。
-                </p>
-                <Link
-                  href="/billing"
-                  className="inline-block rounded-md bg-[#C9A053] px-5 py-2 text-[13px] font-bold text-white hover:bg-[#B58C3D]"
-                >
-                  Premium会員について見る →
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <>
-              {gate.limited && gate.canReplyFree ? (
-                <p className="border-t border-[var(--line)] bg-[#FDF9EF] px-6 py-2 text-[11px] text-[#A87F2F]">
-                  最初のご返信1通は無料です（1往復まで無料）。2往復目以降のやり取りはNAKAMA Premium会員の特典です。
-                </p>
-              ) : null}
-              <Composer
-                key={lastMessageId}
-                threadId={thread.id}
-                otherName={other?.name ?? "相手"}
-                initialDraft={draft?.body ?? ""}
-                initialTemplates={templates}
-              />
-            </>
-          )}
+          <Composer
+            key={lastMessageId}
+            threadId={thread.id}
+            otherName={other?.name ?? "相手"}
+            initialDraft={draft?.body ?? ""}
+            initialTemplates={templates}
+          />
         </div>
       </div>
     </div>

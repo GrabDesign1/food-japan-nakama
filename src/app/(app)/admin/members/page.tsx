@@ -1,4 +1,4 @@
-// 事務局：会員管理（/adminから分離。審査・停止・削除・手動Premium化）。
+// 事務局：会員管理（/adminから分離。審査・停止・削除・手動でのビジネス会員化）。
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { listReviewMembers } from "@/lib/member";
@@ -58,7 +58,7 @@ export default async function AdminMembersPage() {
             退会のお申し出（{withdrawals.length}件）
           </h2>
           <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
-            下の一覧で会社名を開き、Premium会員の解約状況を確認してから「完全に削除する」を実行してください。
+            下の一覧で会社名を開き、ビジネス会員の解約状況を確認してから「完全に削除する」を実行してください。
             削除するとStorageの画像・添付ファイルもまとめて消えます。
           </p>
           <ul className="mt-2 flex flex-col gap-1 text-[12px] text-[var(--ink)]">
@@ -70,7 +70,7 @@ export default async function AdminMembersPage() {
                 </span>
                 {w.paymentStatus === "PAID" ? (
                   <span className="ml-2 rounded bg-white px-2 py-0.5 text-[10px] font-bold text-[#A87F2F]">
-                    Premium課金中（先に解約が必要）
+                    ビジネス会員 課金中（先に解約が必要）
                   </span>
                 ) : null}
                 {w.withdrawalReason ? (

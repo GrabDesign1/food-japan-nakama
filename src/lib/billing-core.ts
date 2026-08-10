@@ -10,14 +10,18 @@ export const CREDIT_PACK_EXPIRY_DAYS = 180;
 /** 送信後この日数未読ならクレジットを1件返還（一度だけ）。 */
 export const UNREAD_REFUND_DAYS = 14;
 
-// 月額会員（22,000円・税込）の特典：通常・優良案件への提案が無制限＋掲載オプション20%割引
-// （ユーザー確定 2026-08-10。クレジットは消費しない）
+// NAKAMAビジネス会員（月額22,000円・税込）の特典（ユーザー確定 2026-08-11）：
+// 毎月20件の提案チケット（繰越なし）＋追加チケットと掲載オプションが20%割引。
+// 「提案無制限」は、大量営業・スパムで買い手が離れる懸念から撤回した。
 
 /** 確認済み事業者への初回登録特典（組織単位で一度だけ）。 */
 export const SIGNUP_FREE_CREDITS = 3;
 
-/** 月額会員の掲載オプション割引率（%）。 */
+/** ビジネス会員の割引率（%）。掲載オプションと追加チケットの両方に適用する。 */
 export const MEMBER_OPTION_DISCOUNT_PERCENT = 20;
+
+/** ビジネス会員に毎月付与する提案チケット数（繰越なし＝翌月の付与時に期限切れ）。 */
+export const MEMBER_MONTHLY_CREDITS = 20;
 
 export type PricingTier = "standard" | "verified_lead";
 export type CreditType = "standard" | "verified";

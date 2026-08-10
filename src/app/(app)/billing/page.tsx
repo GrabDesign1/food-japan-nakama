@@ -68,7 +68,7 @@ export default async function BillingPage({
         <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
         <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
           プロフィール登録、案件（売りたい・探している・共創したい）の掲載、閲覧、応募、問い合わせの送信は無料です。
-          有料になるのは、①売り手から「探している」案件への初回提案（紹介料）②掲載オプション（露出・通知）③受信した問い合わせの2往復目以降のやり取り（Premium特典）④事務局への依頼、の4つです。
+          届いた問い合わせへの返信は、何往復でも無料です。有料になるのは、①売り手から「探している」案件への初回提案（紹介料）②掲載オプション（露出・通知）③事務局への依頼、の3つです。
         </p>
       </div>
 
@@ -83,7 +83,9 @@ export default async function BillingPage({
             優良案件用：<b className="text-[16px] text-[var(--green-d)]">{balances.verified}</b> 件
           </span>
           {isMember ? (
-            <span className="font-semibold text-[#A87F2F]">NAKAMA Premium会員のため提案は無制限（クレジット消費なし）</span>
+            <span className="font-semibold text-[#A87F2F]">
+              ビジネス会員：毎月20件が自動付与されます（繰越なし）
+            </span>
           ) : null}
         </div>
         <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
@@ -92,7 +94,7 @@ export default async function BillingPage({
         </p>
       </div>
 
-      {/* NAKAMA Premium会員プラン（ゴールド基調） */}
+      {/* NAKAMAビジネス会員プラン（ゴールド基調） */}
       <div className="max-w-[760px] rounded-[12px] border-2 border-[#C9A053] bg-[#FDF9EF] p-6">
         <div className="flex flex-wrap items-center gap-3">
           <div className="text-[15px] font-semibold text-[var(--ink)]">{plan.name}</div>

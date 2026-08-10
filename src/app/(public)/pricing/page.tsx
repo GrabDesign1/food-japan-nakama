@@ -46,11 +46,11 @@ export default function PricingPage() {
           <li>・プロフィール登録</li>
           <li>・案件（売りたい・探している・共創したい）の閲覧・登録</li>
           <li>・応募・問い合わせ</li>
-          <li>・問い合わせの送信・受信（受信した問い合わせは1往復目まで無料）</li>
+          <li>・問い合わせの送信・受信と、<b>届いた問い合わせへの返信（何往復でも無料）</b></li>
         </ul>
         <p className="mt-3 text-[12px] leading-6 text-[var(--muted)]">
           無料登録にクレジットカードは必要ありません。無料範囲には、事務局による個別探索、推薦、原稿制作、SNS掲載保証、商談同席、交渉を含みません。
-          売り手から「探している」案件への初回提案のみ、紹介料（通常案件1,100円・確認済み優良案件3,300円・パック割引あり）がかかります。継続メッセージと、受けた問い合わせへの返信は無料です。
+          売り手から「探している」案件への初回提案のみ、紹介料（通常案件1,100円・確認済み優良案件3,300円・パック割引あり）がかかります。同じ案件・同じ相手との継続メッセージと、受けた問い合わせへの返信は何往復でも無料です。
         </p>
         <div className="mt-4">
           <Link href="/signup" className={btn("primary", "lg")}>無料で登録する</Link>
@@ -59,14 +59,14 @@ export default function PricingPage() {
 
       {/* 月額会員 */}
       <section className="rounded-[12px] border-2 border-[#C9A053] bg-[#FDF9EF] p-6">
-        <div className="text-[13px] font-bold text-[#A87F2F]">NAKAMA Premium会員（任意）</div>
+        <div className="text-[13px] font-bold text-[#A87F2F]">NAKAMAビジネス会員（任意）</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="font-serif text-[32px] text-[var(--ink)]">22,000</span>
           <span className="text-[14px] text-[var(--ink-2)]">円 / 月（税込）</span>
         </div>
         <ul className="mt-3 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
-          <li>・「探している」案件への初回提案が無制限（通常案件・優良案件とも）</li>
-          <li>・届いた問い合わせへの応対（2往復目以降のやり取り）</li>
+          <li>・<b>毎月20件の提案チケット</b>（「探している」案件への初回提案に使えます。翌月への繰越はありません）</li>
+          <li>・追加の提案チケットが20%割引</li>
           <li>・掲載オプションが20%割引</li>
           <li>・会員向けセミナーへの参加、Food Japan Summit ネットワークとの接点</li>
         </ul>

@@ -9,7 +9,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
 import { safeAttachmentContentType } from "@/lib/upload";
-import { getInquiryGate } from "@/lib/inquiry-gate";
 import {
   trimTo,
   canSendToOthers,
@@ -17,33 +16,6 @@ import {
   TEMPLATE_NAME_MAX,
   TEMPLATE_BODY_MAX,
 } from "@/lib/security";
-
-/**
- * 受信側が引き合い課金の制限中なら、メール本文に内容を含めない。
- * 画面でモザイクにしたものがメールで読めてしまうのを防ぐ（通知経路は3つあるので必ずここを通す）。
- */
-async function previewForRecipient(params: {
-  threadId: string;
-  threadFromMemberId: string;
-  recipientId: string;
-  body: string;
-}): Promise<string> {
-  const recipient = await prisma.member.findUnique({
-    where: { id: params.recipientId },
-    select: { paymentStatus: true },
-  });
-  const gate = await getInquiryGate({
-    threadId: params.threadId,
-    threadFromMemberId: params.threadFromMemberId,
-    viewerMemberId: params.recipientId,
-    viewerIsPremium: recipient?.paymentStatus === "PAID",
-  });
-  // 制限中で、無料枠（1通目）を使い切っている場合は内容を伏せる
-  if (gate.limited && !gate.canReplyFree) {
-    return "新しいメッセージが届きました。（内容の閲覧・返信はNAKAMA Premium会員の特典です）";
-  }
-  return params.body;
-}
 
 /** 相手が未読を溜めていないときだけメール通知する（連投で通知が洪水にならないように）。 */
 async function notifyRecipientIfCaughtUp(params: {
@@ -127,15 +99,6 @@ export async function sendInterest(
         offeringId: offeringId || null,
       },
     });
-  } else {
-    // 既存スレッドへの書き込みも引き合い課金の対象（ロック中の返信をこの導線で回避させない）
-    const gate = await getInquiryGate({
-      threadId: thread.id,
-      threadFromMemberId: thread.fromMemberId,
-      viewerMemberId: me.id,
-      viewerIsPremium: me.paymentStatus === "PAID",
-    });
-    if (gate.limited && !gate.canReplyFree) redirect("/billing");
   }
 
   // 相手が既読済みか（通知判定は書き込み前に見る）
@@ -162,12 +125,7 @@ export async function sendInterest(
     senderId: me.id,
     senderName: me.name,
     recipientId: toMemberId,
-    body: await previewForRecipient({
-      threadId: thread.id,
-      threadFromMemberId: thread.fromMemberId,
-      recipientId: toMemberId,
-      body,
-    }),
+    body,
     unreadBefore,
     listingTitle: listing?.title || null,
   });
@@ -234,14 +192,6 @@ export async function sendMessage(
     return;
   }
   if (!canSendToOthers(me.status)) return;
-  // 「売りたい」への受信問い合わせ：2通目以降のやり取りはPremium特典（1通目の閲覧は無料）
-  const gate = await getInquiryGate({
-    threadId,
-    threadFromMemberId: thread.fromMemberId,
-    viewerMemberId: me.id,
-    viewerIsPremium: me.paymentStatus === "PAID",
-  });
-  if (gate.limited && !gate.canReplyFree) redirect("/billing");
 
   const body = trimTo(formData.get("message"), MESSAGE_MAX);
   // 添付は非公開バケットの保存パス。自スレッド配下のパスだけを受け付ける
@@ -276,13 +226,7 @@ export async function sendMessage(
   await ensureDeal({ tenantId: su.app.tenantId, meId: me.id, otherId, threadId });
   await touchDealActivity(me.id, otherId);
 
-  // 受信者が非Premiumの売り手（受信問い合わせ制限の対象）なら、メール通知に本文を含めない
-  const mailPreview = await previewForRecipient({
-    threadId,
-    threadFromMemberId: thread.fromMemberId,
-    recipientId: otherId,
-    body: body || "（ファイルを送信しました）",
-  });
+  const mailPreview = body || "（ファイルを送信しました）";
 
   await notifyRecipientIfCaughtUp({
     threadId,
@@ -381,21 +325,11 @@ export async function markThreadRead(threadId: string): Promise<void> {
   const me = await getOrCreateMemberForUser(su);
   const thread = await prisma.thread.findUnique({ where: { id: threadId } });
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) return;
-  // 「売りたい」への受信問い合わせ制限中は、実際に読める分だけを既読にする
-  const gate = await getInquiryGate({
-    threadId,
-    threadFromMemberId: thread.fromMemberId,
-    viewerMemberId: me.id,
-    viewerIsPremium: me.paymentStatus === "PAID",
-  });
-  const maskedIds = Array.from(gate.maskedMessageIds);
   await prisma.message.updateMany({
     where: {
       threadId,
       senderMemberId: { not: me.id },
       readAt: null,
-      // マスクして見せていないメッセージは既読にしない
-      ...(maskedIds.length > 0 ? { id: { notIn: maskedIds } } : {}),
     },
     data: { readAt: new Date() },
   });
