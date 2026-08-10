@@ -1,4 +1,5 @@
 // ログインユーザーの取得と、初回ログイン時のアプリ側ユーザー自動作成（プロビジョニング）。
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,8 +16,10 @@ export type SessionUser = {
 /**
  * 現在ログイン中のユーザーを返す。未ログインなら null。
  * アプリ側の users 行が無ければ、既定テナントに MEMBER として自動作成する。
+ * cache() で同一リクエスト内（layout＋page など）の重複呼び出しを1回にまとめる
+ * （Supabase Auth へのHTTP照会とDB照会が毎ページ2回→1回になる）。
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -73,7 +76,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   }
 
   return { authId: user.id, email, app };
-}
+});
 
 // 事務局（管理者）系ロールか
 export function isAdminRole(role: UserRole): boolean {

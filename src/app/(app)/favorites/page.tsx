@@ -55,12 +55,14 @@ export default async function FavoritesPage() {
       : Promise.resolve([]),
   ]);
 
-  const viewMap = await views24hMap(offerings.map((o) => o.id));
-
+  // 閲覧数マップと掲載者名は互いに独立なので並列で取得
   const projMemberIds = Array.from(new Set(projects.map((p) => p.memberId)));
-  const projMembers = projMemberIds.length
-    ? await prisma.member.findMany({ where: { id: { in: projMemberIds } }, select: { id: true, name: true } })
-    : [];
+  const [viewMap, projMembers] = await Promise.all([
+    views24hMap(offerings.map((o) => o.id)),
+    projMemberIds.length
+      ? prisma.member.findMany({ where: { id: { in: projMemberIds } }, select: { id: true, name: true } })
+      : Promise.resolve([]),
+  ]);
   const projNameMap = new Map(projMembers.map((m) => [m.id, m.name]));
 
   const isEmpty = members.length === 0 && offerings.length === 0 && projects.length === 0;

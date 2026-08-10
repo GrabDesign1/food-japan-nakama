@@ -66,31 +66,33 @@ export default async function ProjectsPage({
   if (purpose) and.push({ OR: [{ purposeMain: purpose }, { purposeSub: { has: purpose } }] });
   if (openOnly) and.push({ OR: [{ deadline: null }, { deadline: { gte: new Date() } }] });
 
-  const published = await prisma.project.findMany({
-    where: {
-      tenantId: su.app.tenantId,
-      status: "published",
-      ...(area ? { area } : {}),
-      ...(stage ? { stage } : {}),
-      ...(fjs ? { eventFlags: { has: "fjs_origin" } } : {}),
-      ...(and.length ? { AND: and } : {}),
-    },
-    orderBy: { publishedAt: "desc" },
-    take: 30,
-    include: { roles: { where: { isPublic: true }, orderBy: { sortOrder: "asc" }, select: { name: true } } },
-  });
+  // 掲載中と自分の掲載は独立なので並列で取得
+  const [published, mine] = await Promise.all([
+    prisma.project.findMany({
+      where: {
+        tenantId: su.app.tenantId,
+        status: "published",
+        ...(area ? { area } : {}),
+        ...(stage ? { stage } : {}),
+        ...(fjs ? { eventFlags: { has: "fjs_origin" } } : {}),
+        ...(and.length ? { AND: and } : {}),
+      },
+      orderBy: { publishedAt: "desc" },
+      take: 30,
+      include: { roles: { where: { isPublic: true }, orderBy: { sortOrder: "asc" }, select: { name: true } } },
+    }),
+    prisma.project.findMany({
+      where: { memberId: me.id },
+      orderBy: { updatedAt: "desc" },
+      include: { _count: { select: { applications: true } } },
+    }),
+  ]);
   const memberIds = Array.from(new Set(published.map((p) => p.memberId)));
   const members = await prisma.member.findMany({
     where: { id: { in: memberIds } },
     select: { id: true, name: true },
   });
   const nameMap = new Map(members.map((m) => [m.id, m.name]));
-
-  const mine = await prisma.project.findMany({
-    where: { memberId: me.id },
-    orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { applications: true } } },
-  });
 
   return (
     <div className="flex flex-col gap-8">

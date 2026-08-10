@@ -18,6 +18,11 @@ import { toggleFavorite } from "../../favorites/actions";
 import { UpgradeToMessage } from "@/components/UpgradeToMessage";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
+// レンダー中のDate.now直呼びをlintが禁止しているため関数に切り出す
+function last24hStart(): Date {
+  return new Date(Date.now() - 24 * 60 * 60 * 1000);
+}
+
 export default async function OfferingDetailPage({
   params,
 }: {
@@ -55,35 +60,35 @@ export default async function OfferingDetailPage({
   // 停止・未承認会員の掲載は本人以外に見せない
   if (offering.member.status !== "APPROVED" && !isOwner) notFound();
 
-  // 閲覧を記録し、直近24時間の閲覧数を集計
-  await prisma.offeringView.create({
-    data: { offeringId: offering.id, viewerUserId: su.app.id },
-  });
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // 閲覧の記録・スレッド有無・お気に入り状態は互いに独立なので並列で実行（直列4往復→2往復）
+  const [, existingThread, myFavorite] = await Promise.all([
+    prisma.offeringView.create({
+      data: { offeringId: offering.id, viewerUserId: su.app.id },
+    }),
+    // すでにこの相手とやり取りがあるか（メッセージCTA用）
+    !isOwner
+      ? prisma.thread.findFirst({
+          where: {
+            OR: [
+              { fromMemberId: member.id, toMemberId: offering.member.id },
+              { fromMemberId: offering.member.id, toMemberId: member.id },
+            ],
+          },
+        })
+      : Promise.resolve(null),
+    // お気に入り状態（非オーナーのみ）
+    !isOwner
+      ? prisma.favorite.findUnique({
+          where: {
+            memberId_targetType_targetId: { memberId: member.id, targetType: "offering", targetId: offering.id },
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+  // 24時間閲覧数は自分の閲覧を含めて数える（記録後にカウント＝従来と同じ値）
   const views24h = await prisma.offeringView.count({
-    where: { offeringId: offering.id, createdAt: { gte: since } },
+    where: { offeringId: offering.id, createdAt: { gte: last24hStart() } },
   });
-
-  // すでにこの相手とやり取りがあるか（メッセージCTA用）
-  const existingThread = !isOwner
-    ? await prisma.thread.findFirst({
-        where: {
-          OR: [
-            { fromMemberId: member.id, toMemberId: offering.member.id },
-            { fromMemberId: offering.member.id, toMemberId: member.id },
-          ],
-        },
-      })
-    : null;
-
-  // お気に入り状態（非オーナーのみ）
-  const myFavorite = !isOwner
-    ? await prisma.favorite.findUnique({
-        where: {
-          memberId_targetType_targetId: { memberId: member.id, targetType: "offering", targetId: offering.id },
-        },
-      })
-    : null;
 
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";

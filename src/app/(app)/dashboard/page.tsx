@@ -4,6 +4,7 @@
 // 商談と共創プロジェクトは「進行中の活動」に統合。初期設定は1行の進捗表示。
 // 「未加入」表示は右カラムの利用状況に1回だけ。下部の重複ブロック（みんなの案件・新着PJ・数字カード等）は削除済み。
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -73,6 +74,28 @@ function fmtShortDate(d: Date): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
+// 次回決済日（Stripe API）は1時間キャッシュする。
+// 毎回のダッシュボード表示でStripeへのHTTP呼び出し（数百ms）を待たないため。月1回しか変わらない値。
+const getNextBillingTs = unstable_cache(
+  async (subscriptionId: string): Promise<number | null> => {
+    if (!stripe) return null;
+    try {
+      const sub = await stripe.subscriptions.retrieve(subscriptionId);
+      const s = sub as unknown as {
+        current_period_end?: number;
+        items?: { data?: { current_period_end?: number }[] };
+      };
+      const ts = s.current_period_end ?? s.items?.data?.[0]?.current_period_end;
+      return ts ? ts * 1000 : null;
+    } catch (e) {
+      console.error("[dashboard] 次回決済日の取得に失敗:", e);
+      return null;
+    }
+  },
+  ["dashboard-next-billing"],
+  { revalidate: 3600 }
+);
+
 export default async function DashboardPage() {
   const su = await getSessionUser();
 
@@ -83,7 +106,7 @@ export default async function DashboardPage() {
   const tenantId = su?.app.tenantId;
   const memberId = member?.id;
 
-  const [announcements, banners, dealsWithOther, myProjects, recommended, myOfferings, myProjectApps] = await Promise.all([
+  const [announcements, banners, dealsWithOther, myProjects, recommended, myOfferings, myProjectApps, nextBillingTs] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
           where: { tenantId },
@@ -136,15 +159,23 @@ export default async function DashboardPage() {
           include: { project: { select: { id: true, title: true } } },
         })
       : Promise.resolve([]),
+    // 次回決済日（1時間キャッシュ。失敗時はnull＝非表示）
+    member?.paymentStatus === "PAID" && member.stripeSubscriptionId
+      ? getNextBillingTs(member.stripeSubscriptionId)
+      : Promise.resolve(null),
   ]);
 
-  // 商談スレッドごとの未読数（「要返信」判定）
+  // ── 2段目：1段目の結果に依存するクエリはまとめて並列実行（直列4往復→1往復に）──
   const dealThreadIds = dealsWithOther
     .map((d) => d.deal.threadId)
     .filter((v): v is string => !!v);
-  const unreadGroups =
+  const myOfferingIds = myOfferings.map((o) => o.id);
+  const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
+
+  const [unreadGroups, viewGroups, favGroups, inquiryGroups, appMembers, viewMap] = await Promise.all([
+    // 商談スレッドごとの未読数（「要返信」判定）
     memberId && dealThreadIds.length
-      ? await prisma.message.groupBy({
+      ? prisma.message.groupBy({
           by: ["threadId"],
           where: {
             threadId: { in: dealThreadIds },
@@ -153,41 +184,42 @@ export default async function DashboardPage() {
           },
           _count: { _all: true },
         })
-      : [];
-  const unreadByThread = new Map(unreadGroups.map((g) => [g.threadId, g._count._all]));
-
-  // 自分の公開中案件の統計（閲覧数・興味あり人数・問い合わせ件数）
-  const myOfferingIds = myOfferings.map((o) => o.id);
-  const [viewGroups, favGroups, inquiryGroups] = myOfferingIds.length
-    ? await Promise.all([
-        prisma.offeringView.groupBy({
+      : Promise.resolve([]),
+    // 自分の公開中案件の統計（閲覧数・興味あり人数・問い合わせ件数）
+    myOfferingIds.length
+      ? prisma.offeringView.groupBy({
           by: ["offeringId"],
           where: { offeringId: { in: myOfferingIds } },
           _count: { _all: true },
-        }),
-        prisma.favorite.groupBy({
+        })
+      : Promise.resolve([]),
+    myOfferingIds.length
+      ? prisma.favorite.groupBy({
           by: ["targetId"],
           where: { targetType: "offering", targetId: { in: myOfferingIds } },
           _count: { _all: true },
-        }),
-        prisma.thread.groupBy({
+        })
+      : Promise.resolve([]),
+    myOfferingIds.length
+      ? prisma.thread.groupBy({
           by: ["offeringId"],
           where: { offeringId: { in: myOfferingIds } },
           _count: { _all: true },
-        }),
-      ])
-    : [[], [], []];
+        })
+      : Promise.resolve([]),
+    // 応募者名（進行中の活動の行表示用）
+    appMemberIds.length
+      ? prisma.member.findMany({ where: { id: { in: appMemberIds } }, select: { id: true, name: true } })
+      : Promise.resolve([]),
+    // 24時間以内の閲覧数（おすすめ＋自分の公開中案件のカード表示用）
+    views24hMap([...recommended.map((o) => o.id), ...myOfferings.map((o) => o.id)]),
+  ]);
+  const unreadByThread = new Map(unreadGroups.map((g) => [g.threadId, g._count._all]));
   const viewsByOffering = new Map(viewGroups.map((g) => [g.offeringId, g._count._all]));
   const favsByOffering = new Map(favGroups.map((g) => [g.targetId, g._count._all]));
   const inquiriesByOffering = new Map(
     inquiryGroups.filter((g) => g.offeringId).map((g) => [g.offeringId as string, g._count._all])
   );
-
-  // 応募者名（進行中の活動の行表示用）
-  const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
-  const appMembers = appMemberIds.length
-    ? await prisma.member.findMany({ where: { id: { in: appMemberIds } }, select: { id: true, name: true } })
-    : [];
   const appNameMap = new Map(appMembers.map((m) => [m.id, m.name]));
 
   // ── 進行中の活動（商談＋共創PJ＋応募進捗を統合・最大3件）──
@@ -259,21 +291,8 @@ export default async function DashboardPage() {
             ? "お支払い待ち"
             : "未申請";
 
-  // 有料会員には次回決済日を表示（取得失敗時は非表示のまま進める）
-  let nextBillingDate: Date | null = null;
-  if (isPaid && member?.stripeSubscriptionId && stripe) {
-    try {
-      const sub = await stripe.subscriptions.retrieve(member.stripeSubscriptionId);
-      const s = sub as unknown as {
-        current_period_end?: number;
-        items?: { data?: { current_period_end?: number }[] };
-      };
-      const ts = s.current_period_end ?? s.items?.data?.[0]?.current_period_end;
-      if (ts) nextBillingDate = new Date(ts * 1000);
-    } catch (e) {
-      console.error("[dashboard] 次回決済日の取得に失敗:", e);
-    }
-  }
+  // 有料会員には次回決済日を表示（1段目で並列取得済み・1時間キャッシュ。取得失敗時は非表示のまま進める）
+  const nextBillingDate: Date | null = isPaid && nextBillingTs ? new Date(nextBillingTs) : null;
 
   // ── 状態アラート（審査・支払いまわりのみ。他の重複案内は出さない）──
   const alerts: { icon: string; label: string; cta: string; href: string }[] = [];
@@ -284,7 +303,7 @@ export default async function DashboardPage() {
     alerts.push({ icon: "💳", label: "お支払いのお手続きが必要です", cta: "手続きへ", href: "/billing" });
   }
 
-  const viewMap = await views24hMap([...recommended.map((o) => o.id), ...myOfferingIds]);
+  // viewMap は2段目の並列取得で取得済み
   const [newest, ...restAnnouncements] = announcements;
 
   return (

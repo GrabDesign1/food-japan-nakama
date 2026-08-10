@@ -41,32 +41,25 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const items = NAV.filter((i) => (i.admin ? admin : true));
   const initial = (su.app.name?.[0] ?? "?").toUpperCase();
 
-  const member = su.app.memberId
-    ? await prisma.member.findUnique({
-        where: { id: su.app.memberId },
-        select: { avatarUrl: true },
-      })
-    : null;
-
-  // 未読メッセージ数（サイドバーのバッジ用）
-  let unread = 0;
-  if (su.app.memberId) {
-    const myThreads = await prisma.thread.findMany({
-      where: {
-        OR: [{ fromMemberId: su.app.memberId }, { toMemberId: su.app.memberId }],
-      },
-      select: { id: true },
-    });
-    if (myThreads.length) {
-      unread = await prisma.message.count({
-        where: {
-          threadId: { in: myThreads.map((t) => t.id) },
-          senderMemberId: { not: su.app.memberId },
-          readAt: null,
-        },
-      });
-    }
-  }
+  // アバターと未読バッジは並列で取得。未読はリレーション条件で1クエリにまとめる
+  const memberId = su.app.memberId;
+  const [member, unread] = await Promise.all([
+    memberId
+      ? prisma.member.findUnique({
+          where: { id: memberId },
+          select: { avatarUrl: true },
+        })
+      : Promise.resolve(null),
+    memberId
+      ? prisma.message.count({
+          where: {
+            thread: { OR: [{ fromMemberId: memberId }, { toMemberId: memberId }] },
+            senderMemberId: { not: memberId },
+            readAt: null,
+          },
+        })
+      : Promise.resolve(0),
+  ]);
 
   return (
     // minmax(0,1fr)：中身が広くても列を押し広げない＝ページ全体の横スクロールを防ぐ

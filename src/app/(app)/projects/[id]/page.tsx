@@ -59,27 +59,28 @@ export default async function ProjectDetailPage({
   const isAdmin = isAdminRole(su.app.role) && project.tenantId === su.app.tenantId;
   if (project.status !== "published" && !isOwner && !isAdmin) notFound();
 
-  if (!isOwner && !isAdmin) {
-    await prisma.project.update({ where: { id }, data: { viewCount: { increment: 1 } } });
-  }
-
-  const owner = await prisma.member.findUnique({
-    where: { id: project.memberId },
-    select: { id: true, name: true, avatarUrl: true, categoryL1: true, prefecture: true, companyLogoUrl: true },
-  });
+  // 閲覧数の加算・掲載者情報・お気に入り状態は互いに独立なので並列で実行（直列3往復→1往復）
+  const [, owner, myFavorite] = await Promise.all([
+    !isOwner && !isAdmin
+      ? prisma.project.update({ where: { id }, data: { viewCount: { increment: 1 } } })
+      : Promise.resolve(null),
+    prisma.member.findUnique({
+      where: { id: project.memberId },
+      select: { id: true, name: true, avatarUrl: true, categoryL1: true, prefecture: true, companyLogoUrl: true },
+    }),
+    // お気に入り状態（非オーナーのみ）
+    !isOwner
+      ? prisma.favorite.findUnique({
+          where: {
+            memberId_targetType_targetId: { memberId: me.id, targetType: "project", targetId: project.id },
+          },
+        })
+      : Promise.resolve(null),
+  ]);
 
   const myApplication = project.applications.find((a) => a.applicantMemberId === me.id);
   const deadlinePassed = isProjectDeadlinePassed(project.deadline);
   const isOpen = project.status === "published" && !deadlinePassed;
-
-  // お気に入り状態（非オーナーのみ）
-  const myFavorite = !isOwner
-    ? await prisma.favorite.findUnique({
-        where: {
-          memberId_targetType_targetId: { memberId: me.id, targetType: "project", targetId: project.id },
-        },
-      })
-    : null;
 
   const roleNames = project.roles.map((r) => r.name);
   const hasConditions =

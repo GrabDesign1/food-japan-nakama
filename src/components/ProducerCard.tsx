@@ -32,6 +32,8 @@ export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?
           <img
             src={thumb}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition group-hover:scale-[1.03]"
           />
         ) : (
@@ -40,11 +42,13 @@ export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?
           </div>
         )}
         {p.companyLogoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <div className="absolute left-2 top-2 flex h-9 max-w-[104px] items-center justify-center overflow-hidden rounded-md bg-white/95 px-2 shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={p.companyLogoUrl}
               alt=""
+              loading="lazy"
+              decoding="async"
               className="max-h-[26px] max-w-full object-contain"
             />
           </div>

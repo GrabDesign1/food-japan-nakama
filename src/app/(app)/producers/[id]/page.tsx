@@ -29,27 +29,25 @@ export default async function ProducerDetailPage({
   });
   if (!m) notFound();
 
-  const viewMap = await views24hMap(m.offerings.map((o) => o.id));
-
   const isOwner = m.id === su.app.memberId;
   if (m.status !== "APPROVED" && !isOwner) notFound();
 
-
-  const isFavorited = su.app.memberId
-    ? !!(await prisma.favorite.findUnique({
-        where: {
-          memberId_targetType_targetId: {
-            memberId: su.app.memberId,
-            targetType: "member",
-            targetId: m.id,
+  // 閲覧数マップ・お気に入り・スレッド有無は互いに独立なので並列で取得（直列3往復→1往復）
+  const [viewMap, favorite, existingThread] = await Promise.all([
+    views24hMap(m.offerings.map((o) => o.id)),
+    su.app.memberId
+      ? prisma.favorite.findUnique({
+          where: {
+            memberId_targetType_targetId: {
+              memberId: su.app.memberId,
+              targetType: "member",
+              targetId: m.id,
+            },
           },
-        },
-      }))
-    : false;
-
-  const existingThread =
+        })
+      : Promise.resolve(null),
     su.app.memberId && !isOwner
-      ? await prisma.thread.findFirst({
+      ? prisma.thread.findFirst({
           where: {
             // メッセージが1通以上あるスレッドだけ「やり取りあり」とみなす
             messages: { some: {} },
@@ -59,7 +57,9 @@ export default async function ProducerDetailPage({
             ],
           },
         })
-      : null;
+      : Promise.resolve(null),
+  ]);
+  const isFavorited = !!favorite;
 
   const hero = m.imageUrls[0] ?? null;
   const gallery = m.imageUrls.slice(1);

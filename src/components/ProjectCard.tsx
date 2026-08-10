@@ -39,7 +39,7 @@ export function ProjectCard({ p, href }: { p: ProjectCardData; href?: string }) 
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--green-soft)] shadow-sm transition group-hover:border-[var(--green)] group-hover:shadow-md">
         {p.imageUrls[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.imageUrls[0]} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+          <img src={p.imageUrls[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
         ) : (
           <div className="grid h-full w-full place-items-center text-[36px] opacity-50">🤝</div>
         )}

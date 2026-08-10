@@ -32,25 +32,28 @@ export type OfferingCardData = {
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+// 日付判定はコンポーネント本体の外に置く（レンダー中のDate.now直呼びをlintが禁止しているため）
+function isNewOffering(createdAt: Date | string | null | undefined): boolean {
+  return createdAt ? Date.now() - new Date(createdAt).getTime() < WEEK_MS : false;
+}
+function deadlineLabel(applicationDeadline: Date | string | null | undefined): string | null {
+  if (!applicationDeadline) return null;
+  const d = new Date(applicationDeadline);
+  return d.getTime() < Date.now() ? "募集終了" : `〜${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; isOwn?: boolean; href?: string }) {
   const meta = categoryMeta(o.category);
   const thumb = o.imageUrls?.[0];
   const isGive = o.direction === "GIVE";
   const amount = formatAmount(o);
-  const isNew = o.createdAt
-    ? Date.now() - new Date(o.createdAt).getTime() < WEEK_MS
-    : false;
+  const isNew = isNewOffering(o.createdAt);
   const price = formatPrice({
     priceType: o.priceType ?? null,
     priceAmount: o.priceAmount ?? null,
     priceUnit: o.priceUnit ?? null,
   });
-  const deadline = o.applicationDeadline ? new Date(o.applicationDeadline) : null;
-  const deadlineText = deadline
-    ? deadline.getTime() < Date.now()
-      ? "募集終了"
-      : `〜${deadline.getMonth() + 1}/${deadline.getDate()}`
-    : null;
+  const deadlineText = deadlineLabel(o.applicationDeadline);
   // 取引条件の要点（値があるものだけ・最大3つ）
   const conditions = [
     o.minOrderText ? `最小 ${o.minOrderText}` : null,
@@ -72,6 +75,8 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
           <img
             src={thumb}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition group-hover:scale-[1.03]"
           />
         ) : (
