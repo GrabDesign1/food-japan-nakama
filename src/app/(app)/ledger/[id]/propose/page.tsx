@@ -120,8 +120,8 @@ export default async function ProposePage({
             </ul>
             <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-3 text-[13px]">
               {canSendFree ? (
-                <span className="font-semibold text-[var(--green-d)]">
-                  {existingUnlock ? "この案件は解放済みです（継続メッセージ無料）" : "月額会員のため提案は無制限・無料です"}
+                <span className={`font-semibold ${existingUnlock ? "text-[var(--green-d)]" : "text-[#A87F2F]"}`}>
+                  {existingUnlock ? "この案件は解放済みです（継続メッセージ無料）" : "NAKAMA Premium会員のため提案は無制限・無料です"}
                 </span>
               ) : (
                 <>
@@ -165,7 +165,7 @@ export default async function ProposePage({
                 />
               )}
               <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-                月額会員（22,000円・税込／月）は通常・優良案件への提案が無制限、掲載オプションが20%割引になります。
+                NAKAMA Premium会員（22,000円・税込／月）は通常・優良案件への提案が無制限、掲載オプションが20%割引になります。
                 <Link href="/billing" className="ml-1 text-[var(--green-d)] underline">詳しく見る →</Link>
               </p>
             </div>

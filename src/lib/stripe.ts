@@ -13,12 +13,12 @@ export type Plan = {
   features: string[];
 };
 
-// NAKAMA 月額会員（任意プラン）。¥20,000税抜＝¥22,000税込。
+// NAKAMA Premium会員（旧・月額会員。任意プラン）。¥20,000税抜＝¥22,000税込。
 // 基本利用（登録・掲載・応募・メッセージ）は無料。会員特典は提案無制限＋オプション割引（2026-08-10確定）。
 export const PLANS: Plan[] = [
   {
     code: "nakama",
-    name: "NAKAMA 月額会員",
+    name: "NAKAMA Premium会員",
     amount: 22000,
     unit: "月",
     tagline: "提案し放題で、営業を加速する",

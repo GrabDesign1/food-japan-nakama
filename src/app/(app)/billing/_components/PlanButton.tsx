@@ -10,7 +10,7 @@ export function PlanButton({ planCode, label }: { planCode: string; label: strin
     <form action={formAction} className="flex flex-col gap-1">
       <button
         disabled={pending}
-        className="w-full rounded-md bg-[var(--green)] py-2 text-[13px] font-medium text-white hover:bg-[var(--green-d)] disabled:opacity-60"
+        className="w-full rounded-md bg-[#C9A053] py-2 text-[13px] font-bold text-white hover:bg-[#B58C3D] disabled:opacity-60"
       >
         {pending ? "処理中…" : label}
       </button>

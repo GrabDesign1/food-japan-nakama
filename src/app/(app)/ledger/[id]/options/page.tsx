@@ -88,7 +88,7 @@ export default async function ListingOptionsPage({
                 ¥{p.priceAmount.toLocaleString()}
               </span>
               ¥{discounted.toLocaleString()}
-              <span className="ml-1 text-[10px] font-normal text-[var(--green-d)]">会員20%OFF</span>
+              <span className="ml-1 rounded bg-[#F7EED9] px-1 py-0.5 text-[10px] font-bold text-[#A87F2F]">Premium会員20%OFF</span>
             </>
           ) : (
             <>¥{discounted.toLocaleString()}</>

@@ -276,7 +276,7 @@ export default async function DashboardPage() {
 
   // ── 会員状態（表示は右カラムの利用状況1か所のみ。登録・掲載・応募は無料＝2026-08-10 最終決定書）──
   const isPaid = member?.paymentStatus === "PAID";
-  const memberStateLabel = isPaid ? "月額会員（既存契約）" : "無料会員";
+  const memberStateLabel = isPaid ? "NAKAMA Premium会員" : "無料会員";
   const reviewLabel =
     member?.status === "APPROVED"
       ? "承認済み"
@@ -306,6 +306,15 @@ export default async function DashboardPage() {
       {/* あいさつ */}
       <div>
         <p className={eyebrowCls}>MY PAGE</p>
+        {/* Premium会員バッジ（ユーザー名の上に表示） */}
+        {isPaid ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/premium-badge.png"
+            alt="NAKAMA Premium会員"
+            className="mb-1 mt-0.5 h-[20px] w-auto"
+          />
+        ) : null}
         <h1 className={h1Cls}>{su?.app.name} さん、こんにちは</h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">今日も新しい食のつながりを見つけましょう。</p>
       </div>
@@ -594,7 +603,7 @@ export default async function DashboardPage() {
             <h2 className={h2Cls}>ご利用状況</h2>
             <div className="mt-1 flex items-center justify-between border-b border-[var(--line)] py-2.5 text-[13px]">
               <span className="text-[var(--muted)]">会員状態</span>
-              <b className={isPaid ? "text-[var(--green-d)]" : "text-[#B77F0B]"}>{memberStateLabel}</b>
+              <b className={isPaid ? "text-[#A87F2F]" : "text-[#B77F0B]"}>{memberStateLabel}</b>
             </div>
             <div className="flex items-center justify-between py-2.5 text-[13px]">
               <span className="text-[var(--muted)]">プロフィール審査</span>
