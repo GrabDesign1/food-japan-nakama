@@ -13,6 +13,7 @@ import {
   adminMarkVerifiedLead,
   adminUnmarkVerifiedLead,
 } from "../billing-actions";
+import { ProductSaveForm } from "../_components/ProductSaveForm";
 
 const inputCls =
   "w-24 rounded-md border border-[var(--line)] px-2 py-1 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
@@ -385,9 +386,7 @@ function BillingProductRowForm({
         <input name="active" type="checkbox" defaultChecked={p.active} form={formId} className="accent-[var(--green)]" />
       </td>
       <td className="px-3 py-2">
-        <form id={formId} action={adminUpdateProduct.bind(null, p.id)}>
-          <button className={btn("secondary", "sm")}>保存</button>
-        </form>
+        <ProductSaveForm formId={formId} action={adminUpdateProduct.bind(null, p.id)} />
       </td>
     </>
   );

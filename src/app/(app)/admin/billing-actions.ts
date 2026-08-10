@@ -19,8 +19,14 @@ export async function adminSeedProducts(): Promise<void> {
   revalidatePath("/admin/billing");
 }
 
+export type ProductUpdateState = { ok?: boolean; at?: number; error?: string };
+
 /** 商品の価格・割引率・公開状態を更新（過去注文の金額は変わらない＝スナップショット保存済み）。 */
-export async function adminUpdateProduct(productId: string, formData: FormData): Promise<void> {
+export async function adminUpdateProduct(
+  productId: string,
+  _prev: ProductUpdateState,
+  formData: FormData
+): Promise<ProductUpdateState> {
   const su = await requireSuperAdmin();
   const priceAmount = Math.max(0, Math.trunc(Number(formData.get("priceAmount")) || 0));
   const memberDiscountPercent = Math.min(
@@ -29,7 +35,7 @@ export async function adminUpdateProduct(productId: string, formData: FormData):
   );
   const active = !!formData.get("active");
   const before = await prisma.billingProduct.findUnique({ where: { id: productId } });
-  if (!before) return;
+  if (!before) return { error: "商品が見つかりません。" };
   await prisma.billingProduct.update({
     where: { id: productId },
     data: { priceAmount, memberDiscountPercent, active },
@@ -40,6 +46,8 @@ export async function adminUpdateProduct(productId: string, formData: FormData):
     detail: `${before.code}: price ${before.priceAmount}→${priceAmount}, discount ${before.memberDiscountPercent}→${memberDiscountPercent}, active ${before.active}→${active}`,
   });
   revalidatePath("/admin/billing");
+  // at で毎回値を変え、クライアント側のトースト（保存しました）を再表示させる
+  return { ok: true, at: Date.now() };
 }
 
 /** 審査待ちの掲載オプションを承認（掲載開始）。 */
