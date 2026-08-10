@@ -277,6 +277,14 @@ export default async function DashboardPage() {
   // ── 会員状態（表示は右カラムの利用状況1か所のみ。登録・掲載・応募は無料＝2026-08-10 最終決定書）──
   const isPaid = member?.paymentStatus === "PAID";
   const memberStateLabel = isPaid ? "NAKAMAビジネス会員" : "無料会員";
+
+  // 事務局アカウントは、担当できる範囲が分かるように役割バッジを出す
+  const STAFF_ROLE: Record<string, { label: string; icon: string; description: string }> = {
+    TENANT_ADMIN: { label: "事務局管理者", icon: "🛡", description: "すべての管理機能" },
+    ADMIN: { label: "事務局管理者", icon: "🛡", description: "すべての管理機能" },
+    REVIEWER: { label: "事務局審査担当", icon: "✓", description: "会員審査・お知らせ投稿" },
+  };
+  const staffRole = su ? STAFF_ROLE[su.app.role] : undefined;
   const reviewLabel =
     member?.status === "APPROVED"
       ? "承認済み"
@@ -306,12 +314,23 @@ export default async function DashboardPage() {
       {/* あいさつ */}
       <div>
         <p className={eyebrowCls}>MY PAGE</p>
-        {/* ビジネス会員バッジ（ユーザー名の上に表示） */}
-        {isPaid ? (
-          <span className="mb-1 mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-[#C9A053] bg-[#FDF9EF] px-3 py-1 text-[11px] font-bold tracking-wide text-[#A87F2F]">
-            NAKAMA <span className="font-normal">ビジネス会員</span>
-          </span>
-        ) : null}
+        {/* 会員バッジと、事務局の場合は担当の役割バッジ（ユーザー名の上に表示） */}
+        <div className="mb-1 mt-0.5 flex flex-wrap items-center gap-2">
+          {isPaid ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C9A053] bg-[#FDF9EF] px-3 py-1 text-[11px] font-bold tracking-wide text-[#A87F2F]">
+              NAKAMA <span className="font-normal">ビジネス会員</span>
+            </span>
+          ) : null}
+          {staffRole ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--green)] bg-[var(--green-soft)] px-3 py-1 text-[11px] font-bold text-[var(--green-d)]"
+              title={staffRole.description}
+            >
+              <span aria-hidden>{staffRole.icon}</span>
+              {staffRole.label}
+            </span>
+          ) : null}
+        </div>
         <h1 className={h1Cls}>{su?.app.name} さん、こんにちは</h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">今日も新しい食のつながりを見つけましょう。</p>
       </div>
