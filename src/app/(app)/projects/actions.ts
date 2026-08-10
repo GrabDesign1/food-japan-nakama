@@ -143,7 +143,8 @@ function parseProjectForm(formData: FormData) {
     title,
     body: g("body") || null, // 旧・自由記述（互換のため編集可能なまま残す）
     fromRole: g("fromRole", 60) || null,
-    toRole: g("toRole", 60) || null,
+    // toRole は新フォームに入力欄が無い（募集役割 ProjectRole に移行）。
+    // ここで空文字→null を保存すると既存データが消えるため、更新対象に含めない。
     area: g("area", 20) || null,
     budget: g("budget", 200) || null,
     tags,

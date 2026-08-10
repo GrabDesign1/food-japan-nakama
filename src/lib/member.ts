@@ -48,9 +48,20 @@ export function countMissingProfileFields(m: Member): number {
 
 /** ログインユーザーの会員を返す。無ければ下書きを作成して users に紐付ける。 */
 export async function getOrCreateMemberForUser(su: SessionUser): Promise<Member> {
-  if (su.app.memberId) {
+  let memberId = su.app.memberId;
+  if (!memberId) {
+    // getSessionUser は cache() でリクエスト内キャッシュされるため、アクション内で member を
+    // 作成した直後の再レンダーでは su.app.memberId が古い（null のまま）ことがある。
+    // 二重作成を防ぐため、未設定のときだけ users 行を読み直す。
+    const fresh = await prisma.user.findUnique({
+      where: { id: su.app.id },
+      select: { memberId: true },
+    });
+    memberId = fresh?.memberId ?? null;
+  }
+  if (memberId) {
     const existing = await prisma.member.findUnique({
-      where: { id: su.app.memberId },
+      where: { id: memberId },
     });
     if (existing) return existing;
   }
