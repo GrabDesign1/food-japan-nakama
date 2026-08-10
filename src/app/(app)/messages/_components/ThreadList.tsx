@@ -65,10 +65,18 @@ export async function ThreadList({
           <Link
             key={t.id}
             href={`/messages/${t.id}`}
-            className={`flex items-center gap-3 border-b border-[#EDF0EA] px-4 py-3 transition ${
-              active ? "bg-[var(--green-soft)]" : "hover:bg-[var(--canvas)]"
+            className={`relative flex items-center gap-3 border-b border-[#EDF0EA] py-3 pl-5 pr-4 transition ${
+              active
+                ? "bg-[var(--green-soft)]"
+                : unreadN > 0
+                  ? "bg-[#FFF7EF] hover:bg-[#FFEFE2]"
+                  : "hover:bg-[var(--canvas)]"
             }`}
           >
+            {/* 未読は左の縦ラインで一目で分かるようにする */}
+            {unreadN > 0 ? (
+              <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-[var(--red)]" />
+            ) : null}
             <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[16px] text-[var(--green-d)]">
               {other?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -79,24 +87,32 @@ export async function ThreadList({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--ink)]">
+                <span
+                  className={`min-w-0 flex-1 truncate text-[14px] text-[var(--ink)] ${
+                    unreadN > 0 ? "font-bold" : "font-semibold"
+                  }`}
+                >
                   {other?.name || "（不明）"}
                 </span>
-                <span className="shrink-0 text-[11px] text-[var(--muted)]">
+                <span
+                  className={`shrink-0 text-[11px] ${
+                    unreadN > 0 ? "font-bold text-[var(--red)]" : "text-[var(--muted)]"
+                  }`}
+                >
                   {shortTime(t.lastMessageAt)}
                 </span>
               </div>
               <div className="mt-0.5 flex items-center gap-2">
                 <span
                   className={`min-w-0 flex-1 truncate text-[12px] ${
-                    unreadN > 0 ? "font-medium text-[var(--ink-2)]" : "text-[var(--muted)]"
+                    unreadN > 0 ? "font-bold text-[var(--ink)]" : "text-[var(--muted)]"
                   }`}
                 >
                   {preview}
                 </span>
                 {unreadN > 0 ? (
-                  <span className="grid h-[18px] min-w-[18px] shrink-0 place-items-center rounded-full bg-[var(--green)] px-1 text-[10px] font-bold text-white">
-                    {unreadN}
+                  <span className="shrink-0 rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
+                    新着 {unreadN}
                   </span>
                 ) : null}
               </div>
