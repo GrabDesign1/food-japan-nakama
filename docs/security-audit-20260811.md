@@ -124,7 +124,9 @@ alter table public."<各テーブル>" enable row level security;
 このコードを知った利用者は誰でも **¥0で Premium 会員**になれる（引き合い課金の解除・提案無制限・オプション20%割引）。
 
 修正（順に効果が大きい）:
-1. **Stripe ダッシュボードで `FJS2026TEST` を無効化/削除**（本番Live・ユーザー作業）
+1. **Stripe ダッシュボードで `FJS2026TEST` を無効化/削除**（本番Live・ユーザー作業）→ **2026-08-11 対応済み**
+   ※ Stripeの仕様上、クーポンを削除しても**すでに適用済みのサブスクリプションからは外れない**。
+   自社の¥0契約（2026-09-09 満了予約済み）はこれに該当するが、満了で解消される。
 2. 招待制の割引が不要なら `allow_promotion_codes` を false にする
 3. `checkout.session.completed` で `session.id` / `amount_total` / `currency` を注文と突合、
    `invoice.paid` は自社プランの価格であることを確認してから昇格
@@ -392,7 +394,7 @@ Supabase に**非公開バケット `message-attachments`** を新設（既存�
 ## 5. 対応の推奨順
 
 **すぐ（ユーザー作業）**
-1. Stripe 本番の 100%OFF プロモコード `FJS2026TEST` を無効化/削除（高-4）
+1. ~~Stripe 本番の 100%OFF プロモコード `FJS2026TEST` を無効化/削除（高-4）~~ → **2026-08-11 対応済み**
 2. Supabase の PostgREST ログで、外部からの `/rest/v1/` アクセス有無を確認（0章）
 
 **公開・対外募集の前（実装）**
