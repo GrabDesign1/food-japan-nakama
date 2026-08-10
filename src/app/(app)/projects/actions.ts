@@ -6,7 +6,11 @@ import { getSessionUser, requireAdmin } from "@/lib/auth";
 import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { notifyProjectApplication } from "@/lib/email";
+import {
+  notifyProjectApplication,
+  notifyProjectApproved,
+  notifyProjectSentBack,
+} from "@/lib/email";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 import { writeAudit } from "@/lib/audit";
 import {
@@ -341,7 +345,11 @@ export async function submitProject(projectId: string): Promise<void> {
     });
     const missing = missingForProjectPublish({ ...owned.project, publicRoleCount });
     if (missing.length) redirect(`/projects/${projectId}/edit?missing=1`);
-    await prisma.project.update({ where: { id: projectId }, data: { status: "pending" } });
+    // 再申請時は前回の差し戻し理由を消す
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { status: "pending", reviewNote: null },
+    });
   }
   revalidatePath(`/projects/${projectId}`);
   revalidatePath("/projects");
@@ -472,25 +480,67 @@ export async function clearProjectBodyImage(projectId: string): Promise<ProjectS
   return { ok: true };
 }
 
-/** 事務局：掲載を承認（pending → published）／差し戻し（→ draft） */
-export async function adminReviewProject(
-  projectId: string,
-  approve: boolean
-): Promise<void> {
+/** 事務局：掲載を承認（pending → published）。掲載者へ承認メールを送る。 */
+export async function adminApproveProject(projectId: string): Promise<void> {
   const su = await requireAdmin();
-  await prisma.project.updateMany({
+  const project = await prisma.project.findFirst({
     where: { id: projectId, tenantId: su.app.tenantId },
-    data: approve
-      ? { status: "published", publishedAt: new Date() }
-      : { status: "draft" },
   });
-  await writeAudit(su, approve ? "project.approve" : "project.send_back", {
+  if (!project) return;
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { status: "published", publishedAt: new Date(), reviewNote: null },
+  });
+  await writeAudit(su, "project.approve", {
     targetType: "project",
     targetId: projectId,
   });
+  // メール送信に失敗しても承認自体は成立させる
+  const to = await getMemberUserEmails(project.memberId);
+  await notifyProjectApproved({
+    to,
+    projectTitle: project.title || "（無題）",
+    projectId,
+  }).catch((e) => console.error("[adminApproveProject] mail error", e));
   revalidatePath("/admin");
   revalidatePath("/projects");
   revalidatePath(`/projects/${projectId}`);
+}
+
+/** 事務局：掲載を差し戻し（pending → draft）。理由は必須で、掲載者の編集画面に表示され、メールでも届く。 */
+export async function adminSendBackProject(
+  projectId: string,
+  _prev: ProjectState,
+  formData: FormData
+): Promise<ProjectState> {
+  const su = await requireAdmin();
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 2000);
+  if (!reason) return { error: "差し戻しの理由をご記入ください。" };
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId: su.app.tenantId },
+  });
+  if (!project) return { error: "対象のプロジェクトが見つかりません。" };
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { status: "draft", reviewNote: reason },
+  });
+  await writeAudit(su, "project.send_back", {
+    targetType: "project",
+    targetId: projectId,
+    detail: `理由：${reason}`,
+  });
+  // メール送信に失敗しても差し戻し自体は成立させる
+  const to = await getMemberUserEmails(project.memberId);
+  await notifyProjectSentBack({
+    to,
+    projectTitle: project.title || "（無題）",
+    projectId,
+    reason,
+  }).catch((e) => console.error("[adminSendBackProject] mail error", e));
+  revalidatePath("/admin");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${projectId}`);
+  return { ok: true };
 }
 
 /* ───────────────────────── 興味があります（応募） ───────────────────────── */

@@ -175,6 +175,59 @@ export async function notifyProjectApplication(params: {
   });
 }
 
+// 会員向け：共創プロジェクトの掲載が承認されたときの通知（掲載者へ）。
+export async function notifyProjectApproved(params: {
+  to: string[];
+  projectTitle: string;
+  projectId: string;
+}): Promise<void> {
+  const { to, projectTitle, projectId } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">プロジェクトの掲載が承認されました</h2>
+    <p style="font-size:14px;color:#3C4A62">共創プロジェクト「<b>${esc(projectTitle)}</b>」の掲載を承認しました。会員の検索結果と一覧に公開されています。</p>
+    <p style="font-size:14px;color:#3C4A62">応募が届くと、メールとマイページの「進行中の活動」でお知らせします。</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/projects/${projectId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">公開ページを確認する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">FOOD JAPAN NAKAMA 事務局（株式会社グラブデザイン）</p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】「${projectTitle}」の掲載が承認されました`,
+    html,
+  });
+}
+
+// 会員向け：共創プロジェクトの掲載が差し戻されたときの通知（掲載者へ・理由つき）。
+export async function notifyProjectSentBack(params: {
+  to: string[];
+  projectTitle: string;
+  projectId: string;
+  reason: string;
+}): Promise<void> {
+  const { to, projectTitle, projectId, reason } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">プロジェクトの掲載についてお願い</h2>
+    <p style="font-size:14px;color:#3C4A62">共創プロジェクト「<b>${esc(projectTitle)}</b>」の掲載申請を確認し、内容の修正をお願いするため一度差し戻しました。</p>
+    <p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap"><b>差し戻しの理由・修正してほしい箇所：</b>
+${esc(reason)}</p>
+    <p style="font-size:14px;color:#3C4A62">内容を修正のうえ、再度「掲載を申請」してください。ご不明な点は事務局までご連絡ください。</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/projects/${projectId}/edit" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">内容を修正する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">FOOD JAPAN NAKAMA 事務局（株式会社グラブデザイン）</p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】「${projectTitle}」の掲載について修正のお願い`,
+    html,
+  });
+}
+
 // 会員向け：掲載を事務局が非公開にしたときの通知。
 export async function notifyListingUnpublished(params: {
   to: string[];

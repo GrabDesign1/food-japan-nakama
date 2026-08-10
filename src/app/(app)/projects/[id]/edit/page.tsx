@@ -131,6 +131,13 @@ export default async function ProjectEditPage({
           下書きを保存しました。内容を確認できたら右上の「掲載を申請」から掲載できます（事務局の承認後に公開されます）。
         </p>
       ) : null}
+      {/* 事務局からの差し戻し理由（再申請すると消える） */}
+      {project.reviewNote && project.status === "draft" ? (
+        <div className="rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] px-4 py-3">
+          <p className="text-[13px] font-bold text-[#7A5A0B]">事務局から差し戻しがありました。次の点を修正して、再度「掲載を申請」してください。</p>
+          <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-6 text-[var(--ink-2)]">{project.reviewNote}</p>
+        </div>
+      ) : null}
       {/* 掲載前チェック：URLのパラメータではなく、保存済みの現在値から毎回判定する（揃ったら消える） */}
       {sp.missing && (project.status === "draft" || project.status === "closed") ? (
         (() => {

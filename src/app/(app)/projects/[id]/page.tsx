@@ -6,8 +6,9 @@ import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { toggleFavorite } from "../../favorites/actions";
-import { adminReviewProject } from "../actions";
+import { adminApproveProject } from "../actions";
 import { InterestForm } from "../_components/InterestForm";
+import { SendBackButton } from "../_components/SendBackButton";
 import {
   PURPOSE_LABEL,
   STAGE_LABEL,
@@ -125,12 +126,10 @@ export default async function ProjectDetailPage({
             承認待ちのプロジェクトです。内容を確認して承認・差し戻しをしてください。
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <form action={adminReviewProject.bind(null, project.id, true)}>
+            <form action={adminApproveProject.bind(null, project.id)}>
               <button className={btn("primary", "sm")}>承認</button>
             </form>
-            <form action={adminReviewProject.bind(null, project.id, false)}>
-              <button className={btn("danger", "sm")}>差し戻し</button>
-            </form>
+            <SendBackButton projectId={project.id} projectTitle={project.title} />
           </div>
         </div>
       ) : null}

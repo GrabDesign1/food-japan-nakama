@@ -4,7 +4,8 @@ import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { listReviewMembers } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { AdminTable, type AdminRow } from "./_components/AdminTable";
-import { adminReviewProject } from "../projects/actions";
+import { adminApproveProject } from "../projects/actions";
+import { SendBackButton } from "../projects/_components/SendBackButton";
 import { createAnnouncement, deleteAnnouncement } from "./announcement-actions";
 import { revokeAdmin } from "./admin-account-actions";
 import { AdminAccountForm } from "./_components/AdminAccountForm";
@@ -291,12 +292,10 @@ export default async function AdminPage() {
                   {p.title || "（無題）"}
                 </Link>
                 <span className="text-[12px] text-[var(--muted)]">{projNameMap.get(p.memberId)}</span>
-                <form action={adminReviewProject.bind(null, p.id, true)}>
+                <form action={adminApproveProject.bind(null, p.id)}>
                   <button className={btn("primary", "sm")}>承認</button>
                 </form>
-                <form action={adminReviewProject.bind(null, p.id, false)}>
-                  <button className={btn("danger", "sm")}>差し戻し</button>
-                </form>
+                <SendBackButton projectId={p.id} projectTitle={p.title} />
               </div>
             ))}
           </div>

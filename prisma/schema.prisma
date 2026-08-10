@@ -315,6 +315,7 @@ model Project {
   eventFlags   String[] @map("event_flags") // FJS連携（fjs_origin/miyazaki/nagoya/business_meeting/tasting/tour）
   supportRequested Boolean @default(false) @map("support_requested") // 事務局伴走を希望
   supportOfficial  Boolean @default(false) @map("support_official") // 「事務局伴走中」表示（事務局のみ設定可）
+  reviewNote       String? @map("review_note") // 事務局の差し戻し理由（再申請で消去・掲載者の編集画面に表示）
 
   applications ProjectApplication[]
   roles        ProjectRole[]
