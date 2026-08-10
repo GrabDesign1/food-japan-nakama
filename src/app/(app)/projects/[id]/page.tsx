@@ -2,10 +2,11 @@
 // 旧データ（新項目がnull）の場合はセクションを非表示にし、body をフォールバック表示する。
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { toggleFavorite } from "../../favorites/actions";
+import { adminReviewProject } from "../actions";
 import { InterestForm } from "../_components/InterestForm";
 import {
   PURPOSE_LABEL,
@@ -53,9 +54,11 @@ export default async function ProjectDetailPage({
   });
   if (!project) notFound();
   const isOwner = project.memberId === me.id;
-  if (project.status !== "published" && !isOwner) notFound();
+  // 事務局（同一テナントの管理者）は掲載承認のため公開前でも閲覧できる
+  const isAdmin = isAdminRole(su.app.role) && project.tenantId === su.app.tenantId;
+  if (project.status !== "published" && !isOwner && !isAdmin) notFound();
 
-  if (!isOwner) {
+  if (!isOwner && !isAdmin) {
     await prisma.project.update({ where: { id }, data: { viewCount: { increment: 1 } } });
   }
 
@@ -115,6 +118,28 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="mx-auto flex max-w-[820px] flex-col gap-6">
+      {/* 事務局向け：承認待ちの内容確認と承認・差し戻し */}
+      {isAdmin && project.status === "pending" ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] px-4 py-3">
+          <span className="text-[13px] font-bold text-[#7A5A0B]">
+            承認待ちのプロジェクトです。内容を確認して承認・差し戻しをしてください。
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <form action={adminReviewProject.bind(null, project.id, true)}>
+              <button className={btn("primary", "sm")}>承認</button>
+            </form>
+            <form action={adminReviewProject.bind(null, project.id, false)}>
+              <button className={btn("danger", "sm")}>差し戻し</button>
+            </form>
+          </div>
+        </div>
+      ) : null}
+      {isAdmin && !isOwner && project.status !== "published" && project.status !== "pending" ? (
+        <p className="rounded-[10px] bg-[var(--line)] px-4 py-2.5 text-[12px] text-[var(--ink-2)]">
+          事務局として閲覧しています（この案件は{project.status === "draft" ? "下書き" : "終了"}のため、会員には表示されません）。
+        </p>
+      ) : null}
+
       <div className="flex items-center justify-between">
         <Link href="/projects" className="text-[12px] text-[var(--green-d)] underline">← 一覧</Link>
         {isOwner ? (

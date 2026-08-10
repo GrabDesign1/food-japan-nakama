@@ -490,6 +490,7 @@ export async function adminReviewProject(
   });
   revalidatePath("/admin");
   revalidatePath("/projects");
+  revalidatePath(`/projects/${projectId}`);
 }
 
 /* ───────────────────────── 興味があります（応募） ───────────────────────── */
