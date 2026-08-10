@@ -182,7 +182,7 @@ export async function notifyUnreadRefund(params: {
   await send({ to, subject: "【FOOD JAPAN NAKAMA】紹介クレジットの返還のお知らせ", html });
 }
 
-/** 条件一致通知（案内メール同意者のみに送る広告メール。広告表記つき）。 */
+/** 案内メール一斉送信（案内メール同意者のみに送る広告メール。広告表記つき）。 */
 export async function sendMatchedNoticeEmail(params: {
   to: string;
   offeringTitle: string;

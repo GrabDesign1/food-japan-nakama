@@ -1,4 +1,4 @@
-// 事務局：課金管理（商品マスター・注文・掲載オプション審査・条件一致通知・優良案件・クレジット台帳）。
+// 事務局：課金管理（商品マスター・注文・掲載オプション審査・案内メール一斉送信・優良案件・クレジット台帳）。
 import Link from "next/link";
 import { requireAdmin, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -150,9 +150,9 @@ export default async function AdminBillingPage() {
         )}
       </section>
 
-      {/* 条件一致通知 */}
+      {/* 案内メール一斉送信 */}
       <section>
-        <h2 className={h2Cls}>条件一致通知（審査待ち {notices.length}件）</h2>
+        <h2 className={h2Cls}>案内メール一斉送信（審査待ち {notices.length}件）</h2>
         {notices.length === 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">審査待ちはありません。</p>
         ) : (

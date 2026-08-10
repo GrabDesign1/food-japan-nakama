@@ -45,7 +45,7 @@ export default async function ListingOptionsPage({
       orderBy: { sortOrder: "asc" },
     }),
     getActiveEffectsFor([offering.id]),
-    // 条件一致通知の予定件数（案内メール同意者のみ・自社を除く）
+    // 案内メール一斉送信の予定件数（案内メール同意者のみ・自社を除く）
     prisma.user.count({
       where: {
         tenantId: su!.app.tenantId,

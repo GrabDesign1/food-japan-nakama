@@ -1,6 +1,6 @@
 "use server";
 
-// 課金システムの管理操作（商品マスター・審査・優良案件確認・条件一致通知）。
+// 課金システムの管理操作（商品マスター・審査・優良案件確認・案内メール一斉送信）。
 // 価格変更・返金相当の操作は上位管理者（requireSuperAdmin）のみ。監査ログを残す。
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
@@ -146,7 +146,7 @@ export async function adminUnmarkVerifiedLead(offeringId: string): Promise<void>
   revalidatePath("/admin/listings");
 }
 
-/** 条件一致通知を承認して送信（案内メール同意者のみ・上限件数まで）。冪等（sent後は再送しない）。 */
+/** 案内メール一斉送信を承認して送信（案内メール同意者のみ・上限件数まで）。冪等（sent後は再送しない）。 */
 export async function adminSendMatchedNotice(noticeId: string, _formData: FormData): Promise<void> {
   // 最大100名への一斉メール送信＝取り消せない外部送信のため上位管理者のみ（REVIEWER不可）
   const su = await requireSuperAdmin();
@@ -215,7 +215,7 @@ export async function adminSendMatchedNotice(noticeId: string, _formData: FormDa
   revalidatePath("/admin/billing");
 }
 
-/** 条件一致通知を否認（返金対応はStripeダッシュボード→Webhook同期）。 */
+/** 案内メール一斉送信を否認（返金対応はStripeダッシュボード→Webhook同期）。 */
 export async function adminRejectMatchedNotice(noticeId: string, formData: FormData): Promise<void> {
   // 返金相当の判断を伴うのため上位管理者のみ（REVIEWER不可）
   const su = await requireSuperAdmin();
