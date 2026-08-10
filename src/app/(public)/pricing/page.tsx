@@ -46,7 +46,7 @@ export default function PricingPage() {
           <li>・プロフィール登録</li>
           <li>・案件（売りたい・探している・共創したい）の閲覧・登録</li>
           <li>・応募・問い合わせ</li>
-          <li>・基本メッセージ</li>
+          <li>・問い合わせの送信（受信した問い合わせは1通目まで無料で閲覧できます）</li>
         </ul>
         <p className="mt-3 text-[12px] leading-6 text-[var(--muted)]">
           無料登録にクレジットカードは必要ありません。無料範囲には、事務局による個別探索、推薦、原稿制作、SNS掲載保証、商談同席、交渉を含みません。
@@ -66,6 +66,7 @@ export default function PricingPage() {
         </div>
         <ul className="mt-3 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
           <li>・「探している」案件への初回提案が無制限（通常案件・優良案件とも）</li>
+          <li>・「売りたい」に届いた問い合わせへの応対（2通目以降の閲覧・返信）</li>
           <li>・掲載オプションが20%割引</li>
           <li>・会員向けセミナーへの参加、Food Japan Summit ネットワークとの接点</li>
         </ul>

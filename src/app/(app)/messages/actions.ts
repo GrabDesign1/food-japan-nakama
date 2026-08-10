@@ -9,6 +9,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
 import { safeAttachmentContentType } from "@/lib/upload";
+import { getInquiryGate } from "@/lib/inquiry-gate";
 
 /** 相手が未読を溜めていないときだけメール通知する（連投で通知が洪水にならないように）。 */
 async function notifyRecipientIfCaughtUp(params: {
@@ -179,7 +180,15 @@ export async function sendMessage(
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
     return;
   }
-  // 送信・返信は無料（2026-08-10 最終決定書：月額ゲート撤廃）
+  // 「売りたい」への受信問い合わせ：2通目以降のやり取りはPremium特典（1通目の閲覧は無料）
+  const gate = await getInquiryGate({
+    threadId,
+    offeringId: thread.offeringId,
+    viewerMemberId: me.id,
+    viewerIsPremium: me.paymentStatus === "PAID",
+  });
+  if (gate.limited) redirect("/billing");
+
   const body = String(formData.get("message") ?? "").trim();
   const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
   const attachmentUrl =
@@ -210,12 +219,30 @@ export async function sendMessage(
   await ensureDeal({ tenantId: su.app.tenantId, meId: me.id, otherId, threadId });
   await touchDealActivity(me.id, otherId);
 
+  // 受信者が非Premiumの売り手（受信問い合わせ制限の対象）なら、メール通知に本文を含めない
+  let mailPreview = body || "（ファイルを送信しました）";
+  if (thread.offeringId) {
+    const recipient = await prisma.member.findUnique({
+      where: { id: otherId },
+      select: { paymentStatus: true },
+    });
+    const recipientGate = await getInquiryGate({
+      threadId,
+      offeringId: thread.offeringId,
+      viewerMemberId: otherId,
+      viewerIsPremium: recipient?.paymentStatus === "PAID",
+    });
+    if (recipientGate.limited) {
+      mailPreview = "新しいメッセージが届きました。（内容の閲覧・返信はNAKAMA Premium会員の特典です）";
+    }
+  }
+
   await notifyRecipientIfCaughtUp({
     threadId,
     senderId: me.id,
     senderName: me.name,
     recipientId: otherId,
-    body: body || "（ファイルを送信しました）",
+    body: mailPreview,
     unreadBefore,
   });
   // 送信したら下書きを消す
@@ -306,8 +333,20 @@ export async function markThreadRead(threadId: string): Promise<void> {
   const me = await getOrCreateMemberForUser(su);
   const thread = await prisma.thread.findUnique({ where: { id: threadId } });
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) return;
+  // 「売りたい」への受信問い合わせ制限中は、無料で読める1通目だけを既読にする
+  const gate = await getInquiryGate({
+    threadId,
+    offeringId: thread.offeringId,
+    viewerMemberId: me.id,
+    viewerIsPremium: me.paymentStatus === "PAID",
+  });
   await prisma.message.updateMany({
-    where: { threadId, senderMemberId: { not: me.id }, readAt: null },
+    where: {
+      threadId,
+      senderMemberId: { not: me.id },
+      readAt: null,
+      ...(gate.limited ? { id: gate.firstMessageId ?? "__none__" } : {}),
+    },
     data: { readAt: new Date() },
   });
   // 初回提案の開封記録（14日未読返還の判定に使用。開封＝スレッドを開いた時点）

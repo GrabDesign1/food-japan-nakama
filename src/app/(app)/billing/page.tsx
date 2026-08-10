@@ -67,8 +67,8 @@ export default async function BillingPage({
       <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
         <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
         <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
-          プロフィール登録、案件（売りたい・探している・共創したい）の掲載、閲覧、応募、問い合わせ、メッセージは無料です。
-          有料になるのは、①売り手から「探している」案件への初回提案（紹介料）②掲載オプション（露出・通知）③事務局への依頼、の3つです。
+          プロフィール登録、案件（売りたい・探している・共創したい）の掲載、閲覧、応募、問い合わせの送信は無料です。
+          有料になるのは、①売り手から「探している」案件への初回提案（紹介料）②掲載オプション（露出・通知）③「売りたい」に受信した問い合わせの2通目以降の閲覧・返信（Premium特典）④事務局への依頼、の4つです。
         </p>
       </div>
 

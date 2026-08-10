@@ -16,6 +16,45 @@ export async function ThreadList({
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 
+  // 「売りたい」への受信問い合わせ制限（非Premiumの売り手は2通目以降を秘匿）を一覧プレビューにも適用
+  const meMember = await prisma.member.findUnique({ where: { id: meId }, select: { paymentStatus: true } });
+  const isPremium = meMember?.paymentStatus === "PAID";
+  let maskedThreadIds = new Set<string>();
+  if (!isPremium) {
+    const offeringIds = Array.from(
+      new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
+    );
+    if (offeringIds.length) {
+      const giveMine = await prisma.offering.findMany({
+        where: { id: { in: offeringIds }, direction: "GIVE", memberId: meId },
+        select: { id: true },
+      });
+      const giveSet = new Set(giveMine.map((o) => o.id));
+      const limitedThreadIds = threads
+        .filter((t) => t.offeringId && giveSet.has(t.offeringId))
+        .map((t) => t.id);
+      if (limitedThreadIds.length) {
+        // 各スレッドの1通目（無料枠）を特定し、それ以外の相手メッセージが最新ならマスク
+        const firsts = await prisma.message.findMany({
+          where: { threadId: { in: limitedThreadIds } },
+          orderBy: { createdAt: "asc" },
+          distinct: ["threadId"],
+          select: { id: true, threadId: true },
+        });
+        const firstMap = new Map(firsts.map((f) => [f.threadId, f.id]));
+        maskedThreadIds = new Set(
+          threads
+            .filter((t) => {
+              if (!limitedThreadIds.includes(t.id)) return false;
+              const last = t.messages[0];
+              return !!last && last.senderMemberId !== meId && last.id !== firstMap.get(t.id);
+            })
+            .map((t) => t.id)
+        );
+      }
+    }
+  }
+
   const otherIds = Array.from(
     new Set(threads.map((t) => (t.fromMemberId === meId ? t.toMemberId : t.fromMemberId)))
   );
@@ -57,9 +96,11 @@ export async function ThreadList({
         const last = t.messages[0];
         const unreadN = unreadMap.get(t.id) ?? 0;
         const active = activeId === t.id;
-        const preview = last
-          ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
-          : "（メッセージはまだありません）";
+        const preview = maskedThreadIds.has(t.id)
+          ? "🔒 新しいメッセージ（Premium会員で閲覧できます）"
+          : last
+            ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
+            : "（メッセージはまだありません）";
         return (
           <Link
             key={t.id}
