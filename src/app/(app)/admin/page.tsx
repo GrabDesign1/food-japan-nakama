@@ -34,6 +34,10 @@ export default async function AdminPage() {
     pendingPromoCount,
     pendingNoticeCount,
     newConsultCount,
+    announcements,
+    banners,
+    curatedArticles,
+    adminUsers,
   ] = await Promise.all([
     prisma.member.count({ where: { tenantId, status: "PENDING" } }),
     prisma.member.count({ where: { tenantId, status: "APPROVED" } }),
@@ -52,29 +56,25 @@ export default async function AdminPage() {
     prisma.listingPromotion.count({ where: { tenantId, status: "pending_review" } }),
     prisma.matchedNotice.count({ where: { tenantId, status: "pending_review" } }),
     prisma.consultation.count({ where: { tenantId, status: "new" } }),
+    prisma.announcement.findMany({
+      where: { tenantId },
+      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+      take: 20,
+    }),
+    prisma.banner.findMany({
+      where: { tenantId },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+    prisma.curatedArticle.findMany({
+      where: { tenantId },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    }),
+    prisma.user.findMany({
+      where: { tenantId, role: { in: ["TENANT_ADMIN", "ADMIN", "REVIEWER"] } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, email: true, role: true },
+    }),
   ]);
-
-  const announcements = await prisma.announcement.findMany({
-    where: { tenantId },
-    orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-    take: 20,
-  });
-
-  const banners = await prisma.banner.findMany({
-    where: { tenantId },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-  });
-
-  const curatedArticles = await prisma.curatedArticle.findMany({
-    where: { tenantId },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-  });
-
-  const adminUsers = await prisma.user.findMany({
-    where: { tenantId, role: { in: ["TENANT_ADMIN", "ADMIN", "REVIEWER"] } },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, email: true, role: true },
-  });
 
   const projMemberIds = Array.from(
     new Set([...pendingProjects, ...sentBackProjects].map((p) => p.memberId))

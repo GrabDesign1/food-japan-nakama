@@ -32,25 +32,29 @@ export default async function ThreadPage({
     viewerIsPremium: me.paymentStatus === "PAID",
   });
 
-  await markThreadRead(thread.id);
-
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
-  const other = await prisma.member.findUnique({
-    where: { id: otherId },
-    select: { id: true, name: true, avatarUrl: true },
-  });
-  const messages = await prisma.message.findMany({
-    where: { threadId: thread.id },
-    orderBy: { createdAt: "asc" },
-  });
-  const draft = await prisma.messageDraft.findUnique({
-    where: { threadId_memberId: { threadId: thread.id, memberId: me.id } },
-  });
-  const templates = await prisma.messageTemplate.findMany({
-    where: { memberId: me.id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, body: true },
-  });
+  // 既読化はサイドバーの未読バッジ表示と競合しないよう先に完了させる
+  // （ゲート判定はcache()済みのため再計算されない）
+  await markThreadRead(thread.id);
+  // 取得系の独立クエリはまとめて並列実行（直列4往復→1往復）
+  const [other, messages, draft, templates] = await Promise.all([
+    prisma.member.findUnique({
+      where: { id: otherId },
+      select: { id: true, name: true, avatarUrl: true },
+    }),
+    prisma.message.findMany({
+      where: { threadId: thread.id },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.messageDraft.findUnique({
+      where: { threadId_memberId: { threadId: thread.id, memberId: me.id } },
+    }),
+    prisma.messageTemplate.findMany({
+      where: { memberId: me.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, body: true },
+    }),
+  ]);
   const lastMessageId = messages[messages.length - 1]?.id ?? "none";
 
   return (
@@ -59,7 +63,7 @@ export default async function ThreadPage({
       <div className="grid grid-cols-1 overflow-hidden rounded-[12px] border border-[var(--line)] bg-white lg:grid-cols-[300px_1fr]">
         {/* 左：一覧（スマホ・タブレットでは非表示） */}
         <div className="hidden max-h-[74vh] overflow-y-auto border-r border-[var(--line)] lg:block">
-          <ThreadList meId={me.id} activeId={thread.id} />
+          <ThreadList meId={me.id} viewerIsPremium={me.paymentStatus === "PAID"} activeId={thread.id} />
         </div>
 
         {/* 右：会話 */}

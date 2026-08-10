@@ -5,9 +5,11 @@ import { EmptyState } from "@/components/EmptyState";
 
 export async function ThreadList({
   meId,
+  viewerIsPremium,
   activeId,
 }: {
   meId: string;
+  viewerIsPremium: boolean;
   activeId?: string;
 }) {
   const threads = await prisma.thread.findMany({
@@ -16,11 +18,9 @@ export async function ThreadList({
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 
-  // 「売りたい」への受信問い合わせ制限（非Premiumの売り手は2通目以降を秘匿）を一覧プレビューにも適用
-  const meMember = await prisma.member.findUnique({ where: { id: meId }, select: { paymentStatus: true } });
-  const isPremium = meMember?.paymentStatus === "PAID";
+  // 受信問い合わせ制限（非Premiumは2往復目以降を秘匿）を一覧プレビューにも適用
   let maskedThreadIds = new Set<string>();
-  if (!isPremium) {
+  if (!viewerIsPremium) {
     const offeringIds = Array.from(
       new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
     );

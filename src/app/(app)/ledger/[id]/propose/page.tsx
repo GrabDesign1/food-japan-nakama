@@ -42,20 +42,21 @@ export default async function ProposePage({
 
   const deadlinePassed = isPastDeadline(offering.applicationDeadline);
 
-  const existingUnlock = await prisma.contactUnlock.findUnique({
-    where: { sellerMemberId_offeringId: { sellerMemberId: me.id, offeringId: offering.id } },
-    select: { threadId: true },
-  });
-
   const isMember = me.paymentStatus === "PAID";
   const verified = isVerifiedLeadActive(offering.verifiedLeadAt, new Date());
   const tier = pricingTierFor(offering.verifiedLeadAt, new Date());
-  const balances = await getCreditBalances(me.id);
-  const balance = tier === "verified_lead" ? balances.verified : balances.standard;
 
-  // 価格は商品マスターから（無効なら購入ボタンを出さない）
+  // 価格は商品マスターから（無効なら購入ボタンを出さない）。独立クエリは並列化（直列3往復→1往復）
   const codes = ["contact_unlock_standard", "contact_unlock_verified_lead", "contact_credits_5", "contact_credits_10"];
-  const products = await prisma.billingProduct.findMany({ where: { code: { in: codes }, active: true } });
+  const [existingUnlock, balances, products] = await Promise.all([
+    prisma.contactUnlock.findUnique({
+      where: { sellerMemberId_offeringId: { sellerMemberId: me.id, offeringId: offering.id } },
+      select: { threadId: true },
+    }),
+    getCreditBalances(me.id),
+    prisma.billingProduct.findMany({ where: { code: { in: codes }, active: true } }),
+  ]);
+  const balance = tier === "verified_lead" ? balances.verified : balances.standard;
   const productMap = new Map(products.map((p) => [p.code, p]));
   const singleCode = tier === "verified_lead" ? "contact_unlock_verified_lead" : "contact_unlock_standard";
   const single = productMap.get(singleCode);
