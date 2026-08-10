@@ -12,6 +12,7 @@ import { notifyNewMessage } from "@/lib/email";
 import { pricingTierFor, creditTypeForTier } from "@/lib/billing-core";
 import { consumeOneCreditTx } from "@/lib/contact-credits";
 import { createOneTimeCheckout } from "@/lib/billing";
+import { canSendToOthers, MESSAGE_MAX } from "@/lib/security";
 
 export type ProposeState = { error?: string };
 
@@ -23,6 +24,8 @@ async function loadTarget(offeringId: string, meId: string, tenantId: string) {
       direction: "WANT",
       isPublic: true,
       title: { not: "" },
+      // 非公開募集（有料オプション）には提案できない
+      visibility: { not: "private" },
       member: { tenantId, status: "APPROVED" },
     },
     include: { member: { select: { id: true, name: true } } },
@@ -44,10 +47,14 @@ export async function sendProposal(
   if (!su) redirect(`/login?next=${encodeURIComponent(`/ledger/${offeringId}/propose`)}`);
   const me = await getOrCreateMemberForUser(su!);
 
+  if (!canSendToOthers(me.status)) {
+    return { error: "現在のご登録状態では提案を送信できません。事務局までお問い合わせください。" };
+  }
+
   const offering = await loadTarget(offeringId, me.id, su!.app.tenantId);
   if (!offering) return { error: "この案件には提案できません（終了・非公開・またはご自身の案件です）。" };
 
-  const body = String(formData.get("message") ?? "").trim();
+  const body = String(formData.get("message") ?? "").trim().slice(0, MESSAGE_MAX);
   if (!body) return { error: "提案内容を入力してください。" };
 
   const isMember = me.paymentStatus === "PAID"; // 月額会員は提案無制限（クレジット消費なし）
@@ -122,7 +129,8 @@ export async function sendProposal(
       });
 
       const message = await tx.message.create({
-        data: { threadId: thread.id, senderMemberId: me.id, body },
+        // 案件の文脈を残す（引き合い課金の判定はメッセージ単位で行う。WANT提案は紹介料モデル＝対象外）
+        data: { threadId: thread.id, senderMemberId: me.id, body, offeringId: offering.id },
       });
       await tx.thread.update({ where: { id: thread.id }, data: { lastMessageAt: new Date() } });
 
@@ -195,6 +203,10 @@ export async function buyProposalProduct(
     "contact_credits_10",
   ]);
   if (!allowed.has(productCode)) return { error: "この商品は購入できません。" };
+
+  // 注文に他人の案件IDが記録されないよう、提案先として妥当な案件かを確認する
+  const offering = await loadTarget(offeringId, me.id, su!.app.tenantId);
+  if (!offering) return { error: "この案件には提案できません（終了・非公開・またはご自身の案件です）。" };
 
   const result = await createOneTimeCheckout({
     tenantId: su!.app.tenantId,

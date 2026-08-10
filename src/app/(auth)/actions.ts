@@ -4,15 +4,15 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendPasswordResetEmail } from "@/lib/email";
+import {
+  safeInternalPath,
+  isAuthRateLimited,
+  recordAuthAttempt,
+  requestIp,
+} from "@/lib/security";
 
 // email: エラー時に入力値を保持してフォームへ戻す（React 19はaction後にフォームを既定値へリセットするため）
 export type AuthState = { error?: string; message?: string; email?: string };
-
-function safeNext(next: FormDataEntryValue | null): string {
-  const n = typeof next === "string" ? next : "";
-  // オープンリダイレクト防止：自サイト内の絶対パスのみ許可
-  return n.startsWith("/") && !n.startsWith("//") ? n : "/dashboard";
-}
 
 export async function signIn(
   _prev: AuthState,
@@ -20,12 +20,23 @@ export async function signIn(
 ): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = safeNext(formData.get("next"));
+  const next = safeInternalPath(formData.get("next"));
+
+  // 総当たり対策：ログインはサーバー側から Supabase を叩くため、送信元IPは常に Vercel になる。
+  // Supabase 側のIP制限が効かないので、アプリ側で失敗回数を数える。
+  const ip = await requestIp();
+  if (await isAuthRateLimited("signin_failed", { email, ip })) {
+    return {
+      error: "ログインの失敗が続いたため、一時的に受け付けを停止しています。しばらく時間をおいてお試しください。",
+      email,
+    };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    await recordAuthAttempt("signin_failed", { email, ip });
     return { error: "メールアドレスまたはパスワードが違います。", email };
   }
   redirect(next);
@@ -96,6 +107,17 @@ export async function requestPasswordReset(
   if (!email || !email.includes("@")) {
     return { error: "正しいメールアドレスを入力してください。", email };
   }
+
+  // メール爆撃対策：自前送信（Resend）のため Supabase 側の送信制限が効かない。
+  // 制限中もアカウントの有無を漏らさないよう、成功時と同じ文面を返す。
+  const ip = await requestIp();
+  if (await isAuthRateLimited("password_reset", { email, ip })) {
+    return {
+      message:
+        "パスワード再設定用のメールを送信しました。メール内のリンクを開いて、新しいパスワードを設定してください。",
+    };
+  }
+  await recordAuthAttempt("password_reset", { email, ip });
 
   // Supabaseのメールテンプレに頼らず、リカバリー用リンクを生成してアプリから日本語で送る。
   const admin = createSupabaseAdminClient();

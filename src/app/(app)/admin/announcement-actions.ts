@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { trimTo, ANNOUNCEMENT_TITLE_MAX, ANNOUNCEMENT_BODY_MAX } from "@/lib/security";
 
 export async function createAnnouncement(formData: FormData): Promise<void> {
   const su = await requireAdmin();
-  const title = String(formData.get("title") ?? "").trim();
-  const body = String(formData.get("body") ?? "").trim();
+  const title = trimTo(formData.get("title"), ANNOUNCEMENT_TITLE_MAX);
+  const body = trimTo(formData.get("body"), ANNOUNCEMENT_BODY_MAX);
   const pinned = String(formData.get("pinned") ?? "") === "on";
   if (!title) return;
   await prisma.announcement.create({

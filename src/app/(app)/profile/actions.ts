@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
+import { trimTo, PROFILE_SHORT_MAX, PROFILE_LONG_MAX } from "@/lib/security";
 import { prisma } from "@/lib/db";
 import {
   getOrCreateMemberForUser,
@@ -209,7 +210,9 @@ export async function saveProfile(
   if (!su) return { error: "ログインが必要です。" };
 
   const member = await getOrCreateMemberForUser(su);
-  const g = (k: string) => String(formData.get(k) ?? "").trim();
+  // 上限つきで取得する（既定は1行項目、本文系は明示的に長い上限を渡す）
+  const g = (k: string, max = PROFILE_SHORT_MAX) => trimTo(formData.get(k), max);
+  const gl = (k: string) => trimTo(formData.get(k), PROFILE_LONG_MAX);
 
   const input: ProfileInput = {
     name: g("name"),
@@ -224,18 +227,18 @@ export async function saveProfile(
     website: g("website"),
     founded: g("founded"),
     size: g("size"),
-    description: g("description"),
-    featureText: g("featureText"),
+    description: gl("description"),
+    featureText: gl("featureText"),
     hasLicense: g("hasLicense") === "yes",
     licenseName: g("hasLicense") === "yes" ? g("licenseName") : "",
-    productItems: g("productItems"),
-    productVolume: g("productVolume"),
-    equipmentText: g("equipmentText"),
-    salesAreaText: g("salesAreaText"),
-    logisticsText: g("logisticsText"),
-    foodlossText: g("foodlossText"),
-    challengeText: g("challengeText"),
-    collabStyle: g("collabStyle"),
+    productItems: gl("productItems"),
+    productVolume: gl("productVolume"),
+    equipmentText: gl("equipmentText"),
+    salesAreaText: gl("salesAreaText"),
+    logisticsText: gl("logisticsText"),
+    foodlossText: gl("foodlossText"),
+    challengeText: gl("challengeText"),
+    collabStyle: gl("collabStyle"),
     startTiming: g("startTiming"),
   };
 

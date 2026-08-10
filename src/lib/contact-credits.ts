@@ -120,6 +120,12 @@ export async function consumeOneCreditTx(
     contactUnlockId: string;
   }
 ): Promise<{ ledgerEntryId: string } | null> {
+  // 会員×種別の消費を直列化する。
+  // 既定の READ COMMITTED では、別案件への同時提案が互いの未コミット消費を見られず、
+  // 残高1件で2件解放できてしまう（後段の再検証もすり抜ける）。
+  // トランザクション終了時に自動解放されるアドバイザリロック（pgbouncerのトランザクションプールでも安全）。
+  await tx.$executeRaw`select pg_advisory_xact_lock(hashtext(${`credit:${params.memberId}:${params.creditType}`}))`;
+
   const now = new Date();
   const lots = await loadLots(tx, params.memberId, params.creditType);
   const lot = pickLotToConsume(lots, now);

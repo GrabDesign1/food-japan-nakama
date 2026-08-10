@@ -23,6 +23,7 @@ import {
   PROGRESS_LABEL,
 } from "@/lib/project-taxonomy";
 import { missingForProjectPublish } from "@/lib/project-publish";
+import { canSendToOthers } from "@/lib/security";
 
 const BUCKET = "member-images";
 const MAX_IMAGES = 6;
@@ -555,6 +556,10 @@ export async function applyToProject(
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su!);
   // 興味表明（応募）は無料（2026-08-10 最終決定書：月額ゲート撤廃）
+  // ただし非承認・停止の会員は応募できない
+  if (!canSendToOthers(me.status)) {
+    return { error: "現在のご登録状態では応募できません。事務局までお問い合わせください。" };
+  }
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (
     !project ||

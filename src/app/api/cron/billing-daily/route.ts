@@ -6,6 +6,7 @@
 // 冪等に設計してあり、重複実行しても二重付与・二重通知しない。
 // 表示クエリ側でも endsAt を判定しているため、cron停止時も期限切れが有効扱いになることはない。
 import type { NextRequest } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { refundUnreadCredit, expireCreditLots } from "@/lib/contact-credits";
 import { isUnreadRefundDue, type CreditType } from "@/lib/billing-core";
@@ -21,13 +22,18 @@ const EFFECT_LABEL: Record<string, string> = {
 };
 
 export async function GET(req: NextRequest) {
-  // Vercel Cron の認証（CRON_SECRET を設定すると Authorization: Bearer <secret> が付与される）
+  // Vercel Cron の認証（CRON_SECRET を設定すると Authorization: Bearer <secret> が付与される）。
+  // シークレットが設定されていれば環境を問わず必ず検証する（プレビュー環境の無認証実行を防ぐ）。
+  // 未設定はローカル開発のみ許可し、本番・プレビューでは拒否する。
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
-  if (process.env.NODE_ENV === "production") {
-    if (!secret || auth !== `Bearer ${secret}`) {
+  if (secret) {
+    if (!timingSafeEquals(auth ?? "", `Bearer ${secret}`)) {
       return new Response("unauthorized", { status: 401 });
     }
+  } else if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    console.error("[cron] CRON_SECRET が未設定のため実行を拒否しました");
+    return new Response("cron not configured", { status: 500 });
   }
 
   const now = new Date();
@@ -163,4 +169,16 @@ export async function GET(req: NextRequest) {
   summary.expiredCredits = await expireCreditLots();
 
   return Response.json({ ok: true, at: now.toISOString(), ...summary });
+}
+
+/** 定数時間比較（シークレットの推測に長さ・一致位置の情報を与えない）。 */
+function timingSafeEquals(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) {
+    // 長さが違う場合も比較コストを揃える（結果は常に false）
+    timingSafeEqual(bb, bb);
+    return false;
+  }
+  return timingSafeEqual(ab, bb);
 }

@@ -26,7 +26,6 @@ export default async function ThreadPage({
   // 「売りたい」への受信問い合わせは1通目のみ無料（2通目以降はPremium特典）
   const gate = await getInquiryGate({
     threadId: thread.id,
-    offeringId: thread.offeringId,
     threadFromMemberId: thread.fromMemberId,
     viewerMemberId: me.id,
     viewerIsPremium: me.paymentStatus === "PAID",
@@ -97,10 +96,9 @@ export default async function ThreadPage({
             <div className="flex flex-col gap-4">
               {messages.map((msg) => {
                 const mine = msg.senderMemberId === me.id;
-                // マスク対象：制限中スレッドで、自分の初回返信より後に届いた相手のメッセージ
-                // （＝2往復目以降。本文はHTMLに出さない）
-                const masked =
-                  gate.limited && !mine && !!gate.freeUntil && msg.createdAt > gate.freeUntil;
+                // マスク対象：無料枠（相手からの1通目）より後に届いた受信メッセージ
+                // （本文・添付はHTMLに出さない）
+                const masked = gate.maskedMessageIds.has(msg.id);
                 if (masked) {
                   return (
                     <div key={msg.id} className="text-left">

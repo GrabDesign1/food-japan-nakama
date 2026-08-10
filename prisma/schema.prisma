@@ -173,6 +173,9 @@ model Member {
 model StripeEvent {
   id        String   @id // Stripeのevent.id（evt_...）
   type      String
+  /// 副作用の適用が完了した時刻。null=受信済みだが未処理（タイムアウト・強制終了で取りこぼした分）。
+  /// 未処理のまま再送が来たら処理し直す。
+  processedAt DateTime? @map("processed_at")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("stripe_events")
@@ -458,6 +461,9 @@ model Message {
   body           String
   attachmentUrl  String?   @map("attachment_url")
   attachmentName String?   @map("attachment_name")
+  /// このメッセージのきっかけになった案件。引き合い課金の判定はスレッドではなくこの値で行う
+  /// （スレッドは会員ペアで1本のため、スレッドの offeringId では後続の問い合わせを判定できない）
+  offeringId     String?   @map("offering_id")
   readAt         DateTime? @map("read_at")
   createdAt      DateTime  @default(now()) @map("created_at")
 
@@ -465,6 +471,19 @@ model Message {
 
   @@index([threadId])
   @@map("messages")
+}
+
+/// 認証操作の試行記録（ログイン失敗・パスワード再設定のレート制限用。総当たりとメール爆撃を防ぐ）
+model AuthAttempt {
+  id        String   @id @default(cuid())
+  kind      String   // signin_failed / password_reset
+  email     String?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([kind, email, createdAt])
+  @@index([kind, ip, createdAt])
+  @@map("auth_attempts")
 }
 
 /// メッセージテンプレート（会員が作成・保存）

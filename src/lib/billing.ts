@@ -10,6 +10,7 @@ import {
   CREDIT_PACK_EXPIRY_DAYS,
 } from "@/lib/billing-core";
 import { grantCredits } from "@/lib/contact-credits";
+import { safeInternalPath } from "@/lib/security";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -67,6 +68,12 @@ export const SEED_PRODUCTS: SeedProduct[] = [
 export const BUNDLE_COMPONENTS: Record<string, string[]> = {
   sell_steady_promotion_7d: ["featured", "urgent"],
   both_reach_matched_100: ["featured", "matched_notice"],
+};
+
+/** クレジットパックの付与数（商品コード＝注文時のスナップショットから決める）。 */
+const PACK_QUANTITY: Record<string, number> = {
+  contact_credits_5: 5,
+  contact_credits_10: 10,
 };
 
 /** 初期商品マスターを投入（既存コードは更新しない＝価格の勝手な上書きを避ける）。 */
@@ -153,7 +160,7 @@ export async function createOneTimeCheckout(params: {
   const discount = product.priceAmount - unit;
 
   // 戻り先は自サイトのパスのみ許可（open redirect防止）
-  const path = params.returnPath.startsWith("/") ? params.returnPath : "/billing";
+  const path = safeInternalPath(params.returnPath, "/billing");
 
   const order = await prisma.billingOrder.create({
     data: {
@@ -215,8 +222,16 @@ export async function createOneTimeCheckout(params: {
 
 // ── 履行（Webhook から呼ぶ。トランザクション内で注文確定と効果作成） ──
 
-/** 決済完了した注文を履行する。冪等（注文statusとorderItemId uniqueで多重防止）。 */
-export async function fulfillPaidOrder(orderId: string, paymentIntentId: string | null): Promise<void> {
+/**
+ * 決済完了した注文を履行する。冪等（注文statusとorderItemId uniqueで多重防止）。
+ * paid は Stripe が実際に受領した金額・通貨・セッションID。注文と一致しない限り履行しない
+ * （クーポン・部分支払い・別セッションの取り違えで、支払っていない商品が付与されるのを防ぐ）。
+ */
+export async function fulfillPaidOrder(
+  orderId: string,
+  paymentIntentId: string | null,
+  paid?: { amountTotal: number | null; currency: string | null; sessionId: string | null }
+): Promise<void> {
   let fulfilled: { memberId: string; itemNames: string[]; totalAmount: number; requiresReview: boolean } | null =
     null;
 
@@ -226,7 +241,30 @@ export async function fulfillPaidOrder(orderId: string, paymentIntentId: string 
       include: { items: true },
     });
     if (!order) return;
-    if (order.status === "paid" || order.status === "fulfilled") return; // 冪等
+    // 冪等かつ、支払い待ち以外（キャンセル済み・返金済み）は履行しない
+    if (order.status !== "pending_payment") return;
+
+    // 実支払額との突合（Stripeのイベント順序に依存せず、注文行だけを信用する）
+    if (paid) {
+      const mismatch: string[] = [];
+      if (paid.sessionId && order.stripeCheckoutSessionId && paid.sessionId !== order.stripeCheckoutSessionId) {
+        mismatch.push(`session ${paid.sessionId} != ${order.stripeCheckoutSessionId}`);
+      }
+      if (paid.amountTotal !== null && paid.amountTotal !== order.totalAmount) {
+        mismatch.push(`amount ${paid.amountTotal} != ${order.totalAmount}`);
+      }
+      if (paid.currency && paid.currency.toLowerCase() !== order.currency.toLowerCase()) {
+        mismatch.push(`currency ${paid.currency} != ${order.currency}`);
+      }
+      if (mismatch.length > 0) {
+        console.error(`[billing] 支払額が注文と一致しないため履行しません order=${order.id}: ${mismatch.join(", ")}`);
+        await tx.billingOrder.update({
+          where: { id: order.id },
+          data: { status: "payment_failed" },
+        });
+        return;
+      }
+    }
 
     await tx.billingOrder.update({
       where: { id: order.id },
@@ -273,6 +311,89 @@ export async function fulfillPaidOrder(orderId: string, paymentIntentId: string 
       console.error("[billing] 決済完了メール送信失敗:", e);
     }
   }
+}
+
+/**
+ * 返金・チャージバックされた注文の効果を取り消す。
+ * 付与済みクレジットは未消費分だけを打ち消し（消費済みは戻さない）、掲載効果は cancelled にする。
+ * 冪等（打ち消しエントリの idempotencyKey と status 判定）。
+ */
+export async function revokeRefundedOrder(
+  paymentIntentId: string,
+  reason: "refund" | "dispute"
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const order = await tx.billingOrder.findFirst({
+      where: { stripePaymentIntentId: paymentIntentId },
+      include: { items: true },
+    });
+    if (!order) return;
+    if (order.status === "refunded") return; // 冪等
+
+    await tx.billingOrder.update({
+      where: { id: order.id },
+      data: { status: "refunded", refundedAt: new Date() },
+    });
+
+    for (const item of order.items) {
+      // 掲載効果：期間を打ち切る
+      await tx.listingPromotion.updateMany({
+        where: { orderItemId: item.id, status: { in: ["pending_review", "scheduled", "active"] } },
+        data: { status: "cancelled", endsAt: new Date() },
+      });
+      await tx.matchedNotice.updateMany({
+        where: { orderItemId: item.id, status: "pending_review" },
+        data: { status: "rejected", reviewNote: `${reason} により取消` },
+      });
+
+      // クレジット：未消費分だけを負のエントリで打ち消す
+      const lot = await tx.contactCreditLedger.findFirst({
+        where: { orderItemId: item.id, quantity: { gt: 0 } },
+      });
+      if (!lot) continue;
+      const used = await tx.contactCreditLedger.aggregate({
+        where: { lotEntryId: lot.id },
+        _sum: { quantity: true },
+      });
+      const remaining = lot.quantity + (used._sum.quantity ?? 0);
+      if (remaining <= 0) continue;
+      try {
+        await tx.contactCreditLedger.create({
+          data: {
+            tenantId: order.tenantId,
+            memberId: order.memberId,
+            entryType: "admin_adjust",
+            creditType: lot.creditType,
+            quantity: -remaining,
+            lotEntryId: lot.id,
+            orderItemId: item.id,
+            idempotencyKey: `revoke:${item.id}`,
+            note: `${reason} により未消費${remaining}件を取消`,
+          },
+        });
+      } catch (e) {
+        // 既に取消済み（再送）なら何もしない
+        if (!(typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002")) {
+          throw e;
+        }
+      }
+    }
+
+    // 公開範囲の有料オプション（非公開募集・応募者限定）を購入していた場合は公開へ戻す
+    const stillRestricted = await tx.listingPromotion.count({
+      where: {
+        offeringId: order.offeringId ?? "",
+        effectType: { in: ["private", "applicant_only"] },
+        status: { in: ["scheduled", "active"] },
+      },
+    });
+    if (order.offeringId && stillRestricted === 0) {
+      await tx.offering.updateMany({
+        where: { id: order.offeringId, visibility: { not: "public" } },
+        data: { visibility: "public" },
+      });
+    }
+  });
 }
 
 type OrderItemRow = {
@@ -385,9 +506,14 @@ async function fulfillItemTx(
     case "contact_unlock_verified":
       await grantPackTx("verified", 1);
       break;
-    case "contact_credits":
-      await grantPackTx("standard", product?.unitLimit ?? 5);
+    case "contact_credits": {
+      // 付与数は注文時の商品コード（スナップショット）から決める。
+      // 商品マスターの現在値に頼ると、商品行の改名・削除で誤った件数を付与してしまう。
+      const qty = PACK_QUANTITY[item.productCode] ?? product?.unitLimit ?? null;
+      if (!qty) throw new Error(`クレジット付与数を決定できません: ${item.productCode}`);
+      await grantPackTx("standard", qty);
       break;
+    }
     case "featured":
     case "top_pr":
     case "urgent":

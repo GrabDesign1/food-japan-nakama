@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/EmptyState";
+import { getInquiryGate } from "@/lib/inquiry-gate";
 
 export async function ThreadList({
   meId,
@@ -18,48 +19,23 @@ export async function ThreadList({
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 
-  // 受信問い合わせ制限（非Premiumは2往復目以降を秘匿）を一覧プレビューにも適用
-  let maskedThreadIds = new Set<string>();
+  // 受信問い合わせ制限（非Premiumは2通目以降を秘匿）を一覧プレビューにも適用。
+  // 判定は必ず getInquiryGate に委ねる（ここで条件を書き写すと、片方だけ直したときに本文が漏れる）。
+  const maskedThreadIds = new Set<string>();
   if (!viewerIsPremium) {
-    const offeringIds = Array.from(
-      new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
+    const gates = await Promise.all(
+      threads.map((t) =>
+        getInquiryGate({
+          threadId: t.id,
+          threadFromMemberId: t.fromMemberId,
+          viewerMemberId: meId,
+          viewerIsPremium: false,
+        }).then((g) => ({ threadId: t.id, gate: g }))
+      )
     );
-    {
-      const giveMine = offeringIds.length
-        ? await prisma.offering.findMany({
-            where: { id: { in: offeringIds }, direction: "GIVE", memberId: meId },
-            select: { id: true },
-          })
-        : [];
-      const giveSet = new Set(giveMine.map((o) => o.id));
-      const limitedThreadIds = threads
-        .filter(
-          (t) =>
-            (t.offeringId && giveSet.has(t.offeringId)) ||
-            // 案件に紐づかない直接会話：自分が受信側のスレッド
-            (!t.offeringId && t.fromMemberId !== meId)
-        )
-        .map((t) => t.id);
-      if (limitedThreadIds.length) {
-        // 各スレッドの「自分の初回返信」時刻を特定し、それより後に届いた相手メッセージが最新ならマスク
-        const myFirstReplies = await prisma.message.findMany({
-          where: { threadId: { in: limitedThreadIds }, senderMemberId: meId },
-          orderBy: { createdAt: "asc" },
-          distinct: ["threadId"],
-          select: { threadId: true, createdAt: true },
-        });
-        const replyMap = new Map(myFirstReplies.map((f) => [f.threadId, f.createdAt]));
-        maskedThreadIds = new Set(
-          threads
-            .filter((t) => {
-              if (!limitedThreadIds.includes(t.id)) return false;
-              const last = t.messages[0];
-              const freeUntil = replyMap.get(t.id);
-              return !!last && last.senderMemberId !== meId && !!freeUntil && last.createdAt > freeUntil;
-            })
-            .map((t) => t.id)
-        );
-      }
+    for (const { threadId, gate } of gates) {
+      const last = threads.find((t) => t.id === threadId)?.messages[0];
+      if (last && gate.maskedMessageIds.has(last.id)) maskedThreadIds.add(threadId);
     }
   }
 

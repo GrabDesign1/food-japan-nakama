@@ -34,11 +34,17 @@ export default async function ProposePage({
       direction: "WANT",
       isPublic: true,
       title: { not: "" },
+      // 非公開募集（有料オプション）は詳細ページと同じく存在ごと見せない
+      visibility: { not: "private" },
       member: { tenantId: su!.app.tenantId, status: "APPROVED" },
     },
     include: { member: { select: { id: true, name: true } } },
   });
   if (!offering || offering.memberId === me.id) notFound();
+
+  // 応募者限定公開：掲載者が返信するまで社名を伏せる（この画面は提案前なので常に非開示）
+  const memberDisplayName =
+    offering.visibility === "applicant_only" ? "非公開（提案・承認後に開示）" : offering.member.name;
 
   const deadlinePassed = isPastDeadline(offering.applicationDeadline);
 
@@ -83,7 +89,7 @@ export default async function ProposePage({
               NAKAMA確認済み優良案件
             </span>
           ) : null}
-          <span className="text-[12px] text-[var(--muted)]">掲載者：{offering.member.name}</span>
+          <span className="text-[12px] text-[var(--muted)]">掲載者：{memberDisplayName}</span>
         </div>
         <div className="mt-2 text-[16px] font-bold text-[var(--ink)]">{offering.title}</div>
         {offering.applicationDeadline ? (

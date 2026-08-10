@@ -10,6 +10,40 @@ import { ensureDeal, touchDealActivity } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
 import { safeAttachmentContentType } from "@/lib/upload";
 import { getInquiryGate } from "@/lib/inquiry-gate";
+import {
+  trimTo,
+  canSendToOthers,
+  MESSAGE_MAX,
+  TEMPLATE_NAME_MAX,
+  TEMPLATE_BODY_MAX,
+} from "@/lib/security";
+
+/**
+ * 受信側が引き合い課金の制限中なら、メール本文に内容を含めない。
+ * 画面でモザイクにしたものがメールで読めてしまうのを防ぐ（通知経路は3つあるので必ずここを通す）。
+ */
+async function previewForRecipient(params: {
+  threadId: string;
+  threadFromMemberId: string;
+  recipientId: string;
+  body: string;
+}): Promise<string> {
+  const recipient = await prisma.member.findUnique({
+    where: { id: params.recipientId },
+    select: { paymentStatus: true },
+  });
+  const gate = await getInquiryGate({
+    threadId: params.threadId,
+    threadFromMemberId: params.threadFromMemberId,
+    viewerMemberId: params.recipientId,
+    viewerIsPremium: recipient?.paymentStatus === "PAID",
+  });
+  // 制限中で、無料枠（1通目）を使い切っている場合は内容を伏せる
+  if (gate.limited && !gate.canReplyFree) {
+    return "新しいメッセージが届きました。（内容の閲覧・返信はNAKAMA Premium会員の特典です）";
+  }
+  return params.body;
+}
 
 /** 相手が未読を溜めていないときだけメール通知する（連投で通知が洪水にならないように）。 */
 async function notifyRecipientIfCaughtUp(params: {
@@ -46,6 +80,8 @@ export async function sendInterest(
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su!);
   if (me.id === toMemberId) return;
+  // 非承認・停止の会員は他社へ送信できない
+  if (!canSendToOthers(me.status)) return;
 
   // 「探している」案件への新規提案は初回紹介料の対象 → 提案フロー（/propose）へ回す。
   // 買い手からの問い合わせ（GIVE案件）と、その返信は無料。
@@ -70,11 +106,12 @@ export async function sendInterest(
   });
   if (!target) return;
 
-  const body = String(formData.get("message") ?? "").trim();
+  const body = trimTo(formData.get("message"), MESSAGE_MAX);
   if (!body) return;
 
   let thread = await prisma.thread.findFirst({
     where: {
+      tenantId: su!.app.tenantId,
       OR: [
         { fromMemberId: me.id, toMemberId },
         { fromMemberId: toMemberId, toMemberId: me.id },
@@ -91,6 +128,15 @@ export async function sendInterest(
         offeringId: offeringId || null,
       },
     });
+  } else {
+    // 既存スレッドへの書き込みも引き合い課金の対象（ロック中の返信をこの導線で回避させない）
+    const gate = await getInquiryGate({
+      threadId: thread.id,
+      threadFromMemberId: thread.fromMemberId,
+      viewerMemberId: me.id,
+      viewerIsPremium: me.paymentStatus === "PAID",
+    });
+    if (gate.limited && !gate.canReplyFree) redirect("/billing");
   }
 
   // 相手が既読済みか（通知判定は書き込み前に見る）
@@ -99,7 +145,8 @@ export async function sendInterest(
   });
 
   await prisma.message.create({
-    data: { threadId: thread.id, senderMemberId: me.id, body },
+    // 案件の文脈を残す（引き合い課金はメッセージ単位で判定する）
+    data: { threadId: thread.id, senderMemberId: me.id, body, offeringId: offeringId || null },
   });
   await prisma.thread.update({
     where: { id: thread.id },
@@ -116,7 +163,12 @@ export async function sendInterest(
     senderId: me.id,
     senderName: me.name,
     recipientId: toMemberId,
-    body,
+    body: await previewForRecipient({
+      threadId: thread.id,
+      threadFromMemberId: thread.fromMemberId,
+      recipientId: toMemberId,
+      body,
+    }),
     unreadBefore,
     listingTitle: listing?.title || null,
   });
@@ -138,6 +190,7 @@ export async function startConversation(toMemberId: string): Promise<void> {
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su!);
   if (me.id === toMemberId) return;
+  if (!canSendToOthers(me.status)) return;
 
   // 問い合わせは無料（2026-08-10 最終決定書：月額ゲート撤廃）
 
@@ -150,6 +203,7 @@ export async function startConversation(toMemberId: string): Promise<void> {
 
   let thread = await prisma.thread.findFirst({
     where: {
+      tenantId: su!.app.tenantId,
       OR: [
         { fromMemberId: me.id, toMemberId },
         { fromMemberId: toMemberId, toMemberId: me.id },
@@ -180,17 +234,17 @@ export async function sendMessage(
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
     return;
   }
+  if (!canSendToOthers(me.status)) return;
   // 「売りたい」への受信問い合わせ：2通目以降のやり取りはPremium特典（1通目の閲覧は無料）
   const gate = await getInquiryGate({
     threadId,
-    offeringId: thread.offeringId,
     threadFromMemberId: thread.fromMemberId,
     viewerMemberId: me.id,
     viewerIsPremium: me.paymentStatus === "PAID",
   });
   if (gate.limited && !gate.canReplyFree) redirect("/billing");
 
-  const body = String(formData.get("message") ?? "").trim();
+  const body = trimTo(formData.get("message"), MESSAGE_MAX);
   const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
   const attachmentUrl =
     attachmentUrlRaw && attachmentUrlRaw.startsWith(STORAGE_PUBLIC_PREFIX) ? attachmentUrlRaw : null;
@@ -221,23 +275,12 @@ export async function sendMessage(
   await touchDealActivity(me.id, otherId);
 
   // 受信者が非Premiumの売り手（受信問い合わせ制限の対象）なら、メール通知に本文を含めない
-  let mailPreview = body || "（ファイルを送信しました）";
-  {
-    const recipient = await prisma.member.findUnique({
-      where: { id: otherId },
-      select: { paymentStatus: true },
-    });
-    const recipientGate = await getInquiryGate({
-      threadId,
-      offeringId: thread.offeringId,
-      threadFromMemberId: thread.fromMemberId,
-      viewerMemberId: otherId,
-      viewerIsPremium: recipient?.paymentStatus === "PAID",
-    });
-    if (recipientGate.limited && recipientGate.freeUntil) {
-      mailPreview = "新しいメッセージが届きました。（内容の閲覧・返信はNAKAMA Premium会員の特典です）";
-    }
-  }
+  const mailPreview = await previewForRecipient({
+    threadId,
+    threadFromMemberId: thread.fromMemberId,
+    recipientId: otherId,
+    body: body || "（ファイルを送信しました）",
+  });
 
   await notifyRecipientIfCaughtUp({
     threadId,
@@ -264,10 +307,11 @@ export async function saveDraft(
   const me = await getOrCreateMemberForUser(su);
   const thread = await prisma.thread.findUnique({ where: { id: threadId } });
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) return {};
+  const draft = body.slice(0, MESSAGE_MAX);
   await prisma.messageDraft.upsert({
     where: { threadId_memberId: { threadId, memberId: me.id } },
-    create: { threadId, memberId: me.id, body },
-    update: { body },
+    create: { threadId, memberId: me.id, body: draft },
+    update: { body: draft },
   });
   return { ok: true };
 }
@@ -280,8 +324,8 @@ export async function createTemplate(
   const su = await getSessionUser();
   if (!su) return { error: "ログインが必要です。" };
   const me = await getOrCreateMemberForUser(su);
-  const n = name.trim();
-  const b = body.trim();
+  const n = name.trim().slice(0, TEMPLATE_NAME_MAX);
+  const b = body.trim().slice(0, TEMPLATE_BODY_MAX);
   if (!n || !b) return { error: "テンプレート名と本文を入力してください。" };
   const t = await prisma.messageTemplate.create({
     data: { memberId: me.id, name: n, body: b },
@@ -335,21 +379,21 @@ export async function markThreadRead(threadId: string): Promise<void> {
   const me = await getOrCreateMemberForUser(su);
   const thread = await prisma.thread.findUnique({ where: { id: threadId } });
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) return;
-  // 「売りたい」への受信問い合わせ制限中は、無料で読める1通目だけを既読にする
+  // 「売りたい」への受信問い合わせ制限中は、実際に読める分だけを既読にする
   const gate = await getInquiryGate({
     threadId,
-    offeringId: thread.offeringId,
     threadFromMemberId: thread.fromMemberId,
     viewerMemberId: me.id,
     viewerIsPremium: me.paymentStatus === "PAID",
   });
+  const maskedIds = Array.from(gate.maskedMessageIds);
   await prisma.message.updateMany({
     where: {
       threadId,
       senderMemberId: { not: me.id },
       readAt: null,
-      // 制限中は、自分の初回返信までに届いた分（＝実際に読める分）だけ既読化する
-      ...(gate.limited && gate.freeUntil ? { createdAt: { lte: gate.freeUntil } } : {}),
+      // マスクして見せていないメッセージは既読にしない
+      ...(maskedIds.length > 0 ? { id: { notIn: maskedIds } } : {}),
     },
     data: { readAt: new Date() },
   });

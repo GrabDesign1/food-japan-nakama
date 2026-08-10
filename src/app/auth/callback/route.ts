@@ -1,17 +1,14 @@
 // OAuth（Googleログイン等）の受け口。code をセッションに交換してダッシュボードへ。
 import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/security";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
 
-  const nextParam = searchParams.get("next") ?? "/dashboard";
-  // オープンリダイレクト防止：自サイト内パスのみ許可
-  const next =
-    nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? nextParam
-      : "/dashboard";
+  // オープンリダイレクト防止：自サイト内パスのみ許可（バックスラッシュ等も弾く）
+  const next = safeInternalPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createSupabaseServerClient();
