@@ -351,7 +351,11 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例：宮崎産の柑橘を使った香り豊かなクラフトビール"
+            placeholder={
+              isGive
+                ? "例：宮崎産の柑橘を使った香り豊かなクラフトビール"
+                : "例：クリスマスで使うイチゴを探している"
+            }
             className={inputCls}
           />
         </label>
@@ -382,7 +386,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             placeholder={
               isGive
                 ? "どのような商品・原料ですか？ 産地・製法・味わい・用途などを紹介してください。"
-                : "例：宮崎らしい常温ギフト商品を探しています。商品名が未定でも、イメージや条件を書いてください。"
+                : "例：クリスマスケーキの製造に使用する国産いちごを探しています。\nデコレーション用途のため、粒揃いがよく、色付き・形状が安定したものを希望しています。品種は問いませんが、ケーキに使用した際に見栄えがよく、適度な酸味と甘みがあるものを希望します。"
             }
             className={inputCls}
           />
@@ -404,8 +408,10 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                 name="usageContext"
                 value={usageContext}
                 onChange={(e) => setUsageContext(e.target.value)}
-                rows={3}
-                placeholder="例：ホテルの朝食ビュッフェで使用／自社ECのギフトセットに同梱／居酒屋の季節メニューに使用"
+                rows={11}
+                placeholder={
+                  "例：\n・用途：クリスマスケーキのデコレーション\n・産地：国産\n・規格：秀品〜優品相当を希望\n・サイズ：M〜L中心（粒揃い希望）\n・荷姿：パック・平詰め等、応相談\n・必要数量：1日あたり50〜100パック程度\n・納品希望：12月20日〜25日\n・納品場所：東京都内店舗\n・価格：相場を踏まえてご相談\n・継続取引：条件が合えば通常期の仕入れも検討"
+                }
                 className={inputCls}
               />
               <span className="text-[11px] text-[var(--muted)]">
