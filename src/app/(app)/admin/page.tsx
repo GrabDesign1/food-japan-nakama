@@ -29,6 +29,7 @@ export default async function AdminPage() {
     dealCount,
     dealClosed,
     pendingProjects,
+    sentBackProjects,
     threadCount,
     applicationCount,
   ] = await Promise.all([
@@ -39,6 +40,11 @@ export default async function AdminPage() {
     prisma.deal.count({ where: { tenantId } }),
     prisma.deal.count({ where: { tenantId, phase: 5 } }),
     prisma.project.findMany({ where: { tenantId, status: "pending" }, orderBy: { updatedAt: "desc" } }),
+    // 差し戻し中（再申請待ち）。reviewNote は再申請時にクリアされるため、これで追跡できる
+    prisma.project.findMany({
+      where: { tenantId, status: "draft", reviewNote: { not: null } },
+      orderBy: { updatedAt: "desc" },
+    }),
     prisma.thread.count({ where: { tenantId } }),
     prisma.projectApplication.count({ where: { project: { tenantId } } }),
   ]);
@@ -67,7 +73,9 @@ export default async function AdminPage() {
 
   const pendingCount = members.filter((m) => m.status === "PENDING").length;
 
-  const projMemberIds = Array.from(new Set(pendingProjects.map((p) => p.memberId)));
+  const projMemberIds = Array.from(
+    new Set([...pendingProjects, ...sentBackProjects].map((p) => p.memberId))
+  );
   const projMembers = projMemberIds.length
     ? await prisma.member.findMany({ where: { id: { in: projMemberIds } }, select: { id: true, name: true } })
     : [];
@@ -296,6 +304,37 @@ export default async function AdminPage() {
                   <button className={btn("primary", "sm")}>承認</button>
                 </form>
                 <SendBackButton projectId={p.id} projectTitle={p.title} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* 差し戻し中（再申請待ち）。掲載者が修正して再申請すると上の承認リストに戻る */}
+      {sentBackProjects.length > 0 ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>差し戻し中のプロジェクト（{sentBackProjects.length}）</h2>
+          <p className="mb-2 text-[12px] text-[var(--muted)]">
+            掲載者が修正して再申請すると「プロジェクト掲載の承認」に戻ります。長く動きがない場合は事務局からご連絡ください。
+          </p>
+          <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+            {sentBackProjects.map((p) => (
+              <div key={p.id} className="flex flex-col gap-1 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className="shrink-0 rounded-full bg-[#FAF0D6] px-2.5 py-1 text-[11px] text-[#B77F0B]">再申請待ち</span>
+                  <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate text-[14px] text-[var(--ink)] hover:underline">
+                    {p.title || "（無題）"}
+                  </Link>
+                  <span className="shrink-0 text-[12px] text-[var(--muted)]">{projNameMap.get(p.memberId)}</span>
+                  <span className="shrink-0 text-[12px] text-[var(--muted)]">
+                    差し戻し {p.updatedAt.getMonth() + 1}月{p.updatedAt.getDate()}日
+                  </span>
+                </div>
+                {p.reviewNote ? (
+                  <p className="line-clamp-2 pl-1 text-[12px] leading-5 text-[var(--ink-2)]">
+                    理由：{p.reviewNote}
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>
