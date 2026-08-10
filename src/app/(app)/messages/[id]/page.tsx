@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { markThreadRead } from "../actions";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
+import { ScrollToLatest } from "../_components/ScrollToLatest";
 import { h1Cls } from "@/lib/ui";
 
 export default async function ThreadPage({
@@ -82,7 +83,7 @@ export default async function ThreadPage({
           </div>
 
           {/* メッセージ */}
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5">
             <div className="flex flex-col gap-4">
               {messages.map((msg) => {
                 const mine = msg.senderMemberId === me.id;
@@ -135,6 +136,8 @@ export default async function ThreadPage({
                 );
               })}
             </div>
+            {/* 最新メッセージまで自動スクロールする目印 */}
+            <ScrollToLatest latestId={lastMessageId} />
           </div>
 
           {/* 入力欄（下書き・テンプレート・面談日程・添付） */}
@@ -144,6 +147,8 @@ export default async function ThreadPage({
             otherName={other?.name ?? "相手"}
             initialDraft={draft?.body ?? ""}
             initialTemplates={templates}
+            myCompanyName={me.name}
+            myPersonName={me.contactName || su.app.name}
           />
         </div>
       </div>

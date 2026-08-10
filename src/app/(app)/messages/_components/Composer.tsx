@@ -63,12 +63,22 @@ export function Composer({
   otherName,
   initialDraft,
   initialTemplates,
+  myCompanyName,
+  myPersonName,
 }: {
   threadId: string;
   otherName: string;
   initialDraft: string;
   initialTemplates: Template[];
+  myCompanyName: string;
+  myPersonName: string;
 }) {
+  /** 定型文の「◯◯（事業者名）」「△△」を自分の情報で埋める（未登録なら元の記号のまま残す）。 */
+  const fillTemplate = (body: string) =>
+    body
+      .replace(/◯◯（事業者名）/g, myCompanyName.trim() || "◯◯（事業者名）")
+      .replace(/△△/g, myPersonName.trim() || "△△");
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [modal, setModal] = useState<null | "template" | "schedule" | "file">(null);
@@ -399,13 +409,13 @@ export function Composer({
                     </span>
                     <button
                       type="button"
-                      onClick={() => { appendText(t.body); setModal(null); }}
+                      onClick={() => { appendText(fillTemplate(t.body)); setModal(null); }}
                       className={`${btn("primary", "sm")} shrink-0`}
                     >
                       この文面を使う
                     </button>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap line-clamp-2 text-[12px] text-[var(--muted)]">{t.body}</p>
+                  <p className="mt-1 whitespace-pre-wrap line-clamp-2 text-[12px] text-[var(--muted)]">{fillTemplate(t.body)}</p>
                 </div>
               ))}
 
@@ -417,7 +427,7 @@ export function Composer({
                     <div className="flex gap-3 text-[12px]">
                       <button
                         type="button"
-                        onClick={() => { appendText(t.body); setModal(null); }}
+                        onClick={() => { appendText(fillTemplate(t.body)); setModal(null); }}
                         className={`${btn("primary", "sm")} shrink-0`}
                       >
                         この文面を使う
