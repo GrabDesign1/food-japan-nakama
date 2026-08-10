@@ -149,7 +149,7 @@ export default async function OfferingDetailPage({
       ["受け渡し方法", offering.deliveryMethods.length ? offering.deliveryMethods.join("・") : null],
       ["送料負担", offering.shippingCostBearer],
       ["サンプル提供", offering.sampleAvailability],
-      // 売りたい＝送り出す側なので「発送元」、探している＝受け取る側なので「発送先」
+      // 販売・提供できる商品＝送り出す側なので「発送元」、仕入れ・調達したいもの＝受け取る側なので「発送先」
       [isGive ? "発送元・受渡地域" : "発送先・受取地域", offering.area],
       ["募集期限", formatDeadline(offering.applicationDeadline)],
     ] as [string, string | null][]
@@ -288,7 +288,7 @@ export default async function OfferingDetailPage({
         </table>
       </div>
 
-      {/* 探している（WANT）：使用目的と条件（売り手が提案可否を判断するための情報） */}
+      {/* 仕入れ・調達したいもの（WANT）：使用目的と条件（売り手が提案可否を判断するための情報） */}
       {!isGive && offering.usageContext ? (
         <div>
           <h2 className={`${h2Cls} mb-2`}>使用目的・販売先</h2>
@@ -399,7 +399,7 @@ export default async function OfferingDetailPage({
             </Link>
           </div>
         ) : !isGive ? (
-          /* 「探している」への新規提案＝初回紹介料の対象。提案ページへ誘導する */
+          /* 「仕入れ・調達したいもの」への新規提案＝初回紹介料の対象。提案ページへ誘導する */
           <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5">
             <div className="text-[14px] font-semibold text-[var(--ink)]">
               この案件に商品・原料を提案する

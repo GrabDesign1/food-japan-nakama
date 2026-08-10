@@ -97,7 +97,7 @@ export default async function PublicHome() {
             <div className="flex flex-col rounded-[12px] border border-[var(--line)] bg-white p-6">
               <h2 className={h2Cls}>できること、探していることを登録する。</h2>
               <p className="mt-2 flex-1 text-[14px] leading-7 text-[var(--ink-2)]">
-                売りたい食材や商品、提供できる技術、探している原料やパートナー、共創したいテーマを無料で掲載できます。
+                販売できる食材や商品、提供できる技術、探している原料やパートナー、共創したいテーマを無料で掲載できます。
               </p>
               <div className="mt-4">
                 <Link href="/signup" className={btn("primary")}>無料で登録する</Link>
@@ -216,7 +216,7 @@ export default async function PublicHome() {
           </div>
         </PreviewSection>
 
-        {/* 売りたい */}
+        {/* 販売・提供できる商品 */}
         <PreviewSection
           id="sell"
           title="販売・提供できる商品"

@@ -29,7 +29,7 @@ export type OfferingCardData = {
   // 掲載タイプ・一言特徴（第2次改善）
   listingPurpose?: string | null;
   tagline?: string | null;
-  // 探している（WANT）の募集タイプ
+  // 仕入れ・調達したいもの（WANT）の募集タイプ
   seekingType?: string | null;
 };
 

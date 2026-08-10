@@ -37,7 +37,7 @@ const MAIN_ACTIONS = [
     href: "/ledger",
     icon: "＋",
     label: "案件を登録する",
-    desc: "売りたい・探している・共創したい",
+    desc: "販売・提供できる商品／仕入れ・調達したいもの／共創パートナー募集",
     primary: false,
   },
   {
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
           include: { member: { select: { name: true } } },
         })
       : Promise.resolve([]),
-    // 自分の公開中の売りたい・買いたい（カード表示用にフル取得）
+    // 自分の公開中の販売・提供できる商品・買いたい（カード表示用にフル取得）
     memberId
       ? prisma.offering.findMany({
           where: { memberId, isPublic: true, title: { not: "" } },

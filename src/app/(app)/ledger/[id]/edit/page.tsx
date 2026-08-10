@@ -90,7 +90,7 @@ export default async function OfferingEditPage({
             ← 台帳一覧
           </Link>
           <h1 className={`${h1Cls} mt-1`}>
-            {offering.direction === "GIVE" ? "売りたいの登録" : "探している商品・原料の登録"}
+            {offering.direction === "GIVE" ? "販売・提供できる商品の登録" : "仕入れ・調達したいもの商品・原料の登録"}
           </h1>
         </div>
         <div className="flex items-center gap-2">

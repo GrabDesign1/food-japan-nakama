@@ -190,7 +190,7 @@ export async function sendMatchedNoticeEmail(params: {
   direction: string;
 }): Promise<void> {
   const { to, offeringTitle, offeringId, direction } = params;
-  const kind = direction === "GIVE" ? "売りたい" : "探している";
+  const kind = direction === "GIVE" ? "販売・提供できる商品" : "仕入れ・調達したいもの";
   const html = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
     <p style="font-size:11px;color:#7C8899">【広告】この案内は、案件・イベント等の案内メールに同意いただいた方へお送りしています。</p>

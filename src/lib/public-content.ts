@@ -11,7 +11,7 @@ export async function getPublicTenantId(): Promise<string | null> {
   return t?.id ?? null;
 }
 
-/** 公開トップに載せるコンテンツ一式（キュレーション記事・お知らせ・プロジェクト・売りたい・買いたい）。 */
+/** 公開トップに載せるコンテンツ一式（キュレーション記事・お知らせ・プロジェクト・販売・提供できる商品・買いたい）。 */
 export async function getLandingContent() {
   const tenantId = await getPublicTenantId();
   if (!tenantId) {

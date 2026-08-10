@@ -55,7 +55,7 @@ export async function sendInterest(
   // 非承認・停止の会員は他社へ送信できない
   if (!canSendToOthers(me.status)) return;
 
-  // 「探している」案件への新規提案は初回紹介料の対象 → 提案フロー（/propose）へ回す。
+  // 「仕入れ・調達したいもの」案件への新規提案は初回紹介料の対象 → 提案フロー（/propose）へ回す。
   // 買い手からの問い合わせ（GIVE案件）と、その返信は無料。
   if (offeringId) {
     const target = await prisma.offering.findUnique({

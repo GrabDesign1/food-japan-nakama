@@ -230,7 +230,7 @@ export default async function AdminBillingPage() {
         ) : (
           <p className="mt-2 text-[12px] text-[var(--muted)]">確認済みの案件はありません。</p>
         )}
-        <h3 className="mt-4 text-[13px] font-semibold text-[var(--ink)]">公開中の「探している」案件（確認候補）</h3>
+        <h3 className="mt-4 text-[13px] font-semibold text-[var(--ink)]">公開中の「仕入れ・調達したいもの」案件（確認候補）</h3>
         <div className="mt-2 flex flex-col gap-2">
           {(isSuper ? wantListings : []).map((o) => (
             <form

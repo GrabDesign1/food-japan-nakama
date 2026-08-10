@@ -1,6 +1,6 @@
 // 共創プロジェクトの掲載申請時の必須チェック（純関数。actions と編集画面のバナーで共用）。
 // 新規申請時（draft/closed → pending）だけ適用する。既存の公開中案件には適用しない。
-// 売りたい（offering-publish.ts）と同じ思想。
+// 販売・提供できる商品（offering-publish.ts）と同じ思想。
 
 export type ProjectPublishCheckInput = {
   title: string;

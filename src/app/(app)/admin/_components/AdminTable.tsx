@@ -109,7 +109,7 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
     });
   }
 
-  // 削除の確認はConfirmDeleteButtonのモーダル側で行う（売りたい・買いたいの削除と同じ仕様）
+  // 削除の確認はConfirmDeleteButtonのモーダル側で行う（販売・提供できる商品・買いたいの削除と同じ仕様）
   async function remove(id: string) {
     await deleteMember(id);
     setOpenId(null);

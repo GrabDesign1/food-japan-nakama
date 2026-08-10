@@ -36,7 +36,7 @@ export function missingForPublish(o: PublishCheckInput): string[] {
   const missing: string[] = [];
   if (!o.title) missing.push("募集タイトル");
   if (o.direction !== "GIVE") {
-    // 探している（WANT）：タイトル＋募集タイプ＋使用目的（2026-08-10 買い手指示書 §5A。
+    // 仕入れ・調達したいもの（WANT）：タイトル＋募集タイプ＋使用目的（2026-08-10 買い手指示書 §5A。
     // 売り手が「何に使うのか」を判断できることが最重要。既存公開中の案件には適用されない）
     if (!o.seekingType) missing.push("募集タイプ（何を探していますか）");
     if (!o.usageContext) missing.push("使用目的・販売先");

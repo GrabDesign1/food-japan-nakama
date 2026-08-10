@@ -34,15 +34,15 @@ export type SeedProduct = {
 /** 初期商品マスター（product-catalog.seed.json 2026-08-10版を基に整形。投入は active=false＝非公開）。 */
 export const SEED_PRODUCTS: SeedProduct[] = [
   // 初回紹介料・クレジット
-  { code: "contact_unlock_standard", name: "通常案件・1件紹介", description: "「探している」案件1件・1相手への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock", priceAmount: 1100, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 10 },
+  { code: "contact_unlock_standard", name: "通常案件・1件紹介", description: "「仕入れ・調達したいもの」案件1件・1相手への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock", priceAmount: 1100, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 10 },
   { code: "contact_unlock_verified_lead", name: "NAKAMA確認済み優良案件・1件紹介", description: "事務局確認済みの優良案件への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock_verified", priceAmount: 3300, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 11 },
   { code: "contact_credits_5", name: "紹介クレジット5件パック", description: "有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 4400, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 5, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 12 },
   { code: "contact_credits_10", name: "紹介クレジット10件パック", description: "有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 7700, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 10, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 13 },
-  // 掲載オプション（売りたい）
+  // 掲載オプション（販売・提供できる商品）
   { code: "sell_featured_7d", name: "注目表示", description: "一覧のスポンサー枠に7日間表示（広告表記つき）", billingType: "one_time", audience: "sell", effectType: "featured", priceAmount: 5500, durationDays: 7, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 20 },
   { code: "sell_top_pr_7d", name: "最上部PR", description: "対象ページ上部のスポンサー枠に7日間表示（審査あり）", billingType: "one_time", audience: "sell", effectType: "top_pr", priceAmount: 22000, durationDays: 7, requiresReview: true, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 21 },
   { code: "sell_urgent_7d", name: "急募ラベル", description: "賞味期限・販売希望時期などを強調（審査あり）", billingType: "one_time", audience: "sell", effectType: "urgent", priceAmount: 3300, durationDays: 7, requiresReview: true, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 22 },
-  // 掲載オプション（探している）
+  // 掲載オプション（仕入れ・調達したいもの）
   { code: "seek_featured_7d", name: "注目表示", description: "一覧のスポンサー枠に7日間表示（広告表記つき）", billingType: "one_time", audience: "seek", effectType: "featured", priceAmount: 11000, durationDays: 7, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 30 },
   { code: "seek_top_pr_7d", name: "最上部PR", description: "対象ページ上部のスポンサー枠に7日間表示（審査あり）", billingType: "one_time", audience: "seek", effectType: "top_pr", priceAmount: 22000, durationDays: 7, requiresReview: true, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 31 },
   { code: "seek_urgent_7d", name: "急募表示", description: "急ぎの仕入れ・調達案件として強調（審査あり）", billingType: "one_time", audience: "seek", effectType: "urgent", priceAmount: 5500, durationDays: 7, requiresReview: true, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 32 },
