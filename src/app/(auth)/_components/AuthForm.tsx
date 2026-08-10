@@ -27,7 +27,7 @@ export function AuthForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <h1 className={h1Cls}>
-        {mode === "login" ? "ログイン" : "新規登録（登録は無料）"}
+        {mode === "login" ? "ログイン" : "新規登録（登録無料）"}
       </h1>
 
       {next ? <input type="hidden" name="next" value={next} /> : null}
