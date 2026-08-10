@@ -72,7 +72,6 @@ export default async function PublicHome() {
                 <Link className="fjn-button fjn-button--primary" href="/signup">無料で登録する</Link>
               )}
               <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
-              <Link className="fjn-button" href="/consultation?type=theme">共創テーマを相談する</Link>
             </div>
             <p className="fjn-hero__note">
               登録・掲載・応募は無料です。<br />
