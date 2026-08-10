@@ -68,7 +68,7 @@ export default function PricingPage() {
           <li>・<b>毎月20件の提案チケット</b>（「探している」案件への初回提案に使えます。翌月への繰越はありません）</li>
           <li>・追加の提案チケットが20%割引</li>
           <li>・掲載オプションが20%割引</li>
-          <li>・会員向けセミナーへの参加、Food Japan Summit ネットワークとの接点</li>
+          <li>・Food Japan Summit ネットワークとの接点</li>
         </ul>
         <p className="mt-2 text-[11px] text-[var(--muted)]">
           会員でなくても基本利用は無料です。お申し込みはログイン後の「プラン・お支払い」から。
