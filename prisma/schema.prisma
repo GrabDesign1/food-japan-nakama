@@ -465,6 +465,8 @@ model Message {
   body           String
   attachmentUrl  String?   @map("attachment_url")
   attachmentName String?   @map("attachment_name")
+  /// 添付のバイト数（送信済みメッセージで「◯KB」を表示するため）
+  attachmentSize Int?      @map("attachment_size")
   /// このメッセージのきっかけになった案件。引き合い課金の判定はスレッドではなくこの値で行う
   /// （スレッドは会員ペアで1本のため、スレッドの offeringId では後続の問い合わせを判定できない）
   offeringId     String?   @map("offering_id")

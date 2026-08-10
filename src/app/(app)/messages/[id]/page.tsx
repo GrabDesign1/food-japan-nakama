@@ -100,16 +100,35 @@ export default async function ThreadPage({
                     >
                       {msg.body}
                       {msg.attachmentUrl ? (
-                        <a
-                          href={`/api/attachments/${msg.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`mt-2 flex items-center gap-1 text-[12px] underline ${
-                            mine ? "text-white/90" : "text-[var(--green-d)]"
-                          }`}
-                        >
-                          📎 {msg.attachmentName ?? "添付ファイル"}
-                        </a>
+                        <div className="mt-2 rounded-[10px] border border-[var(--line)] bg-white p-3">
+                          {isImageName(msg.attachmentName) ? (
+                            // 非公開バケットのため、配信口（参加者のみ）を経由して表示する
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={`/api/attachments/${msg.id}`}
+                              alt={msg.attachmentName ?? "添付画像"}
+                              className="mb-2 max-h-[220px] w-auto rounded object-contain"
+                            />
+                          ) : (
+                            <div className="mb-2 text-[28px] leading-none">📄</div>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                            <span className="break-all text-[var(--ink)]">
+                              {msg.attachmentName ?? "添付ファイル"}
+                              {msg.attachmentSize ? (
+                                <span className="text-[var(--muted)]">（{formatBytes(msg.attachmentSize)}）</span>
+                              ) : null}
+                            </span>
+                            <a
+                              href={`/api/attachments/${msg.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
+                            >
+                              プレビュー
+                            </a>
+                          </div>
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -130,6 +149,19 @@ export default async function ThreadPage({
       </div>
     </div>
   );
+}
+
+/** 拡張子から画像かどうかを判定する（サムネイル表示の可否）。 */
+function isImageName(name: string | null): boolean {
+  if (!name) return false;
+  return /\.(png|jpe?g|gif|webp|avif)$/i.test(name);
+}
+
+/** 3.50 KB のように読みやすく表示する。 */
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(2)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
 function timeStr(d: Date): string {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
@@ -201,6 +202,9 @@ export async function sendMessage(
       ? attachmentPathRaw
       : null;
   const attachmentName = String(formData.get("attachmentName") ?? "").trim().slice(0, 200) || null;
+  const sizeRaw = Number(formData.get("attachmentSize") ?? 0);
+  const attachmentSize =
+    attachmentUrl && Number.isFinite(sizeRaw) && sizeRaw > 0 ? Math.floor(sizeRaw) : null;
   if (!body && !attachmentUrl) return;
 
   const unreadBefore = await prisma.message.count({
@@ -214,33 +218,40 @@ export async function sendMessage(
       body: body || "（ファイルを送信しました）",
       attachmentUrl,
       attachmentName,
+      attachmentSize,
     },
   });
   await prisma.thread.update({
     where: { id: threadId },
     data: { lastMessageAt: new Date() },
   });
-  // メッセージ送信をトリガーに、商談を作成（無ければ）＋最終活動日を更新
   const otherId =
     thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
-  await ensureDeal({ tenantId: su.app.tenantId, meId: me.id, otherId, threadId });
-  await touchDealActivity(me.id, otherId);
 
-  const mailPreview = body || "（ファイルを送信しました）";
-
-  await notifyRecipientIfCaughtUp({
-    threadId,
-    senderId: me.id,
-    senderName: me.name,
-    recipientId: otherId,
-    body: mailPreview,
-    unreadBefore,
-  });
   // 送信したら下書きを消す
   await prisma.messageDraft.deleteMany({ where: { threadId, memberId: me.id } });
 
   revalidatePath(`/messages/${threadId}`);
   revalidatePath("/messages");
+
+  // 商談の作成とメール通知は画面の応答を待たせない（メールは外部APIで数百ms〜数秒かかる）。
+  // after() はレスポンスを返したあとに実行される。
+  after(async () => {
+    try {
+      await ensureDeal({ tenantId: su.app.tenantId, meId: me.id, otherId, threadId });
+      await touchDealActivity(me.id, otherId);
+      await notifyRecipientIfCaughtUp({
+        threadId,
+        senderId: me.id,
+        senderName: me.name,
+        recipientId: otherId,
+        body: body || "（ファイルを送信しました）",
+        unreadBefore,
+      });
+    } catch (e) {
+      console.error("[messages] 送信後処理に失敗:", e);
+    }
+  });
 }
 
 /** 下書き保存（スレッド参加者のみ） */
@@ -291,7 +302,7 @@ export async function deleteTemplate(id: string): Promise<void> {
 export async function uploadMessageAttachment(
   threadId: string,
   formData: FormData
-): Promise<{ url?: string; name?: string; error?: string }> {
+): Promise<{ url?: string; name?: string; size?: number; error?: string }> {
   const su = await getSessionUser();
   if (!su) return { error: "ログインが必要です。" };
   const me = await getOrCreateMemberForUser(su);
@@ -315,7 +326,7 @@ export async function uploadMessageAttachment(
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
   // 非公開バケットなので公開URLは作らない。保存パスだけを返し、配信は /api/attachments 経由で行う
-  return { url: path, name: file.name };
+  return { url: path, name: file.name, size: file.size };
 }
 
 /** スレッドを開いたとき、相手からの未読を既読にする（本人＝スレッド参加者のみ） */

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import {
   sendMessage,
   saveDraft,
@@ -11,6 +12,39 @@ import {
 import { btn, h2Cls } from "@/lib/ui";
 
 type Template = { id: string; name: string; body: string };
+
+/** 3.50 KB のように読みやすく表示する。 */
+export function formatBytes(n: number): string {
+  if (!n) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(2)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+/** 送信ボタン。押した直後に「送信中…」へ変わり、二重送信も防ぐ。 */
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-busy={pending}
+      className={`${btn("primary")} shrink-0 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70`}
+    >
+      {pending ? (
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+          />
+          送信中…
+        </span>
+      ) : (
+        "送信"
+      )}
+    </button>
+  );
+}
 
 // 最初から用意されている定型文（削除不可）
 const DEFAULT_TEMPLATES: { name: string; body: string }[] = [
@@ -37,11 +71,17 @@ export function Composer({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [modal, setModal] = useState<null | "template" | "schedule">(null);
+  const [modal, setModal] = useState<null | "template" | "schedule" | "file">(null);
   const [creating, setCreating] = useState(false);
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
-  const [attachment, setAttachment] = useState<{ url: string; name: string } | null>(null);
+  const [attachment, setAttachment] = useState<{ url: string; name: string; size: number } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  // 添付モーダル（アップロード完了後に開き、ここでメッセージを書いて送信する）
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileBaseName, setFileBaseName] = useState("");
+  const [fileExt, setFileExt] = useState("");
+  const [fileMessage, setFileMessage] = useState("");
   const [pending, startTransition] = useTransition();
 
   // 面談日程
@@ -76,11 +116,54 @@ export function Composer({
     if (!file) return;
     const fd = new FormData();
     fd.append("file", file);
+    // 画像はその場でプレビューできるようにローカルURLを作る（アップロード結果は非公開URLのため）
+    const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+    const dot = file.name.lastIndexOf(".");
+    setFileBaseName(dot > 0 ? file.name.slice(0, dot) : file.name);
+    setFileExt(dot > 0 ? file.name.slice(dot) : "");
+    // アップロードには時間がかかるため、進行中であることを必ず画面に出す
+    setUploading(true);
     startTransition(async () => {
       const res = await uploadMessageAttachment(threadId, fd);
-      if (res.error) showToast(res.error);
-      else if (res.url && res.name) setAttachment({ url: res.url, name: res.name });
+      setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
+      if (res.error) {
+        if (localPreview) URL.revokeObjectURL(localPreview);
+        showToast(res.error);
+        return;
+      }
+      if (res.url && res.name) {
+        setAttachment({ url: res.url, name: res.name, size: res.size ?? 0 });
+        setFilePreview(localPreview);
+        setFileMessage("");
+        // 登録（アップロード）が終わってからモーダルを開く
+        setModal("file");
+      }
+    });
+  }
+
+  /** 添付モーダルを閉じる（送信せずに閉じた場合は添付を破棄する）。 */
+  function closeFileModal(keepAttachment: boolean) {
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    setFilePreview(null);
+    setModal(null);
+    if (!keepAttachment) setAttachment(null);
+  }
+
+  /** モーダルからそのまま送信する。 */
+  function onSendFile() {
+    if (!attachment) return;
+    const name = `${fileBaseName.trim() || "file"}${fileExt}`;
+    const fd = new FormData();
+    fd.set("message", fileMessage.trim());
+    fd.set("attachmentUrl", attachment.url);
+    fd.set("attachmentName", name);
+    fd.set("attachmentSize", String(attachment.size));
+    startTransition(async () => {
+      await sendMessage(threadId, fd);
+      closeFileModal(false);
+      if (textareaRef.current) textareaRef.current.value = "";
+      showToast("ファイルを送信しました");
     });
   }
 
@@ -143,16 +226,32 @@ export function Composer({
           className="w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
         />
 
+        {uploading ? (
+          <div className="mt-2 flex items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--canvas)] px-3 py-2 text-[12px] text-[var(--ink-2)]">
+            <span
+              aria-hidden
+              className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--line)] border-t-[var(--green)]"
+            />
+            ファイルをアップロードしています…
+          </div>
+        ) : null}
+
         {attachment ? (
-          <div className="mt-2 flex items-center gap-2 text-[12px]">
-            <span className="rounded bg-[var(--green-soft)] px-2 py-1 text-[var(--green-d)]">
+          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-[var(--green)] bg-[var(--green-soft)] px-3 py-2 text-[12px]">
+            <span className="font-semibold text-[var(--green-d)]">
               📎 {attachment.name}
             </span>
-            <button type="button" onClick={() => setAttachment(null)} className="text-[var(--red)]">
-              取り消し
+            <span className="text-[11px] text-[var(--ink-2)]">を添付しました（送信すると相手に届きます）</span>
+            <button
+              type="button"
+              onClick={() => setAttachment(null)}
+              className="ml-auto text-[var(--red)] underline"
+            >
+              取り消す
             </button>
             <input type="hidden" name="attachmentUrl" value={attachment.url} />
             <input type="hidden" name="attachmentName" value={attachment.name} />
+            <input type="hidden" name="attachmentSize" value={attachment.size} />
           </div>
         ) : null}
 
@@ -167,16 +266,95 @@ export function Composer({
             <button type="button" onClick={() => setModal("schedule")} className={btnCls}>
               📅 面談日程を調整
             </button>
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={pending} className={btnCls}>
-              📎 ファイル添付
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={pending || uploading}
+              className={btnCls}
+            >
+              📎 {uploading ? "アップロード中…" : attachment ? "添付を変更" : "ファイル添付"}
             </button>
           </div>
-          <button className={`${btn("primary")} shrink-0 whitespace-nowrap`}>
-            送信
-          </button>
+          <SubmitButton />
         </div>
         <input ref={fileRef} type="file" hidden onChange={onPickFile} />
       </form>
+
+      {/* 添付ファイルの送信（アップロード完了後に開く） */}
+      {modal === "file" && attachment ? (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !pending && closeFileModal(false)} />
+          <div className="relative z-10 flex max-h-[86vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[12px] bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3.5">
+              <h2 className={h2Cls}>ファイルの送信</h2>
+              <button
+                type="button"
+                onClick={() => !pending && closeFileModal(false)}
+                className="text-[20px] leading-none text-[var(--muted)] hover:text-[var(--ink)]"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+                ファイルに関するメッセージ（任意）
+                <textarea
+                  autoFocus
+                  rows={3}
+                  value={fileMessage}
+                  onChange={(e) => setFileMessage(e.target.value)}
+                  placeholder="例：規格書をお送りします。ご確認ください。"
+                  className="rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+                />
+              </label>
+
+              <label className="mt-4 flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+                ファイル名
+                <span className="flex items-center gap-2">
+                  <input
+                    value={fileBaseName}
+                    onChange={(e) => setFileBaseName(e.target.value)}
+                    className="min-w-0 flex-1 rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+                  />
+                  <span className="shrink-0 text-[13px] text-[var(--muted)]">{fileExt}</span>
+                </span>
+              </label>
+
+              <div className="mt-4 grid place-items-center rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] p-4">
+                {filePreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={filePreview} alt="" className="max-h-[240px] w-auto object-contain" />
+                ) : (
+                  <div className="py-8 text-center text-[13px] text-[var(--muted)]">
+                    <div className="text-[28px]">📄</div>
+                    {fileBaseName}
+                    {fileExt}
+                  </div>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] text-[var(--muted)]">
+                {formatBytes(attachment.size)}・このファイルはスレッドの相手だけが開けます。
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-[var(--line)] px-5 py-3.5">
+              <button
+                type="button"
+                onClick={() => closeFileModal(false)}
+                disabled={pending}
+                className={btn("secondary")}
+              >
+                キャンセル
+              </button>
+              <button type="button" onClick={onSendFile} disabled={pending} className={btn("primary")}>
+                {pending ? "送信中…" : "送信"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* トースト */}
       {toast ? (
@@ -219,8 +397,12 @@ export function Composer({
                         定型
                       </span>
                     </span>
-                    <button type="button" onClick={() => { appendText(t.body); setModal(null); }} className="text-[12px] text-[var(--green-d)] underline">
-                      使う
+                    <button
+                      type="button"
+                      onClick={() => { appendText(t.body); setModal(null); }}
+                      className={`${btn("primary", "sm")} shrink-0`}
+                    >
+                      この文面を使う
                     </button>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap line-clamp-2 text-[12px] text-[var(--muted)]">{t.body}</p>
@@ -233,8 +415,12 @@ export function Composer({
                   <div className="flex items-center justify-between">
                     <span className="text-[14px] font-medium text-[var(--ink)]">{t.name}</span>
                     <div className="flex gap-3 text-[12px]">
-                      <button type="button" onClick={() => { appendText(t.body); setModal(null); }} className="text-[var(--green-d)] underline">
-                        使う
+                      <button
+                        type="button"
+                        onClick={() => { appendText(t.body); setModal(null); }}
+                        className={`${btn("primary", "sm")} shrink-0`}
+                      >
+                        この文面を使う
                       </button>
                       <button type="button" onClick={() => onDeleteTemplate(t.id)} className="text-[var(--red)] underline">
                         削除
