@@ -30,7 +30,7 @@ export default async function PublicHome() {
           </Link>
 
           <nav className="fjn-nav" aria-label="メインナビゲーション">
-            <a href="#co-creation-projects">案件を探す</a>
+            <a href="#buyer-listings">仕入れ募集を探す</a>
             <Link href="/about">NAKAMAとは</Link>
             <Link href="/produce">共創プロデュース</Link>
             <Link href="/food-loss">食品ロス支援</Link>
@@ -47,15 +47,16 @@ export default async function PublicHome() {
         <div className="fjn-hero__body">
           <div className="fjn-hero__copy">
             <h1 id="fjn-hero-title">
-              食の課題を、<br />全国のNAKAMAと<br />事業に変える。
+              あなたの<br />食材・素材・サービスを<br />探している人と出会う。
             </h1>
+            <p className="fjn-hero__tagline">
+              食の「あったらいいな」<br />を共創でつなぐ。
+            </p>
             <p className="fjn-hero__lead">
-              FOOD JAPAN NAKAMAは、生産者、食品メーカー、小売、<br />
-              流通、飲食店、自治体、大学、専門家など、<br />
-              食に関わる人と企業をつなぐ共創プラットフォームです。
+              全国の食品メーカー、飲食店、小売、加工会社などが募集する
+              食材・原料・商品を確認し、直接提案できます。
               <br /><br />
-              商品・技術・探しているもの・解決したい課題を登録し、<br />
-              取引や新しい事業につながる相手と出会えます。
+              商品の掲載と案件の閲覧は無料です。
             </p>
             <a
               className="fjn-hero__tag"
@@ -66,16 +67,16 @@ export default async function PublicHome() {
               FOOD JAPAN SUMMIT
             </a>
             <div className="fjn-actions">
+              <a className="fjn-button fjn-button--primary" href="#buyer-listings">買い手の募集を見る</a>
               {isLoggedIn ? (
-                <Link className="fjn-button fjn-button--primary" href="/dashboard">マイページトップへ</Link>
+                <Link className="fjn-button" href="/ledger">商品を無料で掲載する</Link>
               ) : (
-                <Link className="fjn-button fjn-button--primary" href="/signup">無料で登録する</Link>
+                <Link className="fjn-button" href="/signup">商品を無料で掲載する</Link>
               )}
-              <a className="fjn-button" href="#co-creation-projects">掲載案件を見る</a>
             </div>
             <p className="fjn-hero__note">
-              登録・掲載・応募は無料です。<br />
-              事務局による相手探し、商談調整、実証・事業化支援は個別契約です。
+              登録無料・月額契約不要。<br />
+              届いた問い合わせへの返信は、何往復でも無料です。
             </p>
           </div>
         </div>
@@ -116,20 +117,42 @@ export default async function PublicHome() {
           {/* 3つの案件区分（公開件数つき） */}
           <div className="mt-8 grid gap-5 sm:grid-cols-3">
             {[
-              { t: "売りたい", n: giveCount, d: "食材、商品、設備、技術、物流など、提供できるものを掲載" },
-              { t: "探している", n: wantCount, d: "必要な食材、原料、商品、技術、加工先、販売先、パートナーを募集" },
-              { t: "共創したい", n: projectCount, d: "新商品開発、食品ロス、地域課題、新規事業などの協業相手を募集" },
+              { t: "販売・提供できる商品", n: giveCount, d: "旬の農産物、業務用原料、加工品、規格外品、余剰品、設備、技術などを掲載" },
+              { t: "仕入れ・調達したいもの", n: wantCount, d: "必要な食材、原料、商品、技術、加工先、販売先を募集" },
+              { t: "パートナー募集", n: projectCount, d: "新商品開発、食品ロス、地域課題、新規事業などの協業相手を募集" },
             ].map((it) => (
               <div key={it.t} className="border-t-2 border-[var(--green)] pt-3">
                 <h2 className={h2Cls}>
                   {it.t}
-                  <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">掲載 {it.n}件</span>
+                  {/* 実数がある場合だけ表示する（0件を大きく見せない） */}
+                  {it.n > 0 ? (
+                    <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">掲載 {it.n}件</span>
+                  ) : null}
                 </h2>
                 <p className="mt-1 text-[13px] leading-6 text-[var(--ink-2)]">{it.d}</p>
               </div>
             ))}
           </div>
         </section>
+
+        {/* 今、企業が探しているもの（トップの主役） */}
+        <PreviewSection
+          id="buyer-listings"
+          title="今、企業が探している食材・商品"
+          sub="食品メーカー・飲食店・小売・加工会社などから寄せられた仕入れ・調達の募集です"
+          empty="現在、食品メーカー・飲食店・小売事業者の仕入れ案件を順次登録しています。掲載され次第このページに表示されます。"
+          hasItems={wants.length > 0}
+        >
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {wants.map((o) => (
+              <OfferingCard
+                key={o.id}
+                href={`/preview/offerings/${o.id}`}
+                o={{ ...o, memberName: o.member.name }}
+              />
+            ))}
+          </div>
+        </PreviewSection>
 
         {/* 食の注目記事（キュレーション） */}
         {articles.length > 0 ? (
@@ -196,32 +219,13 @@ export default async function PublicHome() {
         {/* 売りたい */}
         <PreviewSection
           id="sell"
-          title="売りたい（提供できるもの）"
-          sub="余っている食材・規格外品・食品ロス・提供できる設備など"
-          empty="現在「売りたい」の掲載はありません。"
+          title="販売・提供できる商品"
+          sub="旬の農産物、こだわりの食材、業務用原料、加工品、規格外品、余剰品、設備、技術など"
+          empty="まだ商品が掲載されていません。最初の商品を無料で掲載して、全国の買い手へ紹介しましょう。"
           hasItems={gives.length > 0}
         >
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {gives.map((o) => (
-              <OfferingCard
-                key={o.id}
-                href={`/preview/offerings/${o.id}`}
-                o={{ ...o, memberName: o.member.name }}
-              />
-            ))}
-          </div>
-        </PreviewSection>
-
-        {/* 探している */}
-        <PreviewSection
-          id="buy"
-          title="探している商品・原料"
-          sub="こんな食材・原料・パートナーを探しています"
-          empty="現在「探している」の掲載はありません。"
-          hasItems={wants.length > 0}
-        >
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {wants.map((o) => (
               <OfferingCard
                 key={o.id}
                 href={`/preview/offerings/${o.id}`}
