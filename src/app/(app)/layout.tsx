@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   // アバターと未読バッジは並列で取得。未読はリレーション条件で1クエリにまとめる
   const memberId = su.app.memberId;
-  const [member, unread] = await Promise.all([
+  const [member, unread, pendingReview] = await Promise.all([
     memberId
       ? prisma.member.findUnique({
           where: { id: memberId },
@@ -58,6 +58,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             readAt: null,
           },
         })
+      : Promise.resolve(0),
+    // 事務局向け：審査待ち会員の件数（「事務局管理」にバッジ表示）
+    admin
+      ? prisma.member.count({ where: { tenantId: su.app.tenantId, status: "PENDING" } })
       : Promise.resolve(0),
   ]);
 
@@ -101,6 +105,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   {item.href === "/messages" && unread > 0 ? (
                     <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {unread}
+                    </span>
+                  ) : null}
+                  {item.href === "/admin" && pendingReview > 0 ? (
+                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {pendingReview}
                     </span>
                   ) : null}
                 </Link>

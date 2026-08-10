@@ -49,7 +49,7 @@ export type AdminRow = {
 const STATUS: Record<string, { label: string; cls: string }> = {
   PENDING: { label: "審査中", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
   APPROVED: { label: "承認済み", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
-  AWAITING_PAYMENT: { label: "課金してもらう", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  AWAITING_PAYMENT: { label: "お支払い待ち（旧・要承認し直し）", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
   REJECTED: { label: "非承認", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
   SUSPENDED: { label: "停止中", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
 };
@@ -337,14 +337,7 @@ function DetailModal({
           >
             承認
           </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => onAct(row.id, "require_payment")}
-            className={btn("amber", "md")}
-          >
-            課金してもらう
-          </button>
+          {/* 「課金してもらう」は無料化に伴い撤去（2026-08-10。AWAITING_PAYMENTの既存表示のみ残す） */}
           <button
             type="button"
             disabled={pending}

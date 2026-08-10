@@ -58,6 +58,11 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
           marketingOptInAt,
         },
       });
+      // 事務局へ新規登録を通知（失敗してもログインを妨げない）
+      const { notifyAdminNewSignup } = await import("@/lib/email");
+      notifyAdminNewSignup({ email, name: displayName }).catch((e) =>
+        console.error("[auth] 新規登録通知の送信失敗:", e)
+      );
     } catch (e) {
       // layout と page が同時に初回作成を試みると一意制約で衝突しうる。
       // その場合は作成済みの行を読み直す。

@@ -160,6 +160,20 @@ export async function sendMatchedNoticeEmail(params: {
   await send({ to: [to], subject: `【FOOD JAPAN NAKAMA】条件に合う案件のご案内：${offeringTitle}`, html });
 }
 
+/** 新規登録（アカウント作成）を事務局へ通知。 */
+export async function notifyAdminNewSignup(params: { email: string; name: string }): Promise<void> {
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">新規登録がありました</h2>
+    <p style="font-size:14px;color:#3C4A62">メールアドレス：${esc(params.email)}<br>表示名：${esc(params.name)}</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/admin/members" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">会員管理を開く</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">プロフィール入力・審査申請が届いた際は、別途「審査申請」の通知が届きます。</p>
+  </div>`;
+  await send({ to: ["info@grab-design.com"], subject: "【FOOD JAPAN NAKAMA】新規登録がありました", html });
+}
+
 // 会員が審査申請したとき、事務局へ通知。
 export async function notifyAdminMemberRegistered(params: {
   adminEmails: string[];

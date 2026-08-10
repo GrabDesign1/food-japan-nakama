@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
-import { listReviewMembers } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { AdminTable, type AdminRow } from "./_components/AdminTable";
 import { adminApproveProject } from "../projects/actions";
 import { SendBackButton } from "../projects/_components/SendBackButton";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
@@ -23,7 +21,7 @@ export default async function AdminPage() {
   const tenantId = su.app.tenantId;
 
   const [
-    members,
+    pendingCount,
     memberApproved,
     offeringCount,
     projectPublished,
@@ -34,7 +32,7 @@ export default async function AdminPage() {
     threadCount,
     applicationCount,
   ] = await Promise.all([
-    listReviewMembers(tenantId),
+    prisma.member.count({ where: { tenantId, status: "PENDING" } }),
     prisma.member.count({ where: { tenantId, status: "APPROVED" } }),
     prisma.offering.count({ where: { isPublic: true, member: { tenantId } } }),
     prisma.project.count({ where: { tenantId, status: "published" } }),
@@ -72,8 +70,6 @@ export default async function AdminPage() {
     select: { id: true, name: true, email: true, role: true },
   });
 
-  const pendingCount = members.filter((m) => m.status === "PENDING").length;
-
   const projMemberIds = Array.from(
     new Set([...pendingProjects, ...sentBackProjects].map((p) => p.memberId))
   );
@@ -81,21 +77,6 @@ export default async function AdminPage() {
     ? await prisma.member.findMany({ where: { id: { in: projMemberIds } }, select: { id: true, name: true } })
     : [];
   const projNameMap = new Map(projMembers.map((m) => [m.id, m.name]));
-
-  const rows: AdminRow[] = members.map((m) => ({
-    id: m.id, name: m.name,
-    contactName: m.contactName || m.users[0]?.name || "—",
-    contactKana: m.contactKana, contactEmail: m.users[0]?.email ?? "—",
-    categoryL1: m.categoryL1, categoryL2: m.categoryL2, prefecture: m.prefecture,
-    city: m.city, postalCode: m.postalCode, address: m.address, website: m.website,
-    founded: m.founded, size: m.size, description: m.description, imageUrls: m.imageUrls,
-    featureText: m.featureText, hasLicense: m.hasLicense, licenseName: m.licenseName,
-    equipmentText: m.equipmentText, salesAreaText: m.salesAreaText, logisticsText: m.logisticsText,
-    foodlossText: m.foodlossText, challengeText: m.challengeText, collabStyle: m.collabStyle,
-    startTiming: m.startTiming, completionRate: m.completionRate, status: m.status,
-    paymentStatus: m.paymentStatus,
-    users: m.users,
-  }));
 
   const ROLE_LABEL: Record<string, string> = {
     TENANT_ADMIN: "統括管理者",
@@ -123,6 +104,14 @@ export default async function AdminPage() {
           <h1 className={h1Cls}>事務局管理</h1>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/admin/members" className={`${btn("secondary", "sm")} relative`}>
+            会員管理 →
+            {pendingCount > 0 ? (
+              <span className="absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
+                {pendingCount}
+              </span>
+            ) : null}
+          </Link>
           <Link href="/admin/listings" className={btn("secondary", "sm")}>掲載の監視 →</Link>
           <Link href="/admin/inquiries" className={btn("secondary", "sm")}>問い合わせ・応募の状況 →</Link>
           <Link href="/admin/consultations" className={btn("secondary", "sm")}>個別相談の管理 →</Link>
@@ -354,13 +343,6 @@ export default async function AdminPage() {
           </div>
         </div>
       ) : null}
-
-      {/* 会員管理 */}
-      <div>
-        <h2 className={`${h2Cls} mb-2`}>会員管理（審査中 {pendingCount} 件）</h2>
-        <p className="mb-3 text-[12px] text-[var(--muted)]">会社名をクリックすると、詳細の確認・審査（承認/非承認/課金）・アカウントの停止や削除ができます。</p>
-        <AdminTable rows={rows} />
-      </div>
 
       {/* 管理者アカウント */}
       <div>
