@@ -57,7 +57,14 @@ export default async function PublicHome() {
               商品・技術・探しているもの・解決したい課題を登録し、<br />
               取引や新しい事業につながる相手と出会えます。
             </p>
-            <span className="fjn-hero__tag">FOOD JAPAN SUMMIT</span>
+            <a
+              className="fjn-hero__tag"
+              href="https://food.kanpai-lab.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              FOOD JAPAN SUMMIT
+            </a>
             <div className="fjn-actions">
               {isLoggedIn ? (
                 <Link className="fjn-button fjn-button--primary" href="/dashboard">マイページトップへ</Link>
