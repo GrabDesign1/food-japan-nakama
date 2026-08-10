@@ -16,13 +16,18 @@ function fmt(d: Date): string {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+// レンダー内で Date.now() を直接呼ばないためのヘルパー（react-hooks/purity 対応）
+function daysAgo(days: number): Date {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
 export default async function AdminInquiriesPage() {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   if (!isAdminRole(su.app.role)) redirect("/dashboard");
   const tenantId = su.app.tenantId;
 
-  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const since30d = daysAgo(30);
 
   const [threads, applications, threadCount, messageCount30d] = await Promise.all([
     prisma.thread.findMany({
