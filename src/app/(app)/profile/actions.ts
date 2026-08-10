@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
 import { trimTo, PROFILE_SHORT_MAX, PROFILE_LONG_MAX } from "@/lib/security";
+import { writeAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import {
   getOrCreateMemberForUser,
@@ -10,11 +11,11 @@ import {
   submitMemberForReview,
   type ProfileInput,
 } from "@/lib/member";
-import { notifyAdminMemberRegistered } from "@/lib/email";
+import { notifyAdminMemberRegistered, notifyWithdrawalRequest } from "@/lib/email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
-export type ProfileState = { ok?: boolean; error?: string };
+export type ProfileState = { ok?: boolean; error?: string; message?: string };
 
 const BUCKET = "member-images";
 
@@ -289,4 +290,44 @@ export async function submitProfile(
 
   revalidatePath("/profile");
   return { ok: true };
+}
+
+/**
+ * 退会を申し出る（規約19条）。
+ * その場で消さず「申請」として記録し、事務局が課金の解約・データ削除まで確認して実行する。
+ * 誤操作による取り返しのつかない削除と、Stripeの解約漏れを同時に防ぐため。
+ */
+export async function requestWithdrawal(
+  _prev: ProfileState,
+  formData: FormData
+): Promise<ProfileState> {
+  const su = await getSessionUser();
+  if (!su) return { error: "ログインが必要です。" };
+  const member = await getOrCreateMemberForUser(su);
+
+  if (member.withdrawalRequestedAt) {
+    return { error: "すでに退会申請を受け付けています。事務局からの連絡をお待ちください。" };
+  }
+
+  const reason = trimTo(formData.get("reason"), PROFILE_LONG_MAX);
+  await prisma.member.update({
+    where: { id: member.id },
+    data: { withdrawalRequestedAt: new Date(), withdrawalReason: reason || null },
+  });
+  await writeAudit(su, "member.withdrawal_request", {
+    targetType: "member",
+    targetId: member.id,
+    detail: reason ? `理由=${reason.slice(0, 200)}` : "理由なし",
+  });
+
+  // 事務局への通知と、申請者への受付控え（送信に失敗しても申請自体は成立）
+  notifyWithdrawalRequest({
+    memberName: member.name || "（名称未設定）",
+    memberId: member.id,
+    email: su.app.email,
+    reason,
+  }).catch((e) => console.error("[profile] 退会申請の通知に失敗:", e));
+
+  revalidatePath("/profile");
+  return { ok: true, message: "退会のお申し出を受け付けました。事務局よりご連絡いたします。" };
 }

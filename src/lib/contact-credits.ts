@@ -161,6 +161,21 @@ export async function refundUnreadCredit(params: {
   lotEntryId: string | null;
   contactUnlockId: string;
 }): Promise<{ granted: boolean }> {
+  // 元ロットが既に期限切れなら、そこへ戻しても使えない（返したのに使えない状態になる）。
+  // その場合は新しいロットとして発行し、期限はパックと同じ日数で切り直す。
+  let lotEntryId = params.lotEntryId;
+  let expiresAt: Date | null = null;
+  if (lotEntryId) {
+    const lot = await prisma.contactCreditLedger.findUnique({
+      where: { id: lotEntryId },
+      select: { expiresAt: true },
+    });
+    if (lot?.expiresAt && lot.expiresAt.getTime() <= Date.now()) {
+      lotEntryId = null;
+      expiresAt = new Date(Date.now() + CREDIT_PACK_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    }
+  }
+
   try {
     await prisma.contactCreditLedger.create({
       data: {
@@ -169,11 +184,12 @@ export async function refundUnreadCredit(params: {
         creditType: params.creditType,
         quantity: 1,
         entryType: "refund",
-        // 元ロットが分かる場合はロットへ戻す（期限も元ロットに従う）。不明なら新ロット扱い（無期限）。
-        lotEntryId: params.lotEntryId,
+        // 元ロットが分かる場合はロットへ戻す（期限も元ロットに従う）。
+        lotEntryId,
+        expiresAt,
         contactUnlockId: params.contactUnlockId,
         idempotencyKey: `unread_refund:${params.contactUnlockId}`,
-        note: "14日間未読による返還",
+        note: lotEntryId ? "14日間未読による返還" : "14日間未読による返還（元ロット期限切れのため新規発行）",
       },
     });
     return { granted: true };

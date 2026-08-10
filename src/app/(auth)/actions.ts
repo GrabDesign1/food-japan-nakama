@@ -1,14 +1,16 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendPasswordResetEmail, notifyPasswordChanged } from "@/lib/email";
 import {
   safeInternalPath,
   isAuthRateLimited,
   recordAuthAttempt,
   requestIp,
+  PW_RECOVERY_COOKIE,
 } from "@/lib/security";
 
 // email: エラー時に入力値を保持してフォームへ戻す（React 19はaction後にフォームを既定値へリセットするため）
@@ -145,6 +147,7 @@ export async function updatePassword(
 ): Promise<AuthState> {
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
+  const currentPassword = String(formData.get("currentPassword") ?? "");
 
   if (password.length < 8) {
     return { error: "パスワードは8文字以上にしてください。" };
@@ -164,6 +167,24 @@ export async function updatePassword(
     };
   }
 
+  // 再設定リンク経由（＝メール受信を証明済み）でなければ、現在のパスワードで本人確認する。
+  // これが無いと、セッションを奪われた側が旧パスワードを知らないまま乗っ取りを固定化できる。
+  const jar = await cookies();
+  const viaRecoveryLink = jar.get(PW_RECOVERY_COOKIE)?.value === "1";
+  if (!viaRecoveryLink) {
+    if (!currentPassword) {
+      return { error: "現在のパスワードを入力してください。" };
+    }
+    const check = await createSupabaseServerClient();
+    const { error: reauthError } = await check.auth.signInWithPassword({
+      email: user.email ?? "",
+      password: currentPassword,
+    });
+    if (reauthError) {
+      return { error: "現在のパスワードが違います。" };
+    }
+  }
+
   // 管理者権限で確実に更新（リカバリーセッションの制約を回避）。
   const admin = createSupabaseAdminClient();
   const { error } = await admin.auth.admin.updateUserById(user.id, { password });
@@ -171,7 +192,15 @@ export async function updatePassword(
     return { error: "パスワードの更新に失敗しました。時間をおいて再度お試しください。" };
   }
 
+  if (user.email) {
+    // 身に覚えのない変更に気づけるよう通知（失敗しても更新自体は成立）
+    notifyPasswordChanged(user.email).catch((e) =>
+      console.error("[auth] パスワード変更通知の送信失敗:", e)
+    );
+  }
+
   // リカバリーセッションを終了し、新パスワードでログインし直してもらう。
+  jar.delete(PW_RECOVERY_COOKIE);
   await supabase.auth.signOut();
   redirect("/login?reset=done");
 }

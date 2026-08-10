@@ -84,7 +84,8 @@ export async function adminApprovePromotion(promotionId: string, formData: FormD
 
 /** 審査待ちの掲載オプションを否認（返金はStripeダッシュボードで実施し、注文はWebhookで同期）。 */
 export async function adminRejectPromotion(promotionId: string, formData: FormData): Promise<void> {
-  const su = await requireAdmin();
+  // 返金相当の判断を伴うのため上位管理者のみ（REVIEWER不可）
+  const su = await requireSuperAdmin();
   const reason = String(formData.get("note") ?? "").trim().slice(0, 500);
   if (!reason) return;
   const promo = await prisma.listingPromotion.findFirst({
@@ -105,7 +106,8 @@ export async function adminRejectPromotion(promotionId: string, formData: FormDa
 
 /** 優良案件（NAKAMA確認済み）として確認。確認日と根拠を記録する。 */
 export async function adminMarkVerifiedLead(offeringId: string, formData: FormData): Promise<void> {
-  const su = await requireAdmin();
+  // 紹介料を1,100円→3,300円に変える操作＝価格変更に相当のため上位管理者のみ（REVIEWER不可）
+  const su = await requireSuperAdmin();
   const note = String(formData.get("note") ?? "").trim().slice(0, 1000);
   if (!note) return; // 根拠の記録は必須
   const offering = await prisma.offering.findFirst({
@@ -128,7 +130,8 @@ export async function adminMarkVerifiedLead(offeringId: string, formData: FormDa
 
 /** 優良案件の確認を解除。 */
 export async function adminUnmarkVerifiedLead(offeringId: string): Promise<void> {
-  const su = await requireAdmin();
+  // 価格ティアを戻す操作＝価格変更に相当のため上位管理者のみ（REVIEWER不可）
+  const su = await requireSuperAdmin();
   const offering = await prisma.offering.findFirst({
     where: { id: offeringId, member: { tenantId: su.app.tenantId } },
     select: { id: true },
@@ -145,7 +148,8 @@ export async function adminUnmarkVerifiedLead(offeringId: string): Promise<void>
 
 /** 条件一致通知を承認して送信（案内メール同意者のみ・上限件数まで）。冪等（sent後は再送しない）。 */
 export async function adminSendMatchedNotice(noticeId: string, _formData: FormData): Promise<void> {
-  const su = await requireAdmin();
+  // 最大100名への一斉メール送信＝取り消せない外部送信のため上位管理者のみ（REVIEWER不可）
+  const su = await requireSuperAdmin();
   const notice = await prisma.matchedNotice.findFirst({
     where: { id: noticeId, tenantId: su.app.tenantId, status: "pending_review" },
   });
@@ -154,10 +158,25 @@ export async function adminSendMatchedNotice(noticeId: string, _formData: FormDa
     where: { id: notice.offeringId },
     include: { member: { select: { id: true, name: true } } },
   });
-  if (!offering || !offering.isPublic) return;
+  // 非公開・応募者限定の案件を告知しない（受信者が開けないリンクを100通送ることになる）
+  if (!offering || !offering.isPublic || offering.visibility !== "public") return;
+
+  // 送信件数は注文時の商品の上限（スナップショット）に従う。無ければ既定100件
+  const orderItem = notice.orderItemId
+    ? await prisma.billingOrderItem.findUnique({
+        where: { id: notice.orderItemId },
+        select: { productCode: true },
+      })
+    : null;
+  const product = orderItem
+    ? await prisma.billingProduct.findFirst({
+        where: { code: orderItem.productCode, tenantId: su.app.tenantId },
+        select: { unitLimit: true },
+      })
+    : null;
 
   // 対象抽出：案内メール同意済み・承認済み会員・掲載者自身を除く（サーバー側で確定）
-  const limit = 100;
+  const limit = product?.unitLimit ?? 100;
   const targets = await prisma.user.findMany({
     where: {
       tenantId: su.app.tenantId,
@@ -198,7 +217,8 @@ export async function adminSendMatchedNotice(noticeId: string, _formData: FormDa
 
 /** 条件一致通知を否認（返金対応はStripeダッシュボード→Webhook同期）。 */
 export async function adminRejectMatchedNotice(noticeId: string, formData: FormData): Promise<void> {
-  const su = await requireAdmin();
+  // 返金相当の判断を伴うのため上位管理者のみ（REVIEWER不可）
+  const su = await requireSuperAdmin();
   const reason = String(formData.get("note") ?? "").trim().slice(0, 500);
   if (!reason) return;
   const notice = await prisma.matchedNotice.findFirst({

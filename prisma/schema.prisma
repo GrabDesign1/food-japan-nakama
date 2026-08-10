@@ -155,6 +155,10 @@ model Member {
   stripeCustomerId     String? @map("stripe_customer_id")
   stripeSubscriptionId String? @map("stripe_subscription_id")
 
+  /// 退会申請（会員が自分で申し出た日時と理由。実削除は事務局が行う＝誤操作と課金の取り残しを防ぐ）
+  withdrawalRequestedAt DateTime? @map("withdrawal_requested_at")
+  withdrawalReason      String?   @map("withdrawal_reason")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

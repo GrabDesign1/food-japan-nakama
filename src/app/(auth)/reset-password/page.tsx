@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PW_RECOVERY_COOKIE } from "@/lib/security";
 import { ResetPasswordForm } from "../_components/ResetPasswordForm";
 import { h1Cls } from "@/lib/ui";
 
@@ -27,5 +29,10 @@ export default async function ResetPasswordPage() {
     );
   }
 
-  return <ResetPasswordForm />;
+  // 再設定リンクを踏んでいないセッション（通常ログイン中・乗っ取られたセッション）は
+  // 現在のパスワードを要求する
+  const jar = await cookies();
+  const viaRecoveryLink = jar.get(PW_RECOVERY_COOKIE)?.value === "1";
+
+  return <ResetPasswordForm requireCurrentPassword={!viaRecoveryLink} />;
 }

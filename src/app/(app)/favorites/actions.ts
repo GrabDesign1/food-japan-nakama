@@ -16,8 +16,11 @@ export async function toggleFavorite(targetType: FavTarget, targetId: string): P
 
   // 対象の存在と公開状態を確認（自分のものはお気に入り不可）
   if (targetType === "offering") {
-    const o = await prisma.offering.findUnique({ where: { id: targetId }, select: { memberId: true, isPublic: true } });
-    if (!o || o.memberId === me.id || !o.isPublic) return;
+    const o = await prisma.offering.findFirst({
+      where: { id: targetId, member: { tenantId: su.app.tenantId } },
+      select: { memberId: true, isPublic: true, visibility: true },
+    });
+    if (!o || o.memberId === me.id || !o.isPublic || o.visibility !== "public") return;
   } else {
     const p = await prisma.project.findUnique({ where: { id: targetId }, select: { memberId: true, status: true, tenantId: true } });
     if (!p || p.memberId === me.id || p.status !== "published" || p.tenantId !== su.app.tenantId) return;

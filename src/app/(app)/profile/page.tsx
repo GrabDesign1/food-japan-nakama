@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { ProfileForm, type MemberData } from "./_components/ProfileForm";
 import { ReviewStatus } from "./_components/ReviewStatus";
+import { WithdrawalSection } from "./_components/WithdrawalSection";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function ProfilePage() {
@@ -68,6 +69,8 @@ export default async function ProfilePage() {
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
         <ProfileForm member={data} />
       </div>
+
+      <WithdrawalSection requestedAt={member.withdrawalRequestedAt} />
     </div>
   );
 }

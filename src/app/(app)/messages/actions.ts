@@ -66,9 +66,8 @@ async function notifyRecipientIfCaughtUp(params: {
   });
 }
 
-const BUCKET = "member-images";
-// 添付URLとして受け付けるのは自ストレージの公開URLのみ（data:等のフィッシングURL差し込み防止）
-const STORAGE_PUBLIC_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/${BUCKET}/`;
+// メッセージ添付は非公開バケット。参加者検証と引き合い課金ゲートを通した署名付きURLでのみ配信する
+const ATTACHMENT_BUCKET = "message-attachments";
 
 /** 興味を送る：スレッドが無ければ作成し、最初のメッセージを送る。 */
 export async function sendInterest(
@@ -245,9 +244,12 @@ export async function sendMessage(
   if (gate.limited && !gate.canReplyFree) redirect("/billing");
 
   const body = trimTo(formData.get("message"), MESSAGE_MAX);
-  const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
+  // 添付は非公開バケットの保存パス。自スレッド配下のパスだけを受け付ける
+  const attachmentPathRaw = String(formData.get("attachmentUrl") ?? "").trim();
   const attachmentUrl =
-    attachmentUrlRaw && attachmentUrlRaw.startsWith(STORAGE_PUBLIC_PREFIX) ? attachmentUrlRaw : null;
+    attachmentPathRaw.startsWith(`${threadId}/`) && !attachmentPathRaw.includes("..")
+      ? attachmentPathRaw
+      : null;
   const attachmentName = String(formData.get("attachmentName") ?? "").trim().slice(0, 200) || null;
   if (!body && !attachmentUrl) return;
 
@@ -360,16 +362,16 @@ export async function uploadMessageAttachment(
   if (file.size > 8 * 1024 * 1024) return { error: "ファイルは8MBまでです。" };
 
   const safe = file.name.replace(/[^\w.\-一-龠ぁ-んァ-ヶ]/g, "_");
-  const path = `messages/${threadId}/${crypto.randomUUID()}-${safe}`;
+  const path = `${threadId}/${crypto.randomUUID()}-${safe}`;
   const admin = createSupabaseAdminClient();
   const { error: upErr } = await admin.storage
-    .from(BUCKET)
+    .from(ATTACHMENT_BUCKET)
     // contentType はクライアント申告値を使わない（text/html等を配信させない）
     .upload(path, file, { contentType: safeAttachmentContentType(safe) });
   if (upErr) return { error: `アップロード失敗：${upErr.message}` };
 
-  const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl, name: file.name };
+  // 非公開バケットなので公開URLは作らない。保存パスだけを返し、配信は /api/attachments 経由で行う
+  return { url: path, name: file.name };
 }
 
 /** スレッドを開いたとき、相手からの未読を既読にする（本人＝スレッド参加者のみ） */

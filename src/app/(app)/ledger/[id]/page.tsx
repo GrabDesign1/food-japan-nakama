@@ -120,7 +120,13 @@ export default async function OfferingDetailPage({
 
   const infoRows: [string, string | null][] = [
     ["事業者", memberDisplayName || "—"],
-    ["地域", offering.area || [offering.member.prefecture, offering.member.city].filter(Boolean).join(" ") || "—"],
+    // 応募者限定公開では会員由来の所在地を出さない（都道府県＋市区町村＋業種で会員が特定できてしまう）
+    [
+      "地域",
+      applicantRestricted
+        ? offering.area || "非公開（提案・承認後に開示）"
+        : offering.area || [offering.member.prefecture, offering.member.city].filter(Boolean).join(" ") || "—",
+    ],
     ["カテゴリ", `${meta?.icon ?? ""} ${offering.category}`],
     ["数量・規模", amount],
     ["時期", offering.timing && TIMINGS.includes(offering.timing) ? offering.timing : offering.timing || null],
@@ -216,12 +222,16 @@ export default async function OfferingDetailPage({
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-[var(--ink-2)]">
           <span className="flex items-center gap-1">
             <span className="text-[var(--green-d)]">📍</span>
-            {offering.member.prefecture || offering.area || "—"}
+            {applicantRestricted
+              ? offering.area || "非公開"
+              : offering.member.prefecture || offering.area || "—"}
           </span>
-          <span className="flex items-center gap-1">
-            <span>💼</span>
-            {INDUSTRY_LABEL[offering.member.categoryL1] ?? offering.member.categoryL1}
-          </span>
+          {applicantRestricted ? null : (
+            <span className="flex items-center gap-1">
+              <span>💼</span>
+              {INDUSTRY_LABEL[offering.member.categoryL1] ?? offering.member.categoryL1}
+            </span>
+          )}
         </div>
         <div className="mt-1 text-[12px] text-[var(--muted)]">
           24時間以内に{" "}

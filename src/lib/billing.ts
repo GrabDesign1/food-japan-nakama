@@ -162,6 +162,28 @@ export async function createOneTimeCheckout(params: {
   // 戻り先は自サイトのパスのみ許可（open redirect防止）
   const path = safeInternalPath(params.returnPath, "/billing");
 
+  // 連打対策：直近2分以内の同一条件の未決済注文があれば、そのCheckoutを開き直す。
+  // サーバー側で止めないと、押した回数だけ注文とStripeセッションが増える。
+  const recent = await prisma.billingOrder.findFirst({
+    where: {
+      memberId: params.memberId,
+      offeringId: params.offeringId ?? null,
+      status: "pending_payment",
+      createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+      items: { some: { productCode: product.code } },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, stripeCheckoutSessionId: true },
+  });
+  if (recent?.stripeCheckoutSessionId && stripe) {
+    try {
+      const existing = await stripe.checkout.sessions.retrieve(recent.stripeCheckoutSessionId);
+      if (existing.status === "open" && existing.url) return { url: existing.url };
+    } catch (e) {
+      console.error("[billing] 直近セッションの再利用に失敗（新規作成に進みます）:", e);
+    }
+  }
+
   const order = await prisma.billingOrder.create({
     data: {
       tenantId: params.tenantId,
@@ -410,24 +432,31 @@ async function fulfillItemTx(
   const { tenantId, memberId, offeringId, item } = params;
   const now = new Date();
 
-  const grantPackTx = async (creditType: "standard" | "verified", qty: number) => {
-    try {
-      await tx.contactCreditLedger.create({
-        data: {
+  // 期限つきなのはパックのみ（購入画面で「180日有効」と明示しているため）。
+  // 単品購入は期限を告知していないので無期限にする（未告知の失効を発生させない）。
+  const grantPackTx = async (
+    creditType: "standard" | "verified",
+    qty: number,
+    opts: { expires: boolean }
+  ) => {
+    // $transaction 内で例外を握りつぶすと以後のクエリが失敗するため、createMany + skipDuplicates で冪等にする
+    await tx.contactCreditLedger.createMany({
+      data: [
+        {
           tenantId,
           memberId,
           creditType,
           quantity: qty,
           entryType: "purchase",
-          expiresAt: new Date(now.getTime() + CREDIT_PACK_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
+          expiresAt: opts.expires
+            ? new Date(now.getTime() + CREDIT_PACK_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+            : null,
           orderItemId: item.id,
           idempotencyKey: `item:${item.id}`,
         },
-      });
-    } catch (e) {
-      if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") return;
-      throw e;
-    }
+      ],
+      skipDuplicates: true,
+    });
   };
 
   const createPromotionTx = async (effectType: string, requiresReview: boolean, durationDays: number | null) => {
@@ -451,9 +480,9 @@ async function fulfillItemTx(
       : base.getTime() > now.getTime()
         ? "scheduled"
         : "active";
-    try {
-      await tx.listingPromotion.create({
-        data: {
+    await tx.listingPromotion.createMany({
+      data: [
+        {
           tenantId,
           offeringId,
           // セット展開で1明細から複数効果を作るため、orderItemId は先頭効果のみに紐づける
@@ -463,11 +492,9 @@ async function fulfillItemTx(
           startsAt,
           endsAt,
         },
-      });
-    } catch (e) {
-      if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") return;
-      throw e;
-    }
+      ],
+      skipDuplicates: true,
+    });
     // 公開範囲の即時反映
     if (effectType === "private" || effectType === "applicant_only") {
       await tx.offering.update({
@@ -479,19 +506,17 @@ async function fulfillItemTx(
 
   const createMatchedNoticeTx = async () => {
     if (!offeringId) return;
-    try {
-      await tx.matchedNotice.create({
-        data: {
+    await tx.matchedNotice.createMany({
+      data: [
+        {
           tenantId,
           offeringId,
           orderItemId: item.effectType === "matched_notice" ? item.id : null,
           status: "pending_review",
         },
-      });
-    } catch (e) {
-      if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") return;
-      throw e;
-    }
+      ],
+      skipDuplicates: true,
+    });
   };
 
   // 商品マスターの現在値ではなくスナップショット（durationDaysSnapshot）を使う
@@ -501,17 +526,17 @@ async function fulfillItemTx(
 
   switch (item.effectType) {
     case "contact_unlock":
-      await grantPackTx("standard", 1);
+      await grantPackTx("standard", 1, { expires: false });
       break;
     case "contact_unlock_verified":
-      await grantPackTx("verified", 1);
+      await grantPackTx("verified", 1, { expires: false });
       break;
     case "contact_credits": {
       // 付与数は注文時の商品コード（スナップショット）から決める。
       // 商品マスターの現在値に頼ると、商品行の改名・削除で誤った件数を付与してしまう。
       const qty = PACK_QUANTITY[item.productCode] ?? product?.unitLimit ?? null;
       if (!qty) throw new Error(`クレジット付与数を決定できません: ${item.productCode}`);
-      await grantPackTx("standard", qty);
+      await grantPackTx("standard", qty, { expires: true });
       break;
     }
     case "featured":

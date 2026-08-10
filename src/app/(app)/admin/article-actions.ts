@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { writeAudit } from "@/lib/audit";
 import { fetchOgMeta } from "@/lib/og";
 
 export type ArticleState = { ok?: boolean; error?: string; message?: string };
@@ -73,6 +74,7 @@ export async function createArticle(
     },
   });
 
+  await writeAudit(su, "article.create", { targetType: "article", targetId: title || "(無題)" });
   revalidatePath("/admin");
   revalidatePath("/");
   return { ok: true, message: "記事を追加しました。" };
@@ -81,6 +83,7 @@ export async function createArticle(
 export async function deleteArticle(id: string): Promise<void> {
   const su = await requireAdmin();
   await prisma.curatedArticle.deleteMany({ where: { id, tenantId: su.app.tenantId } });
+  await writeAudit(su, "article.delete", { targetType: "article", targetId: id });
   revalidatePath("/admin");
   revalidatePath("/");
 }
@@ -92,6 +95,7 @@ export async function toggleArticle(id: string, active: boolean): Promise<void> 
     where: { id, tenantId: su.app.tenantId },
     data: { active },
   });
+  await writeAudit(su, "article.toggle", { targetType: "article", targetId: id });
   revalidatePath("/admin");
   revalidatePath("/");
 }

@@ -7,7 +7,11 @@ import { btn, h1Cls } from "@/lib/ui";
 
 const initial: AuthState = {};
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({
+  requireCurrentPassword = false,
+}: {
+  requireCurrentPassword?: boolean;
+}) {
   const [state, formAction, pending] = useActionState(updatePassword, initial);
 
   return (
@@ -16,6 +20,20 @@ export function ResetPasswordForm() {
       <p className="text-[12px] leading-6 text-[var(--ink-2)]">
         新しいパスワード（8文字以上）を入力してください。
       </p>
+
+      {requireCurrentPassword ? (
+        <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+          現在のパスワード
+          <input
+            type="password"
+            name="currentPassword"
+            required
+            autoComplete="current-password"
+            className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+            placeholder="••••••••"
+          />
+        </label>
+      ) : null}
 
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
         新しいパスワード（8文字以上）

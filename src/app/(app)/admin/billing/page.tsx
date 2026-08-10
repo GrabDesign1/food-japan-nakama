@@ -133,10 +133,16 @@ export default async function AdminBillingPage() {
                     <input name="note" placeholder="メモ（任意）" className={`${inputCls} w-44`} />
                     <button className={btn("primary", "sm")}>承認して掲載開始</button>
                   </form>
-                  <form action={adminRejectPromotion.bind(null, p.id)} className="flex items-center gap-2">
-                    <input name="note" required placeholder="否認理由（必須）" className={`${inputCls} w-44`} />
-                    <button className={btn("danger", "sm")}>否認する</button>
-                  </form>
+                  {isSuper ? (
+                    <form action={adminRejectPromotion.bind(null, p.id)} className="flex items-center gap-2">
+                      <input name="note" required placeholder="否認理由（必須）" className={`${inputCls} w-44`} />
+                      <button className={btn("danger", "sm")}>否認する</button>
+                    </form>
+                  ) : (
+                    <span className="self-center text-[11px] text-[var(--muted)]">
+                      否認（返金相当）は上位管理者のみ
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -165,13 +171,21 @@ export default async function AdminBillingPage() {
                   送信対象：案内メール同意済みの承認会員（掲載者除く・最大100件）。送信は一度だけ実行されます。
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <form action={adminSendMatchedNotice.bind(null, n.id)}>
-                    <button className={btn("primary", "sm")}>承認して送信する</button>
-                  </form>
-                  <form action={adminRejectMatchedNotice.bind(null, n.id)} className="flex items-center gap-2">
-                    <input name="note" required placeholder="否認理由（必須）" className={`${inputCls} w-44`} />
-                    <button className={btn("danger", "sm")}>否認する</button>
-                  </form>
+                  {isSuper ? (
+                    <>
+                      <form action={adminSendMatchedNotice.bind(null, n.id)}>
+                        <button className={btn("primary", "sm")}>承認して送信する</button>
+                      </form>
+                      <form action={adminRejectMatchedNotice.bind(null, n.id)} className="flex items-center gap-2">
+                        <input name="note" required placeholder="否認理由（必須）" className={`${inputCls} w-44`} />
+                        <button className={btn("danger", "sm")}>否認する</button>
+                      </form>
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-[var(--muted)]">
+                      一斉送信・否認は上位管理者のみ実行できます
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -185,6 +199,11 @@ export default async function AdminBillingPage() {
         <p className="mt-1 text-[12px] text-[var(--muted)]">
           確認から30日で自動的に通常案件へ戻ります（再確認が必要）。確認の根拠（法人確認・数量・予算・期限・提案確認の意思など）を必ず記録してください。
         </p>
+        {!isSuper ? (
+          <p className="mt-2 rounded-md bg-[var(--canvas)] px-3 py-2 text-[11px] text-[var(--muted)]">
+            この操作は紹介料（1,100円→3,300円）を変えるため、上位管理者のみ実行できます。
+          </p>
+        ) : null}
         {verifiedLeads.length ? (
           <div className="mt-2 flex flex-col gap-2">
             {verifiedLeads.map((o) => {
@@ -199,9 +218,11 @@ export default async function AdminBillingPage() {
                     確認 {o.verifiedLeadAt?.toLocaleDateString("ja-JP")}（{o.verifiedLeadBy}）
                   </span>
                   {expired ? <span className="rounded bg-[var(--red-soft)] px-2 py-0.5 text-[10px] text-[var(--red)]">期限切れ（要再確認）</span> : null}
-                  <form action={adminUnmarkVerifiedLead.bind(null, o.id)} className="ml-auto">
-                    <button className={btn("secondary", "sm")}>解除</button>
-                  </form>
+                  {isSuper ? (
+                    <form action={adminUnmarkVerifiedLead.bind(null, o.id)} className="ml-auto">
+                      <button className={btn("secondary", "sm")}>解除</button>
+                    </form>
+                  ) : null}
                 </div>
               );
             })}
@@ -211,7 +232,7 @@ export default async function AdminBillingPage() {
         )}
         <h3 className="mt-4 text-[13px] font-semibold text-[var(--ink)]">公開中の「探している」案件（確認候補）</h3>
         <div className="mt-2 flex flex-col gap-2">
-          {wantListings.map((o) => (
+          {(isSuper ? wantListings : []).map((o) => (
             <form
               key={o.id}
               action={adminMarkVerifiedLead.bind(null, o.id)}

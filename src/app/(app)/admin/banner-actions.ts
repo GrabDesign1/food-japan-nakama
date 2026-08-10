@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { writeAudit } from "@/lib/audit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 
@@ -60,6 +61,7 @@ export async function createBanner(
     },
   });
 
+  await writeAudit(su, "banner.create", { targetType: "banner", targetId: title || "(無題)" });
   revalidatePath("/admin");
   revalidatePath("/dashboard");
   return { ok: true, message: "バナーを追加しました。" };
@@ -81,6 +83,7 @@ export async function deleteBanner(id: string): Promise<void> {
   }
 
   await prisma.banner.deleteMany({ where: { id, tenantId: su.app.tenantId } });
+  await writeAudit(su, "banner.delete", { targetType: "banner", targetId: id });
   revalidatePath("/admin");
   revalidatePath("/dashboard");
 }
@@ -92,6 +95,7 @@ export async function toggleBanner(id: string, active: boolean): Promise<void> {
     where: { id, tenantId: su.app.tenantId },
     data: { active },
   });
+  await writeAudit(su, "banner.toggle", { targetType: "banner", targetId: id });
   revalidatePath("/admin");
   revalidatePath("/dashboard");
 }

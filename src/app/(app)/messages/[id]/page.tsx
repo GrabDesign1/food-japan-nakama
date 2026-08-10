@@ -131,7 +131,7 @@ export default async function ThreadPage({
                       {msg.body}
                       {msg.attachmentUrl ? (
                         <a
-                          href={msg.attachmentUrl}
+                          href={`/api/attachments/${msg.id}`}
                           target="_blank"
                           rel="noreferrer"
                           className={`mt-2 flex items-center gap-1 text-[12px] underline ${

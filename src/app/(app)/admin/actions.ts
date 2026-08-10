@@ -146,6 +146,17 @@ export async function deleteMember(memberId: string): Promise<void> {
     if (u.authId) await admin.auth.admin.deleteUser(u.authId).catch(() => {});
   }
 
+  // DB削除前に、Storage上のファイルの場所（案件ID・プロジェクトID・スレッドID）を控える。
+  // 控えずに消すと、実体だけが公開URLのまま残り続ける（規約19条の削除と矛盾する）。
+  const [offerings, projects, threads] = await Promise.all([
+    prisma.offering.findMany({ where: { memberId }, select: { id: true } }),
+    prisma.project.findMany({ where: { memberId }, select: { id: true } }),
+    prisma.thread.findMany({
+      where: { OR: [{ fromMemberId: memberId }, { toMemberId: memberId }] },
+      select: { id: true },
+    }),
+  ]);
+
   // DBの関連データを削除（台帳・お気に入りは Member 削除で自動連鎖）
   await prisma.$transaction([
     prisma.project.deleteMany({ where: { memberId } }),
@@ -154,10 +165,60 @@ export async function deleteMember(memberId: string): Promise<void> {
     prisma.user.deleteMany({ where: { memberId, tenantId } }),
     prisma.member.delete({ where: { id: memberId } }),
   ]);
+
+  // Storage上のファイルも消す（画像・ロゴ・アバター・一時アップロード・メッセージ添付）
+  const removed = await removeStorageFolders(admin, {
+    memberImages: [
+      `${memberId}/`,
+      `avatars/${memberId}/`,
+      `logos/${memberId}/`,
+      `offerings/tmp/${memberId}/`,
+      `projects/tmp/${memberId}/`,
+      ...offerings.map((o) => `offerings/${o.id}/`),
+      ...projects.map((p) => `projects/${p.id}/`),
+    ],
+    attachments: threads.map((t) => `${t.id}/`),
+  });
   await writeAudit(su, "member.delete", {
     targetType: "member",
     targetId: memberId,
-    detail: `name=${member.name}`,
+    detail: `name=${member.name} / storage=${removed}件削除`,
   });
   revalidatePath("/admin");
+}
+
+/**
+ * 指定フォルダ配下のファイルを削除する（退会・会員削除時の孤児ファイル対策）。
+ * 失敗しても会員削除自体は巻き戻さない（DB上は消えているため、残骸はログで追える）。
+ */
+async function removeStorageFolders(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  folders: { memberImages: string[]; attachments: string[] }
+): Promise<number> {
+  let count = 0;
+  const targets: [string, string[]][] = [
+    ["member-images", folders.memberImages],
+    ["message-attachments", folders.attachments],
+  ];
+  for (const [bucket, prefixes] of targets) {
+    for (const prefix of prefixes) {
+      try {
+        const { data, error } = await admin.storage.from(bucket).list(prefix.replace(/\/$/, ""), {
+          limit: 1000,
+        });
+        if (error || !data?.length) continue;
+        const paths = data.filter((f) => f.name).map((f) => `${prefix}${f.name}`);
+        if (!paths.length) continue;
+        const { error: rmError } = await admin.storage.from(bucket).remove(paths);
+        if (rmError) {
+          console.error(`[deleteMember] ${bucket}/${prefix} の削除に失敗:`, rmError);
+          continue;
+        }
+        count += paths.length;
+      } catch (e) {
+        console.error(`[deleteMember] ${bucket}/${prefix} の削除で例外:`, e);
+      }
+    }
+  }
+  return count;
 }

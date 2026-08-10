@@ -2,7 +2,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { safeInternalPath } from "@/lib/security";
+import { safeInternalPath, PW_RECOVERY_COOKIE } from "@/lib/security";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -16,7 +16,19 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
+      const res = NextResponse.redirect(new URL(next, request.url));
+      if (type === "recovery") {
+        // 再設定リンクを踏んだ直後だけ、現在のパスワード無しで変更できる印を付ける。
+        // これが無いセッション（＝通常ログインや乗っ取られたセッション）では現在のパスワードを要求する。
+        res.cookies.set(PW_RECOVERY_COOKIE, "1", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 15 * 60,
+        });
+      }
+      return res;
     }
   }
 

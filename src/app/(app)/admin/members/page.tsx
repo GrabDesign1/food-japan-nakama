@@ -2,12 +2,26 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { listReviewMembers } from "@/lib/member";
+import { prisma } from "@/lib/db";
 import { AdminTable, type AdminRow } from "../_components/AdminTable";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function AdminMembersPage() {
   const su = await requireAdmin();
-  const members = await listReviewMembers(su.app.tenantId);
+  const [members, withdrawals] = await Promise.all([
+    listReviewMembers(su.app.tenantId),
+    prisma.member.findMany({
+      where: { tenantId: su.app.tenantId, withdrawalRequestedAt: { not: null } },
+      select: {
+        id: true,
+        name: true,
+        withdrawalRequestedAt: true,
+        withdrawalReason: true,
+        paymentStatus: true,
+      },
+      orderBy: { withdrawalRequestedAt: "asc" },
+    }),
+  ]);
   const pendingCount = members.filter((m) => m.status === "PENDING").length;
 
   const rows: AdminRow[] = members.map((m) => ({
@@ -38,6 +52,36 @@ export default async function AdminMembersPage() {
         </div>
         <Link href="/admin" className={btn("secondary", "sm")}>← 事務局管理へ戻る</Link>
       </div>
+      {withdrawals.length > 0 ? (
+        <section className="rounded-[10px] border-2 border-[var(--red)] bg-[var(--red-soft)] p-4">
+          <h2 className="text-[14px] font-bold text-[var(--red)]">
+            退会のお申し出（{withdrawals.length}件）
+          </h2>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            下の一覧で会社名を開き、Premium会員の解約状況を確認してから「完全に削除する」を実行してください。
+            削除するとStorageの画像・添付ファイルもまとめて消えます。
+          </p>
+          <ul className="mt-2 flex flex-col gap-1 text-[12px] text-[var(--ink)]">
+            {withdrawals.map((w) => (
+              <li key={w.id}>
+                <b>{w.name || "（名称未設定）"}</b>
+                <span className="ml-2 text-[var(--muted)]">
+                  申請 {w.withdrawalRequestedAt?.toLocaleDateString("ja-JP")}
+                </span>
+                {w.paymentStatus === "PAID" ? (
+                  <span className="ml-2 rounded bg-white px-2 py-0.5 text-[10px] font-bold text-[#A87F2F]">
+                    Premium課金中（先に解約が必要）
+                  </span>
+                ) : null}
+                {w.withdrawalReason ? (
+                  <span className="ml-2 text-[var(--ink-2)]">理由：{w.withdrawalReason}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <AdminTable rows={rows} />
     </div>
   );

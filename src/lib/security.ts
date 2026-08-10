@@ -53,6 +53,12 @@ export function safeInternalPath(
   }
 }
 
+/**
+ * パスワード再設定リンクを踏んだ直後であることを示すクッキー名。
+ * これが付いているセッションだけ、現在のパスワード無しでの変更を許す。
+ */
+export const PW_RECOVERY_COOKIE = "nakama-pw-recovery";
+
 // ── 送信者の資格 ─────────────────────────────
 
 /**

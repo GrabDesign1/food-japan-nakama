@@ -62,6 +62,50 @@ export async function sendPasswordResetEmail(
   });
 }
 
+/** パスワード変更の完了通知（身に覚えのない変更に気づけるようにする）。 */
+export async function notifyPasswordChanged(to: string): Promise<void> {
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">パスワードが変更されました</h2>
+    <p style="font-size:14px;color:#3C4A62">FOOD JAPAN NAKAMA のアカウントのパスワードが変更されました。</p>
+    <p style="font-size:12px;color:#7C8899">お心当たりがない場合は、すぐに事務局（info@grab-design.com）までご連絡ください。</p>
+  </div>`;
+
+  await send({
+    to: [to],
+    subject: "【FOOD JAPAN NAKAMA】パスワードが変更されました",
+    html,
+  });
+}
+
+/** 退会申請の通知（事務局宛。実削除は事務局が確認のうえ行う）。 */
+export async function notifyWithdrawalRequest(params: {
+  memberName: string;
+  memberId: string;
+  email: string;
+  reason: string;
+}): Promise<void> {
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #E8341F;padding-bottom:8px">退会のお申し出がありました</h2>
+    <p style="font-size:14px;color:#3C4A62">
+      事業者名：${esc(params.memberName)}<br>
+      申請者：${esc(params.email)}<br>
+      会員ID：${esc(params.memberId)}
+    </p>
+    <p style="font-size:14px;color:#3C4A62">理由：${esc(params.reason) || "（記入なし）"}</p>
+    <p style="font-size:12px;color:#7C8899">
+      /admin/members から、課金の解約状況を確認したうえで削除してください（削除でStorageの画像・添付も消えます）。
+    </p>
+  </div>`;
+
+  await send({
+    to: [ADMIN_INBOX],
+    subject: `【FOOD JAPAN NAKAMA】退会申請：${params.memberName}`,
+    html,
+  });
+}
+
 // ── 課金システム関連（最終実装指示 2026-08-10）──
 
 /** 有料オプション・クレジット購入の決済完了通知。 */
