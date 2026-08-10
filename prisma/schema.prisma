@@ -560,12 +560,17 @@ model Offering {
   sampleAvailability String? @map("sample_availability") // サンプル提供：可/応相談/不可
   priceTaxType     String? @map("price_tax_type") // 税込/税別
 
+  // ── 探している（WANT）改善（2026-08-10 買い手指示書。全てnullable＝旧案件互換） ──
+  seekingType  String? @map("seeking_type") // specific/proposal/oem/surplus/codev/other（src/lib/offering-taxonomy.ts）
+  usageContext String? @map("usage_context") // 使用目的・販売先（何に使うか。売り手の提案判断に最重要）
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   views OfferingView[]
+  requirements OfferingRequirement[]
 
   @@index([memberId])
   @@index([direction])
@@ -574,6 +579,21 @@ model Offering {
 }
 
 /// 台帳の閲覧記録（「24時間以内に○人が閲覧」の集計用）
+/// 探している（WANT）案件の条件（必須・希望・相談可能の区別つき。2026-08-10 買い手指示書 §6）
+model OfferingRequirement {
+  id         String @id @default(cuid())
+  offeringId String @map("offering_id")
+  kind       String // origin/quantity/price/delivery/storage/spec/cert/other（src/lib/offering-taxonomy.ts）
+  text       String // 条件の内容（例：常温保存必須）
+  level      String // must（必須）/ want（希望）/ negotiable（相談可能）
+  sortOrder  Int    @default(0) @map("sort_order")
+
+  offering Offering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+
+  @@index([offeringId])
+  @@map("offering_requirements")
+}
+
 model OfferingView {
   id           String   @id @default(cuid())
   offeringId   String   @map("offering_id")

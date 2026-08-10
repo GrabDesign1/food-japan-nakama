@@ -11,6 +11,9 @@ import {
   formatPrice,
   formatDeadline,
   TIMINGS,
+  SEEKING_TYPE_LABEL,
+  REQUIREMENT_KIND_LABEL,
+  REQUIREMENT_LEVELS,
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
@@ -36,6 +39,7 @@ export default async function OfferingDetailPage({
   const offering = await prisma.offering.findUnique({
     where: { id },
     include: {
+      requirements: { orderBy: { sortOrder: "asc" } },
       member: {
         select: {
           id: true,
@@ -170,6 +174,16 @@ export default async function OfferingDetailPage({
               課題を一緒に解決したい
             </span>
           ) : null}
+          {!isGive && offering.seekingType ? (
+            <span className="rounded bg-[#FAF0D6] px-2.5 py-1 text-[12px] font-bold text-[#B77F0B]">
+              {SEEKING_TYPE_LABEL[offering.seekingType] ?? offering.seekingType}
+            </span>
+          ) : null}
+          {!isGive && offering.isPublic ? (
+            <span className="rounded bg-[var(--green-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--green-d)]">
+              仕入れ・調達先を募集中
+            </span>
+          ) : null}
           {!offering.isPublic ? (
             <span className="rounded bg-[var(--line)] px-2.5 py-1 text-[12px] text-[var(--ink-2)]">
               下書き（未公開）
@@ -201,7 +215,7 @@ export default async function OfferingDetailPage({
         </div>
         {!isOwner && offering.isPublic ? (
           <a href="#inquiry" className={`${btn("primary", "sm")} mt-3 inline-block`}>
-            この案件について問い合わせる ↓
+            {isGive ? "この案件について問い合わせる ↓" : "商品・原料を提案する ↓"}
           </a>
         ) : null}
 
@@ -248,6 +262,62 @@ export default async function OfferingDetailPage({
           </tbody>
         </table>
       </div>
+
+      {/* 探している（WANT）：使用目的と条件（売り手が提案可否を判断するための情報） */}
+      {!isGive && offering.usageContext ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>使用目的・販売先</h2>
+          <p className="whitespace-pre-wrap rounded-[10px] border border-[var(--line)] bg-white p-4 text-[14px] leading-7 text-[var(--ink-2)]">
+            {offering.usageContext}
+          </p>
+        </div>
+      ) : null}
+      {!isGive && offering.requirements.length ? (
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>条件</h2>
+          <div className="flex flex-col gap-3">
+            {REQUIREMENT_LEVELS.map(([level, levelLabel]) => {
+              const rows = offering.requirements.filter((r) => r.level === level);
+              if (!rows.length) return null;
+              return (
+                <div
+                  key={level}
+                  className={`rounded-[10px] border p-4 ${
+                    level === "must"
+                      ? "border-[#E7C7BE] bg-[#FBF1EE]"
+                      : level === "want"
+                        ? "border-[#E7D9A6] bg-[#FFFBF0]"
+                        : "border-[var(--green)] bg-[var(--green-soft)]"
+                  }`}
+                >
+                  <div
+                    className={`text-[12px] font-bold ${
+                      level === "must"
+                        ? "text-[var(--red)]"
+                        : level === "want"
+                          ? "text-[#7A5A0B]"
+                          : "text-[var(--green-d)]"
+                    }`}
+                  >
+                    {levelLabel}
+                    {level === "negotiable" ? "（近い提案・代替案も歓迎）" : ""}
+                  </div>
+                  <ul className="mt-1.5 flex flex-col gap-1">
+                    {rows.map((r) => (
+                      <li key={r.id} className="flex items-start gap-2 text-[14px] leading-6 text-[var(--ink)]">
+                        <span className="shrink-0 text-[12px] text-[var(--muted)]">
+                          {REQUIREMENT_KIND_LABEL[r.kind] ?? r.kind}：
+                        </span>
+                        <span>{r.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {/* 取引条件（買い手が問い合わせ前に判断するための情報） */}
       {tradeRows.length ? (
@@ -311,10 +381,12 @@ export default async function OfferingDetailPage({
             className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5"
           >
             <div className="text-[14px] font-semibold text-[var(--ink)]">
-              この案件について問い合わせる
+              {isGive ? "この案件について問い合わせる" : "この案件に商品・原料を提案する"}
             </div>
             <p className="mb-2 mt-0.5 text-[12px] text-[var(--ink-2)]">
-              価格、数量、受け渡し方法などを{isGive ? "売り手" : "相手"}と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。
+              {isGive
+                ? "価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。"
+                : "提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます（提案を送信 → 相手が確認 → 条件を相談）。"}
             </p>
             <textarea
               name="message"
@@ -482,7 +554,7 @@ export default async function OfferingDetailPage({
       {/* 末尾CTA（問い合わせフォームへ戻る） */}
       {!isOwner && offering.isPublic ? (
         <a href="#inquiry" className={`${btn("primary")} block w-full text-center`}>
-          この案件について問い合わせる
+          {isGive ? "この案件について問い合わせる" : "商品・原料を提案する"}
         </a>
       ) : null}
     </div>

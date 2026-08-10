@@ -223,7 +223,7 @@ export default async function ProducerDetailPage({
       {m.offerings.length ? (
         <div>
           <h2 className={`${h2Cls} mb-3`}>
-            この事業者の「売りたい・買いたい」
+            この事業者の「売りたい・探している」
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {m.offerings.map((o) => (

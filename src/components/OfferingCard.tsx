@@ -1,7 +1,7 @@
 // 台帳カード（一覧・ダッシュボード共通）。レイアウトは一般的な案件カードを参考にした独自デザイン。
 import Link from "next/link";
 import Image from "next/image";
-import { categoryMeta, DIRECTION_SHORT, formatAmount, formatPrice } from "@/lib/offering-taxonomy";
+import { categoryMeta, DIRECTION_SHORT, SEEKING_TYPE_SHORT, formatAmount, formatPrice } from "@/lib/offering-taxonomy";
 
 export type OfferingCardData = {
   id: string;
@@ -29,6 +29,8 @@ export type OfferingCardData = {
   // 掲載タイプ・一言特徴（第2次改善）
   listingPurpose?: string | null;
   tagline?: string | null;
+  // 探している（WANT）の募集タイプ
+  seekingType?: string | null;
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -108,6 +110,11 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
           >
             {DIRECTION_SHORT[o.direction] ?? ""}
           </span>
+          {!isGive && o.seekingType && SEEKING_TYPE_SHORT[o.seekingType] ? (
+            <span className="rounded bg-white/90 px-2 py-0.5 text-[11px] font-bold text-[#B77F0B]">
+              {SEEKING_TYPE_SHORT[o.seekingType]}
+            </span>
+          ) : null}
         </div>
       </div>
 

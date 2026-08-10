@@ -28,9 +28,9 @@ export default async function LedgerPage() {
       <div className="flex items-end justify-between">
         <div>
           <p className={eyebrowCls}>LISTINGS</p>
-          <h1 className={h1Cls}>案件を登録する（売りたい・買いたい）</h1>
+          <h1 className={h1Cls}>案件を登録する（売りたい・探している）</h1>
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-            商品・原料・食品副産物・協業テーマなど、「売りたい」「買いたい」を1件ずつ登録します。
+            商品・原料・食品副産物・協業テーマなど、「売りたい」「探しているもの」を1件ずつ登録します。
           </p>
         </div>
         <div className="flex gap-2">
@@ -38,13 +38,13 @@ export default async function LedgerPage() {
             ＋ 売りたいを登録
           </Link>
           <Link href="/ledger/new?direction=WANT" className={btn("amber")}>
-            ＋ 買いたいを登録
+            ＋ 探しているものを登録する
           </Link>
         </div>
       </div>
 
       <Section title="売りたい" direction="GIVE" items={gives} />
-      <Section title="買いたい" direction="WANT" items={wants} />
+      <Section title="探している商品・原料（買いたい）" direction="WANT" items={wants} />
     </div>
   );
 }
@@ -80,18 +80,18 @@ function Section({
       {items.length === 0 ? (
         <EmptyState
           compact
-          title={direction === "GIVE" ? "「売りたい」はまだ登録がありません" : "「買いたい」はまだ登録がありません"}
+          title={direction === "GIVE" ? "「売りたい」はまだ登録がありません" : "探している商品・原料はまだ登録がありません"}
           description={
             direction === "GIVE"
               ? "商品・食材・規格外品など、動かせるものを1件ずつ登録すると、買いたい相手から見つけてもらえます。"
-              : "探している商品・原料・条件を登録すると、売りたい相手から連絡が届きやすくなります。"
+              : "商品名が決まっていなくても、用途や希望条件から募集できます。登録すると、対応できる生産者や食品事業者から提案を受けられます。"
           }
         >
           <Link
             href={`/ledger/new?direction=${direction}`}
             className={btn(direction === "GIVE" ? "primary" : "amber", "sm")}
           >
-            ＋ {direction === "GIVE" ? "売りたい" : "買いたい"}を登録
+            {direction === "GIVE" ? "＋ 売りたいを登録" : "＋ 探しているものを登録する"}
           </Link>
         </EmptyState>
       ) : (

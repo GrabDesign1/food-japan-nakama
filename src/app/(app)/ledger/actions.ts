@@ -20,6 +20,9 @@ import {
   LISTING_PURPOSES,
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
+  SEEKING_TYPES,
+  REQUIREMENT_KINDS,
+  REQUIREMENT_LEVELS,
 } from "@/lib/offering-taxonomy";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 import { missingForPublish } from "@/lib/offering-publish";
@@ -138,6 +141,13 @@ export async function createOffering(
   const created = await prisma.offering.create({
     data: { memberId: member.id, direction, isPublic: false, ...parsed.data },
   });
+  // 探している（WANT）の条件リストを保存
+  if (direction === "WANT") {
+    await replaceRequirements(
+      created.id,
+      parseRequirements(String(formData.get("requirementsJson") ?? ""))
+    );
+  }
   await attachTempImages(member.id, created.id, tempUrls);
   redirect(`/ledger/${created.id}/edit?created=1`);
 }
@@ -181,7 +191,53 @@ type ParsedOffering = {
   challengeValue: string | null;
   sampleAvailability: string | null;
   priceTaxType: string | null;
+  seekingType: string | null;
+  usageContext: string | null;
 };
+
+// 探している（WANT）の条件リスト（hidden JSONで受け取りサーバー側で検証）
+export type OfferingRequirementInput = {
+  kind: string;
+  text: string;
+  level: string;
+};
+
+const REQUIREMENT_KIND_KEYS = REQUIREMENT_KINDS.map(([v]) => v);
+const REQUIREMENT_LEVEL_KEYS = REQUIREMENT_LEVELS.map(([v]) => v);
+const MAX_REQUIREMENTS = 15;
+
+function parseRequirements(raw: string): OfferingRequirementInput[] {
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .slice(0, MAX_REQUIREMENTS)
+      .map((r) => ({
+        kind: REQUIREMENT_KIND_KEYS.includes(String(r?.kind ?? "")) ? String(r.kind) : "other",
+        text: String(r?.text ?? "").trim().slice(0, 300),
+        level: REQUIREMENT_LEVEL_KEYS.includes(String(r?.level ?? "")) ? String(r.level) : "want",
+      }))
+      .filter((r) => r.text);
+  } catch {
+    return [];
+  }
+}
+
+async function replaceRequirements(
+  offeringId: string,
+  requirements: OfferingRequirementInput[]
+): Promise<void> {
+  await prisma.$transaction([
+    prisma.offeringRequirement.deleteMany({ where: { offeringId } }),
+    ...(requirements.length
+      ? [
+          prisma.offeringRequirement.createMany({
+            data: requirements.map((r, i) => ({ offeringId, ...r, sortOrder: i })),
+          }),
+        ]
+      : []),
+  ]);
+}
 
 // フォーム値の共通パース（保存・新規作成で共用。公開時の必須チェックは togglePublish 側）
 function parseOfferingForm(
@@ -278,6 +334,11 @@ function parseOfferingForm(
       challengeValue: g("challengeValue", 4000) || null,
       sampleAvailability: pick("sampleAvailability", SAMPLE_AVAILABILITY),
       priceTaxType: pick("priceTaxType", PRICE_TAX_TYPES),
+      // 探している（WANT）
+      seekingType: SEEKING_TYPES.some(([v]) => v === g("seekingType"))
+        ? g("seekingType")
+        : null,
+      usageContext: g("usageContext", 4000) || null,
     },
   };
 }
@@ -295,6 +356,13 @@ export async function saveOffering(
     where: { id: offeringId },
     data: parsed.data,
   });
+  // 探している（WANT）の条件リストを置き換え保存
+  if (offering.direction === "WANT") {
+    await replaceRequirements(
+      offeringId,
+      parseRequirements(String(formData.get("requirementsJson") ?? ""))
+    );
+  }
 
   revalidatePath(`/ledger/${offeringId}`);
   revalidatePath("/ledger");

@@ -28,6 +28,11 @@ import {
   LISTING_PURPOSES,
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
+  SEEKING_TYPES,
+  SEEKING_TYPE_SHORT,
+  REQUIREMENT_KINDS,
+  REQUIREMENT_LEVELS,
+  REQUIREMENT_LEVEL_LABEL,
   categoryMeta,
 } from "@/lib/offering-taxonomy";
 import { btn } from "@/lib/ui";
@@ -74,6 +79,10 @@ export type OfferingData = {
   challengeValue: string | null;
   sampleAvailability: string | null;
   priceTaxType: string | null;
+  // 探している（WANT）
+  seekingType: string | null;
+  usageContext: string | null;
+  requirements: { kind: string; text: string; level: string }[];
 };
 
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
@@ -144,8 +153,18 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const [itemCondition, setItemCondition] = useState(offering.itemCondition ?? "");
   const [storageType, setStorageType] = useState(offering.storageType ?? "");
   const [deadline, setDeadline] = useState(offering.applicationDeadline ?? "");
+  // 探している（WANT）：募集タイプ・使用目的・条件リスト
+  const [seekingType, setSeekingType] = useState(offering.seekingType ?? "");
+  const [usageContext, setUsageContext] = useState(offering.usageContext ?? "");
+  const [requirements, setRequirements] = useState<{ kind: string; text: string; level: string }[]>(
+    offering.requirements ?? []
+  );
   // 新規作成モード：一時アップロードした写真（保存時に案件へ紐付け）
   const [tempImages, setTempImages] = useState<string[]>([]);
+
+  function updateRequirement(i: number, patch: Partial<{ kind: string; text: string; level: string }>) {
+    setRequirements((cur) => cur.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
 
   const structured = isStructured(category);
   const food = isFoodCategory(category);
@@ -198,6 +217,48 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_290px]">
       <form action={formAction} className="flex min-w-0 flex-col gap-5">
+        {/* WANT: 条件リストはJSONで送る（サーバー側で検証） */}
+        {!isGive ? (
+          <input type="hidden" name="requirementsJson" value={JSON.stringify(requirements)} />
+        ) : null}
+
+        {/* ── 募集タイプ（探しているのみ） ── */}
+        {!isGive ? (
+          <div>
+            <h2 className="text-[16px] font-bold text-[var(--ink)]">何を探していますか？<Req /></h2>
+            <p className="mt-0.5 text-[12px] text-[var(--muted)]">
+              商品名が決まっていなくても、用途や条件から募集できます。途中で変更しても入力内容は消えません。
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {SEEKING_TYPES.map(([value, label, desc]) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-3.5 py-3 transition ${
+                    seekingType === value
+                      ? "border-[var(--green)] bg-[var(--green-soft)]"
+                      : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="seekingType"
+                      value={value}
+                      checked={seekingType === value}
+                      onChange={() => setSeekingType(value)}
+                      className="accent-[var(--green)]"
+                    />
+                    <span className={`text-[13px] font-bold ${seekingType === value ? "text-[var(--green-d)]" : "text-[var(--ink)]"}`}>
+                      {label}
+                    </span>
+                  </span>
+                  <span className="pl-6 text-[11px] leading-4 text-[var(--muted)]">{desc}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* ── 掲載タイプ（売りたいのみ） ── */}
         {isGive ? (
           <div>
@@ -233,7 +294,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         ) : null}
 
         {/* ── 基本情報 ── */}
-        <div className={isGive ? "border-t border-[var(--line)] pt-5" : ""}>
+        <div className="border-t border-[var(--line)] pt-5">
           <h2 className="text-[16px] font-bold text-[var(--ink)]">基本情報</h2>
           <p className="mt-0.5 text-[12px] text-[var(--muted)]">
             カテゴリに合わせて、必要な入力項目が切り替わります。
@@ -310,14 +371,18 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         <div className={labelCls}>
           <span>
-            この商品・原料について{isGive ? <Req /> : <Req />}
+            {isGive ? <>この商品・原料について<Req /></> : <>何を探していますか？（詳しく）<Req /></>}
           </span>
           <textarea
             name="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
-            placeholder={isGive ? "どのような商品・原料ですか？ 産地・製法・味わい・用途などを紹介してください。" : "探している商品・原料・条件を書いてください。"}
+            placeholder={
+              isGive
+                ? "どのような商品・原料ですか？ 産地・製法・味わい・用途などを紹介してください。"
+                : "例：宮崎らしい常温ギフト商品を探しています。商品名が未定でも、イメージや条件を書いてください。"
+            }
             className={inputCls}
           />
           {!isCreate ? (
@@ -328,6 +393,87 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             />
           ) : null}
         </div>
+
+        {/* ── 使用目的と条件（探しているのみ） ── */}
+        {!isGive ? (
+          <>
+            <div id="f-usage" className={`${labelCls} scroll-mt-24`}>
+              <span>使用目的・販売先<Req /></span>
+              <textarea
+                name="usageContext"
+                value={usageContext}
+                onChange={(e) => setUsageContext(e.target.value)}
+                rows={3}
+                placeholder="例：ホテルの朝食ビュッフェで使用／自社ECのギフトセットに同梱／居酒屋の季節メニューに使用"
+                className={inputCls}
+              />
+              <span className="text-[11px] text-[var(--muted)]">
+                何に使うかが分かると、売り手が代替案も含めて提案しやすくなります。
+              </span>
+            </div>
+
+            <SectionHead
+              title="条件（必須・希望・相談可能）"
+              desc="条件ごとに「必須／希望／相談可能」を選べます。すべて必須にすると提案が来にくくなります。"
+            />
+            <div id="f-requirements" className="scroll-mt-24">
+              <div className="flex flex-col gap-2">
+                {requirements.map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-2 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-3 sm:flex-row sm:items-center"
+                  >
+                    <select
+                      value={r.kind}
+                      onChange={(e) => updateRequirement(i, { kind: e.target.value })}
+                      className={`${inputCls} sm:w-[130px]`}
+                    >
+                      {REQUIREMENT_KINDS.map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={r.text}
+                      onChange={(e) => updateRequirement(i, { text: e.target.value })}
+                      placeholder="例：常温で保存できること"
+                      className={`${inputCls} flex-1`}
+                    />
+                    <select
+                      value={r.level}
+                      onChange={(e) => updateRequirement(i, { level: e.target.value })}
+                      className={`${inputCls} font-bold sm:w-[110px] ${
+                        r.level === "must" ? "text-[var(--red)]" : r.level === "want" ? "text-[#B77F0B]" : "text-[var(--green-d)]"
+                      }`}
+                    >
+                      {REQUIREMENT_LEVELS.map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setRequirements((cur) => cur.filter((_, idx) => idx !== i))}
+                      className="text-[12px] text-[var(--red)] underline"
+                    >
+                      削除
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRequirements((cur) => [...cur, { kind: "origin", text: "", level: "want" }])
+                  }
+                  className={`${btn("secondary", "sm")} w-fit`}
+                >
+                  ＋ 条件を追加
+                </button>
+                <p className="text-[11px] text-[var(--muted)]">
+                  例：産地・地域「宮崎県産が望ましい」＝希望／保存方法「常温保存必須」＝必須／価格「〜500円/個で相談可」＝相談可能
+                </p>
+              </div>
+            </div>
+          </>
+        ) : null}
 
         {/* ── 魅力と背景（質問に答える形式・売りたいのみ） ── */}
         {isGive ? (
@@ -807,9 +953,11 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         </div>
       </form>
 
-      {/* ── 買い手からの見え方（ライブプレビュー） ── */}
+      {/* ── 相手からの見え方（ライブプレビュー） ── */}
       <aside className="h-fit rounded-[12px] border border-[var(--line)] bg-white p-5 lg:sticky lg:top-20">
-        <h2 className="text-[15px] font-bold text-[var(--ink)]">買い手からの見え方</h2>
+        <h2 className="text-[15px] font-bold text-[var(--ink)]">
+          {isGive ? "買い手からの見え方" : "売り手からの見え方"}
+        </h2>
         <div className="mt-3 grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-[var(--green-soft)]">
           {(isCreate ? tempImages[0] : offering.imageUrls[0]) ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -828,10 +976,15 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
             }`}
           >
-            {isGive ? "売りたい" : "買いたい"}
+            {isGive ? "売りたい" : "探している"}
           </span>
           {isGive && listingPurpose === "challenge" ? (
             <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">課題解決</span>
+          ) : null}
+          {!isGive && seekingType ? (
+            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">
+              {SEEKING_TYPE_SHORT[seekingType] ?? seekingType}
+            </span>
           ) : null}
           <span>{meta?.icon} {category}</span>
         </div>
@@ -858,7 +1011,47 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           ))}
         </dl>
         {/* 本文プレビュー（実際の詳細ページと同じ並び） */}
-        <PreviewBlock label="この商品・原料について" text={description} />
+        <PreviewBlock label={isGive ? "この商品・原料について" : "探しているもの"} text={description} />
+        {!isGive ? (
+          <>
+            {usageContext.trim() ? (
+              <PreviewBlock label="使用目的・販売先" text={usageContext} />
+            ) : (
+              <div className="mt-3">
+                <div className="text-[11px] font-bold text-[var(--muted)]">使用目的・販売先</div>
+                <a href="#f-usage" className="text-[12px] font-bold text-[var(--green-d)] underline">
+                  入力する →
+                </a>
+              </div>
+            )}
+            {requirements.filter((r) => r.text.trim()).length ? (
+              <div className="mt-3">
+                <div className="text-[11px] font-bold text-[var(--muted)]">条件</div>
+                <ul className="mt-1 flex flex-col gap-1">
+                  {requirements
+                    .filter((r) => r.text.trim())
+                    .slice(0, 6)
+                    .map((r, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-[12px] leading-5 text-[var(--ink-2)]">
+                        <span
+                          className={`mt-0.5 shrink-0 rounded px-1 py-0.5 text-[10px] font-bold ${
+                            r.level === "must"
+                              ? "bg-[#FBF1EE] text-[var(--red)]"
+                              : r.level === "want"
+                                ? "bg-[#FAF0D6] text-[#B77F0B]"
+                                : "bg-[var(--green-soft)] text-[var(--green-d)]"
+                          }`}
+                        >
+                          {REQUIREMENT_LEVEL_LABEL[r.level] ?? r.level}
+                        </span>
+                        <span>{r.text.trim()}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ) : null}
+          </>
+        ) : null}
         {isGive ? (
           <>
             <PreviewBlock label="特徴・こだわり" text={featureDiff} />

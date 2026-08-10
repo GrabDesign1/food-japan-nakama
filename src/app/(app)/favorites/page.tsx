@@ -73,7 +73,7 @@ export default async function FavoritesPage() {
         <p className={eyebrowCls}>FAVORITES</p>
         <h1 className={h1Cls}>お気に入り</h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-          気になる企業・売りたい/買いたい・共創プロジェクトをここにまとめて見返せます。
+          気になる企業・売りたい/探している・共創プロジェクトをここにまとめて見返せます。
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default async function FavoritesPage() {
         <>
           {offerings.length > 0 ? (
             <div>
-              <h2 className={`${h2Cls} mb-3`}>売りたい・買いたい</h2>
+              <h2 className={`${h2Cls} mb-3`}>売りたい・探している</h2>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {offerings.map((o) => (
                   <OfferingCard

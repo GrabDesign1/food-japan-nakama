@@ -116,7 +116,7 @@ export default async function SearchPage({
         {/* 対象トグル */}
         <div className="mb-3 flex w-full max-w-[560px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
           <button name="target" value="offerings" className={toggleCls(target === "offerings")}>
-            売りたい・買いたい
+            売りたい・探している
           </button>
           <button name="target" value="coprojects" className={toggleCls(target === "coprojects")}>
             共創プロジェクト
@@ -162,7 +162,7 @@ export default async function SearchPage({
             <select name="direction" defaultValue={direction} className={inputCls}>
               <option value="">売り・買い両方</option>
               <option value="GIVE">売りたい</option>
-              <option value="WANT">買いたい</option>
+              <option value="WANT">探している</option>
             </select>
           ) : null}
 
@@ -221,7 +221,7 @@ export default async function SearchPage({
 
 function Empty({ target, hasFilter }: { target: Target; hasFilter: boolean }) {
   const crossLinks: { label: string; href: string }[] = [];
-  if (target !== "offerings") crossLinks.push({ label: "売りたい・買いたいから探す", href: "/search?target=offerings" });
+  if (target !== "offerings") crossLinks.push({ label: "売りたい・探しているから探す", href: "/search?target=offerings" });
   if (target !== "coprojects") crossLinks.push({ label: "共創プロジェクトから探す", href: "/search?target=coprojects" });
   if (target !== "producers") crossLinks.push({ label: "登録事業者から探す", href: "/search?target=producers" });
   return (
@@ -229,13 +229,13 @@ function Empty({ target, hasFilter }: { target: Target; hasFilter: boolean }) {
       title="条件に合うものが見つかりませんでした"
       description={
         hasFilter
-          ? "条件を減らすか、別の言葉でお試しください。逆の立場（売りたい⇄買いたい）で探すと見つかることもあります。"
-          : "掲載は順次増えています。先にあなたの「売りたい・買いたい」を登録しておくと、相手から見つけてもらえます。"
+          ? "条件を減らすか、別の言葉でお試しください。逆の立場（売りたい⇄探している）で探すと見つかることもあります。"
+          : "掲載は順次増えています。先にあなたの「売りたい・探しているもの」を登録しておくと、相手から見つけてもらえます。"
       }
       actions={[
         ...(hasFilter ? [{ label: "条件をクリアして再検索", href: `/search?target=${target}` }] : []),
         ...crossLinks,
-        { label: "売りたい・買いたいを登録する", href: "/ledger", variant: "primary" as const },
+        { label: "売りたい・探しているものを登録する", href: "/ledger", variant: "primary" as const },
       ]}
     />
   );

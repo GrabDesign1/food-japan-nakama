@@ -6,6 +6,8 @@ export type PublishCheckInput = {
   direction: string;
   category: string;
   title: string;
+  seekingType?: string | null; // WANT: 募集タイプ
+  usageContext?: string | null; // WANT: 使用目的・販売先
   area: string | null;
   amountValue: number | null;
   amountText: string | null;
@@ -32,8 +34,14 @@ export type PublishCheckInput = {
 
 export function missingForPublish(o: PublishCheckInput): string[] {
   const missing: string[] = [];
-  if (!o.title) missing.push("タイトル");
-  if (o.direction !== "GIVE") return missing; // 買いたいは従来どおりタイトルのみ
+  if (!o.title) missing.push("募集タイトル");
+  if (o.direction !== "GIVE") {
+    // 探している（WANT）：タイトル＋募集タイプ＋使用目的（2026-08-10 買い手指示書 §5A。
+    // 売り手が「何に使うのか」を判断できることが最重要。既存公開中の案件には適用されない）
+    if (!o.seekingType) missing.push("募集タイプ（何を探していますか）");
+    if (!o.usageContext) missing.push("使用目的・販売先");
+    return missing;
+  }
 
   // 物語部（質問形式）。通常取引型=商品説明・特徴・使い方・相手、課題解決型=＋課題・協力・価値
   if (!o.description) missing.push("この商品・原料について（詳細説明）");

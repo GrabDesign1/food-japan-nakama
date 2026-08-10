@@ -50,7 +50,7 @@ export default async function AdminListingsPage() {
 
       {/* 台帳 */}
       <div>
-        <h2 className={`${h2Cls} mb-3`}>公開中の台帳（売りたい・買いたい）（{offerings.length}）</h2>
+        <h2 className={`${h2Cls} mb-3`}>公開中の台帳（売りたい・探している）（{offerings.length}）</h2>
         {offerings.length === 0 ? (
           <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
             公開中の台帳はありません。
@@ -60,7 +60,7 @@ export default async function AdminListingsPage() {
             {offerings.map((o) => (
               <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
                 <span className={`rounded px-2 py-0.5 text-[11px] font-bold text-white ${o.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"}`}>
-                  {o.direction === "GIVE" ? "売りたい" : "買いたい"}
+                  {o.direction === "GIVE" ? "売りたい" : "探している"}
                 </span>
                 <Link href={`/ledger/${o.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--ink)] hover:underline">
                   {o.title}

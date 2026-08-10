@@ -57,7 +57,7 @@ export const MEMBERSHIP_JSONLD = {
   name: "FOOD JAPAN NAKAMA 月額会員",
   serviceType: "会員制ビジネスマッチング・共創プラットフォーム",
   description:
-    "食に関わる事業者向けの月額会員サービス。自社プロフィール・案件（売りたい／買いたい／共創）の掲載、掲載案件の詳細閲覧、会員へのメッセージ、会員向けセミナー参加を含む。",
+    "食に関わる事業者向けの月額会員サービス。自社プロフィール・案件（売りたい／探している／共創）の掲載、掲載案件の詳細閲覧、会員へのメッセージ、会員向けセミナー参加を含む。",
   provider: { "@id": `${APP_URL}/#org` },
   areaServed: "JP",
   audience: { "@type": "BusinessAudience", name: "食品関連事業者（生産者・メーカー・小売・飲食・流通・自治体等）" },

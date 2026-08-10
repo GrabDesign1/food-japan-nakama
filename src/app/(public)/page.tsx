@@ -92,7 +92,7 @@ export default async function PublicHome() {
           <div className="mt-7 grid gap-5 sm:grid-cols-3">
             {[
               { t: "売りたい", d: "食材・規格外品・商品・設備・技術・物流などを掲載" },
-              { t: "買いたい・探したい", d: "必要な原料・商品・技術・パートナーを募集" },
+              { t: "探している（買いたい）", d: "必要な原料・商品・技術・パートナーを募集" },
               { t: "共創したい", d: "新商品開発・地域課題・食品ロスなどの協業相手を募集" },
             ].map((it) => (
               <div key={it.t} className="border-t-2 border-[var(--green)] pt-3">
@@ -191,9 +191,9 @@ export default async function PublicHome() {
         {/* 買いたい */}
         <PreviewSection
           id="buy"
-          title="買いたい（探しているもの）"
+          title="探している商品・原料（買いたい）"
           sub="こんな食材・原料・パートナーを探しています"
-          empty="現在「買いたい」の掲載はありません。"
+          empty="現在「探している」の掲載はありません。"
           hasItems={wants.length > 0}
         >
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

@@ -43,7 +43,7 @@ export default async function PublicOfferingPreview({
             isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
           }`}
         >
-          {DIRECTION_SHORT[o.direction] ?? (isGive ? "売りたい" : "買いたい")}
+          {DIRECTION_SHORT[o.direction] ?? (isGive ? "売りたい" : "探している")}
         </span>
         <h1 className={h1Cls}>{o.title || "（無題）"}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--muted)]">

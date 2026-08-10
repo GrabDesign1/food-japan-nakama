@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { OfferingForm, type OfferingData } from "../_components/OfferingForm";
-import { DIRECTION_LABEL } from "@/lib/offering-taxonomy";
 import { btn, h1Cls } from "@/lib/ui";
 
 export default async function NewOfferingPage({
@@ -59,6 +58,9 @@ export default async function NewOfferingPage({
     challengeValue: null,
     sampleAvailability: null,
     priceTaxType: null,
+    seekingType: null,
+    usageContext: null,
+    requirements: [],
   };
 
   return (
@@ -67,11 +69,13 @@ export default async function NewOfferingPage({
         <Link href="/ledger" className={btn("secondary", "sm")}>
           ← 案件一覧へ戻る
         </Link>
-        <h1 className={`${h1Cls} mt-2`}>「{DIRECTION_LABEL[direction]}」を登録する</h1>
+        <h1 className={`${h1Cls} mt-2`}>
+          {direction === "GIVE" ? "「売りたい」を登録する" : "探している商品・原料を登録する"}
+        </h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">
           {direction === "GIVE"
             ? "買い手が検討しやすいように、価格・量・状態・受け渡し条件をご登録ください。未確定の項目は「応相談」を選べます。"
-            : "探している商品・原料・条件を登録すると、売りたい相手から連絡が届きやすくなります。"}
+            : "仕入れたい商品や原料、希望条件を登録すると、対応できる生産者や食品事業者から提案を受けられます。商品名が決まっていなくても、用途や希望から相談できます。"}
         </p>
       </div>
 

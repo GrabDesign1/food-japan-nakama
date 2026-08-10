@@ -46,10 +46,12 @@ export async function middleware(request: NextRequest) {
     path === "/" || PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 
   // 未ログインで保護ページ → /login へ
+  // next にはクエリも含める（/ledger/new?direction=WANT 等でログイン後に同じフォームへ戻すため）
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", path);
+    url.search = "";
+    url.searchParams.set("next", path + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { DIRECTION_LABEL } from "@/lib/offering-taxonomy";
 import { OfferingForm, type OfferingData } from "../../_components/OfferingForm";
 import { togglePublish, deleteOffering } from "../../actions";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
@@ -30,7 +29,10 @@ export default async function OfferingEditPage({
   if (!su) redirect("/login");
   const member = await getOrCreateMemberForUser(su);
 
-  const offering = await prisma.offering.findUnique({ where: { id } });
+  const offering = await prisma.offering.findUnique({
+    where: { id },
+    include: { requirements: { orderBy: { sortOrder: "asc" } } },
+  });
   if (!offering || offering.memberId !== member.id) notFound();
 
   const data: OfferingData = {
@@ -75,6 +77,9 @@ export default async function OfferingEditPage({
     challengeValue: offering.challengeValue,
     sampleAvailability: offering.sampleAvailability,
     priceTaxType: offering.priceTaxType,
+    seekingType: offering.seekingType,
+    usageContext: offering.usageContext,
+    requirements: offering.requirements.map((r) => ({ kind: r.kind, text: r.text, level: r.level })),
   };
 
   return (
@@ -85,7 +90,7 @@ export default async function OfferingEditPage({
             ← 台帳一覧
           </Link>
           <h1 className={`${h1Cls} mt-1`}>
-            {DIRECTION_LABEL[offering.direction]}の登録
+            {offering.direction === "GIVE" ? "売りたいの登録" : "探している商品・原料の登録"}
           </h1>
         </div>
         <div className="flex items-center gap-2">

@@ -71,7 +71,7 @@ export default function PricingPage() {
             <h3 className="text-[14px] font-semibold text-[var(--ink)]">含まれるもの</h3>
             <ul className="mt-2 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
               <li>・自社プロフィール掲載</li>
-              <li>・売りたい・買いたい・共創案件の掲載</li>
+              <li>・売りたい・探している・共創案件の掲載</li>
               <li>・案件詳細の閲覧</li>
               <li>・会員への問い合わせ・メッセージ</li>
               <li>・会員向けセミナーへの参加</li>

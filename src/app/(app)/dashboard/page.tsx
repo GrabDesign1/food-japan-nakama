@@ -37,7 +37,7 @@ const MAIN_ACTIONS = [
     href: "/ledger",
     icon: "＋",
     label: "案件を登録する",
-    desc: "売りたい・買いたい・共創したい",
+    desc: "売りたい・探している・共創したい",
     primary: false,
   },
   {
