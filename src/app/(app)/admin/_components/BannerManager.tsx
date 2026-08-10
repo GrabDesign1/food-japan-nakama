@@ -11,11 +11,10 @@ export function BannerManager() {
   const formRef = useRef<HTMLFormElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // 追加成功でフォームとプレビューをリセット
+  // 追加成功でフォームをリセット（プレビューは form の reset イベントで消す）
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
-      setPreview(null);
     }
   }, [state.ok, state.message]);
 
@@ -23,6 +22,7 @@ export function BannerManager() {
     <form
       ref={formRef}
       action={action}
+      onReset={() => setPreview(null)}
       className="flex flex-col gap-3 rounded-[10px] border border-[var(--line)] bg-white p-4"
     >
       <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
