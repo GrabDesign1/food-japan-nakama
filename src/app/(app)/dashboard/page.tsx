@@ -626,11 +626,18 @@ export default async function DashboardPage() {
             ) : (
               <>
                 <p className="mt-2 rounded-[8px] bg-[var(--green-soft)] p-2.5 text-[12px] leading-5 text-[var(--green-d)]">
-                  登録・掲載・応募・メッセージは無料でご利用いただけます。
+                  登録・掲載・応募は無料でご利用いただけます。
                 </p>
-                <Link href="/billing" className="mt-2 inline-block text-[12px] font-bold text-[var(--green-d)]">
-                  料金・共創支援について →
+                {/* Premiumアップグレード（ゴールド） */}
+                <Link
+                  href="/billing"
+                  className="mt-3 block rounded-md bg-[#C9A053] py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[#B58C3D]"
+                >
+                  Premium会員へアップグレード
                 </Link>
+                <p className="mt-1.5 text-[11px] leading-5 text-[var(--muted)]">
+                  提案し放題・届いた問い合わせに応対し放題・オプション20%OFF（月額22,000円・税込）
+                </p>
               </>
             )}
           </div>
