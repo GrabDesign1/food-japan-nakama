@@ -160,7 +160,18 @@ export async function setMemberReview(
           }
         : { status: "REJECTED" as const };
 
-  return prisma.member.update({ where: { id: memberId }, data });
+  const updated = await prisma.member.update({ where: { id: memberId }, data });
+
+  // 事業者確認（承認）後、初回登録特典＝紹介クレジット3件を組織単位で一度だけ付与
+  // （idempotencyKey で再承認しても重複付与されない）
+  if (decision === "approve" || decision === "require_payment") {
+    const { grantSignupCredits } = await import("@/lib/contact-credits");
+    await grantSignupCredits(tenantId, memberId).catch((e) =>
+      console.error("[member] 初回クレジット付与失敗:", e)
+    );
+  }
+
+  return updated;
 }
 
 /** 事務局一覧用：下書き以外の会員を、担当者（登録ユーザー）付きで取得。 */

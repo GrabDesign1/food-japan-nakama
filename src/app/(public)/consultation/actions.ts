@@ -7,7 +7,23 @@ import { sendConsultationEmails } from "@/lib/email";
 
 export type ConsultationState = { ok?: boolean; refNo?: string; error?: string };
 
-const SERVICE_TYPES = new Set(["produce", "crowdfunding", "food-loss", "project", "unsure"]);
+const SERVICE_TYPES = new Set([
+  "theme",
+  "produce",
+  "crowdfunding",
+  "food-loss",
+  "project",
+  "unsure",
+  // 正式サービスメニュー（最終実装指示 2026-08-10。相談→見積→個別契約）
+  "promotion_plan",
+  "sales_growth",
+  "solution_build",
+  "success_fee",
+  "co_creation",
+]);
+
+// 共創テーマ相談：社名・課題の公開可否（新ビジネスモデル実装指示書 §8）
+const THEME_DISCLOSURES = new Set(["公開可", "匿名なら可", "非公開"]);
 
 // 共創プロジェクト伴走で選べる支援内容（指示書 §11）
 const PROJECT_SUPPORT_TYPES = new Set([
@@ -91,6 +107,18 @@ export async function submitConsultation(
     if (flParts.length) {
       productSummaryFull +=
         "\n\n【フードロス相談の詳細】\n" + flParts.map(([k, v]) => `・${k}：${v}`).join("\n");
+    }
+  }
+
+  // 共創テーマ相談：探している相手・公開可否を概要に整形して追記
+  if (serviceType === "theme") {
+    const parts: string[] = [];
+    const seeking = g("themeSeeking");
+    if (seeking) parts.push(`・探している相手・技術・商品：${seeking}`);
+    const disclosure = g("themeDisclosure", 20);
+    if (THEME_DISCLOSURES.has(disclosure)) parts.push(`・社名・課題の公開可否：${disclosure}`);
+    if (parts.length) {
+      productSummaryFull += "\n\n【共創テーマ相談の詳細】\n" + parts.join("\n");
     }
   }
 

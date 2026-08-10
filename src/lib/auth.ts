@@ -42,6 +42,10 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       );
     }
     const displayName = email.split("@")[0] || "ユーザー";
+    // 登録フォームの「案内メール同意」を user_metadata から引き継ぐ（特電法の同意記録）
+    const meta = user.user_metadata as { marketing_opt_in?: boolean; marketing_opt_in_at?: string } | undefined;
+    const marketingOptInAt =
+      meta?.marketing_opt_in && meta.marketing_opt_in_at ? new Date(meta.marketing_opt_in_at) : null;
     try {
       app = await prisma.user.create({
         data: {
@@ -51,6 +55,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
           name: displayName,
           role: "MEMBER",
           status: "ACTIVE",
+          marketingOptInAt,
         },
       });
     } catch (e) {

@@ -373,9 +373,8 @@ export async function togglePublish(
   offeringId: string,
   isPublic: boolean
 ): Promise<void> {
-  const { member, offering } = await ownOfferingOr404(offeringId);
-  // 公開は月額会員のみ（下書き作成・編集・非公開化は誰でも可）
-  if (isPublic && member.paymentStatus !== "PAID") redirect("/billing");
+  const { offering } = await ownOfferingOr404(offeringId);
+  // 公開は無料（2026-08-10 最終決定書：月額ゲート撤廃）
   // 公開時のみ必須チェック（不足があれば編集画面へ戻して表示）
   if (isPublic) {
     const missing = missingForPublish(offering);

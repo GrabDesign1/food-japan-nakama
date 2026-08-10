@@ -1,31 +1,54 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
+import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { PLANS, stripe } from "@/lib/stripe";
+import { PLANS } from "@/lib/stripe";
+import { getCreditBalances } from "@/lib/contact-credits";
 import { PlanButton } from "./_components/PlanButton";
 import { PortalButton } from "./_components/PortalButton";
-import { eyebrowCls, h1Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
-const PAY_LABEL: Record<string, { label: string; cls: string }> = {
-  FREE: { label: "未加入", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
-  UNPAID: { label: "未決済", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
-  PAID: { label: "課金中", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
+// 正式サービスメニュー（最終実装指示 2026-08-10 §正式サービス。個別契約型は自動決済しない）
+const SERVICE_MENU: { name: string; desc: string; price: string; type: string }[] = [
+  { name: "販促プラン", desc: "SNS掲載、クーポン配信、アクセス分析", price: "月額33,000円", type: "promotion_plan" },
+  { name: "販売強化プラン", desc: "特集制作、広告運用、販売企画、月次改善", price: "月額110,000円＋広告費", type: "sales_growth" },
+  { name: "売れる仕組み構築", desc: "LP、動画、クラウドファンディング、EC、キャンペーン開発", price: "100万〜500万円", type: "solution_build" },
+  { name: "販売成果報酬", desc: "NAKAMA経由で確認できる売上（個別契約で条件確定後に開始）", price: "売上の10〜20％", type: "success_fee" },
+  { name: "共創・商品開発", desc: "相手探し、試作、販路、事業化", price: "300万〜1,000万円", type: "co_creation" },
+];
+
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending_payment: "支払い待ち",
+  paid: "支払い済み",
+  fulfilled: "適用済み",
+  payment_failed: "決済失敗",
+  cancelled: "キャンセル",
+  refunded: "返金済み",
 };
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string }>;
+  searchParams: Promise<{ success?: string; paid?: string }>;
 }) {
   const su = await getSessionUser();
   if (!su) redirect("/login");
-  const member = su.app.memberId
-    ? await prisma.member.findUnique({ where: { id: su.app.memberId }, select: { paymentStatus: true, status: true } })
-    : null;
-  const { success } = await searchParams;
+  const me = await getOrCreateMemberForUser(su!);
+  const { success, paid } = await searchParams;
 
-  const pay = member ? PAY_LABEL[member.paymentStatus] ?? PAY_LABEL.FREE : PAY_LABEL.FREE;
-  const isPaid = member?.paymentStatus === "PAID";
+  const isMember = me.paymentStatus === "PAID";
+  const plan = PLANS[0];
+
+  const [balances, orders] = await Promise.all([
+    getCreditBalances(me.id),
+    prisma.billingOrder.findMany({
+      where: { memberId: me.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { items: { select: { name: true } } },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,93 +57,158 @@ export default async function BillingPage({
         <h1 className={h1Cls}>プラン・お支払い</h1>
       </div>
 
-      {success ? (
-        <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-3 text-[14px] text-[var(--green-d)]">
+      {success || paid ? (
+        <div className="max-w-[760px] rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-3 text-[14px] text-[var(--green-d)]">
           お支払いの手続きが完了しました。反映まで少し時間がかかる場合があります。
         </div>
       ) : null}
 
-      {/* 現在の状態 */}
-      <div className="flex items-center gap-3 rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
-        <span className="text-[13px] text-[var(--muted)]">現在の課金状態</span>
-        <span className={`rounded-full px-3 py-1 text-[12px] ${pay.cls}`}>{pay.label}</span>
-        {member?.status === "AWAITING_PAYMENT" ? (
-          <span className="text-[12px] text-[#B77F0B]">事務局よりお支払いのご案内が届いています。下記からお手続きください。</span>
+      {/* 無料で使えることの明示（有料を必須に見せない） */}
+      <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+        <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
+        <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+          プロフィール登録、案件（売りたい・探している・共創したい）の掲載、閲覧、応募、問い合わせ、メッセージは無料です。
+          有料になるのは、①売り手から「探している」案件への初回提案（紹介料）②掲載オプション（露出・通知）③事務局への依頼、の3つです。
+        </p>
+      </div>
+
+      {/* 紹介クレジット残高 */}
+      <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+        <h2 className={h2Cls}>紹介クレジット残高</h2>
+        <div className="mt-2 flex flex-wrap gap-6 text-[13px]">
+          <span>
+            通常案件用：<b className="text-[16px] text-[var(--green-d)]">{balances.standard}</b> 件
+          </span>
+          <span>
+            優良案件用：<b className="text-[16px] text-[var(--green-d)]">{balances.verified}</b> 件
+          </span>
+          {isMember ? (
+            <span className="text-[var(--green-d)]">月額会員のため提案は無制限（クレジット消費なし）</span>
+          ) : null}
+        </div>
+        <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
+          クレジットは「探している」案件への初回提案1件につき1件消費します。パックの有効期限は購入から180日です。
+          送信後14日間相手が未読の場合のみ1件自動返還します（開封済みで返信がない場合は返還しません）。
+        </p>
+      </div>
+
+      {/* 月額会員プラン */}
+      <div className="max-w-[760px] rounded-[12px] border border-[var(--green)] bg-white p-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="text-[15px] font-semibold text-[var(--ink)]">{plan.name}</div>
+          {isMember ? (
+            <span className="rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[10px] font-medium text-[var(--green-d)]">
+              ご契約中
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-1 text-[11px] text-[var(--muted)]">{plan.tagline}</div>
+        <div className="mt-2 font-serif text-[26px] text-[var(--ink)]">
+          ¥{plan.amount!.toLocaleString()}
+          <span className="text-[12px] text-[var(--muted)]">/月（税込）</span>
+        </div>
+        <ul className="mt-3 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
+          {plan.features.map((f) => (
+            <li key={f} className="flex gap-1.5">
+              <span className="text-[var(--green)]">✓</span>
+              {f}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-5">
+          {isMember ? (
+            <div>
+              <p className="mb-2 text-[12px] text-[var(--muted)]">
+                解約・領収書のダウンロード・お支払い方法の変更は、こちらから行えます。
+              </p>
+              <PortalButton />
+            </div>
+          ) : (
+            <PlanButton planCode={plan.code} label={`月額¥${plan.amount!.toLocaleString()}（税込）で申し込む`} />
+          )}
+        </div>
+        {!isMember ? (
+          <div className="mt-4 rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] px-4 py-3">
+            <p className="text-[11px] leading-5 text-[var(--muted)]">
+              ・自動更新契約です。初回は申込日に決済し、以後は1か月ごと（毎月、申込日と同じ日）に自動決済されます。
+              解約は次回更新日の前日23:59（日本時間）までにこのページから手続きできます。日割り返金はありません。
+              <br />
+              ・会員でなくても、基本利用は無料のままご利用いただけます。
+            </p>
+          </div>
         ) : null}
       </div>
 
-      {isPaid ? (
-        <div className="rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
-          <p className="mb-2 text-[12px] text-[var(--muted)]">
-            解約・領収書のダウンロード・お支払い方法の変更は、こちらから行えます。
-          </p>
-          <PortalButton />
-        </div>
-      ) : null}
-
-      {!stripe ? (
-        <div className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-4 text-[12px] text-[var(--muted)]">
-          ※ 現在オンライン決済（Stripe）は準備中です。設定が完了すると、下記のプランからお支払いいただけます。銀行振込をご希望の場合は事務局までご連絡ください。
-        </div>
-      ) : null}
-
-      {/* プラン */}
-      <div className={`grid gap-4 ${PLANS.length > 1 ? "max-w-[760px] sm:grid-cols-2" : "max-w-[420px]"}`}>
-        {PLANS.map((p) => {
-          const paid = p.amount != null && p.amount > 0;
-          // このカードが利用者の「現在のプラン」か（有料枠は課金中なら現在、無料枠は未課金なら現在）
-          const isCurrent = paid ? isPaid : !isPaid;
-          return (
-            <div key={p.code} className={`relative flex flex-col rounded-[12px] border bg-white p-6 ${paid ? "border-[var(--green)]" : "border-[var(--line)]"}`}>
-              {isCurrent ? (
-                <span className="absolute right-4 top-4 rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[10px] font-medium text-[var(--green-d)]">
-                  現在のプラン
-                </span>
-              ) : null}
-              <div className="text-[15px] font-semibold text-[var(--ink)]">{p.name}</div>
-              {p.tagline ? <div className="mt-0.5 text-[11px] text-[var(--muted)]">{p.tagline}</div> : null}
-              <div className="mt-2 font-serif text-[26px] text-[var(--ink)]">
-                {p.amount == null ? "個別見積" : p.amount === 0 ? "¥0" : `¥${p.amount.toLocaleString()}`}
-                {paid ? <span className="text-[12px] text-[var(--muted)]">/{p.unit}（税込）</span> : null}
+      {/* 事務局へ依頼する（正式サービス。相談→見積→個別契約） */}
+      <div className="max-w-[760px]">
+        <h2 className={h2Cls}>事務局へ依頼する（個別契約）</h2>
+        <p className="mt-1 text-[12px] leading-6 text-[var(--muted)]">
+          基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します。
+          価格は税込の提案値で、個別契約が必要なサービスは「相談する」から事務局が要件確認・見積提示を行います（自動決済はしません）。
+        </p>
+        <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+          {SERVICE_MENU.map((s, i) => (
+            <div
+              key={s.name}
+              className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
+            >
+              <div className="flex-1">
+                <div className="text-[13px] font-semibold text-[var(--ink)]">{s.name}</div>
+                <div className="text-[12px] text-[var(--muted)]">{s.desc}</div>
               </div>
-              <ul className="mt-4 flex flex-1 flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
-                {p.features.map((f) => (
-                  <li key={f} className="flex gap-1.5"><span className="text-[var(--green)]">✓</span>{f}</li>
-                ))}
-              </ul>
-              <div className="mt-5">
-                {isCurrent ? (
-                  <div className="rounded-md border border-[var(--green)] bg-[var(--green-soft)] py-2 text-center text-[12px] font-medium text-[var(--green-d)]">
-                    現在ご利用中のプラン
-                  </div>
-                ) : paid ? (
-                  <PlanButton planCode={p.code} label={`月額¥${p.amount!.toLocaleString()}（税込）で申し込む`} />
-                ) : (
-                  <div className="rounded-md bg-[var(--canvas)] py-2 text-center text-[12px] text-[var(--muted)]">個別見積（事務局へお問い合わせ）</div>
-                )}
-              </div>
+              <div className="shrink-0 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
+              <Link
+                href={`/consultation?type=service&service=${s.type}`}
+                className={`${btn("secondary", "sm")} shrink-0`}
+              >
+                相談する
+              </Link>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
-      {/* 特商法12条の6対応：申込前に契約条件を一覧表示 */}
-      {!isPaid ? (
-        <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
-          <p className="mb-2 text-[13px] font-semibold text-[var(--ink)]">お申し込み前にご確認ください（契約条件）</p>
-          <ul className="flex flex-col gap-1 text-[12px] leading-6 text-[var(--ink-2)]">
-            <li>・料金：月額22,000円（税込）。初回は申込日に22,000円を決済します。</li>
-            <li>・契約期間：1か月。解約手続がない限り、1か月ごと（毎月、申込日と同じ日）に22,000円が自動決済される無期限の自動更新契約です。</li>
-            <li>・提供開始：決済完了後、すぐにご利用いただけます。</li>
-            <li>・解約：次回更新日の前日の午後11時59分（日本時間）までに、このページ（マイページ「プラン・お支払い」）から手続きできます。解約後も契約期間の満了までご利用いただけます。</li>
-            <li>・返金：契約期間途中の解約による日割り返金はありません。</li>
-            <li>・訂正・取消し：決済画面でお支払いを完了する前であれば、画面を戻ることで申込みを中止できます。</li>
-          </ul>
-        </div>
-      ) : null}
+      {/* 購入履歴 */}
+      <div className="max-w-[760px]">
+        <h2 className={h2Cls}>購入履歴（掲載オプション・紹介クレジット）</h2>
+        {orders.length === 0 ? (
+          <p className="mt-2 rounded-[10px] border border-dashed border-[var(--line)] bg-white p-5 text-[12px] text-[var(--muted)]">
+            購入履歴はまだありません。
+          </p>
+        ) : (
+          <div className="mt-2 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+            {orders.map((o, i) => (
+              <div
+                key={o.id}
+                className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-[12px] ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
+              >
+                <span className="text-[var(--muted)]">
+                  {o.createdAt.toLocaleDateString("ja-JP")}
+                </span>
+                <span className="flex-1 font-medium text-[var(--ink)]">
+                  {o.items.map((it) => it.name).join("、")}
+                </span>
+                <span className="text-[var(--ink)]">¥{o.totalAmount.toLocaleString()}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] ${
+                    o.status === "fulfilled" || o.status === "paid"
+                      ? "bg-[var(--green-soft)] text-[var(--green-d)]"
+                      : o.status === "refunded" || o.status === "payment_failed"
+                        ? "bg-[var(--red-soft)] text-[var(--red)]"
+                        : "bg-[var(--line)] text-[var(--ink-2)]"
+                  }`}
+                >
+                  {ORDER_STATUS_LABEL[o.status] ?? o.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      <p className="text-[11px] text-[var(--muted)]">
-        ※ 価格は税込です。自治体・JA・大学など請求書払いをご希望の場合は、事務局が個別に対応します（銀行振込・年額可）。協賛プランとの併用も可能です。
+      <p className="max-w-[760px] text-[11px] leading-5 text-[var(--muted)]">
+        ※ 有料オプションは表示機会を増やすサービスであり、閲覧数、問い合わせ、取引成立、売上を保証するものではありません。
+        登録者同士が自ら行う通常取引について、NAKAMAは原則として売買手数料を徴収しません。
       </p>
     </div>
   );

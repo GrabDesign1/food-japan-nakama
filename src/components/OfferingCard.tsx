@@ -45,7 +45,7 @@ function deadlineLabel(applicationDeadline: Date | string | null | undefined): s
   return d.getTime() < Date.now() ? "募集終了" : `〜${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; isOwn?: boolean; href?: string }) {
+export function OfferingCard({ o, isOwn = false, href, urgent = false }: { o: OfferingCardData; isOwn?: boolean; href?: string; urgent?: boolean }) {
   const meta = categoryMeta(o.category);
   const thumb = o.imageUrls?.[0];
   const isGive = o.direction === "GIVE";
@@ -87,7 +87,11 @@ export function OfferingCard({ o, isOwn = false, href }: { o: OfferingCardData; 
             {meta?.icon ?? "📦"}
           </div>
         )}
-        {isNew ? (
+        {urgent ? (
+          <span className="absolute left-0 top-0 rounded-br-lg bg-[var(--red)] px-2.5 py-1 text-[11px] font-bold text-white shadow">
+            急募
+          </span>
+        ) : isNew ? (
           <span className="absolute left-0 top-0 rounded-br-lg bg-[var(--red)] px-2.5 py-1 text-[11px] font-bold text-white shadow">
             新着
           </span>

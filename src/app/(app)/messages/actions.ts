@@ -46,8 +46,21 @@ export async function sendInterest(
   const me = await getOrCreateMemberForUser(su!);
   if (me.id === toMemberId) return;
 
-  // フリープランはメッセージ送信不可。アップグレードへ誘導。
-  if (me.paymentStatus !== "PAID") redirect("/billing");
+  // 「探している」案件への新規提案は初回紹介料の対象 → 提案フロー（/propose）へ回す。
+  // 買い手からの問い合わせ（GIVE案件）と、その返信は無料。
+  if (offeringId) {
+    const target = await prisma.offering.findUnique({
+      where: { id: offeringId },
+      select: { direction: true, memberId: true },
+    });
+    if (target && target.direction === "WANT" && target.memberId === toMemberId) {
+      const unlocked = await prisma.contactUnlock.findUnique({
+        where: { sellerMemberId_offeringId: { sellerMemberId: me.id, offeringId } },
+        select: { id: true },
+      });
+      if (!unlocked) redirect(`/ledger/${offeringId}/propose`);
+    }
+  }
 
   // 相手が同一テナントの承認済み会員であることを確認
   const target = await prisma.member.findFirst({
@@ -125,8 +138,7 @@ export async function startConversation(toMemberId: string): Promise<void> {
   const me = await getOrCreateMemberForUser(su!);
   if (me.id === toMemberId) return;
 
-  // フリープランは問い合わせ不可 → アップグレードへ
-  if (me.paymentStatus !== "PAID") redirect("/billing");
+  // 問い合わせは無料（2026-08-10 最終決定書：月額ゲート撤廃）
 
   // 相手が同一テナントの承認済み会員であることを確認
   const target = await prisma.member.findFirst({
@@ -167,8 +179,7 @@ export async function sendMessage(
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
     return;
   }
-  // フリープランは送信・返信不可。アップグレードへ誘導。
-  if (me.paymentStatus !== "PAID") redirect("/billing");
+  // 送信・返信は無料（2026-08-10 最終決定書：月額ゲート撤廃）
   const body = String(formData.get("message") ?? "").trim();
   const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
   const attachmentUrl =
@@ -298,5 +309,10 @@ export async function markThreadRead(threadId: string): Promise<void> {
   await prisma.message.updateMany({
     where: { threadId, senderMemberId: { not: me.id }, readAt: null },
     data: { readAt: new Date() },
+  });
+  // 初回提案の開封記録（14日未読返還の判定に使用。開封＝スレッドを開いた時点）
+  await prisma.contactUnlock.updateMany({
+    where: { threadId, seekerMemberId: me.id, openedAt: null },
+    data: { openedAt: new Date() },
   });
 }

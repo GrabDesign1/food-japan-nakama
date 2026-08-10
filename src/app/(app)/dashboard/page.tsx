@@ -130,6 +130,7 @@ export default async function DashboardPage() {
       ? prisma.offering.findMany({
           where: {
             isPublic: true,
+            visibility: "public",
             title: { not: "" },
             member: { tenantId, status: "APPROVED" },
             ...(memberId ? { memberId: { not: memberId } } : {}),
@@ -273,13 +274,9 @@ export default async function DashboardPage() {
   const showSetupLine = !!member && !(rate >= 100 && member.status === "APPROVED");
   const emphasizeSetup = showSetupLine && rate < 40;
 
-  // ── 会員状態（表示は右カラムの利用状況1か所のみ）──
+  // ── 会員状態（表示は右カラムの利用状況1か所のみ。登録・掲載・応募は無料＝2026-08-10 最終決定書）──
   const isPaid = member?.paymentStatus === "PAID";
-  const memberStateLabel = isPaid
-    ? "NAKAMA会員"
-    : member?.paymentStatus === "UNPAID" || member?.status === "AWAITING_PAYMENT"
-      ? "お支払い待ち"
-      : "未加入";
+  const memberStateLabel = isPaid ? "月額会員（既存契約）" : "無料会員";
   const reviewLabel =
     member?.status === "APPROVED"
       ? "承認済み"
@@ -299,9 +296,7 @@ export default async function DashboardPage() {
   if (member?.status === "REJECTED") {
     alerts.push({ icon: "⚠️", label: "プロフィールに修正が必要です", cta: "見直して再申請", href: "/profile" });
   }
-  if (member?.status === "AWAITING_PAYMENT" || member?.paymentStatus === "UNPAID") {
-    alerts.push({ icon: "💳", label: "お支払いのお手続きが必要です", cta: "手続きへ", href: "/billing" });
-  }
+  // 支払い関連のアラートは出さない（登録・掲載・応募・メッセージは無料）
 
   // viewMap は2段目の並列取得で取得済み
   const [newest, ...restAnnouncements] = announcements;
@@ -621,11 +616,11 @@ export default async function DashboardPage() {
               </>
             ) : (
               <>
-                <p className="mt-2 rounded-[8px] bg-[#FFF8EF] p-2.5 text-[12px] leading-5 text-[#89501F]">
-                  案件の公開やメッセージなど、一部機能の利用にはNAKAMA会員への加入が必要です。
+                <p className="mt-2 rounded-[8px] bg-[var(--green-soft)] p-2.5 text-[12px] leading-5 text-[var(--green-d)]">
+                  登録・掲載・応募・メッセージは無料でご利用いただけます。
                 </p>
                 <Link href="/billing" className="mt-2 inline-block text-[12px] font-bold text-[var(--green-d)]">
-                  プランを確認する →
+                  料金・共創支援について →
                 </Link>
               </>
             )}

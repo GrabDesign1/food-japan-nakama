@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import {
@@ -18,7 +18,6 @@ import {
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
 import { toggleFavorite } from "../../favorites/actions";
-import { UpgradeToMessage } from "@/components/UpgradeToMessage";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
 // レンダー中のDate.now直呼びをlintが禁止しているため関数に切り出す
@@ -60,9 +59,12 @@ export default async function OfferingDetailPage({
   if (!offering) notFound();
 
   const isOwner = offering.memberId === member.id;
-  if (!offering.isPublic && !isOwner) notFound();
+  const isAdmin = isAdminRole(su.app.role);
+  if (!offering.isPublic && !isOwner && !isAdmin) notFound();
   // 停止・未承認会員の掲載は本人以外に見せない
-  if (offering.member.status !== "APPROVED" && !isOwner) notFound();
+  if (offering.member.status !== "APPROVED" && !isOwner && !isAdmin) notFound();
+  // 非公開募集：所有者・事務局以外には存在ごと見せない（検索・OGP・APIにも出さない）
+  if (offering.visibility === "private" && !isOwner && !isAdmin) notFound();
 
   // 閲覧の記録・スレッド有無・お気に入り状態は互いに独立なので並列で実行（直列4往復→2往復）
   const [, existingThread, myFavorite] = await Promise.all([
@@ -94,6 +96,18 @@ export default async function OfferingDetailPage({
     where: { offeringId: offering.id, createdAt: { gte: last24hStart() } },
   });
 
+  // 応募者限定公開：会社名・事業者情報は「掲載者が返信した相手（承認）」だけに開示する
+  let applicantRestricted = false;
+  if (offering.visibility === "applicant_only" && !isOwner && !isAdmin) {
+    const ownerReplied = existingThread
+      ? await prisma.message.count({
+          where: { threadId: existingThread.id, senderMemberId: offering.memberId },
+        })
+      : 0;
+    applicantRestricted = ownerReplied === 0;
+  }
+  const memberDisplayName = applicantRestricted ? "非公開（提案・承認後に開示）" : offering.member.name;
+
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";
   const amount = formatAmount(offering);
@@ -105,7 +119,7 @@ export default async function OfferingDetailPage({
     .filter(Boolean);
 
   const infoRows: [string, string | null][] = [
-    ["事業者", offering.member.name || "—"],
+    ["事業者", memberDisplayName || "—"],
     ["地域", offering.area || [offering.member.prefecture, offering.member.city].filter(Boolean).join(" ") || "—"],
     ["カテゴリ", `${meta?.icon ?? ""} ${offering.category}`],
     ["数量・規模", amount],
@@ -362,12 +376,10 @@ export default async function OfferingDetailPage({
       {/* 連絡する（興味を送る） */}
       <div id="inquiry" className="scroll-mt-24">
       {!isOwner ? (
-        member.paymentStatus !== "PAID" && !existingThread ? (
-          <UpgradeToMessage targetName={offering.member.name} />
-        ) : existingThread ? (
+        existingThread ? (
           <div className="flex items-center justify-between rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-4">
             <span className="text-[13px] text-[var(--green-d)]">
-              {offering.member.name} とはすでにやり取りがあります。
+              {memberDisplayName} とはすでにやり取りがあります。
             </span>
             <Link
               href={`/messages/${existingThread.id}`}
@@ -376,18 +388,30 @@ export default async function OfferingDetailPage({
               メッセージを見る →
             </Link>
           </div>
+        ) : !isGive ? (
+          /* 「探している」への新規提案＝初回紹介料の対象。提案ページへ誘導する */
+          <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5">
+            <div className="text-[14px] font-semibold text-[var(--ink)]">
+              この案件に商品・原料を提案する
+            </div>
+            <p className="mb-3 mt-0.5 text-[12px] text-[var(--ink-2)]">
+              提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます。
+              初回の提案には紹介料（クレジット1件）がかかります。継続メッセージと、受けた問い合わせへの返信は無料です。
+            </p>
+            <Link href={`/ledger/${offering.id}/propose`} className={btn("primary")}>
+              提案へ進む（料金の確認）→
+            </Link>
+          </div>
         ) : (
           <form
             action={sendInterest.bind(null, offering.member.id, offering.id)}
             className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5"
           >
             <div className="text-[14px] font-semibold text-[var(--ink)]">
-              {isGive ? "この案件について問い合わせる" : "この案件に商品・原料を提案する"}
+              この案件について問い合わせる
             </div>
             <p className="mb-2 mt-0.5 text-[12px] text-[var(--ink-2)]">
-              {isGive
-                ? "価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。"
-                : "提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます（提案を送信 → 相手が確認 → 条件を相談）。"}
+              価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。問い合わせは無料です。
             </p>
             <textarea
               name="message"
@@ -398,7 +422,7 @@ export default async function OfferingDetailPage({
             />
             <div className="mt-2 flex items-center justify-between">
               <span className="text-[11px] text-[var(--muted)]">
-                送信すると {offering.member.name} にメッセージが届きます。
+                送信すると {memberDisplayName} にメッセージが届きます。
               </span>
               <button className={btn("primary")}>
                 メッセージを送る
@@ -525,7 +549,12 @@ export default async function OfferingDetailPage({
         </div>
       ) : null}
 
-      {/* 事業者情報 */}
+      {/* 事業者情報（応募者限定公開では承認前に開示しない） */}
+      {applicantRestricted ? (
+        <div className="rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] p-5 text-[13px] text-[var(--muted)]">
+          この案件は<b>応募者限定公開</b>です。会社名・事業者情報は、提案を送り、掲載者が承認（返信）した後に開示されます。
+        </div>
+      ) : (
       <div>
         <h2 className={`${h2Cls} mb-2`}>事業者情報</h2>
         <div className="overflow-hidden rounded-[10px] border border-[var(--line)]">
@@ -551,6 +580,7 @@ export default async function OfferingDetailPage({
           </table>
         </div>
       </div>
+      )}
 
       {/* 末尾CTA（問い合わせフォームへ戻る） */}
       {!isOwner && offering.isPublic ? (

@@ -5,10 +5,10 @@ import { btn } from "@/lib/ui";
 export const metadata = { title: "利用の流れ｜FOOD JAPAN NAKAMA" };
 
 const STEPS = [
-  { n: 1, title: "NAKAMAに申し込む", body: "メールアドレスで登録し、月額会員（22,000円・税込）にお申し込みください。決済後すぐにご利用いただけます。" },
+  { n: 1, title: "無料で登録する", body: "メールアドレスで登録します。登録・掲載・応募は無料で、クレジットカードは必要ありません。" },
   { n: 2, title: "プロフィール・案件を掲載", body: "自社の事業内容や、売りたい・探している・共創したい案件を掲載します。" },
   { n: 3, title: "パートナーを探して問い合わせ", body: "掲載案件を検索し、気になる相手へメッセージで問い合わせます。" },
-  { n: 4, title: "商談・共創へ", body: "やり取りを重ね、具体的な取引や共創プロジェクトにつなげます。" },
+  { n: 4, title: "商談・共創へ", body: "やり取りを重ね、具体的な取引や共創プロジェクトにつなげます。事務局による相手探し・商談調整・実証支援が必要な場合は、個別にご相談ください。" },
 ];
 
 export default function FlowPage() {
@@ -25,8 +25,9 @@ export default function FlowPage() {
           </div>
         ))}
       </div>
-      <div>
-        <Link href="/signup" className={btn("primary")}>NAKAMAに申し込む</Link>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/signup" className={btn("primary")}>無料で登録する</Link>
+        <Link href="/consultation?type=theme" className={btn("secondary")}>共創テーマを相談する</Link>
       </div>
     </InfoPage>
   );

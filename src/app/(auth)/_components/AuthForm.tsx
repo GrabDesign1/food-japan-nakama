@@ -113,6 +113,18 @@ export function AuthForm({
               を読み、本サービスを事業として、または事業のために申し込みます。
             </label>
           </div>
+          <div className="flex items-start gap-2 text-[12px] leading-5 text-[var(--ink-2)]">
+            <input
+              type="checkbox"
+              id="marketingOptIn"
+              name="marketingOptIn"
+              defaultChecked
+              className="mt-0.5 accent-[var(--green)]"
+            />
+            <label htmlFor="marketingOptIn">
+              案件・イベント・共創支援などの案内メールを受け取ります（任意。あとから配信停止できます）。
+            </label>
+          </div>
         </>
       ) : null}
 

@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
+import { getSponsoredOfferings, getTopPrOffering, getActiveEffectsFor } from "@/lib/billing";
 import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -77,7 +78,14 @@ export default async function SearchPage({
   const count =
     target === "producers" ? producers.length : target === "coprojects" ? coprojects.length : offerings.length;
   const hasFilter = Boolean(area || category || q || direction);
-  const viewMap = await views24hMap(offerings.map((o) => o.id));
+  // スポンサー枠（有料掲載）。自然表示の順位には混ぜず、広告表記つきで分離表示する。
+  const sponsorDirection = direction === "GIVE" || direction === "WANT" ? direction : "WANT";
+  const [viewMap, topPr, sponsored, effectsMap] = await Promise.all([
+    views24hMap(offerings.map((o) => o.id)),
+    target === "offerings" && page === 1 ? getTopPrOffering(sponsorDirection) : Promise.resolve(null),
+    target === "offerings" && page === 1 ? getSponsoredOfferings(sponsorDirection, 4) : Promise.resolve([]),
+    getActiveEffectsFor(offerings.map((o) => o.id)),
+  ]);
 
   // 共創プロジェクトの掲載者名
   const projMemberIds = Array.from(new Set(coprojects.map((p) => p.memberId)));
@@ -196,11 +204,44 @@ export default async function SearchPage({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {offerings.map((o) => (
-            <OfferingCard key={o.id} o={{ ...o, memberName: o.member.name, views24h: viewMap.get(o.id) ?? 0 }} isOwn={o.memberId === ownMemberId} />
-          ))}
-        </div>
+        <>
+          {/* 最上部PR（スポンサー枠・広告表記必須） */}
+          {topPr ? (
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="rounded bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-white">広告</span>
+                <span className="text-[11px] text-[var(--muted)]">スポンサー（最上部PR）</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                <OfferingCard o={{ ...topPr, memberName: topPr.member.name }} isOwn={topPr.memberId === ownMemberId} />
+              </div>
+            </div>
+          ) : null}
+          {/* 注目表示（スポンサー枠） */}
+          {sponsored.length ? (
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="rounded bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-white">広告</span>
+                <span className="text-[11px] text-[var(--muted)]">スポンサー（注目表示）</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {sponsored.map((o) => (
+                  <OfferingCard key={`sp-${o.id}`} o={{ ...o, memberName: o.member.name }} isOwn={o.memberId === ownMemberId} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {offerings.map((o) => (
+              <OfferingCard
+                key={o.id}
+                o={{ ...o, memberName: o.member.name, views24h: viewMap.get(o.id) ?? 0 }}
+                isOwn={o.memberId === ownMemberId}
+                urgent={effectsMap.get(o.id)?.has("urgent") ?? false}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {/* ページネーション */}
@@ -251,6 +292,7 @@ async function searchOfferings(f: {
 }) {
   const where = {
     isPublic: true,
+    visibility: "public", // 非公開募集・応募者限定は検索に出さない
     title: { not: "" },
     member: {
       tenantId: f.tenantId,

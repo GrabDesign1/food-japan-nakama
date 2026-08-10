@@ -6,9 +6,16 @@ import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { updateConsultationStatus } from "../consultation-actions";
 
 const SERVICE_LABEL: Record<string, string> = {
+  theme: "共創テーマ相談",
   produce: "共創プロデュース",
   "food-loss": "フードロス",
   crowdfunding: "クラファン支援",
+  project: "共創PJ伴走",
+  promotion_plan: "販促プラン",
+  sales_growth: "販売強化プラン",
+  solution_build: "売れる仕組み構築",
+  success_fee: "販売成果報酬",
+  co_creation: "共創・商品開発",
   unsure: "どちらか相談",
 };
 const STATUS_OPTIONS: [string, string][] = [

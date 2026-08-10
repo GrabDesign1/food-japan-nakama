@@ -44,7 +44,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             ["NAKAMAとは", "/about"],
             ["学び・セミナー", "/learn"],
             ["利用の流れ", "/flow"],
-            ["料金", "/pricing"],
+            ["利用料金・共創支援", "/pricing"],
             ["よくある質問", "/faq"],
           ]} />
           <FooterCol title="個別支援" links={[
@@ -68,7 +68,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <span>© FOOD JAPAN SUMMIT実行委員会</span>
             <span className="sm:ml-auto flex items-center gap-4">
               <Link href="/login" className="hover:underline">ログイン</Link>
-              <Link href="/signup" className={btn("primary", "sm")}>NAKAMAに申し込む</Link>
+              <Link href="/signup" className={btn("primary", "sm")}>無料で登録する</Link>
             </span>
           </div>
         </div>

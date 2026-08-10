@@ -10,7 +10,8 @@ const ITEMS: { label: string; href: string }[] = [
   { label: "共創プロデュース", href: "/produce" },
   { label: "食品ロス支援", href: "/food-loss" },
   { label: "クラウドファンディング支援", href: "/crowdfunding" },
-  { label: "料金", href: "/pricing" },
+  { label: "利用料金・共創支援", href: "/pricing" },
+  { label: "無料で登録する", href: "/signup" },
 ];
 
 export function HeroMobileMenu({ className = "hidden max-[820px]:block" }: { className?: string }) {

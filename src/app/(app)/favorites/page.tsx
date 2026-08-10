@@ -46,7 +46,7 @@ export default async function FavoritesPage() {
       : Promise.resolve([]),
     offeringIds.length
       ? prisma.offering.findMany({
-          where: { id: { in: offeringIds }, isPublic: true },
+          where: { id: { in: offeringIds }, isPublic: true, visibility: "public" },
           include: { member: { select: { name: true } } },
         })
       : Promise.resolve([]),

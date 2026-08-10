@@ -22,11 +22,14 @@ export async function getLandingContent() {
       projNameMap: new Map<string, string>(),
       gives: [],
       wants: [],
+      giveCount: 0,
+      wantCount: 0,
+      projectCount: 0,
     };
   }
 
   const now = new Date();
-  const [articles, announcements, projects, gives, wants] = await Promise.all([
+  const [articles, announcements, projects, gives, wants, giveCount, wantCount, projectCount] = await Promise.all([
     prisma.curatedArticle.findMany({
       where: {
         tenantId,
@@ -51,17 +54,25 @@ export async function getLandingContent() {
       take: 4,
     }),
     prisma.offering.findMany({
-      where: { isPublic: true, title: { not: "" }, direction: "GIVE", member: { tenantId, status: "APPROVED" } },
+      where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "GIVE", member: { tenantId, status: "APPROVED" } },
       orderBy: { createdAt: "desc" },
       take: 4,
       include: { member: { select: { name: true } } },
     }),
     prisma.offering.findMany({
-      where: { isPublic: true, title: { not: "" }, direction: "WANT", member: { tenantId, status: "APPROVED" } },
+      where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "WANT", member: { tenantId, status: "APPROVED" } },
       orderBy: { createdAt: "desc" },
       take: 4,
       include: { member: { select: { name: true } } },
     }),
+    // 件数（トップのティザー表示用）
+    prisma.offering.count({
+      where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "GIVE", member: { tenantId, status: "APPROVED" } },
+    }),
+    prisma.offering.count({
+      where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "WANT", member: { tenantId, status: "APPROVED" } },
+    }),
+    prisma.project.count({ where: { tenantId, status: "published" } }),
   ]);
 
   const projMemberIds = Array.from(new Set(projects.map((p) => p.memberId)));
@@ -79,7 +90,7 @@ export async function getLandingContent() {
     return true;
   });
 
-  return { articles: uniqueArticles, announcements, projects, projNameMap, gives, wants };
+  return { articles: uniqueArticles, announcements, projects, projNameMap, gives, wants, giveCount, wantCount, projectCount };
 }
 
 /** 公開プレビュー用：掲載中プロジェクト1件（Projectにmemberリレーションが無いため名前は別引き）。 */
@@ -96,7 +107,7 @@ export async function getPublicProject(id: string) {
 /** 公開プレビュー用：公開中の持ち寄り1件（停止・未承認会員の掲載は出さない）。 */
 export async function getPublicOffering(id: string) {
   return prisma.offering.findFirst({
-    where: { id, isPublic: true, title: { not: "" }, member: { status: "APPROVED" } },
+    where: { id, isPublic: true, visibility: "public", title: { not: "" }, member: { status: "APPROVED" } },
     include: { member: { select: { name: true } } },
   });
 }

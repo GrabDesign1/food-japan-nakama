@@ -22,16 +22,16 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nakama.food-japan-su
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
-  title: "FOOD JAPAN NAKAMA｜食の出会い・学び・共創をつくる会員制ネットワーク",
+  title: "FOOD JAPAN NAKAMA｜食の課題を、全国のNAKAMAと事業に変える共創プラットフォーム",
   description:
-    "生産者、食品メーカー、小売、飲食店、流通、自治体など、食に関わる人と企業が営業先や共創相手と出会い、実践者から学べる会員制ネットワーク。共創プロデュースとクラウドファンディング支援にも対応します。",
+    "生産者、食品メーカー、小売、流通、飲食店、自治体、大学、専門家をつなぐ共創プラットフォーム。登録・掲載・応募は無料。事務局による共創テーマ設計、パートナー探索、商談、実証・事業化支援は個別契約で提供します。",
   // 各ページのURLをそのままcanonicalにする（相対指定はページごとに解決される）
   alternates: { canonical: "./" },
   openGraph: {
     type: "website",
     siteName: "FOOD JAPAN NAKAMA",
     locale: "ja_JP",
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "FOOD JAPAN NAKAMA｜食の出会い・学び・共創をつくる会員制ネットワーク" }],
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "FOOD JAPAN NAKAMA｜食の課題を、全国のNAKAMAと事業に変える共創プラットフォーム" }],
   },
   twitter: {
     card: "summary_large_image",

@@ -122,7 +122,6 @@ export default async function ThreadPage({
             otherName={other?.name ?? "相手"}
             initialDraft={draft?.body ?? ""}
             initialTemplates={templates}
-            locked={me.paymentStatus !== "PAID"}
           />
         </div>
       </div>

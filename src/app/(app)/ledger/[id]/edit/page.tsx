@@ -103,6 +103,9 @@ export default async function OfferingEditPage({
                 </span>
                 公開中
               </span>
+              <Link href={`/ledger/${offering.id}/options`} className={btn("amber", "sm")}>
+                有料オプションを追加する
+              </Link>
               <form action={togglePublish.bind(null, offering.id, false)}>
                 <button className={btn("secondary", "sm")}>
                   非公開にする
@@ -114,14 +117,18 @@ export default async function OfferingEditPage({
               <span className="rounded-full bg-[var(--line)] px-3 py-1 text-[11px] text-[var(--ink-2)]">
                 下書き
               </span>
+              {/* 基本掲載は無料。有料オプションは任意（無料導線を隠さない） */}
               <ConfirmActionButton
                 action={togglePublish.bind(null, offering.id, true)}
-                buttonLabel="公開する"
+                buttonLabel="無料で公開する"
                 title="公開しますか？"
-                description="公開すると、会員の検索結果と公開プレビューに表示されます。必須項目が足りない場合は、不足している項目をご案内します。"
-                confirmLabel="公開する"
+                description="基本掲載は無料です。公開すると、会員の検索結果と公開プレビューに表示されます。より早く、より多くの相手へ届けたい場合は、公開後に「有料オプションを追加する」から追加できます。"
+                confirmLabel="無料で公開する"
                 cancelLabel="公開しない"
               />
+              <Link href={`/ledger/${offering.id}/options`} className={btn("amber", "sm")}>
+                有料オプションを追加する
+              </Link>
             </>
           )}
         </div>

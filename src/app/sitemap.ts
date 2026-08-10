@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           take: 1000,
         }),
         prisma.offering.findMany({
-          where: { member: { tenantId }, isPublic: true, title: { not: "" } },
+          where: { member: { tenantId }, isPublic: true, visibility: "public", title: { not: "" } },
           select: { id: true, updatedAt: true },
           take: 1000,
         }),

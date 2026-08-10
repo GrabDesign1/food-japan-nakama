@@ -6,7 +6,7 @@ import { btn } from "@/lib/ui";
 export const metadata = {
   title: "FOOD JAPAN NAKAMAとは｜FOOD JAPAN NAKAMA",
   description:
-    "食に関わる人が、出会い、学び、共創事業をつくる場所。生産者、食品メーカー、小売、流通、飲食店、自治体が立場を越えてつながる会員制ネットワークです。",
+    "食に関わる人が、出会い、学び、共創事業をつくる場所。生産者、食品メーカー、小売、流通、飲食店、自治体、大学、専門家が立場を越えてつながる、無料登録型の共創プラットフォームです。",
 };
 
 // 写真上に重ねる文字用のグラデーション。PC=左→右、スマホ=下→上。
@@ -73,10 +73,10 @@ export default function AboutPage() {
               共創事業をつくる場所。
             </h1>
             <p className="mt-6 max-w-[610px] text-[14px] leading-8 text-white/90 sm:text-[15px]">
-              生産者、食品メーカー、小売、流通、飲食店、自治体。立場を越えてつながり、良いものを次の仕事へ動かす会員制ネットワークです。
+              生産者、食品メーカー、小売、流通、飲食店、自治体、大学、専門家。立場を越えて情報を持ち寄り、良いものを必要な相手につなぎ、続いていく取引や共創事業へ育てるプラットフォームです。
             </p>
             <div className="mt-8">
-              <a href="#membership" className={btn("primary", "lg")}>NAKAMAに参加する</a>
+              <Link href="/signup" className={btn("primary", "lg")}>無料でNAKAMAに登録する</Link>
             </div>
           </div>
         </div>
@@ -163,38 +163,59 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 月額料金と申込CTA */}
-      <section id="membership" className="bg-[#f6f3ec] px-4 py-16 text-center sm:py-[88px]">
-        <div className="mx-auto max-w-[760px]">
-          <p className="text-[11px] tracking-[0.16em] text-[var(--green-d)]">MEMBERSHIP</p>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
-            一人では出会えなかった人と、
-            <br className="hidden sm:block" />
-            次の共創事業をつくろう。
-          </h2>
-          <strong className="mt-6 block font-serif text-[30px] font-medium text-[var(--ink)] sm:text-[34px]">
-            月額 22,000円（税込）
-          </strong>
-          <p className="mt-1 text-[13px] text-[var(--muted)]">税抜 20,000円</p>
-          <p className="mx-auto mt-6 max-w-[560px] text-[14px] leading-7 text-[var(--ink-2)]">
-            会員になると、次のサービスをご利用いただけます。
-          </p>
-          <ul className="mx-auto mt-4 inline-block max-w-[560px] text-left text-[14px] leading-7 text-[var(--ink-2)]">
-            {[
-              "会社・事業プロフィールの登録",
-              "商品・サービスのPR",
-              "商品情報・共創案件の掲載",
-              "共創相手の検索・問い合わせ",
-              "会員向けセミナーへの参加（オンライン・会場開催）",
-            ].map((s) => (
-              <li key={s} className="flex items-start gap-2.5">
-                <span aria-hidden className="mt-px font-bold text-[var(--green)]">✓</span>
-                {s}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-7">
-            <Link href="/signup" className={btn("primary", "lg")}>NAKAMAに申し込む</Link>
+      {/* 無料でできること／事務局へ依頼できること */}
+      <section id="membership" className="bg-[#f6f3ec] px-4 py-16 sm:py-[88px]">
+        <div className="mx-auto max-w-[900px]">
+          <div className="text-center">
+            <p className="text-[11px] tracking-[0.16em] text-[var(--green-d)]">HOW TO USE</p>
+            <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+              一人では出会えなかった人と、
+              <br className="hidden sm:block" />
+              次の共創事業をつくろう。
+            </h2>
+            <p className="mx-auto mt-4 max-w-[560px] text-[14px] leading-7 text-[var(--ink-2)]">
+              登録・掲載・応募は無料です。事務局による相手探し、商談調整、実証・事業化支援は個別契約です。
+            </p>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 text-left">
+              <h3 className="text-[15px] font-bold text-[var(--ink)]">無料でできること</h3>
+              <ul className="mt-3 flex flex-col gap-1.5 text-[14px] leading-7 text-[var(--ink-2)]">
+                {[
+                  "会社・事業プロフィールの登録",
+                  "案件（売りたい・探している・共創したい）の掲載",
+                  "公開案件の閲覧・検索",
+                  "案件への応募・問い合わせ",
+                  "メッセージのやり取り",
+                ].map((s) => (
+                  <li key={s} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-px font-bold text-[var(--green)]">✓</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 text-left">
+              <h3 className="text-[15px] font-bold text-[var(--ink)]">事務局へ依頼できること（個別契約）</h3>
+              <ul className="mt-3 flex flex-col gap-1.5 text-[14px] leading-7 text-[var(--ink-2)]">
+                {[
+                  "共創テーマ設計（課題整理・募集条件・企画設計）",
+                  "パートナー探索（候補探索・個別打診・面談設定）",
+                  "商談調整・試作・実証支援",
+                  "事業化・年間共創プログラム",
+                  "Web・デザイン・動画・クラファン等の制作・販売支援",
+                ].map((s) => (
+                  <li key={s} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-px font-bold text-[var(--green-d)]">◆</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link href="/signup" className={btn("primary", "lg")}>無料でNAKAMAに登録する</Link>
+            <Link href="/consultation?type=theme" className={btn("secondary", "lg")}>共創テーマを相談する</Link>
           </div>
         </div>
       </section>

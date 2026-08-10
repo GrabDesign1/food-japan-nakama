@@ -42,40 +42,21 @@ export const ORG_WEBSITE_JSONLD = {
       url: `${APP_URL}/`,
       name: "FOOD JAPAN NAKAMA",
       description:
-        "食の出会い・学び・共創をつくる会員制ネットワーク。生産者・食品メーカー・小売・飲食・流通・自治体をつなぐ。",
+        "食の売りたい・探している・共創したいを集める無料登録型の共創プラットフォーム。生産者・食品メーカー・小売・飲食・流通・自治体・大学をつなぎ、事務局が共創テーマ設計から事業化まで個別支援する。",
       publisher: { "@id": `${APP_URL}/#org` },
       inLanguage: "ja",
     },
   ],
 };
 
-/** 料金ページ: 月額会員サービスと価格 */
-export const MEMBERSHIP_JSONLD = {
+/** 旧・月額会員のJSON-LD（2026-08-10 最終決定書により月額の新規申込停止。未使用・復旧用に保持） */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const MEMBERSHIP_JSONLD_LEGACY = {
   "@context": "https://schema.org",
   "@type": "Service",
   "@id": `${APP_URL}/pricing#membership`,
   name: "FOOD JAPAN NAKAMA 月額会員",
-  serviceType: "会員制ビジネスマッチング・共創プラットフォーム",
-  description:
-    "食に関わる事業者向けの月額会員サービス。自社プロフィール・案件（売りたい／探している／共創）の掲載、掲載案件の詳細閲覧、会員へのメッセージ、会員向けセミナー参加を含む。",
-  provider: { "@id": `${APP_URL}/#org` },
-  areaServed: "JP",
-  audience: { "@type": "BusinessAudience", name: "食品関連事業者（生産者・メーカー・小売・飲食・流通・自治体等）" },
-  offers: {
-    "@type": "Offer",
-    url: `${APP_URL}/pricing`,
-    priceCurrency: "JPY",
-    price: "22000",
-    priceSpecification: {
-      "@type": "UnitPriceSpecification",
-      price: "22000",
-      priceCurrency: "JPY",
-      unitText: "月",
-      valueAddedTaxIncluded: true,
-    },
-    availability: "https://schema.org/InStock",
-  },
-};
+} as const;
 
 /** 共創プロデュース */
 export const PRODUCE_JSONLD = {

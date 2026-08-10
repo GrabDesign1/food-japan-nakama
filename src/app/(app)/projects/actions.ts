@@ -338,8 +338,7 @@ export async function saveProject(
 export async function submitProject(projectId: string): Promise<void> {
   const owned = await ownProject(projectId);
   if (!owned) return;
-  // 掲載申請は月額会員のみ（下書き作成・編集は誰でも可）
-  if (owned.me.paymentStatus !== "PAID") redirect("/billing");
+  // 掲載申請は無料（2026-08-10 最終決定書：月額ゲート撤廃。事前審査は従来どおり）
   if (owned.project.status === "draft" || owned.project.status === "closed") {
     const publicRoleCount = await prisma.projectRole.count({
       where: { projectId, isPublic: true },
@@ -555,8 +554,7 @@ export async function applyToProject(
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su!);
-  // 興味表明（問い合わせ）は月額会員のみ（仕様11章の権限表に合わせる）
-  if (me.paymentStatus !== "PAID") redirect("/billing");
+  // 興味表明（応募）は無料（2026-08-10 最終決定書：月額ゲート撤廃）
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (
     !project ||

@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
+import { fulfillPaidOrder } from "@/lib/billing";
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
@@ -40,14 +41,35 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        // 非同期決済（コンビニ等）を有効化した場合、入金前に有効化しない
+        if (session.payment_status !== "paid") break;
+
+        // 一回払い（掲載オプション・紹介クレジット）：注文IDで履行
+        const billingOrderId = session.metadata?.billingOrderId;
+        if (billingOrderId) {
+          await fulfillPaidOrder(billingOrderId, idOf(session.payment_intent as string | { id: string } | null));
+          break;
+        }
+
+        // 月額会員サブスク
         const memberId = session.metadata?.memberId;
         if (!memberId) break;
-        // 非同期決済（コンビニ等）を有効化した場合、入金前に PAID を付けない
-        if (session.payment_status !== "paid") break;
         await markPaid(memberId, {
           customerId: idOf(session.customer),
           subscriptionId: idOf(session.subscription),
         });
+        break;
+      }
+      case "charge.refunded": {
+        // 一回払いの返金を注文へ同期（Stripe Dashboardからの返金も反映）
+        const charge = event.data.object as Stripe.Charge;
+        const pi = idOf(charge.payment_intent as string | { id: string } | null);
+        if (pi) {
+          await prisma.billingOrder.updateMany({
+            where: { stripePaymentIntentId: pi },
+            data: { status: "refunded", refundedAt: new Date() },
+          });
+        }
         break;
       }
       case "invoice.paid": {

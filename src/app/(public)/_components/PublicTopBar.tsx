@@ -21,7 +21,7 @@ export function PublicTopBar() {
           <Link href="/produce">共創プロデュース</Link>
           <Link href="/food-loss">食品ロス支援</Link>
           <Link href="/crowdfunding">クラウドファンディング支援</Link>
-          <Link href="/pricing">料金</Link>
+          <Link href="/pricing">利用料金・共創支援</Link>
           <Link className="fjn-nav__login" href="/login">
             ログイン
           </Link>

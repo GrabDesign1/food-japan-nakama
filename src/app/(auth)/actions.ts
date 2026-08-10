@@ -49,16 +49,29 @@ export async function signUp(
     return { error: "事業目的での申込みであることをご確認ください。", email };
   }
 
+  // 案内メール同意（任意。特電法の同意記録として user_metadata に日時つきで保存し、
+  // 初回ログイン時に users.marketing_opt_in_at へ引き継ぐ）
+  const marketingOptIn = !!formData.get("marketingOptIn");
+
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        marketing_opt_in: marketingOptIn,
+        marketing_opt_in_at: marketingOptIn ? new Date().toISOString() : null,
+      },
+    },
+  });
 
   if (error) {
     return { error: error.message, email };
   }
 
-  // メール確認が無効なら即セッションが張られる → 申込・決済（月額会員）へ
+  // メール確認が無効なら即セッションが張られる → マイページへ（登録・掲載は無料。決済誘導はしない）
   if (data.session) {
-    redirect("/billing");
+    redirect("/dashboard");
   }
 
   // メール確認が有効な場合

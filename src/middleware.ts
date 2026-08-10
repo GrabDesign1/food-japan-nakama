@@ -69,6 +69,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // 静的アセット・画像・APIヘルスチェックは対象外
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/health|api/stripe|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/health|api/stripe|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

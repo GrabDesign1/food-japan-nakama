@@ -18,7 +18,7 @@ export default function LearnPage() {
         現在、公開中のセミナーはありません。開催が決まり次第、こちらに掲載します。
       </div>
       <div>
-        <Link href="/signup" className={btn("primary")}>NAKAMAに申し込む</Link>
+        <Link href="/signup" className={btn("primary")}>無料で登録する</Link>
       </div>
     </InfoPage>
   );

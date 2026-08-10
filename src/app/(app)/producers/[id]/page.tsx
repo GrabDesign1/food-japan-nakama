@@ -22,7 +22,7 @@ export default async function ProducerDetailPage({
     where: { id },
     include: {
       offerings: {
-        where: { isPublic: true, title: { not: "" } },
+        where: { isPublic: true, visibility: "public", title: { not: "" } },
         orderBy: { createdAt: "desc" },
       },
     },

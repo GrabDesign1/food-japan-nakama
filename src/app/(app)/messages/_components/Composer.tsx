@@ -29,13 +29,11 @@ export function Composer({
   otherName,
   initialDraft,
   initialTemplates,
-  locked = false,
 }: {
   threadId: string;
   otherName: string;
   initialDraft: string;
   initialTemplates: Template[];
-  locked?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -131,29 +129,7 @@ export function Composer({
   const btnCls =
     "flex items-center gap-1 text-[12px] text-[var(--muted)] hover:text-[var(--green-d)] disabled:opacity-50";
 
-  // フリープランは送信・返信不可。入力欄をアップグレード案内に置き換える。
-  if (locked) {
-    return (
-      <div className="border-t border-[var(--line)] p-4">
-        <div className="rounded-[10px] border border-[#B77F0B] bg-[#FAF0D6] p-5">
-          <div className="mb-1 flex items-center gap-2 text-[14px] font-semibold text-[var(--ink)]">
-            <span>🔒</span>
-            メッセージの送信・返信は「共創コミュニティ」プランの機能です
-          </div>
-          <p className="mb-3 text-[12px] leading-6 text-[var(--ink-2)]">
-            フリープランではメッセージの送信・返信はご利用いただけません。
-            アップグレードすると、この会話を続けて商談を進められます。
-          </p>
-          <a
-            href="/billing"
-            className={`${btn("primary")} inline-block`}
-          >
-            アップグレードする
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // メッセージの送信・返信は無料（2026-08-10 最終決定書：月額ゲート撤廃）
 
   return (
     <div className="border-t border-[var(--line)] p-4">

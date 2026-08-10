@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             FOOD JAPAN SUMMIT
           </div>
           <p className="mt-1 max-w-[340px] text-[12px] leading-6 text-[var(--ink-2)]">
-            生産者、食品メーカー、小売、飲食店、流通、物流、サービスを繋ぐ！「譲りたい」「あったらいいな」を登録して共創事業を作ろう！
+            生産者、食品メーカー、小売、流通、飲食店、自治体、大学、専門家をつなぐ共創プラットフォーム。登録・掲載・応募は無料です。
           </p>
         </div>
         <div className="rounded-[10px] border border-[var(--line)] bg-white p-7 shadow-sm">

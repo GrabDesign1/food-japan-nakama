@@ -62,6 +62,104 @@ export async function sendPasswordResetEmail(
   });
 }
 
+// ── 課金システム関連（最終実装指示 2026-08-10）──
+
+/** 有料オプション・クレジット購入の決済完了通知。 */
+export async function notifyBillingPaid(params: {
+  to: string[];
+  itemNames: string[];
+  totalAmount: number;
+  requiresReview: boolean;
+}): Promise<void> {
+  const { to, itemNames, totalAmount, requiresReview } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">お支払いを確認しました</h2>
+    <p style="font-size:14px;color:#3C4A62">ご購入内容：${esc(itemNames.join("、"))}<br>合計：¥${totalAmount.toLocaleString()}（税込）</p>
+    <p style="font-size:14px;color:#3C4A62">${
+      requiresReview
+        ? "内容を確認後、掲載開始日をお知らせします。"
+        : "掲載オプションの状態はマイページで確認できます。"
+    }</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/billing" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">購入履歴を確認する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">有料オプションは表示機会を増やすサービスであり、閲覧数・問い合わせ・成約を保証するものではありません。</p>
+  </div>`;
+  await send({ to, subject: "【FOOD JAPAN NAKAMA】お支払いを確認しました", html });
+}
+
+/** 掲載オプションの終了予告（3日前）・終了通知。 */
+export async function notifyPromotionEnding(params: {
+  to: string[];
+  offeringTitle: string;
+  effectLabel: string;
+  endsAt: Date;
+  ended: boolean;
+}): Promise<void> {
+  const { to, offeringTitle, effectLabel, endsAt, ended } = params;
+  if (to.length === 0) return;
+  const dateText = `${endsAt.getFullYear()}/${endsAt.getMonth() + 1}/${endsAt.getDate()}`;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">${
+      ended ? "掲載オプションが終了しました" : "掲載オプションがまもなく終了します"
+    }</h2>
+    <p style="font-size:14px;color:#3C4A62">案件「${esc(offeringTitle)}」の「${esc(effectLabel)}」は${
+      ended ? `${dateText} に終了しました。` : `${dateText} に終了予定です。`
+    }</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/billing" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">状態を確認する</a>
+    </p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】掲載オプションの${ended ? "終了" : "終了予告"}`,
+    html,
+  });
+}
+
+/** 14日未読によるクレジット返還の通知。 */
+export async function notifyUnreadRefund(params: {
+  to: string[];
+  offeringTitle: string;
+}): Promise<void> {
+  const { to, offeringTitle } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">紹介クレジットを返還しました</h2>
+    <p style="font-size:14px;color:#3C4A62">案件「${esc(offeringTitle)}」への提案が送信から14日間開封されなかったため、紹介クレジットを1件返還しました。</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/billing" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">残高を確認する</a>
+    </p>
+  </div>`;
+  await send({ to, subject: "【FOOD JAPAN NAKAMA】紹介クレジットの返還のお知らせ", html });
+}
+
+/** 条件一致通知（案内メール同意者のみに送る広告メール。広告表記つき）。 */
+export async function sendMatchedNoticeEmail(params: {
+  to: string;
+  offeringTitle: string;
+  offeringId: string;
+  direction: string;
+}): Promise<void> {
+  const { to, offeringTitle, offeringId, direction } = params;
+  const kind = direction === "GIVE" ? "売りたい" : "探している";
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <p style="font-size:11px;color:#7C8899">【広告】この案内は、案件・イベント等の案内メールに同意いただいた方へお送りしています。</p>
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">条件に合う可能性のある案件のご案内</h2>
+    <p style="font-size:14px;color:#3C4A62">「${esc(kind)}」案件：<b>${esc(offeringTitle)}</b></p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/ledger/${offeringId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">案件を見る</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">配信停止をご希望の場合は、このメールに返信するか info@grab-design.com までご連絡ください。</p>
+  </div>`;
+  await send({ to: [to], subject: `【FOOD JAPAN NAKAMA】条件に合う案件のご案内：${offeringTitle}`, html });
+}
+
 // 会員が審査申請したとき、事務局へ通知。
 export async function notifyAdminMemberRegistered(params: {
   adminEmails: string[];
@@ -258,9 +356,16 @@ export async function notifyListingUnpublished(params: {
 
 // 個別相談（共創プロデュース／クラファン支援）の通知＋自動返信。
 const CONSULT_LABEL: Record<string, string> = {
+  theme: "共創テーマ相談",
   produce: "共創プロデュース",
   "food-loss": "フードロス",
   crowdfunding: "クラウドファンディング支援",
+  project: "共創プロジェクト伴走",
+  promotion_plan: "販促プラン",
+  sales_growth: "販売強化プラン",
+  solution_build: "売れる仕組み構築",
+  success_fee: "販売成果報酬",
+  co_creation: "共創・商品開発",
   unsure: "どちらが合うか相談",
 };
 const ADMIN_INBOX = "info@grab-design.com";

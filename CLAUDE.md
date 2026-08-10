@@ -10,12 +10,14 @@ Food Japan Summit の参加者を会員とする、通年運用の食の共創�
 **機能別の実装指示書**（すべて `~/Desktop/00_デスクトップ/企画書/スナックフォーラム/NAKAMAサイト制作/`。改修時は必ず該当書を参照）:
 `NAKAMA_dashboard_final_ClaudeCode_instructions.md`（マイページ最終形）/ `NAKAMA_sell_listing_ClaudeCode_instructions.md`＋`NAKAMA_sell_story_ClaudeCode_instructions.md`（売りたい）/ `NAKAMA_projects_ClaudeCode_instructions.md`（共創プロジェクト・AUBA参考）/ `NAKAMA_buyer_ClaudeCode_instructions.md`（探している＝買いたい）。
 
-## 事業構造（3サービス。混ぜない）
-1. **NAKAMA**（月額会員）= 出会い・営業・マッチング・学び。**月額22,000円（税込／＝20,000円税抜）**。
-2. **共創プロデュース** = 人が介在する企画・実証・事業化の個別支援。15万円（税抜）〜＋成功報酬（個別）。
-3. **クラウドファンディング支援** = Makuake等を活用した販売・市場検証。個別見積。
-- 決め台詞:「出会い、つながり、学ぶ『NAKAMA』。人が入り、事業をつくる『共創プロデュース』。商品を売り、市場で試す『クラウドファンディング支援』。」
-- 事務局は少人数＝手厚い伴走は上位サービス限定。NAKAMAは原則セルフサービス＋自動化で回す方針。
+## 事業構造（**2026-08-10 確定。正＝docs/NAKAMA_課金システム_ClaudeCode実装パッケージ/00_Claude提出用_最終実装指示_2026-08-10.md**）
+- **無料**: 登録・プロフィール・案件掲載（売りたい/探している/共創したい）・閲覧・買い手からの問い合わせ・受けた問い合わせへの返信・継続メッセージ。カード登録不要。ログイン前は概要まで。
+- **初回紹介料（中心商品）**: 売り手→「探している」案件への最初の提案のみ有料。通常1,100円／NAKAMA確認済み優良案件3,300円／5件パック4,400円／10件パック7,700円（税込・パック期限180日）。事業者確認（承認）時に組織単位で3件付与（一度だけ）。送信後14日未読なら1件自動返還（開封済み・返信なしは返還しない）。課金単位=売り手×案件（ContactUnlock unique）。
+- **月額22,000円（税込）は任意プランとして存続**: 特典＝**提案無制限（通常・優良とも）＋掲載オプション20%割引**（ユーザー確定 2026-08-10。月30件案は撤回）。既存契約1件=グラブデザイン（9/9満了予約）。
+- **掲載オプション（自動販売・Stripe一回払い）**: 注目表示5,500〜11,000円/最上部PR22,000円/急募3,300〜5,500円（各7日）・条件一致通知11,000円（最大100件・同意者のみ）・非公開募集22,000円・応募者限定公開11,000円（各30日）＋セット（しっかり告知8,800円/相手へ届ける22,000円）。広告表記必須・自然順位に混ぜない。
+- **正式サービスメニュー（相談→個別契約・自動決済しない）**: NAKAMA登録無料/販促プラン月33,000円/販売強化月110,000円＋広告費/売れる仕組み構築100万〜500万/販売成果報酬10〜20%/共創・商品開発300万〜1,000万。トップ・/pricing・/billing に掲載、/consultation?type=service&service=X で受付。
+- **実装しない（後続フェーズ・承認後）**: CPC入札・NDAワークフロー・成果報酬の自動請求（UIに準備中とも出さない）。
+- 原則:「自分で登録・掲載・応募・商談するなら無料。事務局の人・企画・制作・営業・広告・ネットワークを使うなら有料。」
 
 ## 技術スタック（実装済）
 - Next.js 16 (App Router) / React 19 / TypeScript / Tailwind CSS v4（`src/app/globals.css` に CSS変数）
@@ -56,10 +58,10 @@ Favorite, Announcement, Banner, CuratedArticle(食の注目記事), **Consultati
 - **レイアウトの注意（指摘あり）**: 2カラム内に高さの違うボタン等を混ぜない。CTAは行として切り出して全幅で整列させる。
 
 ## 料金・法務
-- NAKAMA は Stripe 単一プラン `nakama` ¥22,000（`src/lib/stripe.ts`。無料/¥30,000は廃止）。登録=即課金（signup→`/billing`）。
-- 表示は「22,000円（税込）」で統一（税抜内訳は特商法/規約側に）。
-- 「無料」表記は使わない。法務ページ本文は `src/lib/legal.ts`（利用規約/プライバシー）。特商法は `/tokushoho` に構造化。
-- 法務文面の最終確定は貴社/専門家確認前提（施行日 2026-08-07 仮置き）。
+- 料金表示＝「無料利用0円＋個別支援（税別・個別契約）」（/pricing=利用料金・共創支援）。「無料で登録する」がCTA標準。
+- 旧 `startCheckout` は無効化済み（billing/actions.ts に Legacy 保持）。`src/lib/stripe.ts` の PLANS 定数は既存契約表示用に残置。
+- **規約・特商法は旧月額文言が残存＝改定差分案は `docs/legal-revision-draft-20260810.md`（弁護士確認前・未適用）**。法務ページ本文は `src/lib/legal.ts`、特商法は `/tokushoho`。
+- signup に案内メール同意チェック（任意・users.marketing_opt_in_at に記録。Google OAuth 登録は同意なし=null。配信開始前に配信停止手段の整備が必要）。
 
 ## 現在の進捗（3サービス改修）
 - **Phase 1 完了**: 料金修正(¥22,000/単一/無料廃止), `/produce` `/crowdfunding` `/pricing`(3サービス比較) `/consultation`(フォーム+Consultationモデル+`info@grab-design.com`通知+自動返信+`/admin/consultations`) `/learn`(最小), トップに3サービス/学び/最終3択CTA, ヘッダー/フッターの3サービスナビ, SEO(title/description)。
@@ -155,6 +157,9 @@ Favorite, Announcement, Banner, CuratedArticle(食の注目記事), **Consultati
   3. 3サービス仕様書 Phase 2以降: 学び/セミナー本実装、掲載上限、共créプロフィール構造化+食の検索条件、自動マッチング提案+週次ダイジェスト、共créシート/企画書自動生成、共cré事例、analytics（導入時は外部送信ポリシー更新必須）
   4. 画像の**既存分の一括縮小**（バックフィルスクリプト。新規アップロードは自動縮小済み）／詳細ページヒーローの next/image 化
   5. ダッシュボードの「おすすめ案件」を新着4件→条件スコアリングに置き換え（コード内TODO）
+
+- **課金システム Phase 1 実装（2026-08-10 夕・未コミット・本番未デプロイ）**: 仕様=00_Claude提出用_最終実装指示。①DB=migration `billing_phase1`（BillingProduct/BillingOrder/BillingOrderItem/ListingPromotion/ContactUnlock/ContactCreditLedger＋Offering優良3列）+`billing_phase1b`（Offering.visibility＋MatchedNotice）+`user_marketing_opt_in`。②中核=src/lib/billing-core.ts（純粋ロジック・vitest 18件合格）/billing.ts（商品マスターseed・Checkout mode=payment・履行・スポンサー枠取得。期間は同一効果の加算=scheduled行）/contact-credits.ts（ロット台帳・期限順消費・冪等付与/返還/失効）。③紹介料フロー=/ledger/[id]/propose（料金明示・残高・購入・送信。sendProposalは1トランザクションでunlock作成+消費+スレッド+メッセージ。会員はクレジット消費なし・未読返還対象外）。sendInterestはWANT×未解放をproposeへリダイレクト（バイパス防止）。markThreadReadでunlock.openedAt記録。④承認時に3件付与=member.ts setMemberReview（idempotency signup3:memberId）。⑤Webhook拡張=checkout.session.completedのbillingOrderId分岐→fulfillPaidOrder＋charge.refunded同期（既存サブスク処理は不変）。⑥掲載オプション=/ledger/[id]/options（セット先・4分類・会員割引表示・重複警告・見積系は相談導線）。編集画面に「無料で公開する」＋「有料オプションを追加する」。⑦表示=/searchに最上部PR枠+注目枠（広告表記・日替わりローテ）+急募バッジ（OfferingCard urgent prop）。visibility="public"フィルタ=search/LP/sitemap/producers/favorites/dashboard新着。詳細=privateは所有者・管理者以外404、applicant_onlyは掲載者が返信するまで社名・事業者情報を非開示。⑧管理=/admin/billing（商品マスター編集=SuperAdmin・seed投入ボタン・オプション審査承認/否認・条件一致通知の審査/送信=同意者のみ最大100件・優良案件確認/解除=根拠必須・注文・台帳）。⑨cron=/api/cron/billing-daily（vercel.json 0 0 * * *・CRON_SECRET必須(本番)・scheduled→active/期限切れ/3日前通知1回/14日未読返還/クレジット失効。表示側もendsAt判定で二重防御）。⑩メール=決済完了/終了予告/終了/未読返還/条件一致通知（広告表記+配信停止案内）。⑪/billing全面刷新（残高・プランカード・サービスメニュー・購入履歴）。**運用**: 商品はseed後すべて非公開→管理画面で有効化が必要。CRON_SECRETをVercelに追加要。**未実行**=Stripeテストキー待ちの決済E2E・認証必要ページの実機E2E（テストアカウント手順で実施予定）。バナー広告の申込管理・SNS/特集の進行管理はPhase 2。
+- **無料化改修（2026-08-10・本実装。未コミット時は要ビルド確認）**: ①課金導線停止=startCheckout無効化・signup→/dashboard・/billing全面書換（無料明示+既存契約者ポータル+個別支援表）②PAIDゲート撤廃=sendInterest/sendMessage/startConversation/togglePublish/submitProject/applyToProject・Composer locked/UpgradeToMessage削除・dashboardご利用状況を無料会員表記へ③表側=トップ（新FV「食の課題を、全国のNAKAMAと事業に変える。」・2導線・件数つき3区分・サービス4種・Summit工程・CTA「無料で登録する」）・about（MEMBERSHIP→無料/依頼2列比較）・pricing・FAQ9問・flow・ヘッダー/フッター/モバイルメニュー・Paywall文言・produce/food-lossの月額文言・layout metadata・llms.txt・JsonLd（月額Offer削除）④共創テーマ相談=consultation type=theme（探している相手・公開可否→productSummary整形、予算帯6択に変更、admin/メールのラベル追加）⑤同意=signupに案内メール同意（migration user_marketing_opt_in・auth.tsでuser_metadata→users行へ引継）⑥休眠=migration billing_phase1（課金6テーブル+Offering優良案件3列。全て空・未参照）。検証=tsc/eslint(既存deals/page.tsxのDate.nowエラー1件は既存・未修正)/next build/ブラウザ（トップ・pricing・faq・about・consultation・signup・375px横スクロールなし）。**E2E未実施**=無料ユーザーのメッセージ送信・公開申請（本番テストアカウント手順で公開後に確認予定）。**残**=規約・特商法の改定反映（差分案承認待ち）・退会セルフサービス・配信停止手段。
 
 ## やることリスト（対外募集開始前）
 1. **【最重要】電気通信事業の届出要否確認**: 会員間1対1メッセージ＝「他人の通信の媒介」該当可能性高（弁護士見解）。関東総合通信局 電気通信事業課（03-6238-1670・九段第3合同庁舎＝会社の目の前）へ電話確認。確認依頼文書と事実関係別紙=`docs/telecom-notification-inquiry.md`。**特にQ5「届出前に会員募集を開始してよいか」を必ず確認**（公開スケジュールに直結）。「必要」ならClaude が様式第8記入案+ネットワーク構成図を作成する。

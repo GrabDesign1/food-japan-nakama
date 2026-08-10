@@ -48,6 +48,7 @@ export async function openBillingPortal(
   redirect(url);
 }
 
+/** 月額会員（任意プラン）の申込。基本利用は無料のまま、提案無制限＋オプション割引の特典つき。 */
 export async function startCheckout(
   planCode: string,
   _prev: CheckoutState,

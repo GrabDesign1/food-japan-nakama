@@ -9,13 +9,21 @@ const inputCls =
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 
 const SERVICE_OPTIONS = [
+  { value: "theme", label: "共創テーマを相談したい（テーマ設計・パートナー探索）" },
   { value: "produce", label: "共創プロデュースを相談したい" },
   { value: "crowdfunding", label: "クラウドファンディング支援を相談したい" },
   { value: "food-loss", label: "フードロスについて相談したい" },
   { value: "project", label: "共創プロジェクトの伴走を相談したい" },
+  { value: "promotion_plan", label: "販促プランを相談したい（月額33,000円）" },
+  { value: "sales_growth", label: "販売強化プランを相談したい（月額110,000円＋広告費）" },
+  { value: "solution_build", label: "売れる仕組み構築を相談したい（LP・動画・EC等）" },
+  { value: "success_fee", label: "販売成果報酬について相談したい" },
+  { value: "co_creation", label: "共創・商品開発を相談したい" },
   { value: "unsure", label: "どちらが合うか相談したい" },
 ];
-const BUDGETS = ["15万円未満", "15万〜40万円", "40万〜100万円", "100万円以上", "未定"];
+// 想定予算帯（新ビジネスモデル実装指示書 §8）
+const BUDGETS = ["未定", "50万円未満", "50〜150万円", "150〜300万円", "300〜500万円", "500万円以上"];
+const THEME_DISCLOSURES = ["公開可", "匿名なら可", "非公開"];
 const PROJECT_SUPPORT_TYPES = ["企画整理", "相手探し", "面談同席", "実証設計", "契約・事業化", "その他"];
 
 export function ConsultationForm({
@@ -81,6 +89,25 @@ export function ConsultationForm({
         商品・地域資源・技術の概要<span className="text-[var(--red)]"> ＊</span>
         <textarea name="productSummary" rows={3} required className={inputCls} />
       </label>
+
+      {serviceType === "theme" ? (
+        <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-4">
+          <p className="text-[12px] font-bold text-[var(--green-d)]">
+            共創テーマ相談の詳細（分かる範囲でご記入ください）
+          </p>
+          <label className={labelCls}>
+            探している相手・技術・商品
+            <textarea name="themeSeeking" rows={2} placeholder="例：規格外トマトを加工できる食品メーカー／常温流通できる包装技術 等" className={inputCls} />
+          </label>
+          <label className={labelCls}>
+            社名・課題の公開可否
+            <select name="themeDisclosure" defaultValue="" className={inputCls}>
+              <option value="">選択してください</option>
+              {THEME_DISCLOSURES.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
+        </div>
+      ) : null}
 
       {serviceType === "food-loss" ? (
         <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-4">

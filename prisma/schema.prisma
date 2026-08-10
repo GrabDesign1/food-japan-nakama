@@ -89,6 +89,9 @@ model User {
   memberId String?    @map("member_id")
   status   UserStatus @default(INVITED)
 
+  /// 案内メール（案件・イベント・共創支援等）への同意日時（特定電子メール法の同意記録。null=未同意）
+  marketingOptInAt DateTime? @map("marketing_opt_in_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -531,6 +534,10 @@ model Offering {
   area     String? // 発送元・受渡地域（自由記述）
   isPublic Boolean @default(true) @map("is_public")
 
+  /// 公開範囲（課金オプション）。public=通常公開 / private=非公開募集 / applicant_only=応募者限定公開。
+  /// 有料オプションの適用で変更し、期限切れバッチで public に戻す。
+  visibility String @default("public")
+
   // ── 取引条件（2026-08-10 売りたい改善。全てnullable＝既存データ互換） ──
   priceType           String?   @map("price_type") // fixed / free / negotiable
   priceAmount         Float?    @map("price_amount") // 金額（円）
@@ -564,6 +571,11 @@ model Offering {
   seekingType  String? @map("seeking_type") // specific/proposal/oem/surplus/codev/other（src/lib/offering-taxonomy.ts）
   usageContext String? @map("usage_context") // 使用目的・販売先（何に使うか。売り手の提案判断に最重要）
 
+  // ── NAKAMA確認済み優良案件（課金Phase 1。事務局が確認し記録。有効期間を過ぎると自動で通常扱い） ──
+  verifiedLeadAt   DateTime? @map("verified_lead_at") // 確認日時
+  verifiedLeadBy   String?   @map("verified_lead_by") // 確認した管理者（email）
+  verifiedLeadNote String?   @map("verified_lead_note") // 確認根拠（法人確認・数量・予算・期限・意思など）
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -592,6 +604,169 @@ model OfferingRequirement {
 
   @@index([offeringId])
   @@map("offering_requirements")
+}
+
+// ── 課金システム（2026-08-10 Phase 1。docs/NAKAMA_課金システム_ClaudeCode実装パッケージ 準拠）──
+
+/// 課金商品マスター（価格をコードへ直書きしない。過去注文はスナップショットで保持）
+model BillingProduct {
+  id          String  @id @default(cuid())
+  tenantId    String  @map("tenant_id")
+  code        String  @unique // 不変・一意（例: contact_unlock_standard）
+  name        String
+  description String?
+  billingType String  @map("billing_type") // one_time / quote / grant
+  audience    String // sell / seek / both / banner
+  effectType  String  @map("effect_type") // featured / top_pr / urgent / matched_notice / private / applicant_only / sns / article / search_support / meeting_support / banner / contact_unlock / contact_credits
+  priceAmount Int     @map("price_amount") // 税込・円（JPYはゼロ小数）
+  durationDays Int?   @map("duration_days") // 掲載日数 or クレジット有効期限
+  unitLimit    Int?   @map("unit_limit") // クレジット件数・通知上限など
+  requiresReview Boolean @default(false) @map("requires_review")
+  /// NAKAMA会員（月額PAID）の割引率%（販促オプションに適用。0=割引なし）
+  memberDiscountPercent Int @default(0) @map("member_discount_percent")
+  active    Boolean @default(false) // 非公開で投入し、公開チェック後に有効化
+  sortOrder Int     @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orderItems BillingOrderItem[]
+
+  @@index([tenantId, active])
+  @@map("billing_products")
+}
+
+/// 注文（決済状態）。掲載状態は ListingPromotion に分離する
+model BillingOrder {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+  memberId String @map("member_id")
+  offeringId String? @map("offering_id") // 対象案件（掲載オプションの場合）
+  status   String @default("pending_payment") // pending_payment / paid / fulfilled / payment_failed / cancelled / refunded
+  subtotalAmount Int    @map("subtotal_amount") // 税込
+  discountAmount Int    @default(0) @map("discount_amount") // 会員割引
+  totalAmount    Int    @map("total_amount")
+  currency       String @default("jpy")
+  stripeCheckoutSessionId String? @unique @map("stripe_checkout_session_id")
+  stripePaymentIntentId   String? @unique @map("stripe_payment_intent_id")
+  idempotencyKey          String? @unique @map("idempotency_key")
+  paidAt      DateTime? @map("paid_at")
+  cancelledAt DateTime? @map("cancelled_at")
+  refundedAt  DateTime? @map("refunded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  items BillingOrderItem[]
+
+  @@index([memberId, createdAt])
+  @@index([status])
+  @@map("billing_orders")
+}
+
+/// 注文明細（注文時の商品名・単価・内容をスナップショット保存。価格改定の影響を受けない）
+model BillingOrderItem {
+  id        String @id @default(cuid())
+  orderId   String @map("order_id")
+  productId String @map("product_id")
+  productCode String @map("product_code") // スナップショット
+  name        String // スナップショット
+  quantity    Int    @default(1)
+  unitAmount  Int    @map("unit_amount") // 割引適用後の単価（税込）
+  totalAmount Int    @map("total_amount")
+  effectType  String @map("effect_type")
+  durationDaysSnapshot Int? @map("duration_days_snapshot")
+
+  order   BillingOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product BillingProduct @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("billing_order_items")
+}
+
+/// 有料掲載オプションの適用状態（決済状態と分離。表示クエリは endsAt でも判定する）
+model ListingPromotion {
+  id          String @id @default(cuid())
+  tenantId    String @map("tenant_id")
+  offeringId  String @map("offering_id")
+  orderItemId String? @unique @map("order_item_id") // 二重付与防止
+  effectType  String @map("effect_type") // featured / top_pr / urgent
+  status      String @default("scheduled") // pending_review / scheduled / active / expired / rejected / cancelled
+  startsAt    DateTime? @map("starts_at")
+  endsAt      DateTime? @map("ends_at")
+  reviewedBy  String?   @map("reviewed_by")
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewNote  String?   @map("review_note")
+  endingNoticeSentAt DateTime? @map("ending_notice_sent_at") // 終了3日前通知の一度きり制御
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([offeringId])
+  @@index([status, endsAt])
+  @@map("listing_promotions")
+}
+
+/// 初回紹介の解放記録。課金単位=売り手会員×探している案件（案件所有者は案件で一意に決まる）
+model ContactUnlock {
+  id             String @id @default(cuid())
+  tenantId       String @map("tenant_id")
+  sellerMemberId String @map("seller_member_id") // 提案する側（売り手）
+  offeringId     String @map("offering_id") // WANT案件
+  seekerMemberId String @map("seeker_member_id") // 案件の掲載者（買い手）
+  threadId       String? @map("thread_id")
+  messageId      String? @map("message_id") // 初回提案メッセージ
+  status         String  @default("unlocked") // unlocked / refunded
+  pricingTier    String  @map("pricing_tier") // standard / verified_lead
+  creditLedgerEntryId String? @map("credit_ledger_entry_id") // 消費エントリ
+  openedAt            DateTime? @map("opened_at") // 相手が初回メッセージを開封した日時
+  unreadRefundDueAt   DateTime? @map("unread_refund_due_at") // 送信+14日
+  unreadRefundedAt    DateTime? @map("unread_refunded_at") // 未読返還済み（一度きり）
+  unlockedAt          DateTime  @default(now()) @map("unlocked_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  @@unique([sellerMemberId, offeringId])
+  @@index([seekerMemberId])
+  @@index([unreadRefundDueAt])
+  @@map("contact_unlocks")
+}
+
+/// 条件一致通知の実行記録（購入→審査→送信。二重送信をorderItemId uniqueで防止）
+model MatchedNotice {
+  id          String  @id @default(cuid())
+  tenantId    String  @map("tenant_id")
+  offeringId  String  @map("offering_id")
+  orderItemId String? @unique @map("order_item_id")
+  status      String  @default("pending_review") // pending_review / sent / rejected
+  criteria    String? // 抽出条件のメモ（案件カテゴリ・地域など）
+  targetCount Int?    @map("target_count") // 購入時に提示した予定件数
+  sentCount   Int?    @map("sent_count") // 実際に送った件数
+  reviewNote  String? @map("review_note")
+  sentAt      DateTime? @map("sent_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([offeringId])
+  @@index([status])
+  @@map("matched_notices")
+}
+
+/// 紹介クレジット台帳（残高は上書きせず増減理由を追記。正のエントリ=ロット、負のエントリはロットを参照）
+model ContactCreditLedger {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+  memberId String @map("member_id")
+  entryType String @map("entry_type") // purchase / grant / member_monthly / refund / consume / release / expire / admin_adjust
+  creditType String @map("credit_type") // standard（通常案件）/ verified（優良案件）
+  quantity   Int // 正=付与ロット、負=消費・失効
+  lotEntryId String? @map("lot_entry_id") // 負のエントリが消費するロット（正エントリ）のid
+  expiresAt  DateTime? @map("expires_at") // ロットの有効期限（null=無期限）
+  orderItemId     String? @map("order_item_id")
+  contactUnlockId String? @map("contact_unlock_id")
+  idempotencyKey  String? @unique @map("idempotency_key") // 二重付与・二重返還防止
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([memberId, creditType])
+  @@index([lotEntryId])
+  @@map("contact_credit_ledger")
 }
 
 model OfferingView {
