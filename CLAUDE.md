@@ -7,6 +7,9 @@ Food Japan Summit の参加者を会員とする、通年運用の食の共創�
 一次資料: `docs/HANDOVER.md`（初期仕様）, `docs/DECISIONS.md`, `docs/current-state.md`（現状構成）,
 `NAKAMA_ClaudeCode_implementation_spec.md`（3サービス改修の実装指示書＝最新方針）。
 
+**機能別の実装指示書**（すべて `~/Desktop/00_デスクトップ/企画書/スナックフォーラム/NAKAMAサイト制作/`。改修時は必ず該当書を参照）:
+`NAKAMA_dashboard_final_ClaudeCode_instructions.md`（マイページ最終形）/ `NAKAMA_sell_listing_ClaudeCode_instructions.md`＋`NAKAMA_sell_story_ClaudeCode_instructions.md`（売りたい）/ `NAKAMA_projects_ClaudeCode_instructions.md`（共創プロジェクト・AUBA参考）/ `NAKAMA_buyer_ClaudeCode_instructions.md`（探している＝買いたい）。
+
 ## 事業構造（3サービス。混ぜない）
 1. **NAKAMA**（月額会員）= 出会い・営業・マッチング・学び。**月額22,000円（税込／＝20,000円税抜）**。
 2. **共創プロデュース** = 人が介在する企画・実証・事業化の個別支援。15万円（税抜）〜＋成功報酬（個別）。
@@ -144,7 +147,12 @@ Favorite, Announcement, Banner, CuratedArticle(食の注目記事), **Consultati
   - **Phase 2以降（未実装・要承認）**: 公開範囲設定（価格・数量等の非公開/提案後開示）・構造化された提案フォーム・提案一覧比較・提案ごとの5段階進捗管理・通知連携（§7〜§12）。Phase 3=下書き自動期限通知・事務局伴走画面・運営レポート
 - **バグ再点検（2026-08-10・2件修正）**: ①getOrCreateMemberForUser＝getSessionUserのcache()化で同一リクエスト内（アクション→再レンダー）に member が二重作成されうる理論穴→memberId未設定時のみusers行を読み直すガードを追加 ②プロジェクト保存で旧 `toRole` が空文字→nullで消える退行→更新対象から除外（募集役割ProjectRoleに移行済みのため入力欄なし）。他の当日変更（並列化・unstable_cache・next/image・v.body保存・確認モーダル）は机上＋実機で再確認し問題なし。DB健全性も確認（孤児user/member・二重リンクなし。会員3=グラブデザイン/umetaku1@gmail(未入力・APPROVED)/tongatuned31@gmail(DRAFT)）
 - **⚠️運用TODO（ユーザー作業）**: ①Stripeダッシュボードで Webhook に `invoice.payment_failed`・`customer.subscription.updated` の2イベントを追加（未追加だと決済失敗が反映されない）②Supabaseプラン確認→Pro+PITRでバックアップ有効化（backup-runbook.md）
-- Phase 2以降（未着手・要承認）: 学び/セミナー本実装、掲載上限、共créプロフィール構造化+食の検索条件、自動マッチング提案+週次ダイジェスト、共créシート/企画書自動生成、共cré事例、analytics（導入時は外部送信ポリシー更新必須）。
+- **次にやる候補（未着手・着手前に要承認）**:
+  1. **探している Phase 2**（買い手指示書§7〜§12）: 公開範囲設定（価格・数量・会社名の非公開/提案後開示）→ 構造化された提案フォーム → 提案の一覧比較 → 提案ごとの5段階進捗（共創PJの応募者管理と同じ作りで実装可）→ 通知連携
+  2. **共créプロジェクト Phase 2**（プロジェクト指示書§17）: カンバンDnD・自動リマインド・おすすめマッチング・資料添付（公開範囲つき）・`supportOfficial`（事務局伴走中ラベル）の管理画面トグル
+  3. 3サービス仕様書 Phase 2以降: 学び/セミナー本実装、掲載上限、共créプロフィール構造化+食の検索条件、自動マッチング提案+週次ダイジェスト、共créシート/企画書自動生成、共cré事例、analytics（導入時は外部送信ポリシー更新必須）
+  4. 画像の**既存分の一括縮小**（バックフィルスクリプト。新規アップロードは自動縮小済み）／詳細ページヒーローの next/image 化
+  5. ダッシュボードの「おすすめ案件」を新着4件→条件スコアリングに置き換え（コード内TODO）
 
 ## やることリスト（対外募集開始前）
 1. **【最重要】電気通信事業の届出要否確認**: 会員間1対1メッセージ＝「他人の通信の媒介」該当可能性高（弁護士見解）。関東総合通信局 電気通信事業課（03-6238-1670・九段第3合同庁舎＝会社の目の前）へ電話確認。確認依頼文書と事実関係別紙=`docs/telecom-notification-inquiry.md`。**特にQ5「届出前に会員募集を開始してよいか」を必ず確認**（公開スケジュールに直結）。「必要」ならClaude が様式第8記入案+ネットワーク構成図を作成する。
