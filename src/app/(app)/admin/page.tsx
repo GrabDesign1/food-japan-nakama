@@ -31,6 +31,9 @@ export default async function AdminPage() {
     sentBackProjects,
     threadCount,
     applicationCount,
+    pendingPromoCount,
+    pendingNoticeCount,
+    newConsultCount,
   ] = await Promise.all([
     prisma.member.count({ where: { tenantId, status: "PENDING" } }),
     prisma.member.count({ where: { tenantId, status: "APPROVED" } }),
@@ -46,6 +49,9 @@ export default async function AdminPage() {
     }),
     prisma.thread.count({ where: { tenantId } }),
     prisma.projectApplication.count({ where: { project: { tenantId } } }),
+    prisma.listingPromotion.count({ where: { tenantId, status: "pending_review" } }),
+    prisma.matchedNotice.count({ where: { tenantId, status: "pending_review" } }),
+    prisma.consultation.count({ where: { tenantId, status: "new" } }),
   ]);
 
   const announcements = await prisma.announcement.findMany({
@@ -85,9 +91,14 @@ export default async function AdminPage() {
   };
   const myUserId = su.app.id;
 
-  const metrics = [
+  const billingPending = pendingPromoCount + pendingNoticeCount;
+  // alert: 1件以上で「要対応」＝赤くアラート表示する指標
+  const metrics: { k: string; v: number; alert?: boolean; href?: string }[] = [
+    { k: "審査中の会員", v: pendingCount, alert: true, href: "/admin/members" },
+    { k: "PJ承認待ち", v: pendingProjects.length, alert: true, href: "#pj-review" },
+    { k: "課金の審査待ち", v: billingPending, alert: true, href: "/admin/billing" },
+    { k: "新規の個別相談", v: newConsultCount, alert: true, href: "/admin/consultations" },
     { k: "承認済み会員", v: memberApproved },
-    { k: "審査中の会員", v: pendingCount },
     { k: "公開中の台帳", v: offeringCount },
     { k: "掲載中プロジェクト", v: projectPublished },
     { k: "商談数", v: dealCount },
@@ -120,14 +131,36 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* 指標サマリ */}
+      {/* 指標サマリ（要対応の指標は1件以上で赤くアラート） */}
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {metrics.map((m) => (
-          <div key={m.k} className="rounded-[10px] border border-[var(--line)] bg-white p-4">
-            <div className="text-[10px] text-[var(--muted)]">{m.k}</div>
-            <div className="mt-1 font-serif text-[22px] text-[var(--ink)]">{m.v}</div>
-          </div>
-        ))}
+        {metrics.map((m) => {
+          const alerting = !!m.alert && m.v > 0;
+          const inner = (
+            <>
+              <div className={`flex items-center gap-1.5 text-[10px] ${alerting ? "font-bold text-[var(--red)]" : "text-[var(--muted)]"}`}>
+                {m.k}
+                {alerting ? (
+                  <span className="rounded bg-[var(--red)] px-1 py-0.5 text-[9px] font-bold text-white">要対応</span>
+                ) : null}
+              </div>
+              <div className={`mt-1 font-serif text-[22px] ${alerting ? "font-bold text-[var(--red)]" : "text-[var(--ink)]"}`}>
+                {m.v}
+              </div>
+            </>
+          );
+          const cls = `rounded-[10px] border bg-white p-4 ${
+            alerting ? "border-2 border-[var(--red)] bg-[var(--red-soft)]" : "border-[var(--line)]"
+          }`;
+          return m.href && alerting ? (
+            <Link key={m.k} href={m.href} className={`${cls} transition hover:-translate-y-0.5 hover:shadow-sm`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={m.k} className={cls}>
+              {inner}
+            </div>
+          );
+        })}
       </div>
 
       {/* お知らせ投稿 */}
@@ -295,7 +328,7 @@ export default async function AdminPage() {
       {/* 掲載承認 */}
       {pendingProjects.length > 0 ? (
         <div>
-          <h2 className={`${h2Cls} mb-2`}>プロジェクト掲載の承認（{pendingProjects.length}）</h2>
+          <h2 id="pj-review" className={`${h2Cls} mb-2 scroll-mt-6`}>プロジェクト掲載の承認（{pendingProjects.length}）</h2>
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {pendingProjects.map((p) => (
               <div key={p.id} className="flex items-center gap-3 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
