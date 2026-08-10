@@ -7,7 +7,17 @@ import { sendConsultationEmails } from "@/lib/email";
 
 export type ConsultationState = { ok?: boolean; refNo?: string; error?: string };
 
-const SERVICE_TYPES = new Set(["produce", "crowdfunding", "food-loss", "unsure"]);
+const SERVICE_TYPES = new Set(["produce", "crowdfunding", "food-loss", "project", "unsure"]);
+
+// 共創プロジェクト伴走で選べる支援内容（指示書 §11）
+const PROJECT_SUPPORT_TYPES = new Set([
+  "企画整理",
+  "相手探し",
+  "面談同席",
+  "実証設計",
+  "契約・事業化",
+  "その他",
+]);
 
 // 濫用対策（公開・未認証フォームのため）：同一IP 1時間5件・全体 1時間30件まで
 const LIMIT_PER_IP_HOUR = 5;
@@ -86,6 +96,29 @@ export async function submitConsultation(
 
   const tenantId = await getPublicTenantId();
   if (!tenantId) return { error: "受付できませんでした。時間をおいて再度お試しください。" };
+
+  // 共創プロジェクト伴走：対象プロジェクトと希望する支援を概要に整形して追記
+  if (serviceType === "project") {
+    const parts: string[] = [];
+    const projectId = g("projectId", 40);
+    if (projectId) {
+      // タイトルはサーバー側で照合（クライアントからの自称タイトルは使わない）
+      const pj = await prisma.project.findFirst({
+        where: { id: projectId, tenantId },
+        select: { title: true, status: true },
+      });
+      parts.push(
+        pj
+          ? `・対象プロジェクト：${pj.title || "（無題）"}（ID: ${projectId}）`
+          : `・対象プロジェクトID：${projectId}`
+      );
+    }
+    const support = g("supportType", 40);
+    if (PROJECT_SUPPORT_TYPES.has(support)) parts.push(`・希望する支援：${support}`);
+    if (parts.length) {
+      productSummaryFull += "\n\n【共創プロジェクト伴走の詳細】\n" + parts.join("\n");
+    }
+  }
 
   const refNo = makeRefNo();
   const data = {

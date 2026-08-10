@@ -13,6 +13,12 @@ import { views24hMap } from "@/lib/offering-views";
 import { EmptyState } from "@/components/EmptyState";
 import { countMissingProfileFields } from "@/lib/member";
 import { PHASES, loadMemberDeals } from "@/lib/deal";
+import {
+  PROGRESS_LABEL,
+  PROGRESS_STAGES,
+  nextActionDueState,
+  isMeetingSoon,
+} from "@/lib/project-taxonomy";
 import { btn, eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "マイページ｜FOOD JAPAN NAKAMA" };
@@ -77,7 +83,7 @@ export default async function DashboardPage() {
   const tenantId = su?.app.tenantId;
   const memberId = member?.id;
 
-  const [announcements, banners, dealsWithOther, myProjects, recommended, myOfferings] = await Promise.all([
+  const [announcements, banners, dealsWithOther, myProjects, recommended, myOfferings, myProjectApps] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
           where: { tenantId },
@@ -116,6 +122,18 @@ export default async function DashboardPage() {
           where: { memberId, isPublic: true, title: { not: "" } },
           orderBy: { updatedAt: "desc" },
           take: 4,
+        })
+      : Promise.resolve([]),
+    // 自分が主催する共創プロジェクトの進行中の応募（次の行動・期限を「進行中の活動」に反映）
+    memberId
+      ? prisma.projectApplication.findMany({
+          where: {
+            project: { memberId },
+            progressStage: { in: PROGRESS_STAGES.map(([v]) => v) },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 10,
+          include: { project: { select: { id: true, title: true } } },
         })
       : Promise.resolve([]),
   ]);
@@ -165,7 +183,15 @@ export default async function DashboardPage() {
     inquiryGroups.filter((g) => g.offeringId).map((g) => [g.offeringId as string, g._count._all])
   );
 
-  // ── 進行中の活動（商談＋共創PJを更新順に統合・最大3件・要返信優先）──
+  // 応募者名（進行中の活動の行表示用）
+  const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
+  const appMembers = appMemberIds.length
+    ? await prisma.member.findMany({ where: { id: { in: appMemberIds } }, select: { id: true, name: true } })
+    : [];
+  const appNameMap = new Map(appMembers.map((m) => [m.id, m.name]));
+
+  // ── 進行中の活動（商談＋共創PJ＋応募進捗を統合・最大3件）──
+  // 優先順位（指示書§13）: 0=要返信・未読 / 1=期限超過・間近 / 2=次回打合せが近い / 3=最終更新の新しい順
   const activities: ActivityItem[] = [
     ...dealsWithOther.map(({ deal, other }) => {
       const unread = deal.threadId ? (unreadByThread.get(deal.threadId) ?? 0) : 0;
@@ -176,7 +202,23 @@ export default async function DashboardPage() {
         statusCls: unread > 0 ? STATUS_ORANGE : STATUS_GREEN,
         href: deal.threadId ? `/messages/${deal.threadId}` : "/deals",
         at: deal.lastActivityAt,
-        priority: unread > 0 ? 0 : 1,
+        priority: unread > 0 ? 0 : 3,
+      };
+    }),
+    // 主催プロジェクトの応募進捗（次の行動・期限つき）
+    ...myProjectApps.map((a) => {
+      const name = appNameMap.get(a.applicantMemberId) ?? "会員";
+      const dueState = nextActionDueState(a.progressStage, a.nextActionDue);
+      const meetingSoon = isMeetingSoon(a.nextMeetingAt);
+      const dueText = a.nextActionDue ? ` ・ 期限 ${fmtShortDate(a.nextActionDue)}` : "";
+      return {
+        title: a.nextAction || `${name}さんの応募に対応する`,
+        meta: `${a.project.title || "（無題）"} ・ ${name}${dueText}`,
+        status: dueState === "overdue" ? "期限超過" : PROGRESS_LABEL[a.progressStage] ?? a.progressStage,
+        statusCls: dueState === "overdue" || dueState === "soon" ? STATUS_ORANGE : STATUS_GREEN,
+        href: `/projects/${a.project.id}/applicants`,
+        at: a.updatedAt,
+        priority: dueState === "overdue" || dueState === "soon" ? 1 : meetingSoon ? 2 : 3,
       };
     }),
     ...myProjects.map((p) => ({
@@ -186,7 +228,7 @@ export default async function DashboardPage() {
       statusCls: p.status === "published" ? STATUS_GREEN : STATUS_ORANGE,
       href: `/projects/${p.id}`,
       at: p.updatedAt,
-      priority: 1,
+      priority: 3,
     })),
   ]
     .sort((a, b) => a.priority - b.priority || b.at.getTime() - a.at.getTime())

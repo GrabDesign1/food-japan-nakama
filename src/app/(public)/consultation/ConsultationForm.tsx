@@ -12,11 +12,19 @@ const SERVICE_OPTIONS = [
   { value: "produce", label: "共創プロデュースを相談したい" },
   { value: "crowdfunding", label: "クラウドファンディング支援を相談したい" },
   { value: "food-loss", label: "フードロスについて相談したい" },
+  { value: "project", label: "共創プロジェクトの伴走を相談したい" },
   { value: "unsure", label: "どちらが合うか相談したい" },
 ];
 const BUDGETS = ["15万円未満", "15万〜40万円", "40万〜100万円", "100万円以上", "未定"];
+const PROJECT_SUPPORT_TYPES = ["企画整理", "相手探し", "面談同席", "実証設計", "契約・事業化", "その他"];
 
-export function ConsultationForm({ defaultType }: { defaultType: string }) {
+export function ConsultationForm({
+  defaultType,
+  project,
+}: {
+  defaultType: string;
+  project?: { id: string; title: string | null } | null;
+}) {
   const [state, action, pending] = useActionState<ConsultationState, FormData>(submitConsultation, {});
   const [serviceType, setServiceType] = useState(
     SERVICE_OPTIONS.some((o) => o.value === defaultType) ? defaultType : ""
@@ -91,8 +99,38 @@ export function ConsultationForm({ defaultType }: { defaultType: string }) {
           <label className={labelCls}>法規制などで確認済みの点・不明な点<textarea name="flLegal" rows={2} placeholder="例：飼料化に必要な手続きが分からない 等" className={inputCls} /></label>
         </div>
       ) : null}
+
+      {serviceType === "project" ? (
+        <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-4">
+          <p className="text-[12px] font-bold text-[var(--green-d)]">
+            共創プロジェクト伴走の詳細
+          </p>
+          {project ? (
+            <div className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)]">
+              対象プロジェクト：<b>{project.title || "（無題）"}</b>
+              <input type="hidden" name="projectId" value={project.id} />
+            </div>
+          ) : (
+            <p className="text-[12px] text-[var(--ink-2)]">
+              対象のプロジェクトが決まっている場合は、下の「解決したい課題」にプロジェクト名をご記入ください。
+            </p>
+          )}
+          <label className={labelCls}>
+            希望する支援
+            <select name="supportType" defaultValue="" className={inputCls}>
+              <option value="">選択してください</option>
+              {PROJECT_SUPPORT_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </label>
+        </div>
+      ) : null}
+
       <label className={labelCls}>
-        解決したい課題<span className="text-[var(--red)]"> ＊</span>
+        {serviceType === "project" ? (
+          <>現在の困りごと・解決したい課題<span className="text-[var(--red)]"> ＊</span></>
+        ) : (
+          <>解決したい課題<span className="text-[var(--red)]"> ＊</span></>
+        )}
         <textarea name="challenge" rows={3} required className={inputCls} />
       </label>
       <label className={labelCls}>希望する成果（任意）<textarea name="desiredOutcome" rows={2} className={inputCls} /></label>

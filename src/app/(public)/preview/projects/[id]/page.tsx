@@ -22,7 +22,11 @@ export default async function PublicProjectPreview({
   const p = await getPublicProject(id);
   if (!p) notFound();
 
-  const body = p.body ?? "";
+  // 新形式（質問形式）の案件は「実現したいこと→課題」を、旧形式は body を抜粋する
+  const body =
+    p.body ??
+    [p.coCreationGoal, p.challengeIssue].filter(Boolean).join("\n\n") ??
+    "";
   const preview = body.slice(0, PREVIEW_CHARS);
   const remaining = Math.max(0, body.length - preview.length);
   const hero = p.imageUrls[0] ?? null;
@@ -38,8 +42,12 @@ export default async function PublicProjectPreview({
           共創プロジェクト
         </span>
         <h1 className={h1Cls}>{p.title || "（無題）"}</h1>
+        {p.oneLiner ? (
+          <p className="text-[14px] leading-6 text-[var(--ink-2)]">{p.oneLiner}</p>
+        ) : null}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--muted)]">
           <span>{p.memberName}</span>
+          {p.area ? <span>📍 {p.area}</span> : null}
           {p.budget ? <span>予算 {p.budget}</span> : null}
         </div>
       </div>

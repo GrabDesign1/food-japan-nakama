@@ -264,7 +264,7 @@ model CuratedArticle {
   @@map("curated_articles")
 }
 
-/// 共創プロジェクト掲載（HANDOVER 4-1 / 画面7）
+/// 共創プロジェクト掲載（HANDOVER 4-1 / 画面7。2026-08-10 共創プロジェクト改修で拡張）
 model Project {
   id          String    @id @default(cuid())
   tenantId    String    @map("tenant_id")
@@ -284,27 +284,132 @@ model Project {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  // ── 目的と基本情報（全てnullable＝旧データ互換。選択肢は src/lib/project-taxonomy.ts）──
+  purposeMain  String?   @map("purpose_main") // 主目的
+  purposeSub   String[]  @map("purpose_sub") // 関連目的（複数）
+  oneLiner     String?   @map("one_liner") // 一言で表す目的
+  deadline     DateTime? // 募集期限
+  targetTiming String?   @map("target_timing") // 目標時期
+  leaderName   String?   @map("leader_name") // プロジェクト責任者
+
+  // ── 背景と実現したいこと（質問形式）──
+  challengeIssue String? @map("challenge_issue") // どのような課題がありますか
+  challengeWhy   String? @map("challenge_why") // なぜ解決したいのですか
+  challengeWho   String? @map("challenge_who") // 誰にどのような影響がありますか
+  coCreationGoal String? @map("co_creation_goal") // 共創によって何を実現したいですか
+  futureVision   String? @map("future_vision") // 事業化した先に目指す状態
+
+  // ── 現在地 ──
+  stage            String? // 現在の段階（idea/research/prototype/pilot/prelaunch/running）
+  stageDone        String? @map("stage_done") // これまでに取り組んだこと
+  stageLearned     String? @map("stage_learned") // 分かっていること・検証できたこと
+  stageIssues      String? @map("stage_issues") // 未解決の論点
+  stageSchedule    String? @map("stage_schedule") // 目標スケジュール
+  existingPartners String? @map("existing_partners") // 既存の参加者・協力者（公開できる範囲で記載）
+
+  // ── 条件・イベント連携 ──
+  period       String? // 実施期間
+  place        String? // 実施場所
+  rewardPolicy String?  @map("reward_policy") // 報酬・費用負担・売上分配（decided/negotiable/none/tbd。未定と無償は別値）
+  contractNote String?  @map("contract_note") // 契約・秘密保持の必要性
+  eventFlags   String[] @map("event_flags") // FJS連携（fjs_origin/miyazaki/nagoya/business_meeting/tasting/tour）
+  supportRequested Boolean @default(false) @map("support_requested") // 事務局伴走を希望
+  supportOfficial  Boolean @default(false) @map("support_official") // 「事務局伴走中」表示（事務局のみ設定可）
+
   applications ProjectApplication[]
+  roles        ProjectRole[]
+  resources    ProjectResource[]
+  activities   ProjectActivity[]
 
   @@index([memberId])
   @@index([status])
   @@map("projects")
 }
 
-/// 共創プロジェクトへの応募
+/// 募集する相手・役割（共創プロジェクトの子。役割単位で登録）
+model ProjectRole {
+  id          String  @id @default(cuid())
+  projectId   String  @map("project_id")
+  name        String // 役割名（例：加工パートナー）
+  request     String? // 具体的にお願いしたいこと
+  requirement String? // 必要な経験・条件
+  headcount   String? // 募集数（自由記述）
+  period      String? // 参加時期・期間
+  reward      String? // 費用・報酬・費用負担
+  isPublic    Boolean @default(true) @map("is_public")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_roles")
+}
+
+/// 主催者が提供できる資源（共創プロジェクトの子）
+model ProjectResource {
+  id          String  @id @default(cuid())
+  projectId   String  @map("project_id")
+  kind        String // 分類（material/tech/facility/channel/people/data/network/pr/fund/other）
+  description String? // 説明
+  condition   String? // 提供条件
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_resources")
+}
+
+/// 共創プロジェクトへの応募（興味表明）＋相手ごとの進捗管理
 model ProjectApplication {
   id                String   @id @default(cuid())
   projectId         String   @map("project_id")
   applicantMemberId String   @map("applicant_member_id")
-  message           String?
+  message           String? // 旧・自由記述（互換のため残す）
   status            String   @default("applied") // applied / accepted / declined
   createdAt         DateTime @default(now()) @map("created_at")
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // ── 興味表明の内容（2026-08-10追加）──
+  reason      String? // 興味を持った理由
+  offer       String? // 自社・本人が提供できるもの
+  involvement String? // 希望する関わり方
+  meetingWish String? @map("meeting_wish") // 面談希望（yes/undecided/no）
+  desiredRole String? @map("desired_role") // 希望する役割（ProjectRoleの名前を自由記述）
+
+  // ── 主催者側の進捗管理（5段階＋保留/見送り/完了）──
+  progressStage String    @default("inquiry") @map("progress_stage") // inquiry/meeting/planning/pilot/contract + hold/declined/done
+  nextAction    String?   @map("next_action") // 次に行うこと
+  nextActionDue DateTime? @map("next_action_due") // 期限
+  assignee      String? // 担当者
+  nextMeetingAt DateTime? @map("next_meeting_at") // 次回打ち合わせ日時
+  ownerMemo     String?   @map("owner_memo") // 最新メモ（主催者のみ・非公開）
+  holdReason    String?   @map("hold_reason") // 保留・見送り理由（非公開）
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activities ProjectActivity[]
 
   @@unique([projectId, applicantMemberId])
   @@index([projectId])
   @@map("project_applications")
+}
+
+/// 進捗の活動履歴（段階変更・担当変更・見送り等の重要操作を記録）
+model ProjectActivity {
+  id            String   @id @default(cuid())
+  projectId     String   @map("project_id")
+  applicationId String?  @map("application_id")
+  actorMemberId String   @map("actor_member_id")
+  type          String // applied / stage_change / next_action / assignee_change / memo / hold / declined / done / reopened
+  detail        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  application ProjectApplication? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([applicationId])
+  @@map("project_activities")
 }
 
 /// 商談（HANDOVER 4-1 / 第6章）。2会員間で1つ。フェーズ0〜5。
