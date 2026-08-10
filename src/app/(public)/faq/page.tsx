@@ -2,7 +2,11 @@ import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
 import { JsonLd, faqJsonLd } from "../_components/JsonLd";
 
-export const metadata = { title: "よくある質問｜FOOD JAPAN NAKAMA" };
+export const metadata = {
+  title: "よくある質問｜FOOD JAPAN NAKAMA",
+  description:
+    "登録・掲載・閲覧・応募・問い合わせ・返信は無料です（月額契約は不要）。有料になるのは、売り手からの初回提案（紹介料）、掲載オプション、事務局への依頼の3つ。よくある質問でご確認いただけます。",
+};
 
 // 新ビジネスモデル実装指示書 §6（2026-08-10）の9問
 const QA: [string, string][] = [

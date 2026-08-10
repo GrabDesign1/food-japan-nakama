@@ -7,6 +7,14 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nakama.food-japan-su
 // 新しく公開された案件を反映するため、1時間ごとに再生成する
 export const revalidate = 3600;
 
+/**
+ * 公開ページの本文を最後に更新した日。
+ * lastmod が無いと検索エンジンが再クロールの判断材料を持てず、古い内容が
+ * 検索結果に残り続ける（2026-08-11に実際に発生）。
+ * 料金・サービス説明を変更したら必ずこの日付を更新すること。
+ */
+const CONTENT_UPDATED_AT = new Date("2026-08-11T00:00:00+09:00");
+
 // 公開静的ページ（middleware の PUBLIC_PATHS と対応）
 const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }[] = [
   { path: "/", priority: 1.0, changeFrequency: "daily" },
@@ -29,6 +37,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = STATIC_PAGES.map((p) => ({
     url: `${APP_URL}${p.path}`,
+    lastModified: CONTENT_UPDATED_AT,
     changeFrequency: p.changeFrequency,
     priority: p.priority,
   }));
