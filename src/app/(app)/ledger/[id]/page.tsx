@@ -482,7 +482,7 @@ export default async function OfferingDetailPage({
       {points.length || offering.pointsImageUrl ? (
         <div>
           <h2 className={`${h2Cls} mb-2`}>
-            おすすめポイント
+            {isGive ? "おすすめポイント" : "うちの特徴"}
           </h2>
           {points.length ? (
             <div className="rounded-[10px] bg-[var(--green-soft)] p-5">

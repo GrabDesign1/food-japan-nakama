@@ -415,7 +415,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
             <SectionHead
               title="条件（必須・希望・相談可能）"
-              desc="条件ごとに「必須／希望／相談可能」を選べます。すべて必須にすると提案が来にくくなります。"
+              desc="条件ごとに「必須／希望／相談可能」を選べます。"
             />
             <div id="f-requirements" className="scroll-mt-24">
               <div className="flex flex-col gap-2">
@@ -469,7 +469,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                   ＋ 条件を追加
                 </button>
                 <p className="text-[11px] text-[var(--muted)]">
-                  例：産地・地域「宮崎県産が望ましい」＝希望／保存方法「常温保存必須」＝必須／価格「〜500円/個で相談可」＝相談可能
+                  例：産地・地域「宮崎県産が望ましい」＝希望／保存方法「常温保存必須」＝必須／価格「〜500円/個で相談可」＝相談可能／支払い方法「請求書払い（振込）・PayPay・応相談」
                 </p>
               </div>
             </div>
@@ -914,13 +914,18 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {/* ── アピール・タグ ── */}
         <SectionHead title="アピール" />
         <div className={labelCls}>
-          おすすめポイント（1行に1つ）
+          {/* 売りたい＝商品の推しどころ、探している＝自社の特徴（売り手が取引したくなる理由） */}
+          {isGive ? "おすすめポイント（1行に1つ）" : "うちの特徴（1行に1つ）"}
           <textarea
             name="points"
             value={points}
             onChange={(e) => setPoints(e.target.value)}
             rows={3}
-            placeholder={"高品質な果実の生産ノウハウがあります\n少量からでも相談可能です"}
+            placeholder={
+              isGive
+                ? "高品質な果実の生産ノウハウがあります\n少量からでも相談可能です"
+                : "毎年クリスマスになるとケーキに使ういちごが不足しています\nはじめてのお取引から再発注につながる可能性もございます"
+            }
             className={inputCls}
           />
           {!isCreate ? (
@@ -1091,7 +1096,9 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           .map((p) => p.trim())
           .filter(Boolean).length ? (
           <div className="mt-3">
-            <div className="text-[11px] font-bold text-[var(--muted)]">おすすめポイント</div>
+            <div className="text-[11px] font-bold text-[var(--muted)]">
+              {isGive ? "おすすめポイント" : "うちの特徴"}
+            </div>
             <ul className="mt-1 flex flex-col gap-1">
               {points
                 .split("\n")

@@ -97,6 +97,7 @@ export const REQUIREMENT_KINDS: [string, string][] = [
   ["storage", "保存方法"],
   ["spec", "規格・サイズ"],
   ["cert", "認証・検査"],
+  ["payment", "支払い方法"],
   ["other", "その他"],
 ];
 export const REQUIREMENT_KIND_LABEL: Record<string, string> =
