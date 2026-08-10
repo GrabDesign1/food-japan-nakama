@@ -60,6 +60,8 @@ export function ConfirmDeleteButton({
                 onClick={() =>
                   startTransition(async () => {
                     await action();
+                    // リダイレクトしない削除（管理画面の一覧など）では自分で閉じる
+                    setOpen(false);
                   })
                 }
                 disabled={pending}

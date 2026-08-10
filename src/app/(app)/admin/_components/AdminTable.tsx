@@ -10,6 +10,7 @@ import {
   unmarkMemberPaid,
 } from "../actions";
 import type { ReviewDecision } from "@/lib/member";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { btn, h2Cls } from "@/lib/ui";
 
 export type AdminRow = {
@@ -108,15 +109,10 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
     });
   }
 
-  function remove(id: string, name: string) {
-    const ok = window.confirm(
-      `「${name || "この会員"}」を完全に削除します。\n\n登録データ（台帳・お気に入り・プロジェクト・商談・メッセージ）とログインアカウントもすべて削除され、元に戻せません。\n\n本当に削除しますか？`
-    );
-    if (!ok) return;
-    startTransition(async () => {
-      await deleteMember(id);
-      setOpenId(null);
-    });
+  // 削除の確認はConfirmDeleteButtonのモーダル側で行う（売りたい・買いたいの削除と同じ仕様）
+  async function remove(id: string) {
+    await deleteMember(id);
+    setOpenId(null);
   }
 
   return (
@@ -219,7 +215,7 @@ function DetailModal({
   onAct: (id: string, decision: ReviewDecision) => void;
   onSuspend: (id: string) => void;
   onReactivate: (id: string) => void;
-  onDelete: (id: string, name: string) => void;
+  onDelete: (id: string) => Promise<void>;
   onMarkPaid: (id: string) => void;
   onUnmarkPaid: (id: string) => void;
 }) {
@@ -422,14 +418,15 @@ function DetailModal({
                 アカウントを停止（無効化）
               </button>
             )}
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => onDelete(row.id, row.name)}
-              className={`${btn("danger", "md")} ml-auto`}
-            >
-              完全に削除する
-            </button>
+            <div className="ml-auto">
+              <ConfirmDeleteButton
+                action={() => onDelete(row.id)}
+                buttonLabel="完全に削除する"
+                buttonClassName={btn("danger", "md")}
+                title="本当に完全に削除しますか？"
+                description={`「${row.name || "この会員"}」の登録データ（台帳・お気に入り・プロジェクト・商談・メッセージ）とログインアカウントがすべて削除されます。この操作は元に戻せません。`}
+              />
+            </div>
           </div>
           <p className="mt-2 text-[11px] text-[var(--muted)]">
             「停止」はログイン不可・非公開にします（あとで再開できます）。「完全に削除」は登録データとログインごと消去し、元に戻せません。

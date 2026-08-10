@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { AdminTable, type AdminRow } from "./_components/AdminTable";
 import { adminApproveProject } from "../projects/actions";
 import { SendBackButton } from "../projects/_components/SendBackButton";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { createAnnouncement, deleteAnnouncement } from "./announcement-actions";
 import { revokeAdmin } from "./admin-account-actions";
 import { AdminAccountForm } from "./_components/AdminAccountForm";
@@ -166,9 +167,13 @@ export default async function AdminPage() {
                     {a.createdAt.getFullYear()}/{String(a.createdAt.getMonth() + 1).padStart(2, "0")}/{String(a.createdAt.getDate()).padStart(2, "0")}
                   </div>
                 </div>
-                <form action={deleteAnnouncement.bind(null, a.id)}>
-                  <button className={btn("danger", "sm")}>削除</button>
-                </form>
+                <ConfirmDeleteButton
+                  action={deleteAnnouncement.bind(null, a.id)}
+                  buttonLabel="削除"
+                  buttonClassName={btn("danger", "sm")}
+                  title="本当に削除しますか？"
+                  description={`お知らせ「${a.title}」を削除します。会員のトップからも消えます。この操作は元に戻せません。`}
+                />
               </div>
             ))}
           </div>
@@ -215,9 +220,13 @@ export default async function AdminPage() {
                     {b.active ? "非表示にする" : "表示する"}
                   </button>
                 </form>
-                <form action={deleteBanner.bind(null, b.id)}>
-                  <button className={btn("danger", "sm")}>削除</button>
-                </form>
+                <ConfirmDeleteButton
+                  action={deleteBanner.bind(null, b.id)}
+                  buttonLabel="削除"
+                  buttonClassName={btn("danger", "sm")}
+                  title="本当に削除しますか？"
+                  description={`バナー「${b.title || "（名前なし）"}」と画像を削除します。この操作は元に戻せません。`}
+                />
               </div>
             ))}
           </div>
@@ -280,9 +289,13 @@ export default async function AdminPage() {
                     {a.active ? "非表示にする" : "表示する"}
                   </button>
                 </form>
-                <form action={deleteArticle.bind(null, a.id)}>
-                  <button className={btn("danger", "sm")}>削除</button>
-                </form>
+                <ConfirmDeleteButton
+                  action={deleteArticle.bind(null, a.id)}
+                  buttonLabel="削除"
+                  buttonClassName={btn("danger", "sm")}
+                  title="本当に削除しますか？"
+                  description={`記事「${a.title}」を削除します。公開トップの「食の注目記事」からも消えます。この操作は元に戻せません。`}
+                />
               </div>
             ))}
           </div>
