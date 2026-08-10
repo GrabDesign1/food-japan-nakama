@@ -1,4 +1,4 @@
-// お気に入り一覧（企業・販売・提供できる商品/買いたい・共創プロジェクト）
+// お気に入り一覧（企業・売りたい（提供したい）/買いたい・共創プロジェクト）
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
@@ -73,7 +73,7 @@ export default async function FavoritesPage() {
         <p className={eyebrowCls}>FAVORITES</p>
         <h1 className={h1Cls}>お気に入り</h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-          気になる企業・販売・提供できる商品/仕入れ・調達したいもの・共創プロジェクトをここにまとめて見返せます。
+          気になる企業・売りたい（提供したい）/探している（調達したい）・共創プロジェクトをここにまとめて見返せます。
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default async function FavoritesPage() {
         <>
           {offerings.length > 0 ? (
             <div>
-              <h2 className={`${h2Cls} mb-3`}>販売・提供／仕入れ・調達</h2>
+              <h2 className={`${h2Cls} mb-3`}>売りたい・探している</h2>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {offerings.map((o) => (
                   <OfferingCard

@@ -28,23 +28,23 @@ export default async function LedgerPage() {
       <div className="flex items-end justify-between">
         <div>
           <p className={eyebrowCls}>LISTINGS</p>
-          <h1 className={h1Cls}>案件を登録する（販売・提供／仕入れ・調達）</h1>
+          <h1 className={h1Cls}>案件を登録する（売りたい・探している）</h1>
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-            商品・原料・食品副産物・協業テーマなど、「販売・提供できる商品」「仕入れ・調達したいもの」を1件ずつ登録します。
+            商品・原料・食品副産物・協業テーマなど、「売りたい（提供したい）」「探している（調達したい）」を1件ずつ登録します。
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/ledger/new?direction=GIVE" className={btn("primary")}>
-            ＋ 販売・提供できる商品を登録
+            ＋ 売りたい（提供したい）を登録
           </Link>
           <Link href="/ledger/new?direction=WANT" className={btn("amber")}>
-            ＋ 仕入れ・調達したいものを登録する
+            ＋ 探している（調達したい）を登録する
           </Link>
         </div>
       </div>
 
-      <Section title="販売・提供できる商品" direction="GIVE" items={gives} />
-      <Section title="仕入れ・調達したいもの" direction="WANT" items={wants} />
+      <Section title="売りたい（提供したい）" direction="GIVE" items={gives} />
+      <Section title="探している（調達したい）" direction="WANT" items={wants} />
     </div>
   );
 }
@@ -80,7 +80,7 @@ function Section({
       {items.length === 0 ? (
         <EmptyState
           compact
-          title={direction === "GIVE" ? "「販売・提供できる商品」はまだ登録がありません" : "仕入れ・調達したいもの商品・原料はまだ登録がありません"}
+          title={direction === "GIVE" ? "「売りたい（提供したい）」はまだ登録がありません" : "探している（調達したい）商品・原料はまだ登録がありません"}
           description={
             direction === "GIVE"
               ? "商品・食材・規格外品など、動かせるものを1件ずつ登録すると、買いたい相手から見つけてもらえます。"
@@ -91,7 +91,7 @@ function Section({
             href={`/ledger/new?direction=${direction}`}
             className={btn(direction === "GIVE" ? "primary" : "amber", "sm")}
           >
-            {direction === "GIVE" ? "＋ 販売・提供できる商品を登録" : "＋ 仕入れ・調達したいものを登録する"}
+            {direction === "GIVE" ? "＋ 売りたい（提供したい）を登録" : "＋ 探している（調達したい）を登録する"}
           </Link>
         </EmptyState>
       ) : (

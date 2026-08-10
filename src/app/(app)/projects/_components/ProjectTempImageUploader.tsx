@@ -1,6 +1,6 @@
 "use client";
 
-// 新規登録フォーム用の画像アップローダ（共創プロジェクト版。販売・提供できる商品の TempImageUploader と同仕様）。
+// 新規登録フォーム用の画像アップローダ（共創プロジェクト版。売りたい（提供したい）の TempImageUploader と同仕様）。
 // 選んだ瞬間に一時領域へアップロードし、URLは親（フォーム）のstateで管理。
 // 保存時に hidden input（tempImageUrls）として送信され、サーバー側でプロジェクトへ紐付く。
 import { useRef, useState, useTransition } from "react";

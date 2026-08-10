@@ -364,7 +364,7 @@ export default function FoodLossPage() {
           <div className="border border-[var(--line)] bg-white p-6">
             <h3 className="font-serif text-[18px] text-[var(--ink)]">NAKAMAでできること</h3>
             <p className="mt-2 text-[14px] leading-7 text-[var(--ink-2)]">
-              規格外品や余剰在庫を「販売・提供できる商品」として掲載し、活用したい企業・料理人・自治体とつながれます。
+              規格外品や余剰在庫を「売りたい（提供したい）」として掲載し、活用したい企業・料理人・自治体とつながれます。
               原料として探している相手が見つかれば、廃棄コストが新しい取引に変わります。
             </p>
           </div>

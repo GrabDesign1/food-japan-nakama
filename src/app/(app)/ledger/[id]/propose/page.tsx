@@ -1,4 +1,4 @@
-// 「仕入れ・調達したいもの」案件への提案ページ（初回紹介料の説明・クレジット残高・購入・提案送信）。
+// 「探している（調達したい）」案件への提案ページ（初回紹介料の説明・クレジット残高・購入・提案送信）。
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";

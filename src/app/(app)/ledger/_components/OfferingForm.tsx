@@ -1,6 +1,6 @@
 "use client";
 
-// 台帳の登録・編集フォーム（2026-08-10 販売・提供できる商品改善）。
+// 台帳の登録・編集フォーム（2026-08-10 売りたい（提供したい）改善）。
 // - 「基本情報」「価格と数量」「状態と提供時期」「詳しい取引条件」のセクション構成
 // - カテゴリに応じて食品・物品固有の項目を切り替え
 // - 右側に「買い手からの見え方」ライブプレビュー
@@ -79,7 +79,7 @@ export type OfferingData = {
   challengeValue: string | null;
   sampleAvailability: string | null;
   priceTaxType: string | null;
-  // 仕入れ・調達したいもの（WANT）
+  // 探している（WANT）
   seekingType: string | null;
   usageContext: string | null;
   requirements: { kind: string; text: string; level: string }[];
@@ -153,7 +153,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const [itemCondition, setItemCondition] = useState(offering.itemCondition ?? "");
   const [storageType, setStorageType] = useState(offering.storageType ?? "");
   const [deadline, setDeadline] = useState(offering.applicationDeadline ?? "");
-  // 仕入れ・調達したいもの（WANT）：募集タイプ・使用目的・条件リスト
+  // 探している（WANT）：募集タイプ・使用目的・条件リスト
   const [seekingType, setSeekingType] = useState(offering.seekingType ?? "");
   const [usageContext, setUsageContext] = useState(offering.usageContext ?? "");
   const [requirements, setRequirements] = useState<{ kind: string; text: string; level: string }[]>(
@@ -222,7 +222,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           <input type="hidden" name="requirementsJson" value={JSON.stringify(requirements)} />
         ) : null}
 
-        {/* ── 募集タイプ（仕入れ・調達したいもののみ） ── */}
+        {/* ── 募集タイプ（探している（調達したい）のみ） ── */}
         {!isGive ? (
           <div>
             <h2 className="text-[16px] font-bold text-[var(--ink)]">何を探していますか？<Req /></h2>
@@ -259,7 +259,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           </div>
         ) : null}
 
-        {/* ── 掲載タイプ（販売・提供できる商品のみ） ── */}
+        {/* ── 掲載タイプ（売りたい（提供したい）のみ） ── */}
         {isGive ? (
           <div>
             <h2 className="text-[16px] font-bold text-[var(--ink)]">今回、何をしたいですか？</h2>
@@ -330,7 +330,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             </select>
           </label>
           <label id="f-area" className={`${labelCls} scroll-mt-24`}>
-            {/* 販売・提供できる商品＝送り出す側なので「発送元」、仕入れ・調達したいもの＝受け取る側なので「発送先」 */}
+            {/* 売りたい（提供したい）＝送り出す側なので「発送元」、探している（調達したい）＝受け取る側なので「発送先」 */}
             <span>
               {isGive ? "発送元・受渡地域" : "発送先・受取地域"}
               {isGive && goods ? <Req /> : <Opt />}
@@ -399,7 +399,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           ) : null}
         </div>
 
-        {/* ── 使用目的と条件（仕入れ・調達したいもののみ） ── */}
+        {/* ── 使用目的と条件（探している（調達したい）のみ） ── */}
         {!isGive ? (
           <>
             <div id="f-usage" className={`${labelCls} scroll-mt-24`}>
@@ -482,7 +482,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           </>
         ) : null}
 
-        {/* ── 魅力と背景（質問に答える形式・販売・提供できる商品のみ） ── */}
+        {/* ── 魅力と背景（質問に答える形式・売りたい（提供したい）のみ） ── */}
         {isGive ? (
           <>
             <SectionHead
@@ -920,7 +920,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {/* ── アピール・タグ ── */}
         <SectionHead title="アピール" />
         <div className={labelCls}>
-          {/* 販売・提供できる商品＝商品の推しどころ、仕入れ・調達したいもの＝自社の特徴（売り手が取引したくなる理由） */}
+          {/* 売りたい（提供したい）＝商品の推しどころ、探している（調達したい）＝自社の特徴（売り手が取引したくなる理由） */}
           {isGive ? "おすすめポイント（1行に1つ）" : "うちの特徴（1行に1つ）"}
           <textarea
             name="points"
@@ -988,7 +988,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
             }`}
           >
-            {isGive ? "販売・提供できる商品" : "仕入れ・調達したいもの"}
+            {isGive ? "売りたい（提供したい）" : "探している（調達したい）"}
           </span>
           {isGive && listingPurpose === "challenge" ? (
             <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">課題解決</span>
@@ -1023,7 +1023,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           ))}
         </dl>
         {/* 本文プレビュー（実際の詳細ページと同じ並び） */}
-        <PreviewBlock label={isGive ? "この商品・原料について" : "仕入れ・調達したいもの"} text={description} />
+        <PreviewBlock label={isGive ? "この商品・原料について" : "探している（調達したい）"} text={description} />
         {!isGive ? (
           <>
             {usageContext.trim() ? (

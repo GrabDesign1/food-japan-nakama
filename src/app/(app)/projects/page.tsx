@@ -178,7 +178,7 @@ export default async function ProjectsPage({
               description="最初の1件を掲載してみませんか。課題・実現したいことを書くだけで、共創パートナー候補に届きます。"
               actions={[
                 { label: "＋ 新しいプロジェクトを始める", href: "/projects/new" },
-                { label: "持ち寄り（販売・提供／仕入れ・調達）から探す", href: "/search" },
+                { label: "持ち寄り（売りたい・探している）から探す", href: "/search" },
               ]}
             />
           )

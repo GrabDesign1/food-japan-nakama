@@ -141,7 +141,7 @@ export async function createOffering(
   const created = await prisma.offering.create({
     data: { memberId: member.id, direction, isPublic: false, ...parsed.data },
   });
-  // 仕入れ・調達したいもの（WANT）の条件リストを保存
+  // 探している（WANT）の条件リストを保存
   if (direction === "WANT") {
     await replaceRequirements(
       created.id,
@@ -195,7 +195,7 @@ type ParsedOffering = {
   usageContext: string | null;
 };
 
-// 仕入れ・調達したいもの（WANT）の条件リスト（hidden JSONで受け取りサーバー側で検証）
+// 探している（WANT）の条件リスト（hidden JSONで受け取りサーバー側で検証）
 export type OfferingRequirementInput = {
   kind: string;
   text: string;
@@ -334,7 +334,7 @@ function parseOfferingForm(
       challengeValue: g("challengeValue", 4000) || null,
       sampleAvailability: pick("sampleAvailability", SAMPLE_AVAILABILITY),
       priceTaxType: pick("priceTaxType", PRICE_TAX_TYPES),
-      // 仕入れ・調達したいもの（WANT）
+      // 探している（WANT）
       seekingType: SEEKING_TYPES.some(([v]) => v === g("seekingType"))
         ? g("seekingType")
         : null,
@@ -356,7 +356,7 @@ export async function saveOffering(
     where: { id: offeringId },
     data: parsed.data,
   });
-  // 仕入れ・調達したいもの（WANT）の条件リストを置き換え保存
+  // 探している（WANT）の条件リストを置き換え保存
   if (offering.direction === "WANT") {
     await replaceRequirements(
       offeringId,

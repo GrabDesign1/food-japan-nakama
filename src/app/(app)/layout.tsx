@@ -15,7 +15,7 @@ type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; 
 const NAV: NavItem[] = [
   { label: "ホーム", href: "/dashboard", ready: true },
   { label: "案件を探す", href: "/search", ready: true },
-  { label: "販売・提供／仕入れ・調達", href: "/ledger", ready: true },
+  { label: "売りたい・探している", href: "/ledger", ready: true },
   { label: "進行中の活動", href: "/deals", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
   { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },

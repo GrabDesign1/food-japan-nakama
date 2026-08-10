@@ -70,7 +70,7 @@ export default async function NewOfferingPage({
           ← 案件一覧へ戻る
         </Link>
         <h1 className={`${h1Cls} mt-2`}>
-          {direction === "GIVE" ? "「販売・提供できる商品」を登録する" : "仕入れ・調達したいもの商品・原料を登録する"}
+          {direction === "GIVE" ? "「売りたい（提供したい）」を登録する" : "探している（調達したい）商品・原料を登録する"}
         </h1>
         <p className="mt-1 text-[13px] text-[var(--ink-2)]">
           {direction === "GIVE"

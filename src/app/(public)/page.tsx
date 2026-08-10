@@ -30,7 +30,7 @@ export default async function PublicHome() {
           </Link>
 
           <nav className="fjn-nav" aria-label="メインナビゲーション">
-            <a href="#buyer-listings">仕入れ募集を探す</a>
+            <a href="#buyer-listings">探している案件を見る</a>
             <Link href="/about">NAKAMAとは</Link>
             <Link href="/produce">共創プロデュース</Link>
             <Link href="/food-loss">食品ロス支援</Link>
@@ -67,7 +67,7 @@ export default async function PublicHome() {
               FOOD JAPAN SUMMIT
             </a>
             <div className="fjn-actions">
-              <a className="fjn-button fjn-button--primary" href="#buyer-listings">買い手の募集を見る</a>
+              <a className="fjn-button fjn-button--primary" href="#buyer-listings">探している案件を見る</a>
               {isLoggedIn ? (
                 <Link className="fjn-button" href="/ledger">商品を無料で掲載する</Link>
               ) : (
@@ -117,8 +117,8 @@ export default async function PublicHome() {
           {/* 3つの案件区分（公開件数つき） */}
           <div className="mt-8 grid gap-5 sm:grid-cols-3">
             {[
-              { t: "販売・提供できる商品", n: giveCount, d: "旬の農産物、業務用原料、加工品、規格外品、余剰品、設備、技術などを掲載" },
-              { t: "仕入れ・調達したいもの", n: wantCount, d: "必要な食材、原料、商品、技術、加工先、販売先を募集" },
+              { t: "売りたい（提供したい）", n: giveCount, d: "旬の農産物、業務用原料、加工品、規格外品、余剰品、設備、技術などを掲載" },
+              { t: "探している（調達したい）", n: wantCount, d: "必要な食材、原料、商品、技術、加工先、販売先を募集" },
               { t: "パートナー募集", n: projectCount, d: "新商品開発、食品ロス、地域課題、新規事業などの協業相手を募集" },
             ].map((it) => (
               <div key={it.t} className="border-t-2 border-[var(--green)] pt-3">
@@ -139,7 +139,7 @@ export default async function PublicHome() {
         <PreviewSection
           id="buyer-listings"
           title="今、企業が探している食材・商品"
-          sub="食品メーカー・飲食店・小売・加工会社などから寄せられた仕入れ・調達の募集です"
+          sub="食品メーカー・飲食店・小売・加工会社などから寄せられた探しているの募集です"
           empty="現在、食品メーカー・飲食店・小売事業者の仕入れ案件を順次登録しています。掲載され次第このページに表示されます。"
           hasItems={wants.length > 0}
         >
@@ -216,10 +216,10 @@ export default async function PublicHome() {
           </div>
         </PreviewSection>
 
-        {/* 販売・提供できる商品 */}
+        {/* 売りたい（提供したい） */}
         <PreviewSection
           id="sell"
-          title="販売・提供できる商品"
+          title="売りたい（提供したい）"
           sub="旬の農産物、こだわりの食材、業務用原料、加工品、規格外品、余剰品、設備、技術など"
           empty="まだ商品が掲載されていません。最初の商品を無料で掲載して、全国の買い手へ紹介しましょう。"
           hasItems={gives.length > 0}
