@@ -464,7 +464,7 @@ export function ContractPanel({
       {/* 自分から提示する */}
       <div className="mt-3">
         {!open ? (
-          <button type="button" onClick={() => setOpen(true)} className={btn("secondary", "sm")}>
+          <button type="button" onClick={() => setOpen(true)} className={btn("action")}>
             ＋ {pending ? "新しい条件を提示する" : "条件を提示する"}
           </button>
         ) : (
