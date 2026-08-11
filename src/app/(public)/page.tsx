@@ -93,7 +93,7 @@ export default async function PublicHome() {
           </h1>
           <div className="mt-7 grid gap-5 sm:grid-cols-2">
             <div className="flex flex-col rounded-[12px] border border-[var(--line)] bg-white p-6">
-              <h2 className={h2Cls}>できること、探していることを登録する。</h2>
+              <h2 className={h2Cls}>「売りたい」「探している」「あったらいいな」を登録する。</h2>
               <p className="mt-2 flex-1 text-[14px] leading-7 text-[var(--ink-2)]">
                 販売できる食材や商品、提供できる技術、探している原料やパートナー、共創したいテーマを無料で掲載できます。
               </p>
