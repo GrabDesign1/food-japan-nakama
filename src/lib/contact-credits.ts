@@ -103,7 +103,7 @@ export async function grantSignupCredits(tenantId: string, memberId: string): Pr
 }
 
 /**
- * ビジネス会員の月次チケット付与（請求書1通につき一度だけ）。
+ * ビジネス会員の月次クレジット付与（請求書1通につき一度だけ）。
  * 「未使用分は翌月へ繰り越さない」ため、新しい月の付与に成功したら、
  * 前月までの月次ロットの未使用分をその場で失効させる。
  * （有効期限だけに頼ると、Stripeの請求期間の丸めで前月分が数日残ってしまう）
@@ -123,7 +123,7 @@ export async function grantMonthlyMemberCredits(params: {
     entryType: "member_monthly",
     expiresAt,
     idempotencyKey: `member_monthly:${params.invoiceId}`,
-    note: "NAKAMAビジネス会員 月次チケット（繰越なし）",
+    note: "NAKAMAビジネス会員 月次クレジット（繰越なし）",
   });
   if (result.granted) {
     await expirePreviousMonthlyLots(params.memberId, params.invoiceId);

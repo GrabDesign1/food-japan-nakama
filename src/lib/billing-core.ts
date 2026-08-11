@@ -33,12 +33,12 @@ export const VERIFIED_LEAD_CREDIT_COST = 3;
 export const SIGNUP_FREE_CREDITS = 3;
 
 /**
- * ビジネス会員の割引率（%）。掲載オプションと追加チケット（1件購入）に適用する。
+ * ビジネス会員の割引率（%）。掲載オプションと追加クレジット（単品購入）に適用する。
  * パック（5件・10件）は会員割引の対象外＝会費より安く同じものが買える二重割引を避けるため。
  */
 export const MEMBER_OPTION_DISCOUNT_PERCENT = 20;
 
-/** ビジネス会員に毎月付与する提案チケット数（繰越なし＝翌月の付与時に期限切れ）。 */
+/** ビジネス会員に毎月付与する紹介クレジット数（繰越なし＝翌月の付与時に期限切れ）。 */
 export const MEMBER_MONTHLY_CREDITS = 50;
 
 export type PricingTier = "standard" | "verified_lead";

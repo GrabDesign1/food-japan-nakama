@@ -73,7 +73,6 @@ export default function PricingPage() {
           <li>・Food Japan Summit ネットワークとの接点</li>
         </ul>
         <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
-          通常案件への提案が月20件の場合、都度購入と月額料金は同額です。月21件以上利用する場合は、ビジネス会員のほうが割安になります。月19件以下の場合は、都度購入のほうが安くなります。
           NAKAMA確認済み案件は1件につき3クレジットを消費します。未使用分の翌月への繰越はありません。パック（5・10クレジット）は会員割引の対象外です。
         </p>
         <p className="mt-2 text-[11px] text-[var(--muted)]">
