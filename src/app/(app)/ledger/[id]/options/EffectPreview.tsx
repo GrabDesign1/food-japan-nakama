@@ -13,6 +13,8 @@ type Props = {
   sample: OfferingCardData;
 };
 
+type ButtonProps = Props & { productName: string };
+
 const SponsorLabel = ({ text }: { text: string }) => (
   <div className="mb-1 flex items-center gap-2">
     <span className="rounded bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-white">広告</span>
@@ -24,7 +26,8 @@ const SponsorLabel = ({ text }: { text: string }) => (
 const NaturalRow = ({ sample }: { sample: OfferingCardData }) => (
   <div className="mt-3">
     <div className="mb-1 text-[11px] text-[var(--muted)]">通常の検索結果（無料掲載）</div>
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <OfferingCard o={{ ...sample, title: "（ほかの案件）", tagline: null }} />
       <OfferingCard o={{ ...sample, title: "（ほかの案件）", tagline: null }} />
       <OfferingCard o={{ ...sample, title: "（ほかの案件）", tagline: null }} />
     </div>
@@ -41,7 +44,7 @@ function PreviewBody({ effectType, sample }: Props) {
             （料金で自然な並び順を入れ替えることはしません）。
           </p>
           <SponsorLabel text="スポンサー（最上部PR）" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <OfferingCard o={sample} />
           </div>
           <NaturalRow sample={sample} />
@@ -55,8 +58,9 @@ function PreviewBody({ effectType, sample }: Props) {
             広告表記が必ず付きます。
           </p>
           <SponsorLabel text="スポンサー（注目表示）" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <OfferingCard o={sample} />
+            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} />
             <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} />
           </div>
           <NaturalRow sample={sample} />
@@ -68,7 +72,7 @@ function PreviewBody({ effectType, sample }: Props) {
           <p className="mb-2 text-[12px] leading-5 text-[var(--ink-2)]">
             カードの画像の上に<b>「急募」バッジ</b>が付きます。表示位置は変わりませんが、一覧の中で目に留まりやすくなります。
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <OfferingCard o={sample} urgent />
             <OfferingCard o={{ ...sample, title: "（バッジなしの案件）", tagline: null }} />
           </div>
@@ -130,25 +134,51 @@ function PreviewBody({ effectType, sample }: Props) {
   }
 }
 
-export function EffectPreview({ effectType, sample }: Props) {
+export function EffectPreview({ effectType, sample, productName }: ButtonProps) {
   const [open, setOpen] = useState(false);
+  // 表示例を持たない効果（セット等）ではボタン自体を出さない
   if (!PreviewBody({ effectType, sample })) return null;
 
   return (
     <div className="mt-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`${btn("secondary", "sm")} w-full`}
-      >
-        {open ? "見え方を閉じる" : "見え方を見る"}
+      <button type="button" onClick={() => setOpen(true)} className={`${btn("secondary", "sm")} w-full`}>
+        見え方を見る
       </button>
+
       {open ? (
-        <div className="mt-2 rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] p-3">
-          <PreviewBody effectType={effectType} sample={sample} />
-          <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
-            これは表示例です。掲載の効果（閲覧数・問い合わせ・成約）を保証するものではありません。
-          </p>
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="effect-preview-title"
+            className="relative flex max-h-[88vh] w-full max-w-[720px] flex-col rounded-[14px] border border-[var(--line)] bg-white shadow-xl"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-3">
+              <h2 id="effect-preview-title" className="text-[15px] font-bold text-[var(--ink)]">
+                {productName}の見え方
+              </h2>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="閉じる"
+                className="rounded-md px-2 py-1 text-[18px] leading-none text-[var(--muted)] hover:bg-[var(--canvas)]"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <PreviewBody effectType={effectType} sample={sample} />
+              <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
+                これは表示例です。掲載の効果（閲覧数・問い合わせ・成約）を保証するものではありません。
+              </p>
+            </div>
+            <div className="flex justify-end border-t border-[var(--line)] px-5 py-3">
+              <button type="button" onClick={() => setOpen(false)} className={btn("secondary", "sm")}>
+                閉じる
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

@@ -160,7 +160,7 @@ export default async function ListingOptionsPage({
           </p>
         ) : null}
         {extra}
-        <EffectPreview effectType={p.effectType} sample={sample} />
+        <EffectPreview effectType={p.effectType} sample={sample} productName={p.name} />
         {isDraft ? (
           <div className="mt-2 rounded-md border border-[var(--line)] bg-[var(--canvas)] px-3 py-2 text-[11px] leading-5 text-[var(--muted)]">
             この案件は<b>下書き（非公開）</b>のため購入できません。先に無料で公開してください。
