@@ -106,6 +106,22 @@ export async function notifyWithdrawalRequest(params: {
   });
 }
 
+/** 事務局あての汎用通知（違反報告など）。件名と本文の行だけを受け取る。 */
+export async function notifyAdminLines(params: {
+  subject: string;
+  lines: string[];
+}): Promise<void> {
+  const html = `<div style="font-family:sans-serif;line-height:1.8">
+    <p style="font-size:15px;color:#141414">${esc(params.subject)}</p>
+    ${params.lines.map((l) => `<p style="font-size:14px;color:#3C4A62">${esc(l)}</p>`).join("")}
+  </div>`;
+  await send({
+    to: [ADMIN_INBOX],
+    subject: `【FOOD JAPAN NAKAMA】${params.subject}`,
+    html,
+  });
+}
+
 // ── 課金システム関連（最終実装指示 2026-08-10）──
 
 /** 有料オプション・クレジット購入の決済完了通知。 */

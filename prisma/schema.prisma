@@ -463,6 +463,29 @@ model Thread {
   @@map("threads")
 }
 
+/// 違反報告（2026-08-11）。ガイドライン・規約に反する疑いを事務局へ知らせる。
+/// 内容の判断と対応は事務局が行い、報告者への個別回答は約束しない（クラウドワークスと同じ方針）。
+model ViolationReport {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  /// 報告した会員
+  reporterMemberId String @map("reporter_member_id")
+  /// 報告の対象（会員・案件・やり取りのいずれか）
+  targetType   String   @map("target_type") // member / offering / thread
+  targetId     String   @map("target_id")
+  /// 違反の種類（VIOLATION_KINDS）
+  kind         String
+  detail       String?
+  /// new / reviewing / handled / dismissed
+  status       String   @default("new")
+  adminNote    String?  @map("admin_note")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, status])
+  @@map("violation_reports")
+}
+
 /// 取引条件の提示と合意の記録（2026-08-11・Phase 1）。
 /// **NAKAMAは当事者にならない。お金も預からない**。当事者間の意思表示を記録するだけで、
 /// 支払い・納品は当事者間で行う（手数料・仮払いは未実装＝規約と法務の整理が別途必要）。

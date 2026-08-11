@@ -87,8 +87,9 @@ export function MessageList({
               return (
                 <div
                   key={msg.id}
-                  className={`rounded-[10px] border bg-white p-4 ${
-                    mine ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)]"
+                  // 自分＝白地に緑枠／相手＝かなり薄い緑地。どちらの発言か一目で分かるようにする
+                  className={`rounded-[10px] border p-4 ${
+                    mine ? "border-[var(--green)] bg-white" : "border-[var(--line)] bg-[#F3F9F3]"
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">

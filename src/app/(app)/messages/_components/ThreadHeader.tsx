@@ -25,10 +25,13 @@ export function ThreadHeader({
   offering,
   dealId,
   phase,
+  showPhase = true,
 }: {
   offering: OfferingHead | null;
   dealId: string | null;
   phase: number;
+  /** 進捗ステッパーを出すか（メッセージ一覧側では出さない＝案件ごとの画面で管理する） */
+  showPhase?: boolean;
 }) {
   if (!offering) {
     // 案件に紐づかない直接の会話
@@ -37,7 +40,7 @@ export function ThreadHeader({
         <p className="text-[12px] text-[var(--muted)]">
           案件に紐づかないお問い合わせです。案件について相談する場合は、案件ページの「提案する」「問い合わせる」からご連絡ください。
         </p>
-        {dealId ? <PhaseStepper dealId={dealId} phase={phase} /> : null}
+        {showPhase && dealId ? <PhaseStepper dealId={dealId} phase={phase} /> : null}
       </div>
     );
   }
@@ -93,7 +96,7 @@ export function ThreadHeader({
         </Link>
       </div>
 
-      {dealId ? (
+      {showPhase && dealId ? (
         <div className="mt-3">
           <PhaseStepper dealId={dealId} phase={phase} />
           <p className="mt-1 text-[10px] text-[var(--muted)]">

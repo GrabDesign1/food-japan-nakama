@@ -109,10 +109,18 @@ export default async function ThreadPage({
           </div>
 
           {/* 対象案件と進捗（案件ごとのやり取り） */}
-          <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} />
+          {/* 進捗の更新は案件ごとのやり取り画面で行う（ここでは出さない・2026-08-11 ユーザー指示） */}
+          <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} showPhase={false} />
 
           {/* メッセージ（案件ごとの提案画面と共用） */}
-          <MessageList messages={messages} meId={me.id} otherName={other?.name ?? "相手"} />
+          <MessageList
+            messages={messages}
+            meId={me.id}
+            otherName={other?.name ?? "相手"}
+            myName={me.name || "自分"}
+            myAvatarUrl={me.avatarUrl || me.companyLogoUrl}
+            otherAvatarUrl={other?.avatarUrl ?? null}
+          />
 
           {/* 入力欄（下書き・テンプレート・面談日程・添付） */}
           <Composer
