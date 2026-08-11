@@ -19,6 +19,21 @@ export default async function LedgerPage() {
   });
 
   const viewMap = await views24hMap(offerings.map((o) => o.id));
+  // 案件ごとに届いた提案・問い合わせの件数（相手から1通以上あるスレッド）
+  const receivedGroups = offerings.length
+    ? await prisma.thread.groupBy({
+        by: ["offeringId"],
+        where: {
+          offeringId: { in: offerings.map((o) => o.id) },
+          OR: [{ fromMemberId: member.id }, { toMemberId: member.id }],
+          messages: { some: { senderMemberId: { not: member.id } } },
+        },
+        _count: { _all: true },
+      })
+    : [];
+  const receivedMap = new Map(
+    receivedGroups.filter((g) => g.offeringId).map((g) => [g.offeringId as string, g._count._all])
+  );
   const withViews = offerings.map((o) => ({ ...o, views24h: viewMap.get(o.id) ?? 0 }));
   const gives = withViews.filter((o) => o.direction === "GIVE");
   const wants = withViews.filter((o) => o.direction === "WANT");
@@ -43,8 +58,8 @@ export default async function LedgerPage() {
         </div>
       </div>
 
-      <Section title="売りたい（提供したい）" direction="GIVE" items={gives} />
-      <Section title="探している（調達したい）" direction="WANT" items={wants} />
+      <Section title="売りたい（提供したい）" direction="GIVE" items={gives} receivedMap={receivedMap} />
+      <Section title="探している（調達したい）" direction="WANT" items={wants} receivedMap={receivedMap} />
     </div>
   );
 }
@@ -53,9 +68,12 @@ function Section({
   title,
   direction,
   items,
+  receivedMap,
 }: {
   title: string;
   direction: "GIVE" | "WANT";
+  /** 案件ID → 届いた提案・問い合わせの件数 */
+  receivedMap: Map<string, number>;
   items: {
     id: string;
     direction: string;
@@ -104,12 +122,15 @@ function Section({
                 </span>
               ) : null}
               <OfferingCard o={o} />
-              <Link
-                href={`/ledger/${o.id}/edit`}
-                className={`${btn("secondary", "sm")} mt-1 inline-block`}
-              >
-                編集
-              </Link>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <Link href={`/ledger/${o.id}/edit`} className={btn("secondary", "sm")}>
+                  編集
+                </Link>
+                <Link href={`/ledger/${o.id}/proposals`} className={btn("secondary", "sm")}>
+                  届いた{o.direction === "GIVE" ? "問い合わせ" : "提案"}
+                  {(receivedMap.get(o.id) ?? 0) > 0 ? `（${receivedMap.get(o.id)}）` : ""}
+                </Link>
+              </div>
             </div>
           ))}
         </div>

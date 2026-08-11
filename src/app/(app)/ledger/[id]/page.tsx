@@ -76,10 +76,14 @@ export default async function OfferingDetailPage({
     prisma.offeringView.create({
       data: { offeringId: offering.id, viewerUserId: su.app.id },
     }),
-    // すでにこの相手とやり取りがあるか（メッセージCTA用）
+    // この案件についてすでにやり取りがあるか（メッセージCTA用）。
+    // スレッドは案件ごとに分かれるため、案件IDまで一致させる（2026-08-11）。
+    // ここを相手だけで判定すると、別案件の会話があるだけで「やり取り中」になり、
+    // 提案ボタンがページ内リンクのままになってしまう。
     !isOwner
       ? prisma.thread.findFirst({
           where: {
+            offeringId: offering.id,
             OR: [
               { fromMemberId: member.id, toMemberId: offering.member.id },
               { fromMemberId: offering.member.id, toMemberId: member.id },
@@ -115,6 +119,16 @@ export default async function OfferingDetailPage({
 
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";
+  // 掲載者向け：この案件に届いた提案・問い合わせの件数（相手から1通以上あるスレッド）
+  const receivedCount = isOwner
+    ? await prisma.thread.count({
+        where: {
+          offeringId: offering.id,
+          OR: [{ fromMemberId: member.id }, { toMemberId: member.id }],
+          messages: { some: { senderMemberId: { not: member.id } } },
+        },
+      })
+    : 0;
   const amount = formatAmount(offering);
   const hero = offering.imageUrls[0];
   // CTAの行き先。探している（調達したい）案件でまだやり取りが無ければ、提案ページへ直接進む。
@@ -173,12 +187,16 @@ export default async function OfferingDetailPage({
           ← 台帳一覧
         </Link>
         {isOwner ? (
-          <Link
-            href={`/ledger/${offering.id}/edit`}
-            className={btn("secondary", "sm")}
-          >
-            編集する
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* 届いた提案・問い合わせの一覧（掲載者のみ） */}
+            <Link href={`/ledger/${offering.id}/proposals`} className={btn("action", "sm")}>
+              {isGive ? "届いた問い合わせ" : "届いた提案"}
+              {receivedCount > 0 ? `（${receivedCount}）` : ""}
+            </Link>
+            <Link href={`/ledger/${offering.id}/edit`} className={btn("secondary", "sm")}>
+              編集する
+            </Link>
+          </div>
         ) : offering.isPublic ? (
           <FavoriteButton offeringId={offering.id} initialFavorited={!!myFavorite} size="sm" />
         ) : null}
