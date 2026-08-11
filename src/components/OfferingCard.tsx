@@ -45,7 +45,20 @@ function deadlineLabel(applicationDeadline: Date | string | null | undefined): s
   return d.getTime() < Date.now() ? "募集終了" : `〜${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-export function OfferingCard({ o, isOwn = false, href, urgent = false }: { o: OfferingCardData; isOwn?: boolean; href?: string; urgent?: boolean }) {
+export function OfferingCard({
+  o,
+  isOwn = false,
+  href,
+  urgent = false,
+  featured = false,
+}: {
+  o: OfferingCardData;
+  isOwn?: boolean;
+  href?: string;
+  urgent?: boolean;
+  /** 注目表示（有料オプション）の枠。橙色の枠で自然表示と区別する。 */
+  featured?: boolean;
+}) {
   const meta = categoryMeta(o.category);
   const thumb = o.imageUrls?.[0];
   const isGive = o.direction === "GIVE";
@@ -70,7 +83,11 @@ export function OfferingCard({ o, isOwn = false, href, urgent = false }: { o: Of
     <Link href={href ?? `/ledger/${o.id}`} className="group block transition-transform hover:-translate-y-0.5">
       <div
         className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] shadow-sm transition group-hover:shadow-md ${
-          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)] group-hover:border-[var(--green)]"
+          featured
+            ? "border-2 border-[#F59E0B] ring-2 ring-[#FEF0D9]"
+            : isOwn
+              ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]"
+              : "border-[var(--line)] group-hover:border-[var(--green)]"
         }`}
       >
         {thumb ? (

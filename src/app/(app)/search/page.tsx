@@ -226,7 +226,7 @@ export default async function SearchPage({
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {sponsored.map((o) => (
-                  <OfferingCard key={`sp-${o.id}`} o={{ ...o, memberName: o.member.name }} isOwn={o.memberId === ownMemberId} />
+                  <OfferingCard key={`sp-${o.id}`} o={{ ...o, memberName: o.member.name }} isOwn={o.memberId === ownMemberId} featured />
                 ))}
               </div>
             </div>

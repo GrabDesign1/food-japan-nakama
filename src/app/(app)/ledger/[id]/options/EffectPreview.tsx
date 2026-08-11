@@ -54,14 +54,14 @@ function PreviewBody({ effectType, sample }: Props) {
       return (
         <>
           <p className="mb-2 text-[12px] leading-5 text-[var(--ink-2)]">
-            検索結果の上部にある<b>注目枠</b>に表示されます（最大4件・同条件の案件とは日替わりで入れ替わります）。
-            広告表記が必ず付きます。
+            検索結果の上部にある<b>注目枠</b>に、<b className="text-[#B77F0B]">橙色の枠</b>付きで表示されます
+            （最大4件・同条件の案件とは日替わりで入れ替わります）。広告表記が必ず付きます。
           </p>
           <SponsorLabel text="スポンサー（注目表示）" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} />
-            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} />
-            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} />
+            <OfferingCard o={sample} featured />
+            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} featured />
+            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} featured />
           </div>
           <NaturalRow sample={sample} />
         </>
