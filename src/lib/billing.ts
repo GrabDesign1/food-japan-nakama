@@ -39,7 +39,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   { code: "contact_unlock_standard", name: "紹介クレジット1クレジット", description: "通常案件への初回提案1件分（有効期限180日）", billingType: "one_time", audience: "sell", effectType: "contact_unlock", priceAmount: 1100, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 10 },
   { code: "contact_unlock_verified_lead", name: "紹介クレジット3クレジット（確認済み案件用）", description: "NAKAMA確認済み案件への初回提案1件分＝3クレジット（有効期限180日）", billingType: "one_time", audience: "sell", effectType: "contact_unlock_verified", priceAmount: 3300, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 11 },
   // パックは「まとめ買いの手間を省く」ためのもので、単価は1クレジット1,100円と同じ（2026-08-11 価格整合）。
-  // まとめ買い割引を残すと、会費（22,000円で30クレジット＝733円/件）より安く買えて会員プランが破綻する。
+  // まとめ買い割引を残すと、会費（22,000円で50クレジット＝440円/件）より安く買えて会員プランが破綻する。
   { code: "contact_credits_5", name: "紹介クレジット5クレジットパック", description: "1クレジット1,100円×5・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 5500, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 5, memberDiscountPercent: 0, sortOrder: 12 },
   { code: "contact_credits_10", name: "紹介クレジット10クレジットパック", description: "1クレジット1,100円×10・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 11000, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 10, memberDiscountPercent: 0, sortOrder: 13 },
   // 掲載オプション（売りたい（提供したい））

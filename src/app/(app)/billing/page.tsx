@@ -81,7 +81,7 @@ export default async function BillingPage({
           </span>
           {isMember ? (
             <span className="font-semibold text-[#A87F2F]">
-              ビジネス会員：毎月30クレジットが自動付与されます（繰越なし）
+              ビジネス会員：毎月50クレジットが自動付与されます（繰越なし）
             </span>
           ) : null}
         </div>

@@ -65,9 +65,9 @@ export default function PricingPage() {
           <span className="text-[14px] text-[var(--ink-2)]">円 / 月（税込）</span>
         </div>
         <ul className="mt-3 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
-          <li>・<b>毎月30クレジット</b>（「探している（調達したい）」案件への初回提案に使えます。翌月への繰越はありません）</li>
+          <li>・<b>毎月50クレジット</b>（「探している（調達したい）」案件への初回提案に使えます。翌月への繰越はありません）</li>
           <li>・提案1件の消費は<b>通常案件1クレジット・NAKAMA確認済み案件3クレジット</b></li>
-          <li>・<b>1クレジットあたり733円</b>（都度購入は1クレジット1,100円）</li>
+          <li>・<b>1クレジットあたり440円</b>（都度購入は1クレジット1,100円。使い切ると<b>55,000円相当</b>）</li>
           <li>・追加の紹介クレジット（単品購入）が20%割引</li>
           <li>・掲載オプションが20%割引</li>
           <li>・Food Japan Summit ネットワークとの接点</li>

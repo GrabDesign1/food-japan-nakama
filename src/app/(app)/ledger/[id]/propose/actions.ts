@@ -57,7 +57,7 @@ export async function sendProposal(
   const body = String(formData.get("message") ?? "").trim().slice(0, MESSAGE_MAX);
   if (!body) return { error: "提案内容を入力してください。" };
 
-  // ビジネス会員も提案チケットを消費する（毎月30クレジット付与・繰越なし。2026-08-11確定）。
+  // ビジネス会員も提案クレジットを消費する（毎月50クレジット付与・繰越なし。2026-08-11確定）。
   // 会員特典は「毎月の付与」と「追加クレジット（単品購入）・掲載オプションの20%割引」に集約した。
   // 消費数は通常案件1／確認済み案件3（クレジットは1種類）。
   const tier = pricingTierFor(offering.verifiedLeadAt, new Date());

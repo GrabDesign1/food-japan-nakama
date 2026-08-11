@@ -74,7 +74,7 @@ export default async function ProposePage({
   const price = (p: { priceAmount: number; memberDiscountPercent: number } | undefined) =>
     p ? discountedUnitAmount(p.priceAmount, p.memberDiscountPercent, isMember) : null;
 
-  // ビジネス会員もチケットを消費する（毎月30件付与）。無料で送れるのは解放済みの案件だけ。
+  // ビジネス会員もクレジットを消費する（毎月50クレジット付与）。無料で送れるのは解放済みの案件だけ。
   const canSendFree = !!existingUnlock;
 
   return (
@@ -144,7 +144,7 @@ export default async function ProposePage({
                   </span>
                   <span className="text-[var(--muted)]">
                     残高：{balance}クレジット
-                    {isMember ? "（ビジネス会員：毎月30クレジット付与・繰越なし）" : ""}
+                    {isMember ? "（ビジネス会員：毎月50クレジット付与・繰越なし）" : ""}
                   </span>
                 </>
               )}
@@ -180,7 +180,7 @@ export default async function ProposePage({
                 />
               )}
               <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-                NAKAMAビジネス会員（22,000円・税込／月）は毎月30クレジットが付与され（1クレジットあたり733円・繰越なし）、追加クレジット（単品購入）と掲載オプションが20%割引になります。通常案件への提案が月20件なら都度購入と同額、月21件以上なら会員のほうが割安です。
+                NAKAMAビジネス会員（22,000円・税込／月）は毎月50クレジットが付与され（1クレジットあたり440円・繰越なし）、追加クレジット（単品購入）と掲載オプションが20%割引になります。通常案件への提案が月20件なら都度購入と同額、月21件以上なら会員のほうが割安です。
                 <Link href="/billing" className="ml-1 text-[var(--green-d)] underline">詳しく見る →</Link>
               </p>
             </div>
