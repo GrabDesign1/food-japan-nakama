@@ -247,11 +247,6 @@ export default async function OfferingDetailPage({
           <span className="rounded bg-[var(--green-soft)] px-2.5 py-1 text-[12px] text-[var(--green-d)]">
             {meta?.icon} {offering.category}
           </span>
-          {offering.listingPurpose === "challenge" ? (
-            <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
-              課題を一緒に解決したい
-            </span>
-          ) : null}
           {!isGive && offering.seekingType ? (
             <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
               {SEEKING_TYPE_LABEL[offering.seekingType] ?? offering.seekingType}
@@ -540,31 +535,6 @@ export default async function OfferingDetailPage({
         <div>
           <h2 className={`${h2Cls} mb-2`}>生まれた背景・販売したい理由</h2>
           <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{offering.backgroundStory}</p>
-        </div>
-      ) : null}
-
-      {/* 課題（課題解決型のみ・入力がある項目だけ表示） */}
-      {offering.challengeCurrent || offering.challengeAsk || offering.challengeValue ? (
-        <div className="rounded-[12px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-5">
-          <h2 className={`${h2Cls} mb-3`}>いま起きている課題と、求めている協力</h2>
-          <div className="flex flex-col gap-4">
-            {(
-              [
-                ["いま起きている課題", offering.challengeCurrent],
-                ["課題の規模・期限", offering.challengeScale],
-                ["これまで試したこと", offering.challengeTried],
-                ["求めている協力・提案", offering.challengeAsk],
-                ["解決後に生まれる価値", offering.challengeValue],
-              ] as [string, string | null][]
-            )
-              .filter(([, v]) => !!v)
-              .map(([k, v]) => (
-                <div key={k}>
-                  <h3 className="text-[13px] font-bold text-[var(--amber-ink)]">{k}</h3>
-                  <p className="mt-1 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{v}</p>
-                </div>
-              ))}
-          </div>
         </div>
       ) : null}
 

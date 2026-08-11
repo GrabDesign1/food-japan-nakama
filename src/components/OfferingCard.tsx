@@ -31,8 +31,7 @@ export type OfferingCardData = {
   itemCondition?: string | null;
   supplyFrequency?: string | null;
   applicationDeadline?: string | Date | null;
-  // 掲載タイプ・一言特徴（第2次改善）
-  listingPurpose?: string | null;
+  // 一言特徴（第2次改善）
   tagline?: string | null;
   // 探している（WANT）の募集タイプ
   seekingType?: string | null;
@@ -192,9 +191,6 @@ export function OfferingCard({
       <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--muted)]">
         <span>{meta?.icon}</span>
         <span>{o.category}</span>
-        {o.listingPurpose === "challenge" ? (
-          <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--amber)]">課題解決</span>
-        ) : null}
         {deadlineText ? (
           <span className={`ml-auto ${deadlineText === "募集終了" ? "text-[var(--red)]" : ""}`}>
             {deadlineText}

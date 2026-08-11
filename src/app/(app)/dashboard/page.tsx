@@ -222,7 +222,6 @@ export default async function DashboardPage() {
           supplyFrequency: true,
           applicationDeadline: true,
           tagline: true,
-          listingPurpose: true,
           seekingType: true,
           createdAt: true,
           member: { select: { name: true, companyLogoUrl: true } },

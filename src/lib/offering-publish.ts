@@ -23,13 +23,9 @@ export type PublishCheckInput = {
   deliveryMethods: string[];
   applicationDeadline: Date | null;
   description: string | null;
-  listingPurpose: string | null;
   featureDiff: string | null;
   usageIdeas: string | null;
   desiredPartner: string | null;
-  challengeCurrent: string | null;
-  challengeAsk: string | null;
-  challengeValue: string | null;
 };
 
 export function missingForPublish(o: PublishCheckInput): string[] {
@@ -43,16 +39,12 @@ export function missingForPublish(o: PublishCheckInput): string[] {
     return missing;
   }
 
-  // 物語部（質問形式）。通常取引型=商品説明・特徴・使い方・相手、課題解決型=＋課題・協力・価値
+  // 物語部（質問形式）＝商品説明・特徴・使い方・相手
+  // ※「課題を一緒に解決したい」タイプは 2026-08-12 に廃止（課題は共創パートナー募集で扱う）
   if (!o.description) missing.push("この商品・原料について（詳細説明）");
   if (!o.featureDiff) missing.push("他の商品との違い・特徴");
   if (!o.usageIdeas) missing.push("おすすめの使い方・売り場");
   if (!o.desiredPartner) missing.push("希望する相手");
-  if (o.listingPurpose === "challenge") {
-    if (!o.challengeCurrent) missing.push("いま起きている課題");
-    if (!o.challengeAsk) missing.push("求める協力・提案");
-    if (!o.challengeValue) missing.push("解決後に生まれる価値");
-  }
 
   if (!o.priceType) missing.push("希望価格");
   if (o.priceType === "fixed" && (o.priceAmount == null || !o.priceUnit)) {

@@ -72,11 +72,9 @@ export function isGoodsCategory(key: string): boolean {
   return key === "食材・原料" || key === "加工設備";
 }
 
-// 掲載タイプ（2026-08-10 第2次改善）
-export const LISTING_PURPOSES: [string, string, string][] = [
-  ["trade", "商品・原料を売りたい", "通常の卸売・仕入れ・業務取引。簡潔に登録できます。"],
-  ["challenge", "課題を一緒に解決したい", "食品ロス・余剰在庫・規格外品・地域課題など。背景を詳しく伝えられます。"],
-];
+// 掲載タイプ（2026-08-10 第2次改善）は 2026-08-12 に廃止した。
+// 「課題を一緒に解決したい」は共創パートナー募集（/projects）の役割と重なり、
+// 売りたい側の入力を長くするだけだったため（ユーザー判断）。DBの listing_purpose 列は残置。
 export const SAMPLE_AVAILABILITY = ["可", "応相談", "不可"];
 export const PRICE_TAX_TYPES = ["税込", "税別"];
 
