@@ -122,6 +122,8 @@ export default async function OfferingProposalsPage({
   const totals = {
     all: rows.length,
     unread: rows.filter((r) => r.unread > 0).length,
+    // 受付＝まだ商談に入っていない（出会う段階）
+    received: rows.filter((r) => r.phase < 1).length,
     talking: rows.filter((r) => r.phase >= 1 && r.phase < 5).length,
     closed: rows.filter((r) => r.phase >= 5).length,
   };
@@ -157,31 +159,58 @@ export default async function OfferingProposalsPage({
         ) : null}
       </div>
 
-      {/* サマリー */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "未返信", value: totals.unread, alert: totals.unread > 0 },
-          { label: "合計", value: totals.all, alert: false },
-          { label: "商談中", value: totals.talking, alert: false },
-          { label: "成約・商品化", value: totals.closed, alert: false },
-        ].map((s) => (
+      {/* サマリー（クラウドワークスの応募者サマリーと同じ考え方＝対応が必要な数を左に赤で出す） */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <div className="mb-1 text-center text-[11px] font-bold text-[var(--red)]">対応が必要</div>
           <div
-            key={s.label}
-            className={`rounded-[10px] border bg-white px-4 py-3 text-center ${
-              s.alert ? "border-2 border-[var(--red)]" : "border-[var(--line)]"
+            className={`min-w-[110px] rounded-[10px] px-4 py-3 text-center ${
+              totals.unread > 0
+                ? "border-2 border-[var(--red)] bg-[var(--red-soft)]"
+                : "border border-[var(--line)] bg-white"
             }`}
           >
-            <div className="text-[11px] text-[var(--muted)]">{s.label}</div>
+            <div className="text-[11px] text-[var(--muted)]">未返信</div>
             <div
-              className={`mt-0.5 text-[20px] font-bold ${
-                s.alert ? "text-[var(--red)]" : "text-[var(--ink)]"
+              className={`text-[22px] font-bold ${
+                totals.unread > 0 ? "text-[var(--red)]" : "text-[var(--ink)]"
               }`}
             >
-              {s.value}
+              {totals.unread}
               <span className="ml-0.5 text-[11px] font-normal text-[var(--muted)]">件</span>
             </div>
           </div>
-        ))}
+        </div>
+
+        <div>
+          <div className="mb-1 text-[11px] text-[var(--muted)]">やり取りの状況</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { label: "受付", value: totals.received },
+              { label: "商談中", value: totals.talking },
+              { label: "成約・商品化", value: totals.closed },
+            ].map((s, i) => (
+              <div key={s.label} className="flex items-center gap-2">
+                {i > 0 ? <span className="text-[13px] text-[var(--muted)]">＋</span> : null}
+                <div className="min-w-[92px] rounded-[10px] border border-[var(--line)] bg-white px-3 py-3 text-center">
+                  <div className="text-[11px] text-[var(--muted)]">{s.label}</div>
+                  <div className="text-[18px] font-bold text-[var(--ink)]">
+                    {s.value}
+                    <span className="ml-0.5 text-[11px] font-normal text-[var(--muted)]">件</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <span className="text-[13px] text-[var(--muted)]">＝</span>
+            <div className="min-w-[92px] rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-3 py-3 text-center">
+              <div className="text-[11px] text-[var(--green-d)]">合計</div>
+              <div className="text-[18px] font-bold text-[var(--green-d)]">
+                {totals.all}
+                <span className="ml-0.5 text-[11px] font-normal">件</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {rows.length === 0 ? (
@@ -199,63 +228,91 @@ export default async function OfferingProposalsPage({
           ]}
         />
       ) : (
-        <div className="overflow-hidden rounded-[12px] border border-[var(--line)] bg-white">
-          {rows.map((r, i) => (
-            <div
-              key={r.thread.id}
-              className={`flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start ${
-                i > 0 ? "border-t border-[var(--line)]" : ""
-              } ${r.unread > 0 ? "bg-[#FFF7EF]" : ""}`}
-            >
-              {/* 相手 */}
-              <div className="flex min-w-0 flex-1 gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white font-serif text-[15px] text-[var(--green-d)]">
-                  {r.other?.companyLogoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={r.other.companyLogoUrl} alt="" className="h-full w-full object-contain" />
-                  ) : (
-                    (r.other?.name?.[0] ?? "?").toUpperCase()
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/producers/${r.other?.id ?? ""}`}
-                      className="truncate text-[14px] font-bold text-[var(--ink)] hover:text-[var(--green-d)] hover:underline"
-                    >
-                      {r.other?.name || "（不明）"}
-                    </Link>
-                    {r.unread > 0 ? (
-                      <span className="rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
-                        新着 {r.unread}
+        <div className="overflow-x-auto rounded-[12px] border border-[var(--line)] bg-white">
+          <table className="w-full min-w-[820px] text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-[var(--line)] bg-[var(--canvas)] text-[11px] text-[var(--muted)]">
+                <th className="px-4 py-3 font-medium">ステータス</th>
+                <th className="px-4 py-3 font-medium">{isGive ? "問い合わせ企業" : "提案企業"}</th>
+                <th className="px-4 py-3 font-medium">{isGive ? "問い合わせ内容" : "提案の内容"}</th>
+                <th className="px-4 py-3 font-medium">最終更新</th>
+                <th className="px-4 py-3 font-medium">対応</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr
+                  key={r.thread.id}
+                  className={`border-b border-[#EDF0EA] last:border-b-0 ${r.unread > 0 ? "bg-[#FFF7EF]" : ""}`}
+                >
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex flex-col items-start gap-1">
+                      {r.unread > 0 ? (
+                        <span className="rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
+                          未返信 {r.unread}
+                        </span>
+                      ) : null}
+                      <span className="rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--green-d)]">
+                        {PHASES[r.phase] ?? PHASES[0]}
                       </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-[var(--muted)]">
-                    {[r.other?.prefecture, r.other?.city].filter(Boolean).join(" ") || "地域未設定"}
-                    {r.other?.categoryL1 ? `　/　${r.other.categoryL1}` : ""}
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[var(--ink-2)]">
-                    {r.first.body || "（ファイル）"}
-                  </p>
-                  <div className="mt-1 text-[10px] text-[var(--muted)]">
-                    初回：{fmtDateTime(r.first.createdAt)}
-                    {r.last ? `　/　最終：${fmtDateTime(r.last.createdAt)}` : ""}
-                  </div>
-                </div>
-              </div>
+                    </div>
+                  </td>
 
-              {/* 進捗と導線 */}
-              <div className="flex shrink-0 flex-col items-start gap-2 sm:w-[190px] sm:items-end">
-                <span className="rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--green-d)]">
-                  {PHASES[r.phase] ?? PHASES[0]}
-                </span>
-                <Link href={`/ledger/${offering.id}/proposals/${r.thread.id}`} className={`${btn("action", "sm")} w-full text-center`}>
-                  やり取りを見る →
-                </Link>
-              </div>
-            </div>
-          ))}
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex gap-2">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white font-serif text-[14px] text-[var(--green-d)]">
+                        {r.other?.companyLogoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={r.other.companyLogoUrl} alt="" className="h-full w-full object-contain" />
+                        ) : (
+                          (r.other?.name?.[0] ?? "?").toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/producers/${r.other?.id ?? ""}`}
+                          className="block max-w-[180px] truncate font-bold text-[var(--ink)] hover:text-[var(--green-d)] hover:underline"
+                        >
+                          {r.other?.name || "（不明）"}
+                        </Link>
+                        <div className="text-[11px] text-[var(--muted)]">
+                          {[r.other?.prefecture, r.other?.city].filter(Boolean).join(" ") || "地域未設定"}
+                        </div>
+                        <div className="text-[11px] text-[var(--muted)]">{r.other?.categoryL1 ?? ""}</div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-3 align-top">
+                    <p className="line-clamp-2 max-w-[320px] text-[12px] leading-5 text-[var(--ink-2)]">
+                      {r.first.body || "（ファイル）"}
+                    </p>
+                    <div className="mt-1 text-[10px] text-[var(--muted)]">
+                      初回：{fmtDateTime(r.first.createdAt)}
+                    </div>
+                  </td>
+
+                  <td className="whitespace-nowrap px-4 py-3 align-top text-[12px] text-[var(--ink-2)]">
+                    {r.last ? fmtDateTime(r.last.createdAt) : "—"}
+                    {r.last ? (
+                      <div className="text-[10px] text-[var(--muted)]">
+                        {r.last.senderMemberId === me.id ? "自分が送信" : "相手から"}
+                      </div>
+                    ) : null}
+                  </td>
+
+                  <td className="px-4 py-3 align-top">
+                    <Link
+                      href={`/ledger/${offering.id}/proposals/${r.thread.id}`}
+                      className={`${btn(r.unread > 0 ? "action" : "secondary", "sm")} whitespace-nowrap`}
+                    >
+                      詳細へ
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
