@@ -456,10 +456,40 @@ model Thread {
 
   messages Message[]
   notes    ProposalNote[]
+  offers   ContractOffer[]
 
   @@index([fromMemberId])
   @@index([toMemberId])
   @@map("threads")
+}
+
+/// 取引条件の提示と合意の記録（2026-08-11・Phase 1）。
+/// **NAKAMAは当事者にならない。お金も預からない**。当事者間の意思表示を記録するだけで、
+/// 支払い・納品は当事者間で行う（手数料・仮払いは未実装＝規約と法務の整理が別途必要）。
+model ContractOffer {
+  id               String    @id @default(cuid())
+  threadId         String    @map("thread_id")
+  offeringId       String?   @map("offering_id")
+  /// 条件を提示した側
+  proposerMemberId String    @map("proposer_member_id")
+  /// 金額（税込・円）
+  amount           Int
+  /// 数量・ロットなど
+  quantityText     String?   @map("quantity_text")
+  /// 納品・完了の予定日
+  deliveryDate     DateTime? @map("delivery_date")
+  /// 内容・条件の補足
+  terms            String?
+  /// proposed（提示中）／accepted（合意）／declined（辞退）／superseded（新しい提示に置き換え）
+  status           String    @default("proposed")
+  respondedAt      DateTime? @map("responded_at")
+  respondedBy      String?   @map("responded_by")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@map("contract_offers")
 }
 
 /// 掲載者が提案ごとに残す非公開の評価とメモ（相手には見えない）。

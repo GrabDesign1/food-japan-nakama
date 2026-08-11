@@ -12,6 +12,7 @@ import { Composer } from "../../../../messages/_components/Composer";
 import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
 import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
+import { ContractPanel, type OfferRow } from "./ContractPanel";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function OfferingThreadPage({
@@ -33,7 +34,7 @@ export default async function OfferingThreadPage({
   // 既読化はサイドバーの未読バッジと競合しないよう先に完了させる
   await markThreadRead(thread.id);
 
-  const [other, messages, draft, templates, offering, deal] = await Promise.all([
+  const [other, messages, draft, templates, offering, deal, contractOffers] = await Promise.all([
     prisma.member.findUnique({
       where: { id: otherId },
       select: {
@@ -82,6 +83,10 @@ export default async function OfferingThreadPage({
       },
     }),
     prisma.deal.findFirst({ where: { threadId: thread.id }, select: { id: true, phase: true } }),
+    prisma.contractOffer.findMany({
+      where: { threadId: thread.id },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
   if (!offering) notFound();
 
@@ -143,6 +148,28 @@ export default async function OfferingThreadPage({
 
         {/* 対象案件の要点と進捗（メッセージ画面と同じ表示） */}
         <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} />
+
+        {/* 取引の条件（提示と合意の記録。お金は動かさない） */}
+        <ContractPanel
+          offeringId={offering.id}
+          threadId={thread.id}
+          offers={contractOffers.map<OfferRow>((o) => ({
+            id: o.id,
+            amount: o.amount,
+            quantityText: o.quantityText,
+            deliveryDate: o.deliveryDate
+              ? `${o.deliveryDate.getFullYear()}/${o.deliveryDate.getMonth() + 1}/${o.deliveryDate.getDate()}`
+              : null,
+            terms: o.terms,
+            status: o.status,
+            createdAt: `${o.createdAt.getFullYear()}/${o.createdAt.getMonth() + 1}/${o.createdAt.getDate()}`,
+            respondedAt: o.respondedAt
+              ? `${o.respondedAt.getFullYear()}/${o.respondedAt.getMonth() + 1}/${o.respondedAt.getDate()}`
+              : null,
+            fromMe: o.proposerMemberId === me.id,
+            proposerName: o.proposerMemberId === me.id ? me.name : other?.name ?? "相手",
+          }))}
+        />
 
         {/* 募集の内容（クラウドワークスと同じく、やり取りの上に依頼内容を置く） */}
         {offering.description || offering.usageContext ? (
