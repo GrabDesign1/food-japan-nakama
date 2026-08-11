@@ -4,11 +4,18 @@
 /** 優良案件（NAKAMA確認済み）の確認有効期間。過ぎたら通常案件扱いに戻る。 */
 export const VERIFIED_LEAD_VALID_DAYS = 30;
 
-/** 紹介クレジットパックの有効期限（購入日から）。 */
+/**
+ * 有償クレジット（単品・パック）の有効期限（購入日から）。
+ * 2026-08-11の法務レビューにより、単品購入分も含めてすべての有償クレジットに期限を設定する
+ * （期限延長・実質的な再発行は行わない。資金決済法の適用除外の整理による）。
+ */
 export const CREDIT_PACK_EXPIRY_DAYS = 180;
 
-/** 送信後この日数未読ならクレジットを1件返還（一度だけ）。 */
+/** 送信後この日数未読ならクレジットを返還（unlock単位で一度だけ）。 */
 export const UNREAD_REFUND_DAYS = 14;
+
+/** 確認済み案件への提案で消費するクレジット数（通常案件は1）。 */
+export const VERIFIED_LEAD_CREDIT_COST = 3;
 
 // NAKAMAビジネス会員（月額22,000円・税込）の特典（ユーザー確定 2026-08-11・同日夜に価格整合で改定）：
 // 毎月30件の提案チケット（繰越なし）＋追加チケット（1件購入）と掲載オプションが20%割引。
@@ -48,9 +55,32 @@ export function pricingTierFor(verifiedLeadAt: Date | null | undefined, now: Dat
   return isVerifiedLeadActive(verifiedLeadAt, now) ? "verified_lead" : "standard";
 }
 
-/** ティアに対応するクレジット種別。 */
-export function creditTypeForTier(tier: PricingTier): CreditType {
-  return tier === "verified_lead" ? "verified" : "standard";
+/**
+ * ティアに対応する消費クレジット数（通常案件1／確認済み案件3）。
+ * 2026-08-11の改定で「優良案件専用クレジット」を廃止し、同じクレジットの消費数で差をつける方式にした
+ * （会員の月次クレジットを確認済み案件にも使えるようにするため）。
+ */
+export function creditCostFor(tier: PricingTier): number {
+  return tier === "verified_lead" ? VERIFIED_LEAD_CREDIT_COST : 1;
+}
+
+/**
+ * 有償クレジットの有効期限＝購入日から180日後の23:59:59.999（日本時間）。
+ * 「購入日から180日」を利用者が分かる形（日単位・日本時間の日末）で切る。
+ */
+export function creditExpiryFrom(purchasedAt: Date): Date {
+  const JST_OFFSET = 9 * 60 * 60 * 1000;
+  const jst = new Date(purchasedAt.getTime() + JST_OFFSET);
+  const endOfDayJst = Date.UTC(
+    jst.getUTCFullYear(),
+    jst.getUTCMonth(),
+    jst.getUTCDate() + CREDIT_PACK_EXPIRY_DAYS,
+    23,
+    59,
+    59,
+    999
+  );
+  return new Date(endOfDayJst - JST_OFFSET);
 }
 
 /**
@@ -72,7 +102,31 @@ export type CreditLot = {
   quantity: number; // 付与数（正）
   consumed: number; // このロットから消費済みの数（正の数で渡す）
   expiresAt: Date | null;
+  entryType: string; // member_monthly / purchase / grant / admin_adjust
 };
+
+/**
+ * 消費順序の優先度（小さいほど先に使う）。
+ * ①月次付与分（次回更新日で失効するため先に使うのが利用者に有利）
+ * ②有償購入分
+ * ③無償付与分（登録特典・無期限）
+ * 同順位内は有効期限が早い順、無期限は最後。
+ */
+function consumePriority(entryType: string): number {
+  if (entryType === "member_monthly") return 0;
+  if (entryType === "purchase") return 1;
+  return 2;
+}
+
+function byConsumeOrder(a: CreditLot, b: CreditLot): number {
+  const pa = consumePriority(a.entryType);
+  const pb = consumePriority(b.entryType);
+  if (pa !== pb) return pa - pb;
+  if (!a.expiresAt && !b.expiresAt) return 0;
+  if (!a.expiresAt) return 1;
+  if (!b.expiresAt) return -1;
+  return a.expiresAt.getTime() - b.expiresAt.getTime();
+}
 
 /** ロットの残数。 */
 export function lotRemaining(lot: CreditLot): number {
@@ -86,21 +140,40 @@ export function availableBalance(lots: CreditLot[], now: Date): number {
     .reduce((sum, l) => sum + lotRemaining(l), 0);
 }
 
+/** 消費に使えるロット（残数あり・期限内）を消費順に並べる。 */
+function usableLots(lots: CreditLot[], now: Date): CreditLot[] {
+  return lots
+    .filter((l) => lotRemaining(l) > 0 && (!l.expiresAt || l.expiresAt.getTime() > now.getTime()))
+    .sort(byConsumeOrder);
+}
+
 /**
- * 消費するロットを選ぶ：期限が近い順（無期限は最後）。残数のあるロットのみ。
- * 見つからなければ null。
+ * 消費するロットを選ぶ（1件分）。残数のあるロットのみ。見つからなければ null。
  */
 export function pickLotToConsume(lots: CreditLot[], now: Date): CreditLot | null {
-  const usable = lots.filter(
-    (l) => lotRemaining(l) > 0 && (!l.expiresAt || l.expiresAt.getTime() > now.getTime())
-  );
-  usable.sort((a, b) => {
-    if (!a.expiresAt && !b.expiresAt) return 0;
-    if (!a.expiresAt) return 1;
-    if (!b.expiresAt) return -1;
-    return a.expiresAt.getTime() - b.expiresAt.getTime();
-  });
-  return usable[0] ?? null;
+  return usableLots(lots, now)[0] ?? null;
+}
+
+/**
+ * 必要数を複数ロットに割り当てる（消費順・1ロットで足りなければ次のロットへ）。
+ * 残高が足りなければ null（部分消費はしない）。
+ */
+export function allocateCredits(
+  lots: CreditLot[],
+  need: number,
+  now: Date
+): { lotId: string; take: number }[] | null {
+  if (need <= 0) return [];
+  const plan: { lotId: string; take: number }[] = [];
+  let rest = need;
+  for (const lot of usableLots(lots, now)) {
+    if (rest <= 0) break;
+    const take = Math.min(rest, lotRemaining(lot));
+    if (take <= 0) continue;
+    plan.push({ lotId: lot.id, take });
+    rest -= take;
+  }
+  return rest > 0 ? null : plan;
 }
 
 /** 14日未読返還の対象か（開封なし・期限到来・未返還）。 */

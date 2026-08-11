@@ -4,8 +4,8 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { getCreditBalances } from "@/lib/contact-credits";
-import { pricingTierFor, isVerifiedLeadActive } from "@/lib/billing-core";
+import { getCreditBalance } from "@/lib/contact-credits";
+import { pricingTierFor, isVerifiedLeadActive, creditCostFor } from "@/lib/billing-core";
 import { discountedUnitAmount } from "@/lib/billing-core";
 import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 import { ProposeForm } from "./ProposeForm";
@@ -54,20 +54,22 @@ export default async function ProposePage({
 
   // 価格は商品マスターから（無効なら購入ボタンを出さない）。独立クエリは並列化（直列3往復→1往復）
   const codes = ["contact_unlock_standard", "contact_unlock_verified_lead", "contact_credits_5", "contact_credits_10"];
-  const [existingUnlock, balances, products] = await Promise.all([
+  const [existingUnlock, balance, products] = await Promise.all([
     prisma.contactUnlock.findUnique({
       where: { sellerMemberId_offeringId: { sellerMemberId: me.id, offeringId: offering.id } },
       select: { threadId: true },
     }),
-    getCreditBalances(me.id),
+    getCreditBalance(me.id),
     prisma.billingProduct.findMany({ where: { code: { in: codes }, active: true } }),
   ]);
-  const balance = tier === "verified_lead" ? balances.verified : balances.standard;
+  const creditCost = creditCostFor(tier);
   const productMap = new Map(products.map((p) => [p.code, p]));
+  // 単品はこの案件に必要な分（通常＝1クレジット／確認済み＝3クレジット）を1回で購入できる商品を出す。
+  // クレジットは1種類なので、パックはどちらの案件でも購入できる。
   const singleCode = tier === "verified_lead" ? "contact_unlock_verified_lead" : "contact_unlock_standard";
   const single = productMap.get(singleCode);
-  const pack5 = tier === "verified_lead" ? undefined : productMap.get("contact_credits_5");
-  const pack10 = tier === "verified_lead" ? undefined : productMap.get("contact_credits_10");
+  const pack5 = productMap.get("contact_credits_5");
+  const pack10 = productMap.get("contact_credits_10");
 
   const price = (p: { priceAmount: number; memberDiscountPercent: number } | undefined) =>
     p ? discountedUnitAmount(p.priceAmount, p.memberDiscountPercent, isMember) : null;
@@ -120,11 +122,12 @@ export default async function ProposePage({
           <div className="rounded-[10px] border border-[var(--line)] bg-white p-5">
             <h2 className={h2Cls}>初回紹介料について</h2>
             <ul className="mt-2 flex flex-col gap-1 text-[12px] leading-6 text-[var(--ink-2)]">
-              <li>・この案件への<b>最初の提案メッセージ</b>に紹介料（クレジット1件）がかかります。</li>
+              <li>・この案件への<b>最初の提案メッセージ</b>に紹介料（{creditCost}クレジット）がかかります。</li>
               <li>・同じ案件・同じ相手との<b>継続メッセージは無料</b>です。</li>
               <li>・買い手から問い合わせを受けた場合の返信に、紹介料はかかりません。</li>
               <li>・紹介料はメッセージ送信と連絡経路の解放に対する料金で、<b>返信・商談・成約を保証しません</b>。</li>
-              <li>・送信後<b>14日間相手が一度も開封しなかった場合のみ</b>、クレジットを1件自動返還します（開封済みで返信がない場合は返還しません）。</li>
+              <li>・送信後<b>14日間相手が一度も開封しなかった場合のみ</b>、消費したクレジットを自動返還します（開封済みで返信がない場合は返還しません）。</li>
+              <li>・有償クレジットの有効期限は<b>購入日から180日</b>です。期限を過ぎたクレジットは失効し、未読返還の対象にもなりません（期限の延長・再発行は行いません）。</li>
             </ul>
             <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-3 text-[13px]">
               {canSendFree ? (
@@ -136,12 +139,12 @@ export default async function ProposePage({
                   <span>
                     この案件の紹介料：
                     <b className="text-[var(--green-d)]">
-                      {tier === "verified_lead" ? "優良案件クレジット1件" : "通常クレジット1件"}
+                      {creditCost}クレジット
                     </b>
                   </span>
                   <span className="text-[var(--muted)]">
-                    残高：{balance}件
-                    {isMember ? "（ビジネス会員：毎月30件付与・繰越なし）" : ""}
+                    残高：{balance}クレジット
+                    {isMember ? "（ビジネス会員：毎月30クレジット付与・繰越なし）" : ""}
                   </span>
                 </>
               )}
@@ -162,19 +165,22 @@ export default async function ProposePage({
                   offeringId={offering.id}
                   buyOptions={[
                     single
-                      ? { code: single.code, label: `1件購入（${price(single)!.toLocaleString()}円・税込）` }
+                      ? {
+                          code: single.code,
+                          label: `${creditCost}クレジット購入（${price(single)!.toLocaleString()}円・税込／この案件1件分）`,
+                        }
                       : null,
                     pack5
-                      ? { code: pack5.code, label: `5件パック（${price(pack5)!.toLocaleString()}円・税込／180日有効）` }
+                      ? { code: pack5.code, label: `5クレジットパック（${price(pack5)!.toLocaleString()}円・税込／180日有効）` }
                       : null,
                     pack10
-                      ? { code: pack10.code, label: `10件パック（${price(pack10)!.toLocaleString()}円・税込／180日有効）` }
+                      ? { code: pack10.code, label: `10クレジットパック（${price(pack10)!.toLocaleString()}円・税込／180日有効）` }
                       : null,
                   ].filter((x): x is { code: string; label: string } => !!x)}
                 />
               )}
               <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-                NAKAMAビジネス会員（22,000円・税込／月）は毎月30件の提案チケットが付与され（1件あたり733円・繰越なし）、追加チケット（1件購入）と掲載オプションが20%割引になります。月に20件以上提案する場合は会員のほうが安く済みます。
+                NAKAMAビジネス会員（22,000円・税込／月）は毎月30クレジットが付与され（1クレジットあたり733円・繰越なし）、追加クレジット（単品購入）と掲載オプションが20%割引になります。通常案件への提案が月20件なら都度購入と同額、月21件以上なら会員のほうが割安です。
                 <Link href="/billing" className="ml-1 text-[var(--green-d)] underline">詳しく見る →</Link>
               </p>
             </div>

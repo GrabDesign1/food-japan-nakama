@@ -8,8 +8,8 @@
 import type { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { refundUnreadCredit, expireCreditLots } from "@/lib/contact-credits";
-import { isUnreadRefundDue, type CreditType } from "@/lib/billing-core";
+import { refundUnreadCredits, expireCreditLots } from "@/lib/contact-credits";
+import { isUnreadRefundDue } from "@/lib/billing-core";
 import { getMemberUserEmails } from "@/lib/member";
 import { notifyPromotionEnding, notifyUnreadRefund } from "@/lib/email";
 
@@ -135,30 +135,29 @@ export async function GET(req: NextRequest) {
     if (!isUnreadRefundDue({ openedAt: u.openedAt, unreadRefundDueAt: u.unreadRefundDueAt, unreadRefundedAt: u.unreadRefundedAt, now })) {
       continue;
     }
-    // 消費エントリから元ロットを特定して返還する
-    const consumeEntry = u.creditLedgerEntryId
-      ? await prisma.contactCreditLedger.findUnique({ where: { id: u.creditLedgerEntryId } })
-      : null;
-    const creditType: CreditType = u.pricingTier === "verified_lead" ? "verified" : "standard";
-    const result = await refundUnreadCredit({
+    // 消費した各ロットへ同数を戻す（期限切れロットへは戻さない＝再発行しない）
+    const result = await refundUnreadCredits({
       tenantId: u.tenantId,
       memberId: u.sellerMemberId,
-      creditType,
-      lotEntryId: consumeEntry?.lotEntryId ?? null,
       contactUnlockId: u.id,
     });
     await prisma.contactUnlock.update({
       where: { id: u.id },
       data: { unreadRefundedAt: now },
     });
-    if (result.granted) {
-      refunded++;
+    if (result.skippedExpired > 0) {
+      console.warn(
+        `[cron] 有効期限切れのため返還しなかったクレジット unlock=${u.id} qty=${result.skippedExpired}`
+      );
+    }
+    if (result.refunded > 0) {
+      refunded += result.refunded;
       const offering = await prisma.offering.findUnique({
         where: { id: u.offeringId },
         select: { title: true },
       });
       const to = await getMemberUserEmails(u.sellerMemberId);
-      await notifyUnreadRefund({ to, offeringTitle: offering?.title || "（無題）" }).catch((e) =>
+      await notifyUnreadRefund({ to, offeringTitle: offering?.title || "（無題）", quantity: result.refunded }).catch((e) =>
         console.error("[cron] 返還メール失敗:", e)
       );
     }

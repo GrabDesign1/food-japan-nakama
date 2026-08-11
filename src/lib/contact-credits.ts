@@ -6,7 +6,7 @@ import {
   type CreditLot,
   type CreditType,
   availableBalance,
-  pickLotToConsume,
+  allocateCredits,
   CREDIT_PACK_EXPIRY_DAYS,
   SIGNUP_FREE_CREDITS,
   MEMBER_MONTHLY_CREDITS,
@@ -23,7 +23,13 @@ async function loadLots(db: Tx | typeof prisma, memberId: string, creditType: Cr
   const lots = new Map<string, CreditLot>();
   for (const e of entries) {
     if (e.quantity > 0 && !e.lotEntryId) {
-      lots.set(e.id, { id: e.id, quantity: e.quantity, consumed: 0, expiresAt: e.expiresAt });
+      lots.set(e.id, {
+        id: e.id,
+        quantity: e.quantity,
+        consumed: 0,
+        expiresAt: e.expiresAt,
+        entryType: e.entryType,
+      });
     }
   }
   for (const e of entries) {
@@ -40,19 +46,10 @@ async function loadLots(db: Tx | typeof prisma, memberId: string, creditType: Cr
   return Array.from(lots.values());
 }
 
-/** 利用可能残高。 */
-export async function getCreditBalance(memberId: string, creditType: CreditType): Promise<number> {
+/** 利用可能残高（クレジットは1種類＝standard。verifiedは2026-08-11に廃止した旧種別）。 */
+export async function getCreditBalance(memberId: string, creditType: CreditType = "standard"): Promise<number> {
   const lots = await loadLots(prisma, memberId, creditType);
   return availableBalance(lots, new Date());
-}
-
-/** 両種別の残高（画面表示用）。 */
-export async function getCreditBalances(memberId: string): Promise<{ standard: number; verified: number }> {
-  const [standard, verified] = await Promise.all([
-    getCreditBalance(memberId, "standard"),
-    getCreditBalance(memberId, "verified"),
-  ]);
-  return { standard, verified };
 }
 
 /** 付与ロットを作成（冪等）。既に同じ idempotencyKey があれば何もしない。 */
@@ -176,98 +173,112 @@ async function expirePreviousMonthlyLots(memberId: string, currentInvoiceId: str
 }
 
 /**
- * トランザクション内でクレジットを1件消費する。
- * 期限が近いロットから消費し、消費後にロット残数が負になっていないか再検証する（並行消費対策）。
- * 残高が無ければ null を返す。
+ * トランザクション内でクレジットを指定数消費する（通常案件1・確認済み案件3）。
+ * 消費順は月次付与→有償購入→無償付与、同順位は期限が早い順。1ロットで足りなければ次のロットへ。
+ * 消費後にロット残数が負になっていないか再検証する（並行消費対策）。
+ * 残高が足りなければ null を返す（部分消費はしない）。
  */
-export async function consumeOneCreditTx(
+export async function consumeCreditsTx(
   tx: Tx,
   params: {
     tenantId: string;
     memberId: string;
-    creditType: CreditType;
+    creditType?: CreditType;
     contactUnlockId: string;
+    quantity: number;
   }
-): Promise<{ ledgerEntryId: string } | null> {
+): Promise<{ ledgerEntryIds: string[] } | null> {
+  const creditType: CreditType = params.creditType ?? "standard";
   // 会員×種別の消費を直列化する。
   // 既定の READ COMMITTED では、別案件への同時提案が互いの未コミット消費を見られず、
   // 残高1件で2件解放できてしまう（後段の再検証もすり抜ける）。
   // トランザクション終了時に自動解放されるアドバイザリロック（pgbouncerのトランザクションプールでも安全）。
-  await tx.$executeRaw`select pg_advisory_xact_lock(hashtext(${`credit:${params.memberId}:${params.creditType}`}))`;
+  await tx.$executeRaw`select pg_advisory_xact_lock(hashtext(${`credit:${params.memberId}:${creditType}`}))`;
 
   const now = new Date();
-  const lots = await loadLots(tx, params.memberId, params.creditType);
-  const lot = pickLotToConsume(lots, now);
-  if (!lot) return null;
+  const lots = await loadLots(tx, params.memberId, creditType);
+  const plan = allocateCredits(lots, params.quantity, now);
+  if (!plan) return null;
 
-  const entry = await tx.contactCreditLedger.create({
-    data: {
-      tenantId: params.tenantId,
-      memberId: params.memberId,
-      creditType: params.creditType,
-      quantity: -1,
-      entryType: "consume",
-      lotEntryId: lot.id,
-      contactUnlockId: params.contactUnlockId,
-      idempotencyKey: `consume:${params.contactUnlockId}`,
-    },
-  });
-
-  // 並行消費でロットを超過していないか再検証（超過ならロールバック）
-  const after = await loadLots(tx, params.memberId, params.creditType);
-  const thisLot = after.find((l) => l.id === lot.id);
-  if (thisLot && thisLot.quantity - thisLot.consumed < 0) {
-    throw new Error("credit lot over-consumed");
-  }
-  return { ledgerEntryId: entry.id };
-}
-
-/** 14日未読返還（unlock単位で一度だけ・冪等）。元ロットへ+1を戻す。 */
-export async function refundUnreadCredit(params: {
-  tenantId: string;
-  memberId: string;
-  creditType: CreditType;
-  lotEntryId: string | null;
-  contactUnlockId: string;
-}): Promise<{ granted: boolean }> {
-  // 元ロットが既に期限切れなら、そこへ戻しても使えない（返したのに使えない状態になる）。
-  // その場合は新しいロットとして発行し、期限はパックと同じ日数で切り直す。
-  let lotEntryId = params.lotEntryId;
-  let expiresAt: Date | null = null;
-  if (lotEntryId) {
-    const lot = await prisma.contactCreditLedger.findUnique({
-      where: { id: lotEntryId },
-      select: { expiresAt: true },
-    });
-    if (lot?.expiresAt && lot.expiresAt.getTime() <= Date.now()) {
-      lotEntryId = null;
-      expiresAt = new Date(Date.now() + CREDIT_PACK_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
-    }
-  }
-
-  try {
-    await prisma.contactCreditLedger.create({
+  const ledgerEntryIds: string[] = [];
+  for (const step of plan) {
+    const entry = await tx.contactCreditLedger.create({
       data: {
         tenantId: params.tenantId,
         memberId: params.memberId,
-        creditType: params.creditType,
-        quantity: 1,
-        entryType: "refund",
-        // 元ロットが分かる場合はロットへ戻す（期限も元ロットに従う）。
-        lotEntryId,
-        expiresAt,
+        creditType,
+        quantity: -step.take,
+        entryType: "consume",
+        lotEntryId: step.lotId,
         contactUnlockId: params.contactUnlockId,
-        idempotencyKey: `unread_refund:${params.contactUnlockId}`,
-        note: lotEntryId ? "14日間未読による返還" : "14日間未読による返還（元ロット期限切れのため新規発行）",
+        // 1回の解放で複数ロットに跨ることがあるため、ロットIDまでを冪等キーに含める
+        idempotencyKey: `consume:${params.contactUnlockId}:${step.lotId}`,
       },
     });
-    return { granted: true };
-  } catch (e) {
-    if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
-      return { granted: false };
-    }
-    throw e;
+    ledgerEntryIds.push(entry.id);
   }
+
+  // 並行消費でロットを超過していないか再検証（超過ならロールバック）
+  const after = await loadLots(tx, params.memberId, creditType);
+  for (const step of plan) {
+    const thisLot = after.find((l) => l.id === step.lotId);
+    if (thisLot && thisLot.quantity - thisLot.consumed < 0) {
+      throw new Error("credit lot over-consumed");
+    }
+  }
+  return { ledgerEntryIds };
+}
+
+/**
+ * 14日未読返還（unlock単位で一度だけ・冪等）。消費した各ロットへ同数を戻す。
+ * 元ロットが期限切れの場合は返還しない（期限延長・実質的な再発行を行わないため。
+ * 2026-08-11の法務レビューによる方針。購入画面・規約にもその旨を明示している）。
+ */
+export async function refundUnreadCredits(params: {
+  tenantId: string;
+  memberId: string;
+  contactUnlockId: string;
+}): Promise<{ refunded: number; skippedExpired: number }> {
+  const consumeEntries = await prisma.contactCreditLedger.findMany({
+    where: { contactUnlockId: params.contactUnlockId, entryType: "consume", quantity: { lt: 0 } },
+  });
+  const now = Date.now();
+  let refunded = 0;
+  let skippedExpired = 0;
+
+  for (const entry of consumeEntries) {
+    if (!entry.lotEntryId) continue;
+    const lot = await prisma.contactCreditLedger.findUnique({
+      where: { id: entry.lotEntryId },
+      select: { expiresAt: true },
+    });
+    if (lot?.expiresAt && lot.expiresAt.getTime() <= now) {
+      skippedExpired += -entry.quantity;
+      continue;
+    }
+    try {
+      await prisma.contactCreditLedger.create({
+        data: {
+          tenantId: params.tenantId,
+          memberId: params.memberId,
+          creditType: entry.creditType,
+          quantity: -entry.quantity, // 消費は負なので反転して戻す
+          entryType: "refund",
+          lotEntryId: entry.lotEntryId,
+          contactUnlockId: params.contactUnlockId,
+          idempotencyKey: `unread_refund:${params.contactUnlockId}:${entry.lotEntryId}`,
+          note: "14日間未読による返還",
+        },
+      });
+      refunded += -entry.quantity;
+    } catch (e) {
+      // 既に返還済み（再送）なら何もしない
+      if (!(typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002")) {
+        throw e;
+      }
+    }
+  }
+  return { refunded, skippedExpired };
 }
 
 /** 期限切れロットの残数を失効させる（日次バッチ・ロット単位で冪等）。 */

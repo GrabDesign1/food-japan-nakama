@@ -201,7 +201,7 @@ export default async function AdminBillingPage() {
         </p>
         {!isSuper ? (
           <p className="mt-2 rounded-md bg-[var(--canvas)] px-3 py-2 text-[11px] text-[var(--muted)]">
-            この操作は紹介料（1,100円→3,300円）を変えるため、上位管理者のみ実行できます。
+            この操作は提案時の消費クレジット（1→3クレジット＝1,100円→3,300円相当）を変えるため、上位管理者のみ実行できます。
           </p>
         ) : null}
         {verifiedLeads.length ? (
@@ -304,7 +304,7 @@ export default async function AdminBillingPage() {
                 <span className="text-[var(--muted)]">{l.createdAt.toLocaleString("ja-JP")}</span>
                 <span className="font-medium">{memberNameMap.get(l.memberId) ?? l.memberId}</span>
                 <span>{l.entryType}</span>
-                <span>{l.creditType === "verified" ? "優良" : "通常"}</span>
+                <span>{l.creditType === "verified" ? "旧・優良枠" : "クレジット"}</span>
                 <b className={l.quantity > 0 ? "text-[var(--green-d)]" : "text-[var(--red)]"}>
                   {l.quantity > 0 ? `+${l.quantity}` : l.quantity}
                 </b>

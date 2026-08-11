@@ -168,13 +168,14 @@ export async function notifyPromotionEnding(params: {
 export async function notifyUnreadRefund(params: {
   to: string[];
   offeringTitle: string;
+  quantity?: number;
 }): Promise<void> {
-  const { to, offeringTitle } = params;
+  const { to, offeringTitle, quantity = 1 } = params;
   if (to.length === 0) return;
   const html = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
     <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">紹介クレジットを返還しました</h2>
-    <p style="font-size:14px;color:#3C4A62">案件「${esc(offeringTitle)}」への提案が送信から14日間開封されなかったため、紹介クレジットを1件返還しました。</p>
+    <p style="font-size:14px;color:#3C4A62">案件「${esc(offeringTitle)}」への提案が送信から14日間開封されなかったため、紹介クレジットを${quantity}クレジット返還しました。</p>
     <p style="margin:22px 0">
       <a href="${APP_URL}/billing" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">残高を確認する</a>
     </p>

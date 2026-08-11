@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { PLANS } from "@/lib/stripe";
-import { getCreditBalances } from "@/lib/contact-credits";
+import { getCreditBalance } from "@/lib/contact-credits";
 import { PlanButton } from "./_components/PlanButton";
 import { PortalButton } from "./_components/PortalButton";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
@@ -40,8 +40,8 @@ export default async function BillingPage({
   const isMember = me.paymentStatus === "PAID";
   const plan = PLANS[0];
 
-  const [balances, orders] = await Promise.all([
-    getCreditBalances(me.id),
+  const [balance, orders] = await Promise.all([
+    getCreditBalance(me.id),
     prisma.billingOrder.findMany({
       where: { memberId: me.id },
       orderBy: { createdAt: "desc" },
@@ -77,20 +77,20 @@ export default async function BillingPage({
         <h2 className={h2Cls}>紹介クレジット残高</h2>
         <div className="mt-2 flex flex-wrap gap-6 text-[13px]">
           <span>
-            通常案件用：<b className="text-[16px] text-[var(--green-d)]">{balances.standard}</b> 件
-          </span>
-          <span>
-            優良案件用：<b className="text-[16px] text-[var(--green-d)]">{balances.verified}</b> 件
+            利用できるクレジット：<b className="text-[16px] text-[var(--green-d)]">{balance}</b> クレジット
           </span>
           {isMember ? (
             <span className="font-semibold text-[#A87F2F]">
-              ビジネス会員：毎月30件が自動付与されます（繰越なし）
+              ビジネス会員：毎月30クレジットが自動付与されます（繰越なし）
             </span>
           ) : null}
         </div>
         <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
-          クレジットは「探している（調達したい）」案件への初回提案1件につき1件消費します。1件1,100円（税込）で、5件・10件のまとめ買いパックも同じ単価です（有効期限は購入から180日）。
-          送信後14日間相手が未読の場合のみ1件自動返還します（開封済みで返信がない場合は返還しません）。
+          クレジットは「探している（調達したい）」案件への初回提案に使います。消費するのは、通常案件が1クレジット、NAKAMA確認済み案件が3クレジットです。
+          1クレジット1,100円（税込）で、5・10クレジットのまとめ買いパックも同じ単価です。
+          有償クレジットの有効期限は購入日から180日（期限の延長・再発行はありません）。ビジネス会員の月次クレジットは次回更新日で失効します。
+          消費の順番は、月次クレジット→有償クレジット（いずれも期限が早い順）です。
+          送信後14日間相手が未読の場合のみ、消費したクレジットを自動返還します（開封済みで返信がない場合、および有効期限が過ぎている場合は返還しません）。
         </p>
       </div>
 

@@ -9,8 +9,8 @@ import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { ensureDeal } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
-import { pricingTierFor, creditTypeForTier } from "@/lib/billing-core";
-import { consumeOneCreditTx } from "@/lib/contact-credits";
+import { pricingTierFor, creditCostFor } from "@/lib/billing-core";
+import { consumeCreditsTx } from "@/lib/contact-credits";
 import { createOneTimeCheckout } from "@/lib/billing";
 import { canSendToOthers, MESSAGE_MAX } from "@/lib/security";
 
@@ -57,10 +57,11 @@ export async function sendProposal(
   const body = String(formData.get("message") ?? "").trim().slice(0, MESSAGE_MAX);
   if (!body) return { error: "提案内容を入力してください。" };
 
-  // ビジネス会員も提案チケットを消費する（毎月30件付与・繰越なし。2026-08-11確定）。
-  // 会員特典は「毎月の付与」と「追加チケット（1件購入）・掲載オプションの20%割引」に集約した。
+  // ビジネス会員も提案チケットを消費する（毎月30クレジット付与・繰越なし。2026-08-11確定）。
+  // 会員特典は「毎月の付与」と「追加クレジット（単品購入）・掲載オプションの20%割引」に集約した。
+  // 消費数は通常案件1／確認済み案件3（クレジットは1種類）。
   const tier = pricingTierFor(offering.verifiedLeadAt, new Date());
-  const creditType = creditTypeForTier(tier);
+  const creditCost = creditCostFor(tier);
 
   let threadId: string | null = null;
   let notifyUnread = 0;
@@ -89,16 +90,17 @@ export async function sendProposal(
         });
         unlockId = unlock.id;
 
-        const consumed = await consumeOneCreditTx(tx, {
+        const consumed = await consumeCreditsTx(tx, {
           tenantId: su!.app.tenantId,
           memberId: me.id,
-          creditType,
           contactUnlockId: unlock.id,
+          quantity: creditCost,
         });
         if (!consumed) throw new Error("NO_CREDIT");
         await tx.contactUnlock.update({
           where: { id: unlock.id },
-          data: { creditLedgerEntryId: consumed.ledgerEntryId },
+          // 複数ロットに跨る場合は先頭の消費エントリを記録（返還は contactUnlockId で全件を辿る）
+          data: { creditLedgerEntryId: consumed.ledgerEntryIds[0] },
         });
       }
 
@@ -147,10 +149,7 @@ export async function sendProposal(
   } catch (e) {
     if (e instanceof Error && e.message === "NO_CREDIT") {
       return {
-        error:
-          tier === "verified_lead"
-            ? "優良案件用の紹介クレジットがありません。下の「1件購入」からご購入ください。"
-            : "紹介クレジットがありません。下の「1件購入」またはパックをご購入ください。",
+        error: `紹介クレジットが不足しています（この案件には${creditCost}クレジット必要です）。下の購入からお求めください。`,
       };
     }
     console.error("[propose] 送信失敗:", e);

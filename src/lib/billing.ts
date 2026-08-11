@@ -8,6 +8,8 @@ import {
   discountedUnitAmount,
   MEMBER_OPTION_DISCOUNT_PERCENT,
   CREDIT_PACK_EXPIRY_DAYS,
+  VERIFIED_LEAD_CREDIT_COST,
+  creditExpiryFrom,
 } from "@/lib/billing-core";
 import { grantCredits } from "@/lib/contact-credits";
 import { safeInternalPath } from "@/lib/security";
@@ -34,12 +36,12 @@ export type SeedProduct = {
 /** 初期商品マスター（product-catalog.seed.json 2026-08-10版を基に整形。投入は active=false＝非公開）。 */
 export const SEED_PRODUCTS: SeedProduct[] = [
   // 初回紹介料・クレジット
-  { code: "contact_unlock_standard", name: "通常案件・1件紹介", description: "「探している（調達したい）」案件1件・1相手への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock", priceAmount: 1100, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 10 },
-  { code: "contact_unlock_verified_lead", name: "NAKAMA確認済み優良案件・1件紹介", description: "事務局確認済みの優良案件への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock_verified", priceAmount: 3300, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 11 },
-  // パックは「まとめ買いの手間を省く」ためのもので、単価は1件1,100円と同じ（2026-08-11 価格整合）。
-  // まとめ買い割引を残すと、会費（22,000円で30件＝733円/件）より安く買えて会員プランが破綻する。
-  { code: "contact_credits_5", name: "紹介クレジット5件パック", description: "1件1,100円×5件・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 5500, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 5, memberDiscountPercent: 0, sortOrder: 12 },
-  { code: "contact_credits_10", name: "紹介クレジット10件パック", description: "1件1,100円×10件・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 11000, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 10, memberDiscountPercent: 0, sortOrder: 13 },
+  { code: "contact_unlock_standard", name: "紹介クレジット1クレジット", description: "通常案件への初回提案1件分（有効期限180日）", billingType: "one_time", audience: "sell", effectType: "contact_unlock", priceAmount: 1100, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 10 },
+  { code: "contact_unlock_verified_lead", name: "紹介クレジット3クレジット（確認済み案件用）", description: "NAKAMA確認済み案件への初回提案1件分＝3クレジット（有効期限180日）", billingType: "one_time", audience: "sell", effectType: "contact_unlock_verified", priceAmount: 3300, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 11 },
+  // パックは「まとめ買いの手間を省く」ためのもので、単価は1クレジット1,100円と同じ（2026-08-11 価格整合）。
+  // まとめ買い割引を残すと、会費（22,000円で30クレジット＝733円/件）より安く買えて会員プランが破綻する。
+  { code: "contact_credits_5", name: "紹介クレジット5クレジットパック", description: "1クレジット1,100円×5・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 5500, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 5, memberDiscountPercent: 0, sortOrder: 12 },
+  { code: "contact_credits_10", name: "紹介クレジット10クレジットパック", description: "1クレジット1,100円×10・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 11000, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 10, memberDiscountPercent: 0, sortOrder: 13 },
   // 掲載オプション（売りたい（提供したい））
   { code: "sell_featured_7d", name: "注目表示", description: "一覧のスポンサー枠に7日間表示（広告表記つき）", billingType: "one_time", audience: "sell", effectType: "featured", priceAmount: 5500, durationDays: 7, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 20 },
   { code: "sell_top_pr_7d", name: "最上部PR", description: "対象ページ上部のスポンサー枠に7日間表示（審査あり）", billingType: "one_time", audience: "sell", effectType: "top_pr", priceAmount: 22000, durationDays: 7, requiresReview: true, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 21 },
@@ -434,25 +436,19 @@ async function fulfillItemTx(
   const { tenantId, memberId, offeringId, item } = params;
   const now = new Date();
 
-  // 期限つきなのはパックのみ（購入画面で「180日有効」と明示しているため）。
-  // 単品購入は期限を告知していないので無期限にする（未告知の失効を発生させない）。
-  const grantPackTx = async (
-    creditType: "standard" | "verified",
-    qty: number,
-    opts: { expires: boolean }
-  ) => {
+  // 有償クレジットは単品・パックとも購入日から180日（2026-08-11の法務レビューによる。
+  // 期限延長・実質的な再発行は行わない）。購入画面・規約・特商法表記にも同じ内容を明示している。
+  const grantPurchasedCreditsTx = async (qty: number) => {
     // $transaction 内で例外を握りつぶすと以後のクエリが失敗するため、createMany + skipDuplicates で冪等にする
     await tx.contactCreditLedger.createMany({
       data: [
         {
           tenantId,
           memberId,
-          creditType,
+          creditType: "standard",
           quantity: qty,
           entryType: "purchase",
-          expiresAt: opts.expires
-            ? new Date(now.getTime() + CREDIT_PACK_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
-            : null,
+          expiresAt: creditExpiryFrom(now),
           orderItemId: item.id,
           idempotencyKey: `item:${item.id}`,
         },
@@ -528,17 +524,18 @@ async function fulfillItemTx(
 
   switch (item.effectType) {
     case "contact_unlock":
-      await grantPackTx("standard", 1, { expires: false });
+      await grantPurchasedCreditsTx(1);
       break;
     case "contact_unlock_verified":
-      await grantPackTx("verified", 1, { expires: false });
+      // 確認済み案件への提案は3クレジットを消費するため、同額の3クレジットを付与する
+      await grantPurchasedCreditsTx(VERIFIED_LEAD_CREDIT_COST);
       break;
     case "contact_credits": {
       // 付与数は注文時の商品コード（スナップショット）から決める。
       // 商品マスターの現在値に頼ると、商品行の改名・削除で誤った件数を付与してしまう。
       const qty = PACK_QUANTITY[item.productCode] ?? product?.unitLimit ?? null;
       if (!qty) throw new Error(`クレジット付与数を決定できません: ${item.productCode}`);
-      await grantPackTx("standard", qty, { expires: true });
+      await grantPurchasedCreditsTx(qty);
       break;
     }
     case "featured":

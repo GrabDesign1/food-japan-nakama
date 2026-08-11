@@ -652,7 +652,7 @@ export default async function DashboardPage() {
                   ビジネス会員になる
                 </Link>
                 <p className="mt-1.5 text-[11px] leading-5 text-[var(--muted)]">
-                  毎月30件の提案チケット（1件あたり733円）・追加チケットと掲載オプションが20%OFF（月額22,000円・税込）
+                  毎月30クレジット（1クレジットあたり733円）・追加クレジットと掲載オプションが20%OFF（月額22,000円・税込）
                 </p>
               </>
             )}
