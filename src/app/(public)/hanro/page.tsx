@@ -161,7 +161,7 @@ export default function SalesChannelPage() {
           </p>
           <List items={SESSION_REPORT_CONTENTS} />
           <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
-            なお、準委任契約にする場合も、契約書には次のように定められます。業務遂行の結果を報告する資料として、「商品・販路戦略書」を作成し、PDF形式で共有します。
+            準委任契約のため、業務遂行の結果を報告する資料として、「商品・販路戦略書」を作成し、PDF形式で共有します。
             本資料は、売上、商談、商品採用その他の成果を保証するものではありません。
           </p>
         </Block>
