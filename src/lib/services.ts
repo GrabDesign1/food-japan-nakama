@@ -32,7 +32,7 @@ export const SERVICE_MENU: ServiceItem[] = [
     name: "販路開拓トライアル",
     problem: "販売先そのものが見つからない",
     deliverable: "候補企業の調査・選定、候補先への打診、面談調整、活動報告",
-    period: "1商品・45日間",
+    period: "1商品・30日間程度",
     price: "440,000円〜",
     href: "/hanro#channel-trial",
   },

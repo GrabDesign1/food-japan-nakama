@@ -8,7 +8,7 @@ import { SERVICE_MENU, consultationHref } from "@/lib/services";
 export const metadata = {
   title: "販路開拓支援｜FOOD JAPAN NAKAMA",
   description:
-    "商品の価値と販売条件を整理し、買い手となり得る企業を探して実際の打診まで進めます。商品・販路戦略セッション（110,000円〜・税込）と販路開拓トライアル（440,000円〜・税込／1商品45日間）の2段階。準委任型のため成果は保証しません。",
+    "商品の価値と販売条件を整理し、買い手となり得る企業を探して実際の打診まで進めます。商品・販路戦略セッション（110,000円〜・税込）と販路開拓トライアル（440,000円〜・税込／1商品30日間程度）の2段階。準委任型のため成果は保証しません。",
 };
 
 const SESSION_FOR = [
@@ -58,10 +58,10 @@ const SESSION_EXCLUDED = [
 
 const TRIAL_FOR = [
   "新しい販売先を開拓したい",
-  "営業担当者や営業する時間が足りない",
-  "小売、外食、食品メーカーなどへ提案したい",
+  "営業担当者や営業活動に充てる時間が足りない",
+  "小売、外食、食品メーカーなどへ商品を提案したい",
   "既存の販路とは異なる市場へ進出したい",
-  "自社だけでは接点を持てない企業へ提案したい",
+  "自社だけでは接点を持ちにくい企業へアプローチしたい",
 ];
 
 const TRIAL_WORK = [
@@ -73,24 +73,29 @@ const TRIAL_WORK = [
   "候補先への個別打診",
   "反応があった場合の面談調整",
   "商談前の準備支援",
-  "活動状況・先方の反応の記録",
+  "活動状況および候補先の反応の記録",
   "今後の販路開拓方針の提案",
 ];
 
-const TRIAL_DELIVERABLES = [
-  "販路開拓方針",
-  "候補企業の調査結果",
-  "実施した打診内容",
-  "候補先から得られた反応",
-  "今後の営業・販路開拓に関する提案",
+// 最終成果物「販路開拓活動報告書」に記載する項目
+const TRIAL_REPORT_CONTENTS = [
+  "商品・販売条件・営業課題の整理",
+  "販路開拓の方針と対象市場",
+  "候補企業の選定結果と選定理由",
+  "候補先ごとの打診内容",
+  "返信・面談希望など、候補先から得られた反応",
+  "打診を通じて把握した課題や改善点",
+  "今後優先して取り組むべき販路",
+  "次の営業活動に向けた具体的な提案",
 ];
 
 const TRIAL_EXCLUDED = [
-  "売上や取引成立の保証",
-  "相手企業からの返信・面談承諾の保証",
-  "サンプル・配送・交通・出張などの実費",
-  "営業資料、LP、動画、広告等の制作",
-  "45日間終了後の継続的な営業活動",
+  "売上、商品採用、取引成立などの保証",
+  "相手企業からの返信、面談承諾、商談成立の保証",
+  "サンプル代、配送料、交通費、出張費などの実費",
+  "営業資料、LP、Webサイト、動画、広告等の制作",
+  "契約期間終了後の継続的な営業活動",
+  "取引条件の交渉、契約書の作成および法務対応",
 ];
 
 const FLOW = [
@@ -191,21 +196,44 @@ export default function SalesChannelPage() {
         <Block title="こんな方におすすめ"><List items={TRIAL_FOR} /></Block>
         <Block title="実施する業務"><List items={TRIAL_WORK} /></Block>
         <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
-          候補企業数や打診先数は、商品、市場、契約範囲を確認したうえで個別に設定します。
+          候補企業数や打診先数は、商品、対象市場、契約範囲などを確認したうえで個別に設定します。
         </p>
-        <Block title="実施後に共有するもの"><List items={TRIAL_DELIVERABLES} /></Block>
+
+        <Block title="最終成果物">
+          <p className="mt-2 text-[13px] font-semibold leading-6 text-[var(--ink)]">販路開拓活動報告書</p>
+          <p className="text-[12px] leading-6 text-[var(--muted)]">PDF形式／目安10〜15ページ</p>
+          <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
+            30日間に実施した調査・選定・打診の内容と、その結果を踏まえた今後の販路開拓方針を一つの資料にまとめて共有します。
+          </p>
+          <List items={TRIAL_REPORT_CONTENTS} />
+          <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+            ※個別企業との連絡内容や個人情報などについては、法令、守秘義務および先方との関係に配慮し、共有できる範囲で記載します。
+          </p>
+        </Block>
+
         <Block title="含まれないもの"><List items={TRIAL_EXCLUDED} /></Block>
 
         <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
-          継続的な打診や商談支援が必要な場合は、終了後に「販路開拓伴走プラン」を提案します。
+          継続的な企業への打診や商談支援が必要な場合は、終了後に「販路開拓伴走プラン」をご提案します。
         </p>
+
+        <Block title="契約および成果に関する注意事項">
+          <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+            本業務は準委任契約に基づき実施し、業務遂行の結果を報告する資料として「販路開拓活動報告書」を作成のうえ、PDF形式で共有します。
+          </p>
+          <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+            なお、本サービスは、売上、候補企業からの返信、面談・商談の成立、商品採用、契約締結その他の成果を保証するものではありません。
+            報酬は、契約で定めた調査、候補企業の選定、打診、面談調整、商談準備および報告等の業務遂行に対して発生します。
+          </p>
+        </Block>
+
         <div className="mt-4">
           <Link href={consultationHref("channel_trial")} className={btn("primary", "lg")}>
             自分の商品が対象になるか相談する
           </Link>
         </div>
         <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
-          目安の費用：440,000円〜（税込）／1商品・45日間
+          目安の費用：440,000円〜（税込）／1商品・30日間程度
         </p>
       </section>
 
