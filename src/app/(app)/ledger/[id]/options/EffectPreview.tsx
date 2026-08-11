@@ -152,7 +152,7 @@ export function EffectPreview({ effectType, sample, productName }: ButtonProps) 
             role="dialog"
             aria-modal="true"
             aria-labelledby="effect-preview-title"
-            className="relative flex max-h-[88vh] w-full max-w-[720px] flex-col rounded-[14px] border border-[var(--line)] bg-white shadow-xl"
+            className="relative flex max-h-[88vh] w-full max-w-[900px] flex-col rounded-[14px] border border-[var(--line)] bg-white shadow-xl"
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-3">
               <h2 id="effect-preview-title" className="text-[15px] font-bold text-[var(--ink)]">

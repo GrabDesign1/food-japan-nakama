@@ -101,21 +101,24 @@ export function OfferingCard({ o, isOwn = false, href, urgent = false }: { o: Of
             あなたの投稿
           </span>
         ) : null}
-        <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+        {/* 画像上のバッジ。狭い幅では単語の途中で改行されて読めなくなるため、
+            各バッジは改行させず（whitespace-nowrap）、入りきらない場合は行を折り返す。
+            地域名は長くなりうるので幅を制限して省略する。 */}
+        <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-1.5">
           {o.area ? (
-            <span className="rounded bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">
+            <span className="max-w-[55%] truncate whitespace-nowrap rounded bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">
               {o.area}
             </span>
           ) : null}
           <span
-            className={`rounded px-2 py-0.5 text-[11px] font-bold text-white ${
+            className={`whitespace-nowrap rounded px-2 py-0.5 text-[11px] font-bold text-white ${
               isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
             }`}
           >
             {DIRECTION_SHORT[o.direction] ?? ""}
           </span>
           {!isGive && o.seekingType && SEEKING_TYPE_SHORT[o.seekingType] ? (
-            <span className="rounded bg-white/90 px-2 py-0.5 text-[11px] font-bold text-[#B77F0B]">
+            <span className="whitespace-nowrap rounded bg-white/90 px-2 py-0.5 text-[11px] font-bold text-[#B77F0B]">
               {SEEKING_TYPE_SHORT[o.seekingType]}
             </span>
           ) : null}
