@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db";
 import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
 import { sellerBuyerIds } from "@/lib/invoice";
-import { openLead, isChargeableLead } from "@/lib/lead-unlock";
+import { openLead, isChargeableLead, firstInboundAt } from "@/lib/lead-unlock";
 import {
   PHASE_CONTRACTED,
   PHASE_SHIPPED,
@@ -622,6 +622,7 @@ export async function openLeadAction(
       offeringMemberId: offering.memberId,
       viewerMemberId: me.id,
       threadFromMemberId: thread.fromMemberId,
+      firstInboundAt: await firstInboundAt(threadId, me.id),
     })
   ) {
     return { error: "この画面では開封の操作は不要です。" };

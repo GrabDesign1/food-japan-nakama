@@ -17,6 +17,12 @@ import {
   amountLabel,
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
+import { loadReplyRates } from "@/lib/reply-rate";
+import {
+  isLeadChargingActive,
+  LEAD_UNLOCK_START_LABEL,
+  LEAD_UNOPENED_NOTICE_DAYS,
+} from "@/lib/lead-unlock";
 import { sendInterest } from "../../messages/actions";
 import { PendingButton } from "@/components/PendingButton";
 import { duplicateOffering } from "../actions";
@@ -119,6 +125,12 @@ export default async function OfferingDetailPage({
   }
   const memberDisplayName = applicantRestricted ? "非公開（提案・承認後に開示）" : offering.member.name;
 
+  // 掲載者の返信率。問い合わせも提案も相手側に紹介料がかかるため、
+  // 「返ってくる相手か」を先に見せる（母数が足りないときは null＝出さない）。
+  const replyRate = applicantRestricted
+    ? null
+    : (await loadReplyRates([offering.memberId])).get(offering.memberId) ?? null;
+
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";
   // 掲載者向け：この案件に届いた提案・問い合わせの件数（相手から1通以上あるスレッド）
@@ -153,6 +165,14 @@ export default async function OfferingDetailPage({
 
   const infoRows: [string, string | null][] = [
     ["事業者", memberDisplayName || "—"],
+    ...(replyRate
+      ? ([
+          [
+            "返信率",
+            `${replyRate.percent}%（届いた${replyRate.received}件のうち${replyRate.replied}件に返信）`,
+          ],
+        ] as [string, string | null][])
+      : []),
     // 応募者限定公開では会員由来の所在地を出さない（都道府県＋市区町村＋業種で会員が特定できてしまう）
     [
       "地域",
@@ -441,7 +461,7 @@ export default async function OfferingDetailPage({
             </div>
             <p className="mb-3 mt-0.5 text-[12px] text-[var(--ink-2)]">
               提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます。
-              初回の提案には紹介料がかかります（消費するのは通常案件で1クレジット、NAKAMA確認済み案件で3クレジット）。継続メッセージと、受けた問い合わせへの返信は無料です。
+              初回の提案には紹介料がかかります（消費するのは通常案件で1クレジット、NAKAMA確認済み案件で3クレジット）。提案が届いたあとの継続メッセージは、何往復でも無料です。
             </p>
             <Link href={`/ledger/${offering.id}/propose`} className={btn("primary")}>
               提案へ進む（料金の確認）→
@@ -456,7 +476,16 @@ export default async function OfferingDetailPage({
               この案件について問い合わせる
             </div>
             <p className="mb-2 mt-0.5 text-[12px] text-[var(--ink-2)]">
-              価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。問い合わせは無料です。
+              価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。
+              <b>問い合わせの送信は無料です。</b>
+            </p>
+            {/* 予告：開封が有料になることと、待たされたときに何が起きるかを先に伝える（2026-08-12） */}
+            <p className="mb-2 rounded-[8px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-3 py-2 text-[11px] leading-5 text-[var(--ink-2)]">
+              {isLeadChargingActive()
+                ? "お送りした内容は、売り手が開封してから読まれます（売り手は開封に紹介料1クレジットを使います）。"
+                : `${LEAD_UNLOCK_START_LABEL}以降にお送りいただく問い合わせは、売り手が開封してから読まれます（売り手は開封に紹介料1クレジットを使います）。`}
+              {LEAD_UNOPENED_NOTICE_DAYS}日たっても開封されない場合は、メールでお知らせします。
+              具体的に書いていただくほど開いてもらいやすくなります（必要な数量・時期・用途・お届け先）。
             </p>
             <textarea
               name="message"

@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { PHASES, PHASE_CONTRACTED, PHASE_DONE } from "@/lib/deal-constants";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { EmptyState } from "@/components/EmptyState";
+import { loadLockedLeadThreadIds, leadPreview } from "@/lib/lead-unlock";
 import { ProposalRows } from "./ProposalRows";
 import { btn, eyebrowCls, h1Cls, input } from "@/lib/ui";
 
@@ -102,6 +103,9 @@ export default async function OfferingProposalsPage({
         })
       : Promise.resolve([]),
   ]);
+
+  // 未開封のリードは本文を返さない（一覧で読めてしまうと開封課金の意味がない）
+  const lockedThreadIds = await loadLockedLeadThreadIds(me.id, threads);
 
   const notes = threadIds.length
     ? await prisma.proposalNote.findMany({
@@ -288,7 +292,10 @@ export default async function OfferingProposalsPage({
               otherLogoUrl: r.other?.companyLogoUrl ?? null,
               otherPlace: [r.other?.prefecture, r.other?.city].filter(Boolean).join(" "),
               otherIndustry: r.other?.categoryL1 ?? "",
-              firstBody: r.first.body,
+              locked: lockedThreadIds.has(r.thread.id),
+              firstBody: lockedThreadIds.has(r.thread.id)
+                ? leadPreview(r.first.body)
+                : r.first.body,
               firstAt: fmtDateTime(r.first.createdAt),
               lastAt: r.last ? fmtDateTime(r.last.createdAt) : "—",
               lastFromMe: r.last?.senderMemberId === me.id,

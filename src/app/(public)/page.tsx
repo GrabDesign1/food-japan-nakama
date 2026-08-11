@@ -74,7 +74,7 @@ export default async function PublicHome() {
             </div>
             <p className="fjn-hero__note">
               登録無料・月額契約不要。<br />
-              届いた問い合わせへの返信は、何往復でも無料です。
+              問い合わせの送信は無料。やり取りが始まったあとは、何往復でも無料です。
             </p>
           </div>
         </div>

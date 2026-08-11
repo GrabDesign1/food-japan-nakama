@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/EmptyState";
+import { loadLockedLeadThreadIds, LEAD_LOCKED_TEXT } from "@/lib/lead-unlock";
 
 export async function ThreadList({
   meId,
@@ -49,6 +50,9 @@ export async function ThreadList({
     : [];
   const offeringMap = new Map(offerings.map((o) => [o.id, o]));
 
+  // 未開封のリードは、一覧のプレビューにも本文を出さない
+  const locked = await loadLockedLeadThreadIds(meId, threads);
+
   if (threads.length === 0) {
     return (
       <div className="p-4">
@@ -70,9 +74,11 @@ export async function ThreadList({
         const last = t.messages[0];
         const unreadN = unreadMap.get(t.id) ?? 0;
         const active = activeId === t.id;
-        const preview = last
-          ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
-          : "（メッセージはまだありません）";
+        const preview = locked.has(t.id)
+          ? LEAD_LOCKED_TEXT
+          : last
+            ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
+            : "（メッセージはまだありません）";
         return (
           <Link
             key={t.id}

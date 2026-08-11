@@ -17,6 +17,8 @@ export type OfferingCardData = {
   description?: string | null;
   memberName?: string | null;
   memberLogoUrl?: string | null;
+  /** 掲載者の返信率（0〜100）。母数が少ないときは渡さない＝表示しない（src/lib/reply-rate.ts） */
+  replyRatePercent?: number | null;
   createdAt?: string | Date | null;
   tags?: string[];
   views24h?: number | null;
@@ -228,6 +230,12 @@ export function OfferingCard({
             />
           ) : null}
           <span className="truncate">{o.memberName}</span>
+          {/* 返信率＝届いた問い合わせに返している割合（母数が足りるときだけ渡ってくる） */}
+          {o.replyRatePercent != null ? (
+            <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-[var(--green-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--green-d)]">
+              返信率 {o.replyRatePercent}%
+            </span>
+          ) : null}
         </div>
       ) : null}
 

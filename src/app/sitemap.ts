@@ -13,7 +13,7 @@ export const revalidate = 3600;
  * 検索結果に残り続ける（2026-08-11に実際に発生）。
  * 料金・サービス説明を変更したら必ずこの日付を更新すること。
  */
-const CONTENT_UPDATED_AT = new Date("2026-08-11T23:30:00+09:00");
+const CONTENT_UPDATED_AT = new Date("2026-08-12T12:00:00+09:00");
 
 // 公開静的ページ（middleware の PUBLIC_PATHS と対応）
 const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }[] = [

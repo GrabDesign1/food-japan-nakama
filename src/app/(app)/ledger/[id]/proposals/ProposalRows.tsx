@@ -16,6 +16,8 @@ export type ProposalRow = {
   otherLogoUrl: string | null;
   otherPlace: string;
   otherIndustry: string;
+  /** 未開封＝本文は冒頭だけ（サーバー側で切ってある） */
+  locked: boolean;
   firstBody: string;
   firstAt: string;
   lastAt: string;
@@ -206,14 +208,19 @@ export function ProposalRows({
                 <td className="px-4 py-3 align-top">
                   <Link
                     href={`/ledger/${offeringId}/proposals/${r.threadId}`}
-                    className={`${btn(r.unread > 0 ? "action" : "primary", "sm")} whitespace-nowrap`}
+                    className={`${btn(r.locked || r.unread > 0 ? "action" : "primary", "sm")} whitespace-nowrap`}
                   >
-                    {r.unread > 0 ? "対応する" : "やり取りを見る"}
+                    {r.locked ? "開いて読む" : r.unread > 0 ? "対応する" : "やり取りを見る"}
                   </Link>
                 </td>
 
                 <td className="px-4 py-3 align-top">
                   <div className="flex flex-col items-start gap-1">
+                    {r.locked ? (
+                      <span className="rounded-full bg-[var(--orange)] px-2 py-0.5 text-[10px] font-bold text-white">
+                        未開封
+                      </span>
+                    ) : null}
                     {r.unread > 0 ? (
                       <span className="rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
                         未返信 {r.unread}
@@ -248,6 +255,11 @@ export function ProposalRows({
                       <p className="mt-1 line-clamp-2 max-w-[240px] text-[12px] leading-5 text-[var(--ink-2)]">
                         {r.firstBody || "（ファイル）"}
                       </p>
+                      {r.locked ? (
+                        <div className="text-[10px] font-bold text-[var(--orange)]">
+                          全文は開封すると読めます（1クレジット）
+                        </div>
+                      ) : null}
                       <div className="text-[10px] text-[var(--muted)]">初回：{r.firstAt}</div>
                     </div>
                   </div>

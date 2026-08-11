@@ -11,6 +11,7 @@ import { ensureDeal, touchDealActivity } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
 import { safeAttachmentContentType } from "@/lib/upload";
 import { MAX_ATTACHMENTS } from "@/lib/attachments";
+import { loadLockedLeadThreadIds, leadPreview } from "@/lib/lead-unlock";
 import {
   trimTo,
   canSendToOthers,
@@ -31,10 +32,23 @@ async function notifyRecipientIfCaughtUp(params: {
 }): Promise<void> {
   if (params.unreadBefore > 0) return;
   const to = await getMemberUserEmails(params.recipientId);
+
+  // 未開封のリードは、通知メールにも本文を載せない
+  // （画面だけ伏せてもメールで全部読めてしまっては同じこと）
+  const thread = await prisma.thread.findUnique({
+    where: { id: params.threadId },
+    select: { id: true, offeringId: true, fromMemberId: true },
+  });
+  const locked = thread
+    ? await loadLockedLeadThreadIds(params.recipientId, [thread])
+    : new Set<string>();
+
   await notifyNewMessage({
     to,
     fromMemberName: params.senderName,
-    preview: params.body,
+    preview: locked.has(params.threadId)
+      ? `${leadPreview(params.body)}\n（この先は、NAKAMAの画面で開封すると読めます）`
+      : params.body,
     threadId: params.threadId,
     listingTitle: params.listingTitle,
   });

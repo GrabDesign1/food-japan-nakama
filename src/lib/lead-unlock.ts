@@ -10,12 +10,11 @@
 // （提案側は「送ったが読まれない」ことがあるため返還があるが、こちらは自分で開く）。
 import { prisma } from "@/lib/db";
 import { consumeCreditsTx } from "@/lib/contact-credits";
+import { isChargeableLead, LEAD_UNLOCK_COST, LEAD_UNLOCK_START_AT } from "@/lib/lead-unlock-core";
 
-/** リードを開くのに必要なクレジット数（提案側の通常案件と同じ1）。 */
-export const LEAD_UNLOCK_COST = 1;
-
-/** 一覧で無料で見せる概要の文字数。これ以上は開封するまで伏せる。 */
-export const LEAD_PREVIEW_CHARS = 40;
+// 判定と文言は lead-unlock-core.ts（DB非依存・テスト対象）。
+// これまでどおり "@/lib/lead-unlock" から使えるように再輸出する。
+export * from "@/lib/lead-unlock-core";
 
 /** 開封済みのスレッドIDの集合を返す（一覧でまとめて判定する用）。 */
 export async function loadUnlockedThreadIds(
@@ -35,21 +34,146 @@ export async function isLeadUnlocked(memberId: string, threadId: string): Promis
   return !!row && row.memberId === memberId;
 }
 
+
 /**
- * 課金の対象になるリードか。
- * 対象＝**自分が掲載した「売りたい」案件に、相手から届いた問い合わせ**。
- * 自分から送ったやり取り・「探している」案件・案件に紐づかない直接連絡は対象外（従来どおり無料）。
+ * 一覧向け：未開封のまま伏せるべきスレッドIDを返す。
+ * 画面ごとに条件を書き直すと必ずどこかで漏れる（本文が1画面でも出れば課金は無意味になる）ので、
+ * **本文を表示する画面はすべてこの関数を通す**こと。
  */
-export function isChargeableLead(params: {
-  direction: string;
-  offeringMemberId: string;
-  viewerMemberId: string;
-  threadFromMemberId: string;
-}): boolean {
-  if (params.direction !== "GIVE") return false;
-  if (params.offeringMemberId !== params.viewerMemberId) return false;
-  // 掲載者が自分から送り始めたスレッドは「届いたリード」ではない
-  return params.threadFromMemberId !== params.viewerMemberId;
+export async function loadLockedLeadThreadIds(
+  memberId: string,
+  threads: { id: string; offeringId: string | null; fromMemberId: string }[]
+): Promise<Set<string>> {
+  // 相手が始めた・案件つきのスレッドだけが対象になりうる
+  const candidates = threads.filter((t) => t.offeringId && t.fromMemberId !== memberId);
+  if (!candidates.length) return new Set();
+
+  const offeringIds = Array.from(new Set(candidates.map((t) => t.offeringId!)));
+  const mine = await prisma.offering.findMany({
+    where: { id: { in: offeringIds }, memberId, direction: "GIVE" },
+    select: { id: true },
+  });
+  const mineIds = new Set(mine.map((o) => o.id));
+  const targets = candidates.filter((t) => mineIds.has(t.offeringId!));
+  if (!targets.length) return new Set();
+
+  const targetIds = targets.map((t) => t.id);
+  // 施行日の判定に使う「相手からの最初のメッセージ」
+  const firsts = await prisma.message.groupBy({
+    by: ["threadId"],
+    where: { threadId: { in: targetIds }, senderMemberId: { not: memberId } },
+    _min: { createdAt: true },
+  });
+  const firstAt = new Map(firsts.map((f) => [f.threadId, f._min.createdAt ?? null]));
+
+  const chargeable = targets.filter((t) =>
+    isChargeableLead({
+      direction: "GIVE",
+      offeringMemberId: memberId,
+      viewerMemberId: memberId,
+      threadFromMemberId: t.fromMemberId,
+      firstInboundAt: firstAt.get(t.id) ?? null,
+    })
+  );
+  if (!chargeable.length) return new Set();
+
+  const unlocked = await loadUnlockedThreadIds(
+    memberId,
+    chargeable.map((t) => t.id)
+  );
+  return new Set(chargeable.map((t) => t.id).filter((id) => !unlocked.has(id)));
+}
+
+/** 未開封のまま置かれている問い合わせ（買い手へ知らせる用）。 */
+export type UnopenedLead = {
+  threadId: string;
+  buyerMemberId: string;
+  sellerMemberId: string;
+  offeringId: string;
+  offeringTitle: string;
+  firstInboundAt: Date;
+};
+
+/**
+ * 一定期間ひらかれていない問い合わせを探す（日次バッチから使う）。
+ * 開封が有料になった以上、**買い手には「まだ読まれていない」ことを知らせる**（透明化・ユーザー決定）。
+ * 通知済みかどうかは `Thread.leadUnopenedNoticeAt` で持つので、この関数は未通知のものだけを返す。
+ */
+export async function findUnopenedLeadsForNotice(params: {
+  olderThan: Date;
+  limit?: number;
+}): Promise<UnopenedLead[]> {
+  const limit = params.limit ?? 100;
+  const threads = await prisma.thread.findMany({
+    where: {
+      leadUnopenedNoticeAt: null,
+      offeringId: { not: null },
+      createdAt: { lte: params.olderThan },
+    },
+    orderBy: { createdAt: "asc" },
+    take: limit * 3,
+    select: { id: true, offeringId: true, fromMemberId: true, toMemberId: true },
+  });
+  if (!threads.length) return [];
+
+  const offerings = await prisma.offering.findMany({
+    where: { id: { in: threads.map((t) => t.offeringId!) }, direction: "GIVE" },
+    select: { id: true, memberId: true, title: true },
+  });
+  const offeringMap = new Map(offerings.map((o) => [o.id, o]));
+
+  // 掲載者（売り手）宛てに、買い手から届いたものだけ
+  const targets = threads.filter((t) => {
+    const o = offeringMap.get(t.offeringId!);
+    return !!o && o.memberId === t.toMemberId && t.fromMemberId !== o.memberId;
+  });
+  if (!targets.length) return [];
+
+  const targetIds = targets.map((t) => t.id);
+  const opened = await prisma.leadUnlock.findMany({
+    where: { threadId: { in: targetIds } },
+    select: { threadId: true },
+  });
+  const openedIds = new Set(opened.map((o) => o.threadId));
+
+  const firsts = await prisma.message.groupBy({
+    by: ["threadId", "senderMemberId"],
+    where: { threadId: { in: targetIds } },
+    _min: { createdAt: true },
+  });
+  const firstByPair = new Map(
+    firsts.map((f) => [`${f.threadId}:${f.senderMemberId}`, f._min.createdAt ?? null])
+  );
+
+  const out: UnopenedLead[] = [];
+  for (const t of targets) {
+    if (openedIds.has(t.id)) continue;
+    const at = firstByPair.get(`${t.id}:${t.fromMemberId}`);
+    if (!at) continue;
+    if (at.getTime() < LEAD_UNLOCK_START_AT.getTime()) continue; // 無料だった時期のものは対象外
+    if (at.getTime() > params.olderThan.getTime()) continue;
+    const o = offeringMap.get(t.offeringId!)!;
+    out.push({
+      threadId: t.id,
+      buyerMemberId: t.fromMemberId,
+      sellerMemberId: t.toMemberId,
+      offeringId: o.id,
+      offeringTitle: o.title || "（無題）",
+      firstInboundAt: at,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** 相手からの最初のメッセージの日時（課金対象かどうかの判定に使う）。 */
+export async function firstInboundAt(threadId: string, memberId: string): Promise<Date | null> {
+  const first = await prisma.message.findFirst({
+    where: { threadId, senderMemberId: { not: memberId } },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+  });
+  return first?.createdAt ?? null;
 }
 
 export type OpenLeadResult = { ok: true } | { ok: false; error: string };

@@ -461,6 +461,9 @@ model Thread {
   closedAt     DateTime? @map("closed_at")
   closedBy     String?   @map("closed_by")
   closedReason String?   @map("closed_reason")
+  /// 「まだ開封されていません」を買い手へ知らせた日時（日次バッチ・一度だけ）。
+  /// 送信済みの印なので、再送しないためにここに残す。
+  leadUnopenedNoticeAt DateTime? @map("lead_unopened_notice_at")
   createdAt     DateTime @default(now()) @map("created_at")
 
   messages Message[]

@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
+import { loadReplyRates } from "@/lib/reply-rate";
 import { getSponsoredOfferings, getTopPrOffering, getActiveEffectsFor } from "@/lib/billing";
 import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -130,6 +131,14 @@ export default async function SearchPage({
     target === "offerings" && page === 1 ? getSponsoredOfferings(sponsorDirection, 4) : Promise.resolve([]),
     getActiveEffectsFor(offerings.map((o) => o.id)),
   ]);
+
+  // 掲載者の返信率（問い合わせ・提案には紹介料がかかるため、返ってくる相手かを先に示す）
+  const replyRates = await loadReplyRates([
+    ...offerings.map((o) => o.memberId),
+    ...sponsored.map((o) => o.memberId),
+    ...(topPr ? [topPr.memberId] : []),
+  ]);
+  const replyRateOf = (memberId: string) => replyRates.get(memberId)?.percent ?? null;
 
   // 共創プロジェクトの掲載者名
   const projMemberIds = Array.from(new Set(coprojects.map((p) => p.memberId)));
@@ -280,7 +289,12 @@ export default async function SearchPage({
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 <OfferingCard
-                  o={{ ...topPr, memberName: topPr.member.name, memberLogoUrl: topPr.member.companyLogoUrl }}
+                  o={{
+                    ...topPr,
+                    memberName: topPr.member.name,
+                    memberLogoUrl: topPr.member.companyLogoUrl,
+                    replyRatePercent: replyRateOf(topPr.memberId),
+                  }}
                   isOwn={topPr.memberId === ownMemberId}
                 />
               </div>
@@ -297,7 +311,12 @@ export default async function SearchPage({
                 {sponsored.map((o) => (
                   <OfferingCard
                     key={`sp-${o.id}`}
-                    o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl }}
+                    o={{
+                      ...o,
+                      memberName: o.member.name,
+                      memberLogoUrl: o.member.companyLogoUrl,
+                      replyRatePercent: replyRateOf(o.memberId),
+                    }}
                     isOwn={o.memberId === ownMemberId}
                     featured
                   />
@@ -309,7 +328,13 @@ export default async function SearchPage({
             {offerings.map((o) => (
               <OfferingCard
                 key={o.id}
-                o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl, views24h: viewMap.get(o.id) ?? 0 }}
+                o={{
+                  ...o,
+                  memberName: o.member.name,
+                  memberLogoUrl: o.member.companyLogoUrl,
+                  views24h: viewMap.get(o.id) ?? 0,
+                  replyRatePercent: replyRateOf(o.memberId),
+                }}
                 isOwn={o.memberId === ownMemberId}
                 urgent={effectsMap.get(o.id)?.has("urgent") ?? false}
               />

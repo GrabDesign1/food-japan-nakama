@@ -38,8 +38,6 @@ export default async function OfferingThreadPage({
   if (thread.fromMemberId !== me.id && thread.toMemberId !== me.id) notFound();
 
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
-  // 既読化はサイドバーの未読バッジと競合しないよう先に完了させる
-  await markThreadRead(thread.id);
   // 段階は手で動かせないので、記録された事実とずれていたらここで直す
   await reconcileDealPhase(thread.id);
 
@@ -104,15 +102,19 @@ export default async function OfferingThreadPage({
 
   // 「売りたい」に届いたリードは、初回だけ1クレジットで開封する（開封後の往復は無料）。
   // 未開封のときは**本文をサーバーから返さない**（画面で隠すだけでは読めてしまう）。
+  const firstInbound = messages.find((m) => m.senderMemberId !== me.id) ?? null;
   const chargeable = isChargeableLead({
     direction: offering.direction,
     offeringMemberId: offering.memberId,
     viewerMemberId: me.id,
     threadFromMemberId: thread.fromMemberId,
+    firstInboundAt: firstInbound?.createdAt ?? null,
   });
   const gated = chargeable && !(await isLeadUnlocked(me.id, thread.id));
+  // 未開封のうちは既読にしない（読んでいないのに「未返信」が消えると対応漏れになる）
+  if (!gated) await markThreadRead(thread.id);
   const balance = gated ? await getCreditBalance(me.id) : 0;
-  const firstMessage = messages[0];
+  const firstMessage = firstInbound ?? messages[0];
 
   const isOwner = offering.memberId === me.id;
   const lastMessageId = messages[messages.length - 1]?.id ?? "none";
