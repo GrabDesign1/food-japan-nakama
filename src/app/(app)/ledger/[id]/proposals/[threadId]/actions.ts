@@ -11,6 +11,7 @@ import { prisma } from "@/lib/db";
 import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
 import { sellerBuyerIds } from "@/lib/invoice";
+import { openLead, isChargeableLead } from "@/lib/lead-unlock";
 import {
   PHASE_CONTRACTED,
   PHASE_SHIPPED,
@@ -596,5 +597,46 @@ export async function respondNda(
   });
 
   revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
+  return { ok: true };
+}
+
+/**
+ * 届いたリード（買い手からの問い合わせ）を開く＝1クレジット消費。
+ * 開けるのは案件の掲載者（売り手）だけ。開封後のやり取りは無料。
+ */
+export async function openLeadAction(
+  offeringId: string,
+  threadId: string,
+  _prev: OfferState,
+  _formData: FormData
+): Promise<OfferState> {
+  const { su, me, thread } = await participantOr404(offeringId, threadId);
+  const offering = await prisma.offering.findUnique({
+    where: { id: offeringId },
+    select: { direction: true, memberId: true },
+  });
+  if (!offering) return { error: "案件が見つかりません。" };
+  if (
+    !isChargeableLead({
+      direction: offering.direction,
+      offeringMemberId: offering.memberId,
+      viewerMemberId: me.id,
+      threadFromMemberId: thread.fromMemberId,
+    })
+  ) {
+    return { error: "この画面では開封の操作は不要です。" };
+  }
+
+  const res = await openLead({
+    tenantId: su.app.tenantId,
+    memberId: me.id,
+    buyerMemberId: thread.fromMemberId,
+    threadId,
+    offeringId,
+  });
+  if (!res.ok) return { error: res.error };
+
+  revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
+  revalidatePath(`/ledger/${offeringId}/proposals`);
   return { ok: true };
 }
