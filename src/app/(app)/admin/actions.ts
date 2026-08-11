@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe";
 import { writeAudit } from "@/lib/audit";
-import { grantCredits } from "@/lib/contact-credits";
+import { grantMonthlyMemberCredits } from "@/lib/contact-credits";
 import { MEMBER_MONTHLY_CREDITS } from "@/lib/billing-core";
 import { setMemberReview, type ReviewDecision } from "@/lib/member";
 
@@ -64,21 +64,20 @@ export async function grantMonthlyCreditsManually(memberId: string): Promise<voi
   });
   if (!m || m.paymentStatus !== "PAID") return;
 
-  // 「当月分」を1回だけ。有効期限は翌月の同日（次回更新日相当）
+  // 「当月分」を1回だけ。有効期限は翌月の同日（次回更新日相当）。
+  // Stripe決済・日次バッチと同じ経路（grantMonthlyMemberCredits）を通すことが重要。
+  // 付与時に前月までの未使用の月次ロットを失効させるため、
+  // バッチ→手動の順で押されても残高は30に収束し、60にはならない（2026-08-11）。
   const now = new Date();
   const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const expiresAt = new Date(now);
   expiresAt.setUTCMonth(expiresAt.getUTCMonth() + 1);
 
-  const { granted } = await grantCredits({
+  const { granted } = await grantMonthlyMemberCredits({
     tenantId,
     memberId,
-    creditType: "standard",
-    quantity: MEMBER_MONTHLY_CREDITS,
-    entryType: "member_monthly",
-    expiresAt,
-    idempotencyKey: `member_monthly_manual:${memberId}:${ym}`,
-    note: `事務局による月次クレジットの手動付与（${ym}）`,
+    invoiceId: `manual:${memberId}:${ym}`,
+    periodEnd: expiresAt,
   });
 
   await writeAudit(su, "member.grant_monthly_credits", {
