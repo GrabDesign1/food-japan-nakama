@@ -14,6 +14,7 @@ import {
   SEEKING_TYPE_LABEL,
   REQUIREMENT_KIND_LABEL,
   REQUIREMENT_LEVELS,
+  amountLabel,
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
@@ -140,7 +141,7 @@ export default async function OfferingDetailPage({
   const tradeRows: [string, string | null][] = (
     [
       ["希望価格", price],
-      [isGive ? "提供可能量" : "必要数量", amount],
+      [amountLabel(offering.category, offering.direction), amount],
       ["最小取引量", offering.minOrderText],
       ["商品・原料の状態", offering.itemCondition],
       ["保存状態", offering.storageType],

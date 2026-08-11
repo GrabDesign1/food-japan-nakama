@@ -104,7 +104,19 @@ export const SEEKING_TYPE_SHORT: Record<string, string> = {
 };
 
 // 条件の分類（必須・希望・相談可能をつけて登録する）
-export const REQUIREMENT_KINDS: [string, string][] = [
+// ── カテゴリ群（2026-08-11 追加）─────────────────────────
+// 9分類のうち食品・物品向けの入力欄が全カテゴリに出ていて、人材や技術・地域課題では
+// 「保存方法」「規格・サイズ」など選べない項目ばかりだった。群ごとに項目を出し分ける。
+export type CategoryGroup = "goods" | "service" | "support";
+
+/** モノ（食材・原料／加工設備）／サービス・場・ヒト／資金・地域 の3群。 */
+export function categoryGroup(key: string): CategoryGroup {
+  if (key === "食材・原料" || key === "加工設備") return "goods";
+  if (key === "資金・補助" || key === "地域課題") return "support";
+  return "service"; // 技術・ノウハウ／販路・売り場／実証の場／物流／人材
+}
+
+const REQUIREMENT_KINDS_GOODS: [string, string][] = [
   ["origin", "産地・地域"],
   ["quantity", "数量・ロット"],
   ["price", "価格"],
@@ -115,8 +127,102 @@ export const REQUIREMENT_KINDS: [string, string][] = [
   ["payment", "支払い方法"],
   ["other", "その他"],
 ];
-export const REQUIREMENT_KIND_LABEL: Record<string, string> =
-  Object.fromEntries(REQUIREMENT_KINDS);
+
+const REQUIREMENT_KINDS_SERVICE: [string, string][] = [
+  ["area", "対応エリア"],
+  ["term", "期間・稼働"],
+  ["staffing", "人数・体制"],
+  ["experience", "実績・経験"],
+  ["license", "資格・許認可"],
+  ["fee", "費用・報酬"],
+  ["contract", "契約形態"],
+  ["payment", "支払い方法"],
+  ["other", "その他"],
+];
+
+const REQUIREMENT_KINDS_SUPPORT: [string, string][] = [
+  ["target_area", "対象エリア"],
+  ["schedule", "時期・スケジュール"],
+  ["budget", "予算・原資"],
+  ["partners", "関係者・体制"],
+  ["requirement", "条件・要件"],
+  ["other", "その他"],
+];
+
+/** 既定（モノ）の分類。既存の参照との互換のため残す。 */
+export const REQUIREMENT_KINDS = REQUIREMENT_KINDS_GOODS;
+
+/** カテゴリに応じた条件の分類。 */
+export function requirementKindsFor(category: string): [string, string][] {
+  const g = categoryGroup(category);
+  if (g === "service") return REQUIREMENT_KINDS_SERVICE;
+  if (g === "support") return REQUIREMENT_KINDS_SUPPORT;
+  return REQUIREMENT_KINDS_GOODS;
+}
+
+/** 「条件を追加」したときの初期値。 */
+export function defaultRequirementKind(category: string): string {
+  return requirementKindsFor(category)[0][0];
+}
+
+// 表示用ラベルは全群の和集合（カテゴリを変更しても既存の条件が「未知の値」にならないように）
+export const REQUIREMENT_KIND_LABEL: Record<string, string> = Object.fromEntries([
+  ...REQUIREMENT_KINDS_SUPPORT,
+  ...REQUIREMENT_KINDS_SERVICE,
+  ...REQUIREMENT_KINDS_GOODS,
+]);
+
+/** 全群を通した条件分類のキー（サーバー側の検証用。群を切り替えても値が失われないように）。 */
+export const ALL_REQUIREMENT_KIND_KEYS = Object.keys(REQUIREMENT_KIND_LABEL);
+
+/** 数量欄の見出し（カテゴリ群 × 売りたい／探している）。 */
+export function amountLabel(category: string, direction: string): string {
+  const isGive = direction === "GIVE";
+  switch (categoryGroup(category)) {
+    case "service":
+      return isGive ? "提供できる規模・稼働量" : "必要な人数・稼働量";
+    case "support":
+      return isGive ? "提供できる規模・件数" : "必要な規模・件数";
+    default:
+      return isGive ? "提供可能量" : "必要数量";
+  }
+}
+
+/** 数量欄の入力例（自由記述のとき）。 */
+export function amountPlaceholder(category: string): string {
+  switch (categoryGroup(category)) {
+    case "service":
+      return "例：週2日・1名 / 月10時間 / 3か月間";
+    case "support":
+      return "例：総額500万円規模 / 対象10事業者";
+    default:
+      return "例：月20ケース / 2〜3店舗 / 1名 など";
+  }
+}
+
+/** 条件行の入力例。 */
+export function requirementPlaceholder(category: string): string {
+  switch (categoryGroup(category)) {
+    case "service":
+      return "例：週2日、現地に来られること";
+    case "support":
+      return "例：自治体と連携できること";
+    default:
+      return "例：常温で保存できること";
+  }
+}
+
+/** 条件セクションの下に出す例文。 */
+export function requirementHint(category: string): string {
+  switch (categoryGroup(category)) {
+    case "service":
+      return "例：対応エリア「関東近郊」＝希望／資格・許認可「食品衛生責任者」＝必須／費用・報酬「月20万円まで」＝相談可能／期間・稼働「週2日から」＝希望";
+    case "support":
+      return "例：対象エリア「宮崎県内」＝必須／予算・原資「補助金の活用を想定」＝希望／時期・スケジュール「2027年3月まで」＝希望";
+    default:
+      return "例：産地・地域「宮崎県産が望ましい」＝希望／保存方法「常温保存必須」＝必須／価格「〜500円/個で相談可」＝相談可能／支払い方法「請求書払い（振込）・PayPay・応相談」";
+  }
+}
 
 export const REQUIREMENT_LEVELS: [string, string][] = [
   ["must", "必須"],

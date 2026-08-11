@@ -31,7 +31,12 @@ import {
   PRICE_TAX_TYPES,
   SEEKING_TYPES,
   SEEKING_TYPE_SHORT,
-  REQUIREMENT_KINDS,
+  requirementKindsFor,
+  defaultRequirementKind,
+  requirementPlaceholder,
+  requirementHint,
+  amountLabel,
+  amountPlaceholder,
   REQUIREMENT_LEVELS,
   REQUIREMENT_LEVEL_LABEL,
   categoryMeta,
@@ -204,7 +209,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   // 未入力時は該当の入力欄へジャンプできるリンクを出す。
   const previewRows: { label: string; value: string | null; anchor: string }[] = [
     { label: "希望価格", value: previewPrice, anchor: "f-price" },
-    { label: isGive ? "提供量" : "必要数量", value: previewAmount, anchor: "f-amount" },
+    { label: amountLabel(category, isGive ? "GIVE" : "WANT"), value: previewAmount, anchor: "f-amount" },
     ...(isGive && food
       ? [{ label: "最小取引量", value: minOrderText || null, anchor: "f-minorder" }]
       : []),
@@ -436,14 +441,14 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                       onChange={(e) => updateRequirement(i, { kind: e.target.value })}
                       className={`${inputCls} sm:w-[130px]`}
                     >
-                      {REQUIREMENT_KINDS.map(([v, l]) => (
+                      {requirementKindsFor(category).map(([v, l]) => (
                         <option key={v} value={v}>{l}</option>
                       ))}
                     </select>
                     <input
                       value={r.text}
                       onChange={(e) => updateRequirement(i, { text: e.target.value })}
-                      placeholder="例：常温で保存できること"
+                      placeholder={requirementPlaceholder(category)}
                       className={`${inputCls} flex-1`}
                     />
                     <select
@@ -469,15 +474,16 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                 <button
                   type="button"
                   onClick={() =>
-                    setRequirements((cur) => [...cur, { kind: "origin", text: "", level: "want" }])
+                    setRequirements((cur) => [
+                      ...cur,
+                      { kind: defaultRequirementKind(category), text: "", level: "want" },
+                    ])
                   }
                   className={`${btn("secondary", "sm")} w-fit`}
                 >
                   ＋ 条件を追加
                 </button>
-                <p className="text-[11px] text-[var(--muted)]">
-                  例：産地・地域「宮崎県産が望ましい」＝希望／保存方法「常温保存必須」＝必須／価格「〜500円/個で相談可」＝相談可能／支払い方法「請求書払い（振込）・PayPay・応相談」
-                </p>
+                <p className="text-[11px] text-[var(--muted)]">{requirementHint(category)}</p>
               </div>
             </div>
           </>
@@ -674,7 +680,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {structured ? (
           <div id="f-amount" className="scroll-mt-24">
             <div className="mb-1 text-[12px] text-[var(--ink-2)]">
-              {isGive ? "提供可能量" : "必要数量"}
+              {amountLabel(category, isGive ? "GIVE" : "WANT")}
               {isGive && food ? <Req /> : <Opt />}
             </div>
             <div className="flex flex-wrap items-end gap-3">
@@ -727,12 +733,12 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           </div>
         ) : (
           <label id="f-amount" className={`${labelCls} scroll-mt-24`}>
-            <span>数量・規模（自由記述）<Opt /></span>
+            <span>{amountLabel(category, isGive ? "GIVE" : "WANT")}（自由記述）<Opt /></span>
             <input
               name="amountText"
               value={amountText}
               onChange={(e) => setAmountText(e.target.value)}
-              placeholder="例：月20ケース / 2〜3店舗 / 1名 など"
+              placeholder={amountPlaceholder(category)}
               className={inputCls}
             />
           </label>

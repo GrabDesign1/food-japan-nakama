@@ -22,7 +22,7 @@ import {
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
   SEEKING_TYPES,
-  REQUIREMENT_KINDS,
+  ALL_REQUIREMENT_KIND_KEYS,
   REQUIREMENT_LEVELS,
 } from "@/lib/offering-taxonomy";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
@@ -232,7 +232,9 @@ export type OfferingRequirementInput = {
   level: string;
 };
 
-const REQUIREMENT_KIND_KEYS = REQUIREMENT_KINDS.map(([v]) => v);
+// カテゴリ群ごとに選択肢は変わるが、検証は全群の和集合で行う
+// （群を跨いでカテゴリを変更したときに、入力済みの条件が「その他」へ落ちるのを防ぐ）
+const REQUIREMENT_KIND_KEYS = ALL_REQUIREMENT_KIND_KEYS;
 const REQUIREMENT_LEVEL_KEYS = REQUIREMENT_LEVELS.map(([v]) => v);
 const MAX_REQUIREMENTS = 15;
 
