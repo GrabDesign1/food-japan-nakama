@@ -300,6 +300,20 @@ function SendForm({
           </div>
         ) : null}
 
+        {/* 提示額（任意）。掲載者が一覧で比較しやすくなる */}
+        <label className="mt-3 flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+          提示額（任意・税込／円）
+          <input
+            name="proposedAmount"
+            inputMode="numeric"
+            placeholder="例：120000"
+            className="w-[220px] rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+          />
+          <span className="text-[11px] text-[var(--muted)]">
+            おおよその金額を入れておくと、相手が検討しやすくなります（この時点では契約ではありません）。
+          </span>
+        </label>
+
         {/* 添付は提案文のすぐ下に出す（画像はそのままプレビュー）。相手にも同じ形で届く */}
         {attachments.length ? (
           <div className="mt-2 flex flex-col gap-2">

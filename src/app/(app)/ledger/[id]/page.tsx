@@ -18,6 +18,7 @@ import {
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
+import { duplicateOffering } from "../actions";
 import { FavoriteButton } from "./FavoriteButton";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 
@@ -199,6 +200,10 @@ export default async function OfferingDetailPage({
               {isGive ? "届いた問い合わせ" : "届いた提案"}
               {receivedCount > 0 ? `（${receivedCount}）` : ""}
             </Link>
+            {/* 毎日の出荷分を出せるように、前回の内容を引き継いだ下書きを作る */}
+            <form action={duplicateOffering.bind(null, offering.id)}>
+              <button className={btn("secondary", "sm")}>この内容で新しく登録</button>
+            </form>
             <Link href={`/ledger/${offering.id}/edit`} className={btn("secondary", "sm")}>
               編集する
             </Link>

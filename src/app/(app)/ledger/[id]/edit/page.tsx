@@ -21,7 +21,7 @@ export default async function OfferingEditPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ missing?: string; created?: string }>;
+  searchParams: Promise<{ missing?: string; created?: string; copied?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -159,6 +159,12 @@ export default async function OfferingEditPage({
       {sp.created ? (
         <p className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[13px] text-[var(--green-d)]">
           下書きを保存しました。写真を追加し、内容を確認できたら右上の「公開する」で掲載できます。
+        </p>
+      ) : null}
+      {sp.copied ? (
+        <p className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[13px] leading-6 text-[var(--green-d)]">
+          前回の内容をコピーしました。<b>数量・希望価格・募集期限（出荷できる日）</b>を今回の分に直してから、
+          右上の「公開する」で掲載できます。写真もコピー済みです。
         </p>
       ) : null}
       {/* 公開前チェック：URLのパラメータではなく、保存済みの現在値から毎回判定する（揃ったら消える） */}

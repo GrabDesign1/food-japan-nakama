@@ -449,13 +449,35 @@ model Thread {
   toMemberId    String   @map("to_member_id") // 送られた側
   offeringId    String?  @map("offering_id") // きっかけの共創プロジェクト
   lastMessageAt DateTime @default(now()) @map("last_message_at")
+  /// 提案・問い合わせ時に相手が申告した金額（税込・円）。掲載者が一覧で比較するための目安で、
+  /// 契約・合意ではない（構造化した条件提示は未実装）。
+  proposedAmount Int?    @map("proposed_amount")
   createdAt     DateTime @default(now()) @map("created_at")
 
   messages Message[]
+  notes    ProposalNote[]
 
   @@index([fromMemberId])
   @@index([toMemberId])
   @@map("threads")
+}
+
+/// 掲載者が提案ごとに残す非公開の評価とメモ（相手には見えない）。
+/// クラウドワークスの応募者一覧の「お気に入り・メモ（非公開）」に相当（2026-08-11）。
+model ProposalNote {
+  id        String   @id @default(cuid())
+  threadId  String   @map("thread_id")
+  /// 書いた人（掲載者）。同じスレッドでも人ごとに別のメモを持てる
+  memberId  String   @map("member_id")
+  /// 5段階の評価（1〜5。未評価は null）
+  rating    Int?
+  memo      String?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, memberId])
+  @@map("proposal_notes")
 }
 
 model Message {

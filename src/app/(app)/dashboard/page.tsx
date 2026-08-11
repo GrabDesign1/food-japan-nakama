@@ -12,6 +12,8 @@ import { stripe } from "@/lib/stripe";
 import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
 import { EmptyState } from "@/components/EmptyState";
+import { MyListingsTable } from "@/components/MyListingsTable";
+import { loadMyListingRows } from "@/lib/listing-stats";
 import { countMissingProfileFields } from "@/lib/member";
 import { PHASES, loadMemberDeals } from "@/lib/deal";
 import {
@@ -101,7 +103,7 @@ export default async function DashboardPage() {
   const tenantId = su?.app.tenantId;
   const memberId = member?.id;
 
-  const [announcements, banners, dealsWithOther, myProjects, recommended, myOfferings, myProjectApps, nextBillingTs] = await Promise.all([
+  const [announcements, banners, dealsWithOther, myProjects, recommended, myProjectApps, nextBillingTs] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
           where: { tenantId },
@@ -135,14 +137,6 @@ export default async function DashboardPage() {
           include: { member: { select: { name: true, companyLogoUrl: true } } },
         })
       : Promise.resolve([]),
-    // 自分の公開中の売りたい（提供したい）・買いたい（カード表示用にフル取得）
-    memberId
-      ? prisma.offering.findMany({
-          where: { memberId, isPublic: true, title: { not: "" } },
-          orderBy: { updatedAt: "desc" },
-          take: 4,
-        })
-      : Promise.resolve([]),
     // 自分が主催する共創プロジェクトの進行中の応募（次の行動・期限を「進行中の活動」に反映）
     memberId
       ? prisma.projectApplication.findMany({
@@ -165,10 +159,9 @@ export default async function DashboardPage() {
   const dealThreadIds = dealsWithOther
     .map((d) => d.deal.threadId)
     .filter((v): v is string => !!v);
-  const myOfferingIds = myOfferings.map((o) => o.id);
   const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
 
-  const [unreadGroups, viewGroups, favGroups, inquiryGroups, appMembers, viewMap, dealThreads] = await Promise.all([
+  const [unreadGroups, appMembers, viewMap, dealThreads] = await Promise.all([
     // 商談スレッドごとの未読数（「要返信」判定）
     memberId && dealThreadIds.length
       ? prisma.message.groupBy({
@@ -181,34 +174,12 @@ export default async function DashboardPage() {
           _count: { _all: true },
         })
       : Promise.resolve([]),
-    // 自分の公開中案件の統計（閲覧数・興味あり人数・問い合わせ件数）
-    myOfferingIds.length
-      ? prisma.offeringView.groupBy({
-          by: ["offeringId"],
-          where: { offeringId: { in: myOfferingIds } },
-          _count: { _all: true },
-        })
-      : Promise.resolve([]),
-    myOfferingIds.length
-      ? prisma.favorite.groupBy({
-          by: ["targetId"],
-          where: { targetType: "offering", targetId: { in: myOfferingIds } },
-          _count: { _all: true },
-        })
-      : Promise.resolve([]),
-    myOfferingIds.length
-      ? prisma.thread.groupBy({
-          by: ["offeringId"],
-          where: { offeringId: { in: myOfferingIds } },
-          _count: { _all: true },
-        })
-      : Promise.resolve([]),
     // 応募者名（進行中の活動の行表示用）
     appMemberIds.length
       ? prisma.member.findMany({ where: { id: { in: appMemberIds } }, select: { id: true, name: true } })
       : Promise.resolve([]),
     // 24時間以内の閲覧数（おすすめ＋自分の公開中案件のカード表示用）
-    views24hMap([...recommended.map((o) => o.id), ...myOfferings.map((o) => o.id)]),
+    views24hMap(recommended.map((o) => o.id)),
     // 商談のスレッドが「どの案件のものか」（進行中の活動をカードで出すため）
     dealThreadIds.length
       ? prisma.thread.findMany({
@@ -217,12 +188,9 @@ export default async function DashboardPage() {
         })
       : Promise.resolve([]),
   ]);
+  // 自分が出した案件の管理表（届いた件数・未返信・放置が一目で分かる）
+  const myListingRows = memberId ? await loadMyListingRows(memberId) : [];
   const unreadByThread = new Map(unreadGroups.map((g) => [g.threadId, g._count._all]));
-  const viewsByOffering = new Map(viewGroups.map((g) => [g.offeringId, g._count._all]));
-  const favsByOffering = new Map(favGroups.map((g) => [g.targetId, g._count._all]));
-  const inquiriesByOffering = new Map(
-    inquiryGroups.filter((g) => g.offeringId).map((g) => [g.offeringId as string, g._count._all])
-  );
   const appNameMap = new Map(appMembers.map((m) => [m.id, m.name]));
 
   // ── 進行中の活動：案件に紐づく商談はカードで出す（案件が一目で分かるように・2026-08-11 ユーザー指示）──
@@ -551,39 +519,17 @@ export default async function DashboardPage() {
             ) : null}
           </section>
 
-          {/* あなたの公開中の案件（台帳と同じカード表示＋反響） */}
-          {myOfferings.length > 0 ? (
+          {/* 自分が出した案件（クラウドワークスの「登録中のお仕事」に相当）。
+              カードだと「問い合わせが来ているか・返していないか・放置していないか」が読み取れないため表にした。 */}
+          {myListingRows.length > 0 ? (
             <section>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className={h2Cls}>あなたの公開中の案件</h2>
+                <h2 className={h2Cls}>自分が出した案件</h2>
                 <Link href="/ledger" className="text-[13px] font-bold text-[var(--green-d)]">
                   すべて見る →
                 </Link>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {myOfferings.map((o) => {
-                  const views = viewsByOffering.get(o.id) ?? 0;
-                  const favs = favsByOffering.get(o.id) ?? 0;
-                  const inquiries = inquiriesByOffering.get(o.id) ?? 0;
-                  return (
-                    <div key={o.id}>
-                      <OfferingCard o={{ ...o, views24h: viewMap.get(o.id) ?? 0 }} />
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--muted)]">
-                        {inquiries > 0 ? (
-                          <span className="rounded-full bg-[#FAF0D6] px-2.5 py-0.5 font-bold text-[#B77F0B]">
-                            📩 問い合わせ {inquiries}件
-                          </span>
-                        ) : null}
-                        <span className="font-bold text-[var(--ink)]">閲覧 {views}回</span>
-                        <span className="font-bold text-[var(--ink)]">興味あり {favs}人</span>
-                        <Link href={`/ledger/${o.id}/edit`} className="ml-auto font-bold text-[var(--green-d)] underline">
-                          編集
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MyListingsTable rows={myListingRows.slice(0, 5)} now={new Date()} />
             </section>
           ) : null}
 

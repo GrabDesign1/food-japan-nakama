@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { PHASES } from "@/lib/deal-constants";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { EmptyState } from "@/components/EmptyState";
+import { ProposalRows } from "./ProposalRows";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 function fmtDateTime(d: Date): string {
@@ -17,12 +18,23 @@ function fmtDateTime(d: Date): string {
   return `${j.getUTCFullYear()}/${j.getUTCMonth() + 1}/${j.getUTCDate()} ${p(j.getUTCHours())}:${p(j.getUTCMinutes())}`;
 }
 
+const SORTS: [string, string][] = [
+  ["new", "新着順"],
+  ["rating", "お気に入り順"],
+  ["updated", "最新更新日"],
+  ["amount", "提示額の安い順"],
+];
+
 export default async function OfferingProposalsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ sort?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const sort = SORTS.some(([v]) => v === sp.sort) ? (sp.sort as string) : "new";
   const su = await getSessionUser();
   if (!su) redirect(`/login?next=${encodeURIComponent(`/ledger/${id}/proposals`)}`);
   const me = await getOrCreateMemberForUser(su!);
@@ -91,6 +103,13 @@ export default async function OfferingProposalsPage({
       : Promise.resolve([]),
   ]);
 
+  const notes = threadIds.length
+    ? await prisma.proposalNote.findMany({
+        where: { threadId: { in: threadIds }, memberId: me.id },
+        select: { threadId: true, rating: true, memo: true },
+      })
+    : [];
+  const noteByThread = new Map(notes.map((n) => [n.threadId, n]));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const dealMap = new Map(deals.map((d) => [d.threadId ?? "", d]));
   const firstMap = new Map<string, (typeof firstMessages)[number]>();
@@ -105,6 +124,7 @@ export default async function OfferingProposalsPage({
     .map((t) => {
       const otherId = t.fromMemberId === me.id ? t.toMemberId : t.fromMemberId;
       const deal = dealMap.get(t.id);
+      const note = noteByThread.get(t.id);
       return {
         thread: t,
         other: memberMap.get(otherId),
@@ -112,10 +132,20 @@ export default async function OfferingProposalsPage({
         last: lastMap.get(t.id),
         unread: unreadMap.get(t.id) ?? 0,
         phase: deal?.phase ?? 0,
+        rating: note?.rating ?? null,
+        memo: note?.memo ?? "",
       };
     })
     .sort((a, b) => {
+      // 未返信は並べ替えに関わらず先頭（対応が必要なものを見落とさないため）
       if ((b.unread > 0 ? 1 : 0) !== (a.unread > 0 ? 1 : 0)) return b.unread - a.unread;
+      if (sort === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sort === "amount") {
+        const av = a.thread.proposedAmount ?? Number.MAX_SAFE_INTEGER;
+        const bv = b.thread.proposedAmount ?? Number.MAX_SAFE_INTEGER;
+        if (av !== bv) return av - bv;
+      }
+      if (sort === "new") return b.first.createdAt.getTime() - a.first.createdAt.getTime();
       return b.thread.lastMessageAt.getTime() - a.thread.lastMessageAt.getTime();
     });
 
@@ -228,91 +258,47 @@ export default async function OfferingProposalsPage({
           ]}
         />
       ) : (
-        <div className="overflow-x-auto rounded-[12px] border border-[var(--line)] bg-white">
-          <table className="w-full min-w-[820px] text-left text-[13px]">
-            <thead>
-              <tr className="border-b border-[var(--line)] bg-[var(--canvas)] text-[11px] text-[var(--muted)]">
-                <th className="px-4 py-3 font-medium">ステータス</th>
-                <th className="px-4 py-3 font-medium">{isGive ? "問い合わせ企業" : "提案企業"}</th>
-                <th className="px-4 py-3 font-medium">{isGive ? "問い合わせ内容" : "提案の内容"}</th>
-                <th className="px-4 py-3 font-medium">最終更新</th>
-                <th className="px-4 py-3 font-medium">対応</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.thread.id}
-                  className={`border-b border-[#EDF0EA] last:border-b-0 ${r.unread > 0 ? "bg-[#FFF7EF]" : ""}`}
-                >
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex flex-col items-start gap-1">
-                      {r.unread > 0 ? (
-                        <span className="rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
-                          未返信 {r.unread}
-                        </span>
-                      ) : null}
-                      <span className="rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--green-d)]">
-                        {PHASES[r.phase] ?? PHASES[0]}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex gap-2">
-                      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white font-serif text-[14px] text-[var(--green-d)]">
-                        {r.other?.companyLogoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.other.companyLogoUrl} alt="" className="h-full w-full object-contain" />
-                        ) : (
-                          (r.other?.name?.[0] ?? "?").toUpperCase()
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <Link
-                          href={`/producers/${r.other?.id ?? ""}`}
-                          className="block max-w-[180px] truncate font-bold text-[var(--ink)] hover:text-[var(--green-d)] hover:underline"
-                        >
-                          {r.other?.name || "（不明）"}
-                        </Link>
-                        <div className="text-[11px] text-[var(--muted)]">
-                          {[r.other?.prefecture, r.other?.city].filter(Boolean).join(" ") || "地域未設定"}
-                        </div>
-                        <div className="text-[11px] text-[var(--muted)]">{r.other?.categoryL1 ?? ""}</div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-3 align-top">
-                    <p className="line-clamp-2 max-w-[320px] text-[12px] leading-5 text-[var(--ink-2)]">
-                      {r.first.body || "（ファイル）"}
-                    </p>
-                    <div className="mt-1 text-[10px] text-[var(--muted)]">
-                      初回：{fmtDateTime(r.first.createdAt)}
-                    </div>
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-3 align-top text-[12px] text-[var(--ink-2)]">
-                    {r.last ? fmtDateTime(r.last.createdAt) : "—"}
-                    {r.last ? (
-                      <div className="text-[10px] text-[var(--muted)]">
-                        {r.last.senderMemberId === me.id ? "自分が送信" : "相手から"}
-                      </div>
-                    ) : null}
-                  </td>
-
-                  <td className="px-4 py-3 align-top">
-                    <Link
-                      href={`/ledger/${offering.id}/proposals/${r.thread.id}`}
-                      className={`${btn(r.unread > 0 ? "action" : "secondary", "sm")} whitespace-nowrap`}
-                    >
-                      詳細へ
-                    </Link>
-                  </td>
-                </tr>
+        <div className="flex flex-col gap-3">
+          {/* 表示順 */}
+          <form method="GET" className="flex flex-wrap items-center justify-end gap-2">
+            <label className="text-[12px] text-[var(--muted)]">表示順</label>
+            <select
+              name="sort"
+              defaultValue={sort}
+              className="rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-[13px] outline-none focus:border-[var(--green)]"
+            >
+              {SORTS.map(([v, label]) => (
+                <option key={v} value={v}>
+                  {label}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+            <button className={btn("secondary", "sm")}>並べ替え</button>
+          </form>
+
+          <ProposalRows
+            offeringId={offering.id}
+            isGive={isGive}
+            rows={rows.map((r) => ({
+              threadId: r.thread.id,
+              offeringId: offering.id,
+              isGive,
+              otherId: r.other?.id ?? "",
+              otherName: r.other?.name || "（不明）",
+              otherLogoUrl: r.other?.companyLogoUrl ?? null,
+              otherPlace: [r.other?.prefecture, r.other?.city].filter(Boolean).join(" "),
+              otherIndustry: r.other?.categoryL1 ?? "",
+              firstBody: r.first.body,
+              firstAt: fmtDateTime(r.first.createdAt),
+              lastAt: r.last ? fmtDateTime(r.last.createdAt) : "—",
+              lastFromMe: r.last?.senderMemberId === me.id,
+              unread: r.unread,
+              phaseLabel: PHASES[r.phase] ?? PHASES[0],
+              proposedAmount: r.thread.proposedAmount,
+              rating: r.rating,
+              memo: r.memo,
+            }))}
+          />
         </div>
       )}
 

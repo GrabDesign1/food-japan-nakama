@@ -127,6 +127,11 @@ export async function sendProposal(
     });
   }
 
+  // 提示額（任意）。掲載者が一覧で比較するための目安で、契約・合意ではない。
+  const amountRaw = Number(String(formData.get("proposedAmount") ?? "").replace(/[^\d]/g, ""));
+  const proposedAmount =
+    Number.isFinite(amountRaw) && amountRaw > 0 && amountRaw <= 1_000_000_000 ? Math.trunc(amountRaw) : null;
+
   // ビジネス会員も提案クレジットを消費する（毎月50クレジット付与・繰越なし。2026-08-11確定）。
   // 会員特典は「毎月の付与」と「追加クレジット（単品購入）・掲載オプションの20%割引」に集約した。
   // 消費数は通常案件1／確認済み案件3（クレジットは1種類）。
@@ -192,8 +197,12 @@ export async function sendProposal(
             fromMemberId: me.id,
             toMemberId: offering.memberId,
             offeringId: offering.id,
+            proposedAmount,
           },
         });
+      } else if (proposedAmount != null) {
+        // 提示額は最新のものを残す（掲載者は一覧で最新の金額を見る）
+        await tx.thread.update({ where: { id: thread.id }, data: { proposedAmount } });
       }
 
       notifyUnread = await tx.message.count({

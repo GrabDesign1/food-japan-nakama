@@ -427,6 +427,99 @@ export async function togglePublish(
   revalidatePath("/ledger");
 }
 
+/**
+ * 過去の投稿を複製して新しい下書きを作る（2026-08-11 ユーザー指示）。
+ * 農家の方が毎日出荷分を投稿できるようにするため。食材・原料の公開には15項目が必要で、
+ * 毎回ゼロから書くのは現実的でない。定番を1回登録しておけば、複製して
+ * 数量・価格・出荷可能日（募集期限）だけ直せば公開できる。
+ *
+ * 画像はURLを使い回さず**ストレージ上でコピー**する。元の案件を削除すると
+ * `offerings/<元のID>/` 配下が消えるため、URLを共有すると複製側の画像が壊れるため。
+ */
+export async function duplicateOffering(offeringId: string): Promise<void> {
+  const ctx = await ownOfferingOr404(offeringId);
+  const { offering } = ctx;
+
+  const created = await prisma.offering.create({
+    data: {
+      memberId: offering.memberId,
+      direction: offering.direction,
+      category: offering.category,
+      title: offering.title,
+      description: offering.description,
+      points: offering.points,
+      tags: offering.tags,
+      amountValue: offering.amountValue,
+      amountUnit: offering.amountUnit,
+      amountPeriod: offering.amountPeriod,
+      amountText: offering.amountText,
+      timing: offering.timing,
+      area: offering.area,
+      priceType: offering.priceType,
+      priceAmount: offering.priceAmount,
+      priceUnit: offering.priceUnit,
+      priceTaxType: offering.priceTaxType,
+      minOrderText: offering.minOrderText,
+      itemCondition: offering.itemCondition,
+      storageType: offering.storageType,
+      shelfLifeText: offering.shelfLifeText,
+      specification: offering.specification,
+      supplyFrequency: offering.supplyFrequency,
+      deliveryMethods: offering.deliveryMethods,
+      shippingCostBearer: offering.shippingCostBearer,
+      desiredPartner: offering.desiredPartner,
+      sampleAvailability: offering.sampleAvailability,
+      listingPurpose: offering.listingPurpose,
+      tagline: offering.tagline,
+      featureDiff: offering.featureDiff,
+      backgroundStory: offering.backgroundStory,
+      usageIdeas: offering.usageIdeas,
+      challengeCurrent: offering.challengeCurrent,
+      challengeScale: offering.challengeScale,
+      challengeTried: offering.challengeTried,
+      challengeAsk: offering.challengeAsk,
+      challengeValue: offering.challengeValue,
+      seekingType: offering.seekingType,
+      usageContext: offering.usageContext,
+      // 出荷分ごとに変わるもの・引き継がないもの
+      isPublic: false, // 必ず下書きから始める
+      applicationDeadline: null, // 出荷可能日は毎回入れ直す
+    },
+  });
+
+  // 画像はストレージ上で複製する（元を消しても複製側が壊れないように）
+  const admin = createSupabaseAdminClient();
+  const newUrls: string[] = [];
+  for (const u of offering.imageUrls) {
+    const from = storagePathFromUrl(u, BUCKET, `offerings/${offering.id}/`);
+    if (!from) continue;
+    const name = from.split("/").pop() ?? "image";
+    const to = `offerings/${created.id}/${crypto.randomUUID()}-${name}`;
+    const { error } = await admin.storage.from(BUCKET).copy(from, to);
+    if (error) continue; // 1枚失敗しても複製自体は続ける
+    newUrls.push(admin.storage.from(BUCKET).getPublicUrl(to).data.publicUrl);
+  }
+  if (newUrls.length) {
+    await prisma.offering.update({ where: { id: created.id }, data: { imageUrls: newUrls } });
+  }
+
+  // 条件（必須・希望・相談可能）も引き継ぐ
+  const reqs = await prisma.offeringRequirement.findMany({
+    where: { offeringId: offering.id },
+    orderBy: { sortOrder: "asc" },
+    select: { kind: true, text: true, level: true },
+  });
+  if (reqs.length) {
+    await prisma.offeringRequirement.createMany({
+      data: reqs.map((r, i) => ({ offeringId: created.id, ...r, sortOrder: i })),
+    });
+  }
+
+  await auditProxy(ctx, "listing.proxy_duplicate", `複製元=${offering.id}`);
+  revalidatePath("/ledger");
+  redirect(`/ledger/${created.id}/edit?copied=1`);
+}
+
 export async function deleteOffering(offeringId: string): Promise<void> {
   const ctx = await ownOfferingOr404(offeringId);
   const { offering } = ctx;

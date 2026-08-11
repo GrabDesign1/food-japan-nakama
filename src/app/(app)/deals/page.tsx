@@ -8,7 +8,9 @@ import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
 import { PhaseSelect } from "./_components/PhaseSelect";
 import { setDealNext } from "./actions";
 import { EmptyState } from "@/components/EmptyState";
-import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
+import { MyListingsTable } from "@/components/MyListingsTable";
+import { loadMyListingRows } from "@/lib/listing-stats";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 // レンダー中の Date.now 直呼びは lint（react-hooks/purity）が禁止しているため関数に切り出す
 function isOverdue(d: Date | null): boolean {
@@ -30,6 +32,9 @@ export default async function DealsPage({
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su);
   const all = await loadMemberDeals(me.id);
+  // 自分が出した案件の管理表（届いた件数・未返信・放置が一目で分かる）
+  const myListings = await loadMyListingRows(me.id);
+  const now = new Date();
 
   // どの案件の商談かを出す（案件ごとにスレッドを分けたため、会社名だけでは区別できない）。
   // 未読は「要返信」の判定に使う。ダッシュボード・提案一覧と同じ見せ方に揃える（2026-08-11）。
@@ -80,6 +85,21 @@ export default async function DealsPage({
           ステータスボードで見る →
         </Link>
       </div>
+
+      {/* 自分が出した案件（クラウドワークスの「登録中のお仕事」に相当） */}
+      {myListings.length ? (
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className={h2Cls}>自分が出した案件</h2>
+            <Link href="/ledger" className="text-[13px] font-bold text-[var(--green-d)]">
+              案件を登録する →
+            </Link>
+          </div>
+          <MyListingsTable rows={myListings} now={now} />
+        </section>
+      ) : null}
+
+      <h2 className={h2Cls}>相手とのやり取り</h2>
 
       {/* フェーズタブ */}
       <div className="flex flex-wrap gap-1 border-b border-[var(--line)]">

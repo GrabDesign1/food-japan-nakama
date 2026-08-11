@@ -5,6 +5,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
 import { EmptyState } from "@/components/EmptyState";
+import { duplicateOffering } from "./actions";
 import { views24hMap } from "@/lib/offering-views";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
@@ -128,6 +129,10 @@ function Section({
                 <Link href={`/ledger/${o.id}/edit`} className={btn("secondary", "sm")}>
                   編集
                 </Link>
+                {/* 毎日の出荷分を出せるように、前回の内容を引き継いだ下書きを作る */}
+                <form action={duplicateOffering.bind(null, o.id)}>
+                  <button className={btn("secondary", "sm")}>この内容で新しく登録</button>
+                </form>
                 {/* 届いた件数があるときは目立たせる（案件一覧から対応状況が分かるように） */}
                 <Link
                   href={`/ledger/${o.id}/proposals`}
