@@ -452,6 +452,10 @@ model Thread {
   /// 提案・問い合わせ時に相手が申告した金額（税込・円）。掲載者が一覧で比較するための目安で、
   /// 契約・合意ではない（構造化した条件提示は未実装）。
   proposedAmount Int?    @map("proposed_amount")
+  /// 見送り（辞退）。どちらの当事者からでも終了でき、一覧では「見送り」として区別する。
+  closedAt     DateTime? @map("closed_at")
+  closedBy     String?   @map("closed_by")
+  closedReason String?   @map("closed_reason")
   createdAt     DateTime @default(now()) @map("created_at")
 
   messages Message[]
@@ -461,6 +465,32 @@ model Thread {
   @@index([fromMemberId])
   @@index([toMemberId])
   @@map("threads")
+}
+
+/// 秘密保持契約（NDA）の同意記録（2026-08-11）。
+/// 雛形を提示し、相手が同意した事実と日時・特記事項を残す。**電子署名ではない**。
+/// 雛形の文面は弁護士確認前（`src/lib/nda.ts`）。
+model NdaAgreement {
+  id            String    @id @default(cuid())
+  threadId      String    @unique @map("thread_id")
+  offeringId    String?   @map("offering_id")
+  /// 同意リクエストを送った側（甲）
+  requestedBy   String    @map("requested_by")
+  /// 甲・乙の表示名と住所（合意時点の内容を残す）
+  partyAName    String    @map("party_a_name")
+  partyAAddress String?   @map("party_a_address")
+  partyBName    String    @map("party_b_name")
+  partyBAddress String?   @map("party_b_address")
+  specialTerms  String?   @map("special_terms")
+  /// 雛形のバージョン（文面を改定したときに、どの版に同意したか分かるように）
+  templateVersion String  @default("2026-08-11") @map("template_version")
+  /// requested / agreed / declined
+  status        String    @default("requested")
+  agreedBy      String?   @map("agreed_by")
+  agreedAt      DateTime? @map("agreed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("nda_agreements")
 }
 
 /// 違反報告（2026-08-11）。ガイドライン・規約に反する疑いを事務局へ知らせる。

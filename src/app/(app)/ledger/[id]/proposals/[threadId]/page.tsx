@@ -13,6 +13,8 @@ import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
 import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
 import { ContractPanel, type OfferRow } from "./ContractPanel";
+import { ThreadTools } from "./ThreadTools";
+import { ndaBody } from "@/lib/nda";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function OfferingThreadPage({
@@ -34,7 +36,7 @@ export default async function OfferingThreadPage({
   // 既読化はサイドバーの未読バッジと競合しないよう先に完了させる
   await markThreadRead(thread.id);
 
-  const [other, messages, draft, templates, offering, deal, contractOffers] = await Promise.all([
+  const [other, messages, draft, templates, offering, deal, contractOffers, nda] = await Promise.all([
     prisma.member.findUnique({
       where: { id: otherId },
       select: {
@@ -87,6 +89,7 @@ export default async function OfferingThreadPage({
       where: { threadId: thread.id },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.ndaAgreement.findUnique({ where: { threadId: thread.id } }),
   ]);
   if (!offering) notFound();
 
@@ -212,6 +215,34 @@ export default async function OfferingThreadPage({
             emptyText="まだやり取りはありません。下の入力欄から送れます。"
           />
         </div>
+
+        {/* 見送り・秘密保持契約・違反報告 */}
+        <ThreadTools
+          offeringId={offering.id}
+          threadId={thread.id}
+          closed={!!thread.closedAt}
+          closedReason={thread.closedReason}
+          nda={
+            nda
+              ? {
+                  status: nda.status,
+                  partyAName: nda.partyAName,
+                  partyBName: nda.partyBName,
+                  specialTerms: nda.specialTerms,
+                  agreedAt: nda.agreedAt
+                    ? `${nda.agreedAt.getFullYear()}/${nda.agreedAt.getMonth() + 1}/${nda.agreedAt.getDate()}`
+                    : null,
+                  mine: nda.requestedBy === me.id,
+                  ...ndaBody({
+                    aName: nda.partyAName,
+                    aAddress: nda.partyAAddress ?? "",
+                    bName: nda.partyBName,
+                    bAddress: nda.partyBAddress ?? "",
+                  }),
+                }
+              : null
+          }
+        />
 
         {/* 返信（下書き・テンプレート・面談日程・添付。メッセージ画面と同じ） */}
         <Composer

@@ -8,6 +8,7 @@
 import type { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   refundUnreadCredits,
   expireCreditLots,
@@ -207,6 +208,41 @@ export async function GET(req: NextRequest) {
 
   // 6) 期限切れクレジットの失効
   summary.expiredCredits = await expireCreditLots();
+
+  // 7) 古いメッセージの削除（保存期間＝最後のやり取りから1年）。
+  //    プライバシーポリシーに保存期間を明記したうえで運用する（2026-08-11）。
+  //    添付は非公開バケットに残さず、メッセージと一緒に消す。
+  const cutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const oldThreads = await prisma.thread.findMany({
+    where: { lastMessageAt: { lt: cutoff } },
+    select: { id: true },
+    take: 200,
+  });
+  let deletedMessages = 0;
+  if (oldThreads.length) {
+    const threadIds = oldThreads.map((t) => t.id);
+    const attachments = await prisma.messageAttachment.findMany({
+      where: { message: { threadId: { in: threadIds } } },
+      select: { path: true },
+    });
+    const legacy = await prisma.message.findMany({
+      where: { threadId: { in: threadIds }, attachmentUrl: { not: null } },
+      select: { attachmentUrl: true },
+    });
+    const paths = [
+      ...attachments.map((a) => a.path),
+      ...legacy.map((m) => m.attachmentUrl).filter((v): v is string => !!v),
+    ];
+    if (paths.length) {
+      const admin = createSupabaseAdminClient();
+      const { error } = await admin.storage.from("message-attachments").remove(paths);
+      if (error) console.error("[cron] 添付の削除に失敗:", error);
+    }
+    // MessageAttachment は Message の削除でカスケードされる
+    const res = await prisma.message.deleteMany({ where: { threadId: { in: threadIds } } });
+    deletedMessages = res.count;
+  }
+  summary.deletedOldMessages = deletedMessages;
 
   return Response.json({ ok: true, at: now.toISOString(), ...summary });
 }
