@@ -6,6 +6,7 @@ import {
   type CreditLot,
   type CreditType,
   availableBalance,
+  lotRemaining,
   allocateCredits,
   CREDIT_PACK_EXPIRY_DAYS,
   SIGNUP_FREE_CREDITS,
@@ -50,6 +51,46 @@ async function loadLots(db: Tx | typeof prisma, memberId: string, creditType: Cr
 export async function getCreditBalance(memberId: string, creditType: CreditType = "standard"): Promise<number> {
   const lots = await loadLots(prisma, memberId, creditType);
   return availableBalance(lots, new Date());
+}
+
+/** 残高の内訳（表示用）。並びは消費される順＝月次付与→有償購入→無償付与。 */
+export type CreditBreakdownGroup = {
+  key: "monthly" | "purchased" | "free";
+  quantity: number;
+  /** そのグループで最も早い有効期限（無期限だけなら null） */
+  expiresAt: Date | null;
+};
+
+/**
+ * 利用可能残高を「今月分・購入分・無償付与」に分けて返す。
+ * 合計は getCreditBalance と同じ（同じロットから集計するため二重に問い合わせない）。
+ */
+export async function getCreditBreakdown(
+  memberId: string,
+  creditType: CreditType = "standard"
+): Promise<{ total: number; groups: CreditBreakdownGroup[] }> {
+  const now = new Date();
+  const lots = await loadLots(prisma, memberId, creditType);
+  const live = lots.filter(
+    (l) => lotRemaining(l) > 0 && (!l.expiresAt || l.expiresAt.getTime() > now.getTime())
+  );
+  const keyOf = (entryType: string): CreditBreakdownGroup["key"] =>
+    entryType === "member_monthly" ? "monthly" : entryType === "purchase" ? "purchased" : "free";
+
+  const groups = (["monthly", "purchased", "free"] as const).map((key) => {
+    const mine = live.filter((l) => keyOf(l.entryType) === key);
+    const expiries = mine
+      .map((l) => l.expiresAt)
+      .filter((d): d is Date => !!d)
+      .map((d) => d.getTime());
+    return {
+      key,
+      quantity: mine.reduce((sum, l) => sum + lotRemaining(l), 0),
+      expiresAt: expiries.length ? new Date(Math.min(...expiries)) : null,
+    };
+  });
+
+  return { total: groups.reduce((sum, g) => sum + g.quantity, 0), groups };
 }
 
 /** 付与ロットを作成（冪等）。既に同じ idempotencyKey があれば何もしない。 */

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { getCreditBalance } from "@/lib/contact-credits";
+import { getCreditBreakdown, type CreditBreakdownGroup } from "@/lib/contact-credits";
 import { pricingTierFor, isVerifiedLeadActive, creditCostFor } from "@/lib/billing-core";
 import { discountedUnitAmount } from "@/lib/billing-core";
 import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
@@ -23,6 +23,30 @@ import { FeeNotice } from "./FeeNotice";
 // レンダー中のDate.now直呼びをlintが禁止しているため関数に切り出す
 function isPastDeadline(d: Date | null): boolean {
   return !!d && d.getTime() < Date.now();
+}
+
+// 残高の内訳表示（合計だけだと「毎月50付与なのに残高53」の理由が分からないため内訳を出す）
+const CREDIT_GROUP_LABEL: Record<CreditBreakdownGroup["key"], string> = {
+  monthly: "ビジネス会員の今月分",
+  purchased: "購入したクレジット",
+  free: "無償で付与された分",
+};
+
+/** 有効期限は日本時間の23:59が基準なので、表示も日本時間で揃える。 */
+function formatCreditExpiry(d: Date): string {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(d);
+}
+
+function creditExpiryText(g: CreditBreakdownGroup): string {
+  if (g.key === "monthly") {
+    return g.expiresAt ? `${formatCreditExpiry(g.expiresAt)}まで・繰越なし` : "次回更新日まで・繰越なし";
+  }
+  return g.expiresAt ? `${formatCreditExpiry(g.expiresAt)}まで` : "有効期限なし";
 }
 
 export default async function ProposePage({
@@ -67,14 +91,16 @@ export default async function ProposePage({
 
   // 価格は商品マスターから（無効なら購入ボタンを出さない）。独立クエリは並列化（直列3往復→1往復）
   const codes = ["contact_unlock_standard", "contact_unlock_verified_lead", "contact_credits_5", "contact_credits_10"];
-  const [existingUnlock, balance, products] = await Promise.all([
+  const [existingUnlock, credits, products] = await Promise.all([
     prisma.contactUnlock.findUnique({
       where: { sellerMemberId_offeringId: { sellerMemberId: me.id, offeringId: offering.id } },
       select: { threadId: true },
     }),
-    getCreditBalance(me.id),
+    getCreditBreakdown(me.id),
     prisma.billingProduct.findMany({ where: { code: { in: codes }, active: true } }),
   ]);
+  const balance = credits.total;
+  const creditGroups = credits.groups.filter((g) => g.quantity > 0);
   const creditCost = creditCostFor(tier);
 
   // 対象案件の要点（ヘッダー表示とモーダルで共用）
@@ -121,6 +147,8 @@ export default async function ProposePage({
 
   // ビジネス会員もクレジットを消費する（毎月50クレジット付与）。無料で送れるのは解放済みの案件だけ。
   const canSendFree = !!existingUnlock;
+  // 購入の導線は「残高が足りないとき」だけ出す（クレジットを持っている人には不要・2026-08-11 ユーザー指示）
+  const needsPurchase = !canSendFree && balance < creditCost;
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-6">
@@ -201,16 +229,37 @@ export default async function ProposePage({
                   この案件は解放済みです（継続メッセージ無料）
                 </span>
               ) : (
-                <>
-                  <span>
-                    この案件の紹介料：
-                    <b className="text-[var(--green-d)]">{creditCost}クレジット</b>
-                  </span>
-                  <span className="text-[var(--muted)]">
-                    残高：{balance}クレジット
-                    {isMember ? "（ビジネス会員：毎月50クレジット付与・繰越なし）" : ""}
-                  </span>
-                </>
+                <div className="w-full">
+                  <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                    <span>
+                      この案件の紹介料：
+                      <b className="text-[var(--green-d)]">{creditCost}クレジット</b>
+                    </span>
+                    <span>
+                      いま使えるクレジット：
+                      <b className="text-[16px] text-[var(--ink)]">{balance}</b>クレジット
+                      {balance >= creditCost ? (
+                        <span className="ml-2 text-[12px] text-[var(--muted)]">
+                          送信すると残り{balance - creditCost}クレジット
+                        </span>
+                      ) : (
+                        <span className="ml-2 text-[12px] font-bold text-[var(--red)]">
+                          あと{creditCost - balance}クレジット足りません
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  {creditGroups.length > 0 ? (
+                    <ul className="mt-2 flex flex-col gap-0.5 text-[12px] leading-5 text-[var(--muted)]">
+                      {creditGroups.map((g) => (
+                        <li key={g.key}>
+                          ・{CREDIT_GROUP_LABEL[g.key]}　<b className="text-[var(--ink-2)]">{g.quantity}</b>
+                          クレジット（{creditExpiryText(g)}）
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
               )
             }
           >
@@ -224,8 +273,8 @@ export default async function ProposePage({
             </ul>
           </FeeNotice>
 
-          {/* クレジット購入（残高がない場合の導線。無料導線は隠さない） */}
-          {!canSendFree ? (
+          {/* クレジット購入（残高が足りないときだけ出す） */}
+          {needsPurchase ? (
             <div className="rounded-[10px] border border-[var(--line)] bg-white p-5">
               <h2 className={h2Cls}>クレジットを購入する</h2>
               {products.length === 0 ? (
