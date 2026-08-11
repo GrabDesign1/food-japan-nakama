@@ -36,12 +36,13 @@ export function PhaseStepper({ dealId, phase }: { dealId: string; phase: number 
                 }
               });
             }}
+            // 現在＝橙で塗り、通過済み＝淡い黄、未達＝白。取引の進み具合が一目で分かるようにする
             className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
               active
-                ? "bg-[var(--green)] text-white"
+                ? "bg-[var(--orange)] text-white shadow-sm"
                 : done
-                  ? "bg-[var(--green-soft)] text-[var(--green-d)]"
-                  : "border border-[var(--line)] bg-white text-[var(--muted)] hover:border-[var(--green)]"
+                  ? "border border-[var(--amber-line)] bg-[var(--amber-soft)] text-[var(--amber-ink)]"
+                  : "border border-[var(--line)] bg-white text-[var(--muted)] hover:border-[var(--orange)]"
             }`}
           >
             {i + 1}. {label}
