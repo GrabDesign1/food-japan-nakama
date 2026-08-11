@@ -1,8 +1,12 @@
 "use client";
 
 // 帳票の画面上だけのツールバー（印刷では消える）。
-// ここで入れた値は帳票に反映するだけで保存しない（保存すると電子帳簿保存法の要件を負うため）。
-import { useState } from "react";
+//
+// 「発行して相手に送る」を押すと**内容だけ**を保存し、相手のやり取りにも知らせる。
+// 相手は同じ内容の帳票を開いて印刷・PDF保存できる。PDFそのものは保存しない
+// （保存すると電子帳簿保存法の検索機能・訂正削除防止の要件を負うため）。
+import { useActionState, useState } from "react";
+import { issueDocument, type OfferState } from "../actions";
 import { btn, input } from "@/lib/ui";
 
 export type DocExtra = {
@@ -22,31 +26,35 @@ export type DocExtra = {
 };
 
 const LABEL: Record<"invoice" | "delivery" | "receipt", string> = {
-  invoice: "請求書番号",
-  delivery: "納品書番号",
-  receipt: "領収書番号",
+  invoice: "請求書",
+  delivery: "納品書",
+  receipt: "領収書",
 };
 
 export function DocumentTools({
   kind,
-  defaultDocNo,
-  defaultReduced,
+  offeringId,
+  threadId,
+  initial,
+  canIssue,
+  issuedAt,
   onChange,
 }: {
   kind: "invoice" | "delivery" | "receipt";
-  defaultDocNo: string;
-  defaultReduced: boolean;
+  offeringId: string;
+  threadId: string;
+  initial: DocExtra;
+  /** 発行できるのは売り手だけ。買い手は保存済みの内容を見て印刷するだけ */
+  canIssue: boolean;
+  /** 発行済みならその日時（表示用） */
+  issuedAt: string | null;
   onChange: (v: DocExtra) => void;
 }) {
-  const [v, setV] = useState<DocExtra>({
-    docNo: defaultDocNo,
-    issuedOn: "",
-    dueText: "",
-    receivedOn: "",
-    purpose: "",
-    note: "",
-    reduced: defaultReduced,
-  });
+  const [v, setV] = useState<DocExtra>(initial);
+  const [state, formAction, pending] = useActionState<OfferState, FormData>(
+    issueDocument.bind(null, offeringId, threadId, kind),
+    {}
+  );
   const set = (patch: Partial<DocExtra>) => {
     const next = { ...v, ...patch };
     setV(next);
@@ -54,9 +62,43 @@ export function DocumentTools({
   };
 
   const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
+  const label = LABEL[kind];
+
+  // 買い手：入力させず、状態と印刷ボタンだけ出す
+  if (!canIssue) {
+    return (
+      <div className="print:hidden mb-4 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="text-[12px] text-[var(--ink-2)]">
+            {issuedAt
+              ? `お相手が発行した${label}です（発行 ${issuedAt}）。`
+              : `この${label}はまだ発行されていません。お相手の発行をお待ちください。`}
+          </div>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className={`${btn("primary", "sm")} ml-auto`}
+          >
+            印刷 / PDFで保存
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="print:hidden mb-4 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-4">
+    <form
+      action={formAction}
+      className="print:hidden mb-4 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-4"
+    >
+      {/* 表示は制御コンポーネントなので、送信値は隠しフィールドで渡す */}
+      <input type="hidden" name="taxRate" value={v.reduced ? "8" : "10"} />
+      <input type="hidden" name="issuedOn" value={v.issuedOn} />
+      <input type="hidden" name="dueText" value={v.dueText} />
+      <input type="hidden" name="receivedOn" value={v.receivedOn} />
+      <input type="hidden" name="purpose" value={v.purpose} />
+      <input type="hidden" name="note" value={v.note} />
+
       <div className="flex flex-wrap items-end gap-3">
         {kind !== "receipt" ? (
           <label className={labelCls}>
@@ -106,14 +148,14 @@ export function DocumentTools({
         ) : null}
 
         <label className={labelCls}>
-          {LABEL[kind]}（自動採番・変更できます）
+          {label}番号（自動採番・変更できます）
           <input
+            name="docNo"
             value={v.docNo}
             onChange={(e) => set({ docNo: e.target.value })}
             className={`${input("sm")} w-[220px]`}
           />
         </label>
-
       </div>
 
       {/* 軽減税率の切り替え（飲食料品は8%） */}
@@ -142,13 +184,24 @@ export function DocumentTools({
           />
         </label>
 
+        <button disabled={pending} className={`${btn("action", "sm")} disabled:opacity-50`}>
+          {pending ? "送信中…" : issuedAt ? "この内容で出し直して相手に送る" : "この内容で発行して相手に送る"}
+        </button>
         <button type="button" onClick={() => window.print()} className={btn("primary", "sm")}>
           印刷 / PDFで保存
         </button>
       </div>
+
+      {state.error ? <p className="mt-2 text-[12px] text-[var(--red)]">{state.error}</p> : null}
+      {issuedAt ? (
+        <p className="mt-2 text-[11px] leading-5 text-[var(--green-d)]">
+          発行済み（{issuedAt}）。相手も同じ内容の{label}を開けます。
+        </p>
+      ) : null}
       <p className="mt-2 text-[11px] leading-5 text-[var(--red)]">
-        入力した内容は保存されません。印刷ダイアログで「PDFに保存」を選ぶとファイル保存し、その後、ご自身で相手先へご送付ください。
+        PDFそのものは保存されません。印刷ダイアログで「PDFに保存」を選ぶとファイル保存できます。
+        「発行して相手に送る」を押すと、相手のやり取りにも同じ内容の{label}が届きます。
       </p>
-    </div>
+    </form>
   );
 }

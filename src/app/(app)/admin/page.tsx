@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { PHASE_CONTRACTED } from "@/lib/deal-constants";
 import { adminApproveProject } from "../projects/actions";
 import { SendBackButton } from "../projects/_components/SendBackButton";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
@@ -44,7 +45,7 @@ export default async function AdminPage() {
     prisma.offering.count({ where: { isPublic: true, member: { tenantId } } }),
     prisma.project.count({ where: { tenantId, status: "published" } }),
     prisma.deal.count({ where: { tenantId } }),
-    prisma.deal.count({ where: { tenantId, phase: 5 } }),
+    prisma.deal.count({ where: { tenantId, phase: { gte: PHASE_CONTRACTED } } }),
     prisma.project.findMany({ where: { tenantId, status: "pending" }, orderBy: { updatedAt: "desc" } }),
     // 差し戻し中（再申請待ち）。reviewNote は再申請時にクリアされるため、これで追跡できる
     prisma.project.findMany({

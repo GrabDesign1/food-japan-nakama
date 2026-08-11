@@ -96,14 +96,42 @@ export default async function DocumentPage({
     );
   }
 
-  const rate = normalizeTaxRate(offer.taxRate, defaultTaxRate(offering.category));
+  // 発行済みの内容があれば、売り手・買い手とも同じものを見る
+  const issued = await prisma.issuedDocument.findUnique({
+    where: { offerId_kind: { offerId: offer.id, kind } },
+  });
+
+  const label = kind === "invoice" ? "請求書" : kind === "receipt" ? "領収書" : "納品書";
+
+  // 買い手には、相手が発行するまで用紙を見せない（未発行なのに書類が見えると紛らわしい）
+  if (!issued && me.id !== sellerId) {
+    return (
+      <div className="mx-auto max-w-[820px]">
+        <Link href={backHref} className="text-[12px] text-[var(--green-d)] underline">
+          ← やり取りに戻る
+        </Link>
+        <div className="mt-4 rounded-[10px] border border-[var(--line)] bg-white p-6 text-[13px] leading-7 text-[var(--ink-2)]">
+          <b className="text-[var(--ink)]">この{label}はまだ発行されていません。</b>
+          <p className="mt-2">
+            {label}は、代金を請求する側（お相手）が発行します。発行されるとやり取りに届き、
+            この画面から同じ内容を印刷・PDF保存できます。
+          </p>
+          <Link href={backHref} className={`${btn("primary", "sm")} mt-4`}>
+            やり取りの画面へ
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const rate = normalizeTaxRate(issued?.taxRate ?? offer.taxRate, defaultTaxRate(offering.category));
   const amounts = taxBreakdown(offer.amount, rate);
   const issuedAt = new Date();
   const regNo = normalizeInvoiceRegNo(seller?.invoiceRegNo);
 
   const data: DocumentData = {
     kind,
-    docNo: documentNo(kind, offer.id, offer.completedAt),
+    docNo: issued?.docNo ?? documentNo(kind, offer.id, offer.completedAt),
     issuedAt: formatJpDate(issuedAt),
     completedAt: formatJpDate(offer.completedAt),
     deliveryDate: offer.deliveryDate ? formatJpDate(offer.deliveryDate) : null,
@@ -127,6 +155,21 @@ export default async function DocumentPage({
     including: amounts.including,
     viewerIsSeller: me.id === sellerId,
     regNoOk: !!regNo,
+    offeringId: id,
+    threadId,
+    canIssue: me.id === sellerId,
+    issuedRecordAt: issued ? formatJpDate(issued.updatedAt) : null,
+    saved: issued
+      ? {
+          docNo: issued.docNo,
+          issuedOn: issued.issuedOn ?? "",
+          dueText: issued.dueText ?? "",
+          receivedOn: issued.receivedOn ?? "",
+          purpose: issued.purpose ?? "",
+          note: issued.note ?? "",
+          reduced: issued.taxRate === 8,
+        }
+      : null,
   };
 
   return (

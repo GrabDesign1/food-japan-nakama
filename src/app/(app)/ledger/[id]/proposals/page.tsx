@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { PHASES } from "@/lib/deal-constants";
+import { PHASES, PHASE_CONTRACTED, PHASE_DONE } from "@/lib/deal-constants";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { EmptyState } from "@/components/EmptyState";
 import { ProposalRows } from "./ProposalRows";
@@ -154,8 +154,8 @@ export default async function OfferingProposalsPage({
     unread: rows.filter((r) => r.unread > 0).length,
     // 受付＝まだ商談に入っていない（出会う段階）
     received: rows.filter((r) => r.phase < 1).length,
-    talking: rows.filter((r) => r.phase >= 1 && r.phase < 5).length,
-    closed: rows.filter((r) => r.phase >= 5).length,
+    talking: rows.filter((r) => r.phase >= PHASE_CONTRACTED && r.phase < PHASE_DONE).length,
+    closed: rows.filter((r) => r.phase >= PHASE_DONE).length,
   };
 
   const facts = [
@@ -218,7 +218,7 @@ export default async function OfferingProposalsPage({
             {[
               { label: "受付", value: totals.received },
               { label: "商談中", value: totals.talking },
-              { label: "成約・商品化", value: totals.closed },
+              { label: "完了", value: totals.closed },
             ].map((s, i) => (
               <div key={s.label} className="flex items-center gap-2">
                 {i > 0 ? <span className="text-[13px] text-[var(--muted)]">＋</span> : null}
@@ -303,7 +303,7 @@ export default async function OfferingProposalsPage({
       )}
 
       <p className="text-[11px] leading-5 text-[var(--muted)]">
-        進捗（出会う〜成約・商品化）は、各やり取りの画面で変更できます。すべての商談を横断して見る場合は
+        進捗（ご商談〜完了）は、各やり取りの画面で変更できます。すべての商談を横断して見る場合は
         <Link href="/deals" className="mx-1 text-[var(--green-d)] underline">
           進行中の活動
         </Link>

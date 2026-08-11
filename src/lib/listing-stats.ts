@@ -2,6 +2,7 @@
 // クラウドワークスの「登録中のお仕事」に相当する表で使う（2026-08-11 ユーザー指示）＝
 // 問い合わせが来ているか、返していないか、放置していないかが一目で分かるようにする。
 import { prisma } from "@/lib/db";
+import { PHASE_DONE } from "@/lib/deal-constants";
 
 /** 最終のやり取りからこの日数を過ぎ、かつ未返信でなければ「放置」とみなす。 */
 export const STALE_DAYS = 14;
@@ -19,7 +20,7 @@ export type MyListingRow = {
   unread: number;
   /** 商談中（出会う〜成約手前） */
   talking: number;
-  /** 成約・商品化 */
+  /** 完了（領収書発行まで済んだ取引） */
   closed: number;
   /** 最後にやり取りがあった日時 */
   lastMessageAt: Date | null;
@@ -78,7 +79,7 @@ export async function loadMyListingRows(memberId: string): Promise<MyListingRow[
     cur.received += 1;
     cur.unread += unreadByThread.get(t.id) ?? 0;
     const phase = phaseByThread.get(t.id) ?? 0;
-    if (phase >= 5) cur.closed += 1;
+    if (phase >= PHASE_DONE) cur.closed += 1;
     else if (phase >= 1) cur.talking += 1;
     if (!cur.last || t.lastMessageAt > cur.last) cur.last = t.lastMessageAt;
     byOffering.set(t.offeringId, cur);

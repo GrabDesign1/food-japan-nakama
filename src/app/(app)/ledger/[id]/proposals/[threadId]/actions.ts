@@ -11,6 +11,7 @@ import { prisma } from "@/lib/db";
 import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
 import { sellerBuyerIds } from "@/lib/invoice";
+import { PHASE_CONTRACTED } from "@/lib/deal-constants";
 
 export type OfferState = { ok?: boolean; error?: string };
 
@@ -164,11 +165,11 @@ export async function respondToContract(
     },
   });
 
-  // 合意したら商談の進捗も「成約・商品化」に進める（手で直す手間を省く）
+  // 合意したら商談の進捗も「ご契約」に進める（手で直す手間を省く）
   if (decision === "accept") {
     await prisma.deal.updateMany({
       where: { threadId },
-      data: { phase: 5, lastActivityAt: new Date() },
+      data: { phase: PHASE_CONTRACTED, lastActivityAt: new Date() },
     });
   }
 
@@ -189,6 +190,91 @@ export async function respondToContract(
   });
 
   revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
+  return { ok: true };
+}
+
+const DOC_LABEL: Record<string, string> = {
+  invoice: "請求書",
+  delivery: "納品書",
+  receipt: "領収書",
+};
+
+/**
+ * 帳票の「内容」を保存し、相手に知らせる（PDFは保存しない）。
+ * 保存する理由＝相手にも**同じ内容**の帳票を開いてもらうため。
+ * 発行できるのは売り手（代金を請求する側）だけ。同じ取引・同じ種類は1件で、
+ * 出し直すと上書きする（有効なのは常に最新の1件）。
+ */
+export async function issueDocument(
+  offeringId: string,
+  threadId: string,
+  kind: "invoice" | "delivery" | "receipt",
+  _prev: OfferState,
+  formData: FormData
+): Promise<OfferState> {
+  const { me, thread, otherId } = await participantOr404(offeringId, threadId);
+  const offering = await prisma.offering.findUnique({
+    where: { id: offeringId },
+    select: { direction: true, memberId: true },
+  });
+  if (!offering) return { error: "案件が見つかりません。" };
+
+  const { sellerId } = sellerBuyerIds({
+    direction: offering.direction,
+    offeringMemberId: offering.memberId,
+    participantAId: thread.fromMemberId,
+    participantBId: thread.toMemberId,
+  });
+  if (me.id !== sellerId) return { error: "帳票を発行できるのは、代金を請求する側のみです。" };
+
+  const offer = await prisma.contractOffer.findFirst({
+    where: { threadId, status: "accepted", completedAt: { not: null } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!offer) return { error: "発送と受け取りの両方が記録されていません。" };
+
+  const docNo = trimTo(formData.get("docNo"), 60);
+  if (!docNo) return { error: "書類番号を入力してください。" };
+  const taxRate = Number(formData.get("taxRate")) === 8 ? 8 : 10;
+
+  const data = {
+    threadId,
+    offeringId,
+    offerId: offer.id,
+    kind,
+    docNo,
+    issuedOn: trimTo(formData.get("issuedOn"), 40) || null,
+    dueText: trimTo(formData.get("dueText"), 40) || null,
+    receivedOn: trimTo(formData.get("receivedOn"), 40) || null,
+    purpose: trimTo(formData.get("purpose"), 100) || null,
+    note: trimTo(formData.get("note"), 500) || null,
+    taxRate,
+    amount: offer.amount,
+    issuedBy: me.id,
+  };
+  await prisma.issuedDocument.upsert({
+    where: { offerId_kind: { offerId: offer.id, kind } },
+    create: data,
+    update: data,
+  });
+
+  const label = DOC_LABEL[kind] ?? "書類";
+  await postSystemMessage({
+    threadId,
+    offeringId,
+    senderMemberId: me.id,
+    senderName: me.name,
+    recipientId: otherId,
+    body:
+      `【${label}を発行しました】\n` +
+      `・番号：${docNo}\n` +
+      `・金額：${fmtAmount(offer.amount)}（消費税${taxRate}%）\n\n` +
+      `やり取りの画面から同じ内容の${label}を開いて、印刷・PDF保存ができます。\n` +
+      `※NAKAMAは代金を預からず、請求・回収にも関与しません。`,
+  });
+
+  revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
+  revalidatePath(`/ledger/${offeringId}/proposals/${threadId}/document`);
   return { ok: true };
 }
 

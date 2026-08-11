@@ -466,6 +466,7 @@ model Thread {
   messages Message[]
   notes    ProposalNote[]
   offers   ContractOffer[]
+  docs     IssuedDocument[]
 
   @@index([fromMemberId])
   @@index([toMemberId])
@@ -946,4 +947,39 @@ model OfferingView {
   @@index([offeringId, createdAt])
   @@index([viewerUserId, createdAt])
   @@map("offering_views")
+}
+
+/// 発行した帳票の「内容」だけを保存する（PDFは保存しない）。
+/// 保存する理由＝相手にも**同じ内容**の納品書・請求書・領収書を開いてもらうため。
+/// PDFを持たないので電子帳簿保存法の検索機能・訂正削除防止の要件は負わない
+/// （保存義務は従来どおり当事者それぞれにある）。NAKAMAは当事者にならない。
+model IssuedDocument {
+  id         String   @id @default(cuid())
+  threadId   String   @map("thread_id")
+  offeringId String?  @map("offering_id")
+  /// 対象の合意（ContractOffer）
+  offerId    String   @map("offer_id")
+  /// invoice（請求書）／delivery（納品書）／receipt（領収書）
+  kind       String
+  docNo      String   @map("doc_no")
+  /// 表示用の日付は自由入力のため文字列で持つ
+  issuedOn   String?  @map("issued_on")
+  dueText    String?  @map("due_text")
+  receivedOn String?  @map("received_on")
+  purpose    String?
+  note       String?
+  /// 8＝軽減税率／10＝標準税率
+  taxRate    Int      @map("tax_rate")
+  /// 発行時点の税込金額（あとで合意が変わっても帳票は動かさない）
+  amount     Int
+  /// 発行した会員（売り手）
+  issuedBy   String   @map("issued_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, kind])
+  @@index([threadId])
+  @@map("issued_documents")
 }

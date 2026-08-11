@@ -8,6 +8,22 @@ import { taxBreakdown } from "@/lib/invoice";
 
 export type DocumentData = {
   kind: "invoice" | "delivery" | "receipt";
+  offeringId: string;
+  threadId: string;
+  /** 発行できるのは売り手だけ */
+  canIssue: boolean;
+  /** 発行（保存）した日時。用紙の「発行日」とは別 */
+  issuedRecordAt: string | null;
+  /** 保存済みの発行内容（あれば両者ともこれを見る） */
+  saved: {
+    docNo: string;
+    issuedOn: string;
+    dueText: string;
+    receivedOn: string;
+    purpose: string;
+    note: string;
+    reduced: boolean;
+  } | null;
   docNo: string;
   issuedAt: string;
   completedAt: string;
@@ -30,7 +46,8 @@ export type DocumentData = {
 const yen = (n: number) => `${n.toLocaleString()} 円`;
 
 export function DocumentSheet({ data }: { data: DocumentData }) {
-  const [extra, setExtra] = useState<DocExtra>({
+  // 発行済みならその内容を初期値にする（相手にも同じものが見える）
+  const initial: DocExtra = data.saved ?? {
     docNo: data.docNo,
     issuedOn: "",
     dueText: "",
@@ -38,7 +55,8 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
     purpose: "",
     note: "",
     reduced: data.rate === 8,
-  });
+  };
+  const [extra, setExtra] = useState<DocExtra>(initial);
   const isInvoice = data.kind === "invoice";
   const isReceipt = data.kind === "receipt";
   // 金額の内訳を出すのは請求書と領収書（納品書は数量と品名だけ）
@@ -53,8 +71,11 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
 
       <DocumentTools
         kind={data.kind}
-        defaultDocNo={data.docNo}
-        defaultReduced={data.rate === 8}
+        offeringId={data.offeringId}
+        threadId={data.threadId}
+        initial={initial}
+        canIssue={data.canIssue}
+        issuedAt={data.issuedRecordAt}
         onChange={setExtra}
       />
 
