@@ -33,10 +33,10 @@ export default async function PublicHome() {
           <nav className="fjn-nav" aria-label="メインナビゲーション">
             <a href="#buyer-listings">探している案件を見る</a>
             <Link href="/about">NAKAMAとは</Link>
+            <Link href="/hanro">販路開拓支援</Link>
             <Link href="/produce">共創プロデュース</Link>
             <Link href="/food-loss">食品ロス支援</Link>
             <Link href="/crowdfunding">クラウドファンディング支援</Link>
-            <Link href="/pricing">利用料金・共創支援</Link>
             {isLoggedIn ? (
               <Link className="fjn-nav__login" href="/dashboard">マイページトップへ</Link>
             ) : (

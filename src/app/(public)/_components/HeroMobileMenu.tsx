@@ -5,8 +5,9 @@ import Link from "next/link";
 
 // 公開トップのヒーローヘッダー用ハンバーガーメニュー（モバイルのみ・左側）。
 const ITEMS: { label: string; href: string }[] = [
-  { label: "案件を探す", href: "/#co-creation-projects" },
+  { label: "探している案件を見る", href: "/#buyer-listings" },
   { label: "NAKAMAとは", href: "/about" },
+  { label: "販路開拓支援", href: "/hanro" },
   { label: "共創プロデュース", href: "/produce" },
   { label: "食品ロス支援", href: "/food-loss" },
   { label: "クラウドファンディング支援", href: "/crowdfunding" },
