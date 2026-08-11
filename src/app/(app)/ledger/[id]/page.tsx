@@ -241,7 +241,7 @@ export default async function OfferingDetailPage({
         </div>
         {!isOwner && offering.isPublic ? (
           <a href="#inquiry" className={`${btn("primary", "sm")} mt-3 inline-block`}>
-            {isGive ? "この案件について問い合わせる ↓" : "商品・原料を提案する ↓"}
+            {isGive ? "問い合わせる ↓" : "提案する ↓"}
           </a>
         ) : null}
 
@@ -405,7 +405,7 @@ export default async function OfferingDetailPage({
             </div>
             <p className="mb-3 mt-0.5 text-[12px] text-[var(--ink-2)]">
               提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます。
-              初回の提案には紹介料（クレジット1件）がかかります。継続メッセージと、受けた問い合わせへの返信は無料です。
+              初回の提案には紹介料がかかります（消費するのは通常案件で1クレジット、NAKAMA確認済み案件で3クレジット）。継続メッセージと、受けた問い合わせへの返信は無料です。
             </p>
             <Link href={`/ledger/${offering.id}/propose`} className={btn("primary")}>
               提案へ進む（料金の確認）→

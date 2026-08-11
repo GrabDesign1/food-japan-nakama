@@ -10,6 +10,8 @@ export function ProposeForm(props: {
   offeringId: string;
   needsCredit?: boolean;
   creditBalance?: number;
+  /** この案件に必要なクレジット数（通常1・NAKAMA確認済み案件3）。 */
+  creditCost?: number;
   buyOptions?: { code: string; label: string }[];
 }) {
   if (props.mode === "buy") {
@@ -28,16 +30,19 @@ function SendForm({
   offeringId,
   needsCredit,
   creditBalance,
+  creditCost = 1,
 }: {
   offeringId: string;
   needsCredit?: boolean;
   creditBalance?: number;
+  creditCost?: number;
 }) {
   const [state, action, pending] = useActionState<ProposeState, FormData>(
     sendProposal.bind(null, offeringId),
     {}
   );
-  const noCredit = !!needsCredit && (creditBalance ?? 0) <= 0;
+  // 確認済み案件は3クレジット必要。残高が足りているかは必要数で判定する
+  const noCredit = !!needsCredit && (creditBalance ?? 0) < creditCost;
   return (
     <form action={action} className="mt-3 flex flex-col gap-3">
       <textarea
@@ -55,11 +60,13 @@ function SendForm({
           {pending
             ? "送信中…"
             : needsCredit
-              ? "クレジット1件を使って提案を送信する"
+              ? `${creditCost}クレジットを使って提案を送信する`
               : "提案を送信する（無料）"}
         </button>
         {noCredit ? (
-          <span className="text-[12px] text-[var(--red)]">クレジットがありません。上の購入からお求めください。</span>
+          <span className="text-[12px] text-[var(--red)]">
+            クレジットが不足しています（この案件には{creditCost}クレジット必要です）。上の購入からお求めください。
+          </span>
         ) : null}
       </div>
     </form>

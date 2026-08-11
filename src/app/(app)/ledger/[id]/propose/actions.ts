@@ -37,7 +37,7 @@ async function loadTarget(offeringId: string, meId: string, tenantId: string) {
   return offering;
 }
 
-/** 初回提案を送信する。未解放なら紹介料（クレジット1件）を消費して解放する。 */
+/** 初回提案を送信する。未解放なら紹介料（通常1・確認済み案件3クレジット）を消費して解放する。 */
 export async function sendProposal(
   offeringId: string,
   _prev: ProposeState,

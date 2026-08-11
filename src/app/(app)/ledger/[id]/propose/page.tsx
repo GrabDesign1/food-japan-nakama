@@ -197,6 +197,7 @@ export default async function ProposePage({
               offeringId={offering.id}
               needsCredit={!canSendFree}
               creditBalance={balance}
+              creditCost={creditCost}
             />
           </div>
         </>
