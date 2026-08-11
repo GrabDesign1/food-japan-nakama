@@ -1,22 +1,13 @@
 import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
 import { btn } from "@/lib/ui";
+import { SERVICE_MENU } from "@/lib/services";
 
 export const metadata = {
   title: "利用料金・共創支援｜FOOD JAPAN NAKAMA",
   description:
     "登録・案件の掲載・閲覧・応募・問い合わせ・届いた問い合わせへの返信は無料（月額契約は不要）。有料は、売り手から「探している」案件への初回提案（紹介料1,100円〜）、掲載オプション、事務局への個別依頼のみ。NAKAMAビジネス会員（月額22,000円・税込）は任意です。",
 };
-
-// 正式サービスメニュー（最終実装指示 2026-08-10。価格は税込の提案値・個別契約が必要なサービスは相談から）
-const SUPPORT_MENU: { name: string; desc: string; price: string }[] = [
-  { name: "NAKAMA登録", desc: "商品・会社・募集情報の掲載", price: "無料" },
-  { name: "販促プラン", desc: "SNS掲載、クーポン配信、アクセス分析", price: "月額33,000円" },
-  { name: "販売強化プラン", desc: "特集制作、広告運用、販売企画、月次改善", price: "月額110,000円＋広告費" },
-  { name: "売れる仕組み構築", desc: "LP、動画、クラウドファンディング、EC、キャンペーン開発", price: "50万円〜" },
-  { name: "販売成果報酬", desc: "NAKAMA経由で確認できる売上（個別契約で条件確定後に開始）", price: "売上の10〜20％" },
-  { name: "共創・商品開発", desc: "相手探し、試作、販路、事業化", price: "200万円〜" },
-];
 
 // 掲載オプション（案件を目立たせる・届ける。ログイン後に案件ごとに購入）
 const LISTING_OPTIONS: { name: string; price: string }[] = [
@@ -99,29 +90,42 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* 個別支援 */}
+      {/* 個別支援（困りごとから選ぶ。定義は src/lib/services.ts に集約） */}
       <section>
-        <h2 className="text-[16px] font-bold text-[var(--ink)]">事務局へ依頼する（NAKAMAサービスメニュー）</h2>
+        <h2 className="text-[16px] font-bold text-[var(--ink)]">事務局へ依頼する（困りごとから選ぶ）</h2>
         <p className="mt-1 text-[12px] leading-6 text-[var(--muted)]">
-          基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します。
+          基本掲載は無料です。必要なところだけ、NAKAMA事務局が販路開拓・販促・共創事業化まで伴走します。
           価格は税込の提案値で、内容や規模により変動します。試作・検査・製造・物流・出張・制作・広告媒体費等は別途です。個別契約が必要なサービスは、相談のうえ見積を提示します（自動決済はしません）。
         </p>
         <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
-          {SUPPORT_MENU.map((s, i) => (
+          {SERVICE_MENU.map((s, i) => (
             <div
-              key={s.name}
-              className={`flex flex-col gap-1 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
+              key={s.type}
+              className={`flex flex-col gap-1 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
             >
-              <div>
-                <div className="text-[14px] font-semibold text-[var(--ink)]">{s.name}</div>
-                <div className="text-[12px] text-[var(--muted)]">{s.desc}</div>
+              <div className="min-w-0">
+                <div className="text-[11px] text-[var(--muted)]">{s.problem}</div>
+                <div className="text-[14px] font-semibold text-[var(--ink)]">
+                  {s.href ? (
+                    <Link href={s.href} className="underline decoration-dotted underline-offset-2">{s.name}</Link>
+                  ) : (
+                    s.name
+                  )}
+                </div>
+                <div className="text-[12px] leading-5 text-[var(--muted)]">{s.deliverable}</div>
+                <div className="text-[11px] text-[var(--muted)]">期間：{s.period}</div>
               </div>
               <div className="shrink-0 text-[14px] font-semibold text-[var(--green-d)]">{s.price}</div>
             </div>
           ))}
         </div>
-        <div className="mt-4">
-          <Link href="/consultation?type=theme" className={btn("primary", "lg")}>共創テーマを相談する</Link>
+        <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+          販路開拓の入口となる2つのサービス（商品・販路戦略セッション／販路開拓トライアル）の詳しい業務範囲は
+          <Link href="/hanro" className="underline">販路開拓支援</Link>ページに記載しています。
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href="/hanro" className={btn("primary", "lg")}>販路開拓の進め方を見る</Link>
+          <Link href="/consultation?type=theme" className={btn("secondary", "lg")}>共創テーマを相談する</Link>
         </div>
       </section>
 

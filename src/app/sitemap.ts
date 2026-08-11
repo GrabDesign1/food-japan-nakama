@@ -20,6 +20,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   { path: "/", priority: 1.0, changeFrequency: "daily" },
   { path: "/about", priority: 0.9, changeFrequency: "weekly" },
   { path: "/pricing", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/hanro", priority: 0.9, changeFrequency: "weekly" },
   { path: "/produce", priority: 0.9, changeFrequency: "weekly" },
   { path: "/crowdfunding", priority: 0.9, changeFrequency: "weekly" },
   { path: "/food-loss", priority: 0.9, changeFrequency: "weekly" },

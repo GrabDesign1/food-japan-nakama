@@ -8,15 +8,7 @@ import { getCreditBalance } from "@/lib/contact-credits";
 import { PlanButton } from "./_components/PlanButton";
 import { PortalButton } from "./_components/PortalButton";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
-
-// 正式サービスメニュー（最終実装指示 2026-08-10 §正式サービス。個別契約型は自動決済しない）
-const SERVICE_MENU: { name: string; desc: string; price: string; type: string }[] = [
-  { name: "販促プラン", desc: "SNS掲載、クーポン配信、アクセス分析", price: "月額33,000円", type: "promotion_plan" },
-  { name: "販売強化プラン", desc: "特集制作、広告運用、販売企画、月次改善", price: "月額110,000円＋広告費", type: "sales_growth" },
-  { name: "売れる仕組み構築", desc: "LP、動画、クラウドファンディング、EC、キャンペーン開発", price: "50万円〜", type: "solution_build" },
-  { name: "販売成果報酬", desc: "NAKAMA経由で確認できる売上（個別契約で条件確定後に開始）", price: "売上の10〜20％", type: "success_fee" },
-  { name: "共創・商品開発", desc: "相手探し、試作、販路、事業化", price: "200万円〜", type: "co_creation" },
-];
+import { SERVICE_MENU, consultationHref } from "@/lib/services";
 
 // 購入履歴に出す注文の状態＝実際に支払いが成立したもの（返金済みは支払いの記録として残す）
 const PURCHASED_STATUSES = ["paid", "fulfilled", "refunded"];
@@ -72,29 +64,38 @@ function ServiceMenuSection() {
     <div className="max-w-[760px]">
       <h2 className={h2Cls}>事務局へ依頼する（個別契約）</h2>
       <p className="mt-1 text-[12px] leading-6 text-[var(--muted)]">
-        基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します。
+        基本掲載は無料です。必要なところだけ、NAKAMA事務局が販路開拓・販促・共創事業化まで伴走します。
         価格は税込の提案値で、個別契約が必要なサービスは「相談する」から事務局が要件確認・見積提示を行います（自動決済はしません）。
       </p>
       <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
         {SERVICE_MENU.map((s, i) => (
           <div
-            key={s.name}
+            key={s.type}
             className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
           >
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[var(--ink)]">{s.name}</div>
-              <div className="text-[12px] text-[var(--muted)]">{s.desc}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] text-[var(--muted)]">{s.problem}</div>
+              <div className="text-[13px] font-semibold text-[var(--ink)]">
+                {s.href ? (
+                  <Link href={s.href} className="underline decoration-dotted underline-offset-2">{s.name}</Link>
+                ) : (
+                  s.name
+                )}
+              </div>
+              <div className="text-[12px] leading-5 text-[var(--muted)]">{s.deliverable}</div>
+              <div className="text-[11px] text-[var(--muted)]">期間：{s.period}</div>
             </div>
             <div className="shrink-0 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
-            <Link
-              href={`/consultation?type=service&service=${s.type}`}
-              className={`${btn("secondary", "sm")} shrink-0`}
-            >
+            <Link href={consultationHref(s.type)} className={`${btn("secondary", "sm")} shrink-0`}>
               相談する
             </Link>
           </div>
         ))}
       </div>
+      <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
+        販路開拓の入口2サービスの詳しい業務範囲は
+        <Link href="/hanro" className="underline">販路開拓支援</Link>ページに記載しています。
+      </p>
     </div>
   );
 }

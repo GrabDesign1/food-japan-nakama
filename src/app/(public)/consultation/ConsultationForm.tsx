@@ -14,6 +14,8 @@ const SERVICE_OPTIONS = [
   { value: "crowdfunding", label: "クラウドファンディング支援を相談したい" },
   { value: "food-loss", label: "フードロスについて相談したい" },
   { value: "project", label: "共創プロジェクトの伴走を相談したい" },
+  { value: "strategy_session", label: "商品・販路戦略セッションを相談したい（110,000円〜）" },
+  { value: "channel_trial", label: "販路開拓トライアルを相談したい（440,000円〜／1商品45日間）" },
   { value: "promotion_plan", label: "販促プランを相談したい（月額33,000円）" },
   { value: "sales_growth", label: "販売強化プランを相談したい（月額110,000円＋広告費）" },
   { value: "solution_build", label: "売れる仕組み構築を相談したい（LP・動画・EC等）" },

@@ -15,6 +15,9 @@ const SERVICE_TYPES = new Set([
   "project",
   "unsure",
   // 正式サービスメニュー（最終実装指示 2026-08-10。相談→見積→個別契約）
+  // 入口商品2種は 2026-08-11 追加（/hanro）
+  "strategy_session",
+  "channel_trial",
   "promotion_plan",
   "sales_growth",
   "solution_build",

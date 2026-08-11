@@ -11,6 +11,8 @@ const SERVICE_LABEL: Record<string, string> = {
   "food-loss": "フードロス",
   crowdfunding: "クラファン支援",
   project: "共創PJ伴走",
+  strategy_session: "商品・販路戦略セッション",
+  channel_trial: "販路開拓トライアル",
   promotion_plan: "販促プラン",
   sales_growth: "販売強化プラン",
   solution_build: "売れる仕組み構築",

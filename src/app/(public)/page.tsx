@@ -4,6 +4,7 @@ import { getLandingContent } from "@/lib/public-content";
 import { OfferingCard } from "@/components/OfferingCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { btn, h2Cls } from "@/lib/ui";
+import { SERVICE_MENU, consultationHref } from "@/lib/services";
 import { HeroMobileMenu } from "./_components/HeroMobileMenu";
 
 export default async function PublicHome() {
@@ -253,24 +254,34 @@ export default async function PublicHome() {
             sub="基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します"
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { t: "NAKAMA登録", d: "商品・会社・募集情報の掲載。登録・掲載・応募は無料。", price: "無料", href: "/signup", cta: "無料で登録する" },
-              { t: "販促プラン", d: "SNS掲載、クーポン配信、アクセス分析。", price: "月額33,000円", href: "/consultation?type=service&service=promotion_plan", cta: "相談する" },
-              { t: "販売強化プラン", d: "特集制作、広告運用、販売企画、月次改善。", price: "月額110,000円＋広告費", href: "/consultation?type=service&service=sales_growth", cta: "相談する" },
-              { t: "売れる仕組み構築", d: "LP、動画、クラウドファンディング、EC、キャンペーン開発。", price: "50万円〜", href: "/consultation?type=service&service=solution_build", cta: "相談する" },
-              { t: "販売成果報酬", d: "NAKAMA経由で確認できる売上に応じた報酬。個別契約で条件を確定してから開始。", price: "売上の10〜20％", href: "/consultation?type=service&service=success_fee", cta: "相談する" },
-              { t: "共創・商品開発", d: "相手探し、試作、販路、事業化。", price: "200万円〜", href: "/consultation?type=service&service=co_creation", cta: "相談する" },
-            ].map((s) => (
-              <div key={s.t} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
-                <h3 className="text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
-                <p className="mt-1 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{s.d}</p>
-                <div className="mt-2 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
-                <Link href={s.href} className="mt-3 text-[12px] text-[var(--green-d)] underline">{s.cta} →</Link>
+            <div className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
+              <div className="text-[11px] text-[var(--muted)]">まずは無料で始めたい</div>
+              <h3 className="text-[15px] font-bold text-[var(--ink)]">NAKAMA登録</h3>
+              <p className="mt-1 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">
+                商品・会社・募集情報の掲載。登録・掲載・応募は無料。
+              </p>
+              <div className="mt-2 text-[13px] font-semibold text-[var(--green-d)]">無料</div>
+              <Link href="/signup" className="mt-3 text-[12px] text-[var(--green-d)] underline">無料で登録する →</Link>
+            </div>
+            {SERVICE_MENU.map((s) => (
+              <div key={s.type} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
+                <div className="text-[11px] text-[var(--muted)]">{s.problem}</div>
+                <h3 className="text-[15px] font-bold text-[var(--ink)]">{s.name}</h3>
+                <p className="mt-1 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{s.deliverable}</p>
+                <div className="mt-2 text-[11px] text-[var(--muted)]">期間：{s.period}</div>
+                <div className="text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
+                <Link
+                  href={s.href ?? consultationHref(s.type)}
+                  className="mt-3 text-[12px] text-[var(--green-d)] underline"
+                >
+                  {s.href ? "詳しく見る" : "相談する"} →
+                </Link>
               </div>
             ))}
           </div>
           <p className="mt-3 text-[11px] text-[var(--muted)]">
             ※ 価格は税込の提案値です。個別契約が必要なサービスは、相談のうえ要件確認・見積提示を行います（自動決済はしません）。
+            販路開拓の入口2サービスの詳細は<Link href="/hanro" className="underline">販路開拓支援</Link>ページをご覧ください。
           </p>
         </section>
 
