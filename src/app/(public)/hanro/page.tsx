@@ -116,9 +116,23 @@ export default function SalesChannelPage() {
   return (
     <InfoPage
       eyebrow="SALES CHANNEL"
-      title="商品の価値を整理し、出会えなかった相手へ届ける"
-      lead="NAKAMAは、商品を掲載するだけのサービスではありません。商品の価値と販売条件を整理し、買い手となり得る企業を探し、実際の打診まで販路開拓を前へ進めます。"
+      title="まだ出会えていない相手へ、商品の価値を届ける。"
+      lead="良い商品があっても、その価値が整理され、必要とする相手に届かなければ、取引にはつながりません。"
     >
+      {/* 導入（lead の続き。InfoPage の lead は1段落しか置けないため本文側に書く） */}
+      <div className="flex flex-col gap-3">
+        <p className="text-[14px] leading-7 text-[var(--ink-2)]">
+          NAKAMAは、商品を掲載して待つだけのサービスではありません。商品の強みや背景、価格・ロットなどの販売条件を整理し、買い手となり得る企業を探します。
+          そして、候補企業への打診や商談準備まで行い、販路開拓を具体的に前へ進めます。
+        </p>
+        <p className="text-[14px] leading-7 text-[var(--ink-2)]">
+          食品業界のネットワークを生かし、自社だけでは出会えなかった相手との接点をつくります。
+        </p>
+        <p className="text-[12px] leading-6 text-[var(--muted)]">
+          ※売上や商談成立を保証するものではなく、調査・整理・候補先の選定・打診などの業務を行う準委任型のサービスです。
+        </p>
+      </div>
+
       {/* 入口商品1：商品・販路戦略セッション */}
       <section id="strategy-session" className="scroll-mt-6 rounded-[12px] border-2 border-[var(--green)] bg-white p-6">
         <h2 className="text-[20px] font-bold leading-7 text-[var(--ink)]">商品・販路戦略セッション</h2>
