@@ -69,7 +69,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     // minmax(0,1fr)：中身が広くても列を押し広げない＝ページ全体の横スクロールを防ぐ
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_minmax(0,1fr)]">
       {/* サイドバー（PCのみ。スマホはヘッダーのメニューから） */}
-      <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex">
+      <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex print:hidden">
         <Link
           href="/"
           className="flex items-center gap-2.5 border-b border-white/12 px-5 pb-4 transition hover:opacity-80"
@@ -121,7 +121,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
       {/* メイン */}
       <div className="flex min-h-screen min-w-0 flex-col bg-[var(--canvas)]">
-        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--line)] bg-white px-4 py-3 md:px-8">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--line)] bg-white px-4 py-3 md:px-8 print:hidden">
           {/* スマホ用：メニュー＋ブランド */}
           <MobileNav items={items.filter((i) => i.ready).map((i) => ({ label: i.label, href: i.href, admin: i.admin, section: i.section }))} unread={unread} />
           <Link href="/" className="flex items-center gap-2 md:hidden">

@@ -13,6 +13,7 @@ import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
 import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
 import { ContractPanel, type OfferRow } from "./ContractPanel";
+import { defaultTaxRate, normalizeTaxRate } from "@/lib/invoice";
 import { ThreadTools } from "./ThreadTools";
 import { ndaBody } from "@/lib/nda";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
@@ -69,6 +70,7 @@ export default async function OfferingThreadPage({
         id: true,
         memberId: true,
         direction: true,
+        category: true,
         title: true,
         description: true,
         usageContext: true,
@@ -169,9 +171,14 @@ export default async function OfferingThreadPage({
             respondedAt: o.respondedAt
               ? `${o.respondedAt.getFullYear()}/${o.respondedAt.getMonth() + 1}/${o.respondedAt.getDate()}`
               : null,
+            completedAt: o.completedAt
+              ? `${o.completedAt.getFullYear()}/${o.completedAt.getMonth() + 1}/${o.completedAt.getDate()}`
+              : null,
+            taxRate: normalizeTaxRate(o.taxRate, defaultTaxRate(offering.category)),
             fromMe: o.proposerMemberId === me.id,
             proposerName: o.proposerMemberId === me.id ? me.name : other?.name ?? "相手",
           }))}
+          defaultTaxRate={String(defaultTaxRate(offering.category)) as "8" | "10"}
         />
 
         {/* 募集の内容（クラウドワークスと同じく、やり取りの上に依頼内容を置く） */}

@@ -94,6 +94,8 @@ export async function proposeContract(
   const dateRaw = String(formData.get("deliveryDate") ?? "").trim();
   const deliveryDate = dateRaw ? new Date(`${dateRaw}T00:00:00+09:00`) : null;
   if (deliveryDate && Number.isNaN(deliveryDate.getTime())) return { error: "日付を正しく入力してください。" };
+  // 消費税率（飲食料品は軽減8%）。請求書の税率区分に使うため、提示の時点で決めておく
+  const taxRate = Number(formData.get("taxRate")) === 8 ? 8 : 10;
 
   await prisma.$transaction([
     // 提示中のものは「置き換え」にする（最新の1件だけが有効）
@@ -110,6 +112,7 @@ export async function proposeContract(
         quantityText,
         deliveryDate,
         terms,
+        taxRate,
       },
     }),
   ]);
@@ -122,7 +125,7 @@ export async function proposeContract(
     recipientId: otherId,
     body:
       `【条件を提示しました】\n` +
-      `・金額：${fmtAmount(amount)}\n` +
+      `・金額：${fmtAmount(amount)}（消費税${taxRate}%）\n` +
       (quantityText ? `・数量：${quantityText}\n` : "") +
       `・納品・完了の予定日：${fmtDate(deliveryDate)}\n` +
       (terms ? `・内容：${terms}\n` : "") +
@@ -186,6 +189,63 @@ export async function respondToContract(
 
   revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
   return { ok: true };
+}
+
+/**
+ * 発送・受け渡しの完了を記録する（合意済みの条件が対象）。
+ * どちらの当事者からでも押せる（売り手が発送した／買い手が受け取った、のどちらの起点もあるため）。
+ * これ自体は事実の記録であり、支払いの完了を意味しない。
+ */
+export async function completeContract(
+  offeringId: string,
+  threadId: string,
+  offerId: string,
+  _prev: OfferState,
+  _formData: FormData
+): Promise<OfferState> {
+  const { me, otherId } = await participantOr404(offeringId, threadId);
+  const offer = await prisma.contractOffer.findFirst({
+    where: { id: offerId, threadId, status: "accepted" },
+  });
+  if (!offer) return { error: "合意済みの条件が見つかりません。画面を再読み込みしてください。" };
+  if (offer.completedAt) return { ok: true };
+
+  const now = new Date();
+  await prisma.contractOffer.update({
+    where: { id: offer.id },
+    data: { completedAt: now, completedBy: me.id },
+  });
+
+  await postSystemMessage({
+    threadId,
+    offeringId,
+    senderMemberId: me.id,
+    senderName: me.name,
+    recipientId: otherId,
+    body:
+      `【発送・受け渡しが完了しました】\n` +
+      `・完了日：${fmtDate(now)}\n` +
+      `・金額：${fmtAmount(offer.amount)}\n` +
+      (offer.quantityText ? `・数量：${offer.quantityText}\n` : "") +
+      `\nやり取りの画面から納品書・請求書を作成できます（NAKAMAは代金を預かりません）。`,
+  });
+
+  revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
+  return { ok: true };
+}
+
+/** 完了の記録を取り消す（押し間違いの取り消し用）。 */
+export async function undoCompleteContract(
+  offeringId: string,
+  threadId: string,
+  offerId: string
+): Promise<void> {
+  await participantOr404(offeringId, threadId);
+  await prisma.contractOffer.updateMany({
+    where: { id: offerId, threadId, status: "accepted" },
+    data: { completedAt: null, completedBy: null },
+  });
+  revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
 }
 
 /** このやり取りを見送る（辞退）。どちらの当事者からでも終了できる。 */
