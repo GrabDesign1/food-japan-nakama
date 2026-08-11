@@ -17,6 +17,7 @@ import {
   isGoodsCategory,
   AMOUNT_UNITS,
   AMOUNT_PERIODS,
+  formatAmountPeriod,
   TIMINGS,
   PRICE_TYPES,
   PRICE_UNITS,
@@ -190,7 +191,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           : null;
   const previewAmount = structured
     ? amountValue
-      ? `${amountPeriod ? `${amountPeriod}あたり ` : ""}${amountValue}${amountUnit}`
+      ? `${amountPeriod ? `${formatAmountPeriod(amountPeriod)} ` : ""}${amountValue}${amountUnit}`
       : null
     : amountText || null;
   const previewCondition = [itemCondition, storageType].filter(Boolean).join("・") || null;
@@ -203,7 +204,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   // 未入力時は該当の入力欄へジャンプできるリンクを出す。
   const previewRows: { label: string; value: string | null; anchor: string }[] = [
     { label: "希望価格", value: previewPrice, anchor: "f-price" },
-    { label: "提供量", value: previewAmount, anchor: "f-amount" },
+    { label: isGive ? "提供量" : "必要数量", value: previewAmount, anchor: "f-amount" },
     ...(isGive && food
       ? [{ label: "最小取引量", value: minOrderText || null, anchor: "f-minorder" }]
       : []),
@@ -673,8 +674,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {structured ? (
           <div id="f-amount" className="scroll-mt-24">
             <div className="mb-1 text-[12px] text-[var(--ink-2)]">
-              提供可能量{isGive && food ? <Req /> : <Opt />}
-              <span className="ml-2 text-[11px] text-[var(--muted)]">数値で登録すると範囲検索できます</span>
+              {isGive ? "提供可能量" : "必要数量"}
+              {isGive && food ? <Req /> : <Opt />}
             </div>
             <div className="flex flex-wrap items-end gap-3">
               <label className={labelCls}>
@@ -688,7 +689,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                   <option value="">未選択</option>
                   {AMOUNT_PERIODS.map((p) => (
                     <option key={p} value={p}>
-                      {p}あたり
+                      {formatAmountPeriod(p)}
                     </option>
                   ))}
                 </select>
@@ -763,8 +764,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           </div>
         ) : null}
 
-        {/* ── 状態と提供時期 ── */}
-        <SectionHead title="状態と提供時期" />
+        {/* ── 状態と時期（探している側は「状態」「保存状態」が無いので見出しも変える） ── */}
+        <SectionHead title={isGive ? "状態と提供時期" : "希望する時期"} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {isGive && goods ? (
@@ -804,7 +805,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             </label>
           ) : null}
           <label className={labelCls}>
-            <span>提供・希望時期<Opt /></span>
+            <span>{isGive ? "提供・希望時期" : "希望する納品時期"}<Opt /></span>
             <select name="timing" defaultValue={offering.timing ?? ""} className={inputCls}>
               <option value="">未選択</option>
               {TIMINGS.map((t) => (
@@ -917,11 +918,11 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           </>
         ) : null}
 
-        {/* ── アピール・タグ ── */}
-        <SectionHead title="アピール" />
+        {/* ── アピール（探している側は補足情報なので「備考」） ── */}
+        <SectionHead title={isGive ? "アピール" : "備考"} />
         <div className={labelCls}>
-          {/* 売りたい（提供したい）＝商品の推しどころ、探している（調達したい）＝自社の特徴（売り手が取引したくなる理由） */}
-          {isGive ? "おすすめポイント（1行に1つ）" : "うちの特徴（1行に1つ）"}
+          {/* 売りたい（提供したい）＝商品の推しどころ、探している（調達したい）＝補足情報（背景や取引の条件で伝えたいこと） */}
+          {isGive ? "おすすめポイント（1行に1つ）" : "備考（1行に1つ）"}
           <textarea
             name="points"
             value={points}
@@ -1103,7 +1104,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           .filter(Boolean).length ? (
           <div className="mt-3">
             <div className="text-[11px] font-bold text-[var(--muted)]">
-              {isGive ? "おすすめポイント" : "うちの特徴"}
+              {isGive ? "おすすめポイント" : "備考"}
             </div>
             <ul className="mt-1 flex flex-col gap-1">
               {points

@@ -31,7 +31,17 @@ export function isStructured(key: string): boolean {
 
 // 数量の単位・期間（食材・原料の構造化用）
 export const AMOUNT_UNITS = ["t", "kg", "g", "ケース", "箱", "個", "本", "パック", "L", "人", "1ユーザー"];
-export const AMOUNT_PERIODS = ["年", "月", "週", "日", "一括"];
+// 数量の期間。「年」〜「一括」は表示時に「あたり」を付ける（値はDBに保存済みのため変更しない）。
+// 2026-08-11 追加：どの期間にも決めきれない場合の逃げ道として「およそ（合計）」「期間は相談」。
+export const AMOUNT_PERIODS = ["年", "月", "週", "日", "一括", "およそ（合計）", "期間は相談"];
+
+/** 「あたり」を付けて表示する期間（付けると日本語が壊れるものは除く）。 */
+const PERIOD_WITH_SUFFIX = new Set(["年", "月", "週", "日", "一括"]);
+
+/** 期間の表示文言（例：月 → 月あたり／期間は相談 → 期間は相談）。 */
+export function formatAmountPeriod(period: string): string {
+  return PERIOD_WITH_SUFFIX.has(period) ? `${period}あたり` : period;
+}
 
 // 提供時期・希望時期
 export const TIMINGS = ["すぐに", "1ヶ月以内", "3ヶ月以内", "時期は相談"];
@@ -164,7 +174,7 @@ export function formatAmount(o: {
   amountText: string | null;
 }): string | null {
   if (o.amountValue != null && o.amountUnit) {
-    const period = o.amountPeriod ? `${o.amountPeriod}あたり ` : "";
+    const period = o.amountPeriod ? `${formatAmountPeriod(o.amountPeriod)} ` : "";
     return `${period}${o.amountValue}${o.amountUnit}`;
   }
   return o.amountText || null;

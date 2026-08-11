@@ -140,7 +140,7 @@ export default async function OfferingDetailPage({
   const tradeRows: [string, string | null][] = (
     [
       ["希望価格", price],
-      ["提供可能量", amount],
+      [isGive ? "提供可能量" : "必要数量", amount],
       ["最小取引量", offering.minOrderText],
       ["商品・原料の状態", offering.itemCondition],
       ["保存状態", offering.storageType],
@@ -516,7 +516,7 @@ export default async function OfferingDetailPage({
       {points.length || offering.pointsImageUrl ? (
         <div>
           <h2 className={`${h2Cls} mb-2`}>
-            {isGive ? "おすすめポイント" : "うちの特徴"}
+            {isGive ? "おすすめポイント" : "備考"}
           </h2>
           {points.length ? (
             <div className="rounded-[10px] bg-[var(--green-soft)] p-5">
