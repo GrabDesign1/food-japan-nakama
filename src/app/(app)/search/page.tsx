@@ -32,10 +32,38 @@ const inputCls =
 // 検索タブ。「売りたい」と「探している」は性質が違う（写真の有無・見る人が逆）ので分ける
 // （2026-08-11 ユーザー指示。従来は1つのタブ＋「売り・買い両方」のプルダウンだった）
 const TABS = [
-  { key: "want", label: "探している", target: "offerings" as Target, direction: "WANT" },
-  { key: "give", label: "売りたい", target: "offerings" as Target, direction: "GIVE" },
-  { key: "coprojects", label: "共創プロジェクト", target: "coprojects" as Target, direction: "" },
-  { key: "producers", label: "登録事業者", target: "producers" as Target, direction: "" },
+  {
+    key: "want",
+    label: "探している",
+    hint: "買い手が求めているもの",
+    icon: "🔎",
+    target: "offerings" as Target,
+    direction: "WANT",
+  },
+  {
+    key: "give",
+    label: "売りたい",
+    hint: "売り手が提供できるもの",
+    icon: "📦",
+    target: "offerings" as Target,
+    direction: "GIVE",
+  },
+  {
+    key: "coprojects",
+    label: "共創プロジェクト",
+    hint: "一緒に事業をつくる",
+    icon: "🤝",
+    target: "coprojects" as Target,
+    direction: "",
+  },
+  {
+    key: "producers",
+    label: "登録事業者",
+    hint: "会社から探す",
+    icon: "🏢",
+    target: "producers" as Target,
+    direction: "",
+  },
 ];
 
 /** タブを決める。新パラメータ t が最優先で、無ければ旧URL（target/direction）から復元する。 */
@@ -131,14 +159,41 @@ export default async function SearchPage({
     return `/search?${params.toString()}`;
   };
 
-  const toggleCls = (active: boolean) =>
-    `flex-1 whitespace-nowrap px-3 py-2 text-center ${active ? "bg-[var(--green)] text-white" : "text-[var(--ink-2)]"}`;
-
   return (
     <div className="flex flex-col gap-5">
       <div>
         <p className={eyebrowCls}>SEARCH</p>
         <h1 className={h1Cls}>共創パートナーを探す</h1>
+      </div>
+
+      {/* 何を探すか（検索パネルの外に出し、押せると分かる形にする・2026-08-11 ユーザー指摘） */}
+      <div>
+        <p className="mb-2 text-[13px] font-bold text-[var(--ink-2)]">何を探しますか？</p>
+        <div className="flex flex-wrap gap-2">
+          {TABS.map((t) => {
+            const active = tab.key === t.key;
+            return (
+              <Link
+                key={t.key}
+                href={tabHref(t.key)}
+                aria-current={active ? "page" : undefined}
+                className={`flex min-w-[150px] flex-col rounded-xl border px-4 py-2.5 transition ${
+                  active
+                    ? "border-[var(--green)] bg-[var(--green)] text-white shadow"
+                    : "border-[var(--line)] bg-white text-[var(--ink-2)] hover:border-[var(--green)] hover:text-[var(--green-d)]"
+                }`}
+              >
+                <span className="text-[14px] font-bold">
+                  <span className="mr-1">{t.icon}</span>
+                  {t.label}
+                </span>
+                <span className={`text-[11px] ${active ? "text-white/85" : "text-[var(--muted)]"}`}>
+                  {t.hint}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* 検索バー */}
@@ -147,13 +202,6 @@ export default async function SearchPage({
         className="rounded-xl border border-[var(--line)] bg-[var(--green-soft)] p-4"
       >
         {/* 対象トグル */}
-        <div className="mb-3 flex w-full max-w-[680px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
-          {TABS.map((t) => (
-            <Link key={t.key} href={tabHref(t.key)} className={toggleCls(tab.key === t.key)}>
-              {t.label}
-            </Link>
-          ))}
-        </div>
         {/* 絞り込みの送信でタブが外れないように、いまのタブを持たせる */}
         <input type="hidden" name="t" value={tab.key} />
 
