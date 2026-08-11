@@ -27,6 +27,39 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   refunded: "返金済み",
 };
 
+/** 事務局へ依頼する（正式サービス。相談→見積→個別契約）。会員は上部、未加入は下部に置く。 */
+function ServiceMenuSection() {
+  return (
+    <div className="max-w-[760px]">
+      <h2 className={h2Cls}>事務局へ依頼する（個別契約）</h2>
+      <p className="mt-1 text-[12px] leading-6 text-[var(--muted)]">
+        基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します。
+        価格は税込の提案値で、個別契約が必要なサービスは「相談する」から事務局が要件確認・見積提示を行います（自動決済はしません）。
+      </p>
+      <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+        {SERVICE_MENU.map((s, i) => (
+          <div
+            key={s.name}
+            className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
+          >
+            <div className="flex-1">
+              <div className="text-[13px] font-semibold text-[var(--ink)]">{s.name}</div>
+              <div className="text-[12px] text-[var(--muted)]">{s.desc}</div>
+            </div>
+            <div className="shrink-0 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
+            <Link
+              href={`/consultation?type=service&service=${s.type}`}
+              className={`${btn("secondary", "sm")} shrink-0`}
+            >
+              相談する
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -63,14 +96,18 @@ export default async function BillingPage({
         </div>
       ) : null}
 
-      {/* 無料で使えることの明示（有料を必須に見せない） */}
-      <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
-        <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
-        <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
-          プロフィール登録、案件（売りたい（提供したい）／探している（調達したい）／共創パートナー募集）の掲載、閲覧、応募、問い合わせの送信は無料です。
-          届いた問い合わせへの返信は、何往復でも無料です。有料になるのは、①売り手から「探している（調達したい）」案件への初回提案（紹介料）②掲載オプション（露出・通知）③事務局への依頼、の3つです。
-        </p>
-      </div>
+      {/* 無料で使えることの明示（有料を必須に見せない）。会員には不要なので出さない（2026-08-11 ユーザー指示） */}
+      {isMember ? (
+        <ServiceMenuSection />
+      ) : (
+        <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+          <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            プロフィール登録、案件（売りたい（提供したい）／探している（調達したい）／共創パートナー募集）の掲載、閲覧、応募、問い合わせの送信は無料です。
+            届いた問い合わせへの返信は、何往復でも無料です。有料になるのは、①売り手から「探している（調達したい）」案件への初回提案（紹介料）②掲載オプション（露出・通知）③事務局への依頼、の3つです。
+          </p>
+        </div>
+      )}
 
       {/* 紹介クレジット残高 */}
       <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
@@ -141,34 +178,8 @@ export default async function BillingPage({
         ) : null}
       </div>
 
-      {/* 事務局へ依頼する（正式サービス。相談→見積→個別契約） */}
-      <div className="max-w-[760px]">
-        <h2 className={h2Cls}>事務局へ依頼する（個別契約）</h2>
-        <p className="mt-1 text-[12px] leading-6 text-[var(--muted)]">
-          基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します。
-          価格は税込の提案値で、個別契約が必要なサービスは「相談する」から事務局が要件確認・見積提示を行います（自動決済はしません）。
-        </p>
-        <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
-          {SERVICE_MENU.map((s, i) => (
-            <div
-              key={s.name}
-              className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
-            >
-              <div className="flex-1">
-                <div className="text-[13px] font-semibold text-[var(--ink)]">{s.name}</div>
-                <div className="text-[12px] text-[var(--muted)]">{s.desc}</div>
-              </div>
-              <div className="shrink-0 text-[13px] font-semibold text-[var(--green-d)]">{s.price}</div>
-              <Link
-                href={`/consultation?type=service&service=${s.type}`}
-                className={`${btn("secondary", "sm")} shrink-0`}
-              >
-                相談する
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 事務局へ依頼する（正式サービス。相談→見積→個別契約）。会員のときは上部へ移動している */}
+      {isMember ? null : <ServiceMenuSection />}
 
       {/* 購入履歴 */}
       <div className="max-w-[760px]">
