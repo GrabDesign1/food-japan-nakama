@@ -304,7 +304,7 @@ export default async function PublicHome() {
 
         {/* 最終CTA（3択） */}
         <section className="rounded-2xl border border-[var(--green)] bg-[var(--green-soft)] px-6 py-10">
-          <h2 className="text-center font-serif text-[22px] text-[var(--ink)]">目的に合わせて、次の一歩へ</h2>
+          <h2 className="text-center font-serif text-[22px] text-[var(--ink)]">目的に合わせてお選びいただけます。</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-[10px] bg-white p-5 text-center">
               <p className="text-[13px] text-[var(--ink-2)]">自分で相手を探したい</p>
