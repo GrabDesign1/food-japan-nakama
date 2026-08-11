@@ -30,7 +30,100 @@ function Stat({ label, value, strong = false }: { label: string; value: number; 
   );
 }
 
-export function MyListingsTable({ rows, now }: { rows: MyListingRow[]; now: Date }) {
+/**
+ * 表は列が多く、ダッシュボードの左カラム（約600px）では横スクロールになり
+ * 「操作」ボタンが見切れてしまう。狭い場所ではカード（layout="cards"）を使う。
+ */
+export function MyListingsTable({
+  rows,
+  now,
+  layout = "table",
+}: {
+  rows: MyListingRow[];
+  now: Date;
+  layout?: "table" | "cards";
+}) {
+  if (layout === "cards") {
+    return (
+      <div className="flex flex-col gap-3">
+        {rows.map((r) => {
+          const state = listingState(r, now);
+          const idle = idleDays(r, now);
+          const stale = r.received > 0 && r.unread === 0 && idle !== null && idle >= STALE_DAYS;
+          return (
+            <div
+              key={r.id}
+              className={`rounded-[12px] border p-4 ${
+                r.unread > 0 ? "border-[var(--red)] bg-[#FFF7EF]" : "border-[var(--line)] bg-white"
+              }`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
+                    r.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+                  }`}
+                >
+                  {DIRECTION_SHORT[r.direction] ?? ""}
+                </span>
+                <Link
+                  href={`/ledger/${r.id}/proposals`}
+                  className="min-w-0 flex-1 truncate font-bold text-[var(--ink)] hover:text-[var(--green-d)] hover:underline"
+                >
+                  {r.title || "（無題）"}
+                </Link>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    state === "public"
+                      ? "bg-[var(--green-soft)] text-[var(--green-d)]"
+                      : state === "expired"
+                        ? "bg-[var(--line)] text-[var(--ink-2)]"
+                        : "bg-[#FAF0D6] text-[#B77F0B]"
+                  }`}
+                >
+                  {state === "public" ? "公開中" : state === "expired" ? "募集終了" : "下書き"}
+                </span>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
+                {r.unread > 0 ? (
+                  <span className="font-bold text-[var(--red)]">未返信 {r.unread}件</span>
+                ) : stale ? (
+                  <span className="font-bold text-[#E2591F]">放置 {idle}日</span>
+                ) : (
+                  <span className="text-[var(--muted)]">対応が必要なものはありません</span>
+                )}
+                <span className="text-[var(--ink-2)]">
+                  届いた <b>{r.received}</b>　商談中 <b>{r.talking}</b>　成約 <b>{r.closed}</b>
+                </span>
+              </div>
+
+              <div className="mt-1 text-[11px] text-[var(--muted)]">
+                最終のやり取り {fmtDate(r.lastMessageAt)}
+                {r.applicationDeadline ? `　/　募集期限 ${fmtDate(r.applicationDeadline)}` : ""}
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href={`/ledger/${r.id}/proposals`}
+                  className={btn(r.unread > 0 ? "action" : "secondary", "sm")}
+                >
+                  届いた{r.direction === "GIVE" ? "問い合わせ" : "提案"}
+                  {r.received > 0 ? `（${r.received}）` : ""}
+                </Link>
+                <Link href={`/ledger/${r.id}/edit`} className={btn("secondary", "sm")}>
+                  編集
+                </Link>
+                <form action={duplicateOffering.bind(null, r.id)}>
+                  <button className={btn("secondary", "sm")}>コピーして再登録</button>
+                </form>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto rounded-[12px] border border-[var(--line)] bg-white">
       <table className="w-full min-w-[900px] text-left text-[13px]">

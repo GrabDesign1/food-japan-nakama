@@ -529,7 +529,8 @@ export default async function DashboardPage() {
                   すべて見る →
                 </Link>
               </div>
-              <MyListingsTable rows={myListingRows.slice(0, 5)} now={new Date()} />
+              {/* 左カラムは幅が狭く、表だとボタンが見切れるためカードで出す */}
+              <MyListingsTable rows={myListingRows.slice(0, 5)} now={new Date()} layout="cards" />
             </section>
           ) : null}
 
