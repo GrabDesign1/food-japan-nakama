@@ -37,6 +37,10 @@ const SESSION_DELIVERABLES = [
   "90日間のアクションプラン",
 ];
 
+const SESSION_FINAL_DELIVERABLE = [
+  "商品・販路戦略書（PDF／目安8〜12ページ）",
+];
+
 const SESSION_EXCLUDED = [
   "候補企業の個別調査",
   "企業リストの作成",
@@ -144,6 +148,7 @@ export default function SalesChannelPage() {
         <Block title="こんな方におすすめ"><List items={SESSION_FOR} /></Block>
         <Block title="実施する業務"><List items={SESSION_WORK} /></Block>
         <Block title="実施後に共有するもの"><List items={SESSION_DELIVERABLES} /></Block>
+        <Block title="最終成果物"><List items={SESSION_FINAL_DELIVERABLE} /></Block>
         <Block title="含まれないもの"><List items={SESSION_EXCLUDED} /></Block>
 
         <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
