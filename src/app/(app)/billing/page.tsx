@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
-import { PLANS } from "@/lib/stripe";
+import { PLANS, stripe } from "@/lib/stripe";
 import { getCreditBalance } from "@/lib/contact-credits";
 import { PlanButton } from "./_components/PlanButton";
 import { PortalButton } from "./_components/PortalButton";
@@ -17,6 +17,45 @@ const SERVICE_MENU: { name: string; desc: string; price: string; type: string }[
   { name: "販売成果報酬", desc: "NAKAMA経由で確認できる売上（個別契約で条件確定後に開始）", price: "売上の10〜20％", type: "success_fee" },
   { name: "共創・商品開発", desc: "相手探し、試作、販路、事業化", price: "300万〜1,000万円", type: "co_creation" },
 ];
+
+// 購入履歴に出す注文の状態＝実際に支払いが成立したもの（返金済みは支払いの記録として残す）
+const PURCHASED_STATUSES = ["paid", "fulfilled", "refunded"];
+
+type HistoryRow = {
+  key: string;
+  date: Date;
+  name: string;
+  amount: number;
+  status: string;
+  refunded: boolean;
+};
+
+/**
+ * ビジネス会員の月額の支払い履歴（Stripeの請求書）。
+ * クーポンで0円になった請求も支払い済みとして返す（自社DBのbillingOrderには残らないため）。
+ */
+async function listPaidInvoices(customerId: string | null): Promise<HistoryRow[]> {
+  if (!stripe || !customerId) return [];
+  try {
+    const res = await stripe.invoices.list({ customer: customerId, limit: 24 });
+    return res.data
+      .filter((inv) => inv.status === "paid")
+      .map((inv) => ({
+        key: `inv_${inv.id}`,
+        date: new Date(inv.created * 1000),
+        // 請求書の明細（英語まじりの自動生成文）ではなくプラン名で統一する。
+        // Checkout(mode=payment)の単品購入は請求書を作らないため、ここに来るのは月額のみ。
+        name: `${PLANS[0].name}（月額）`,
+        amount: inv.amount_paid,
+        status: "支払い済み",
+        refunded: false,
+      }));
+  } catch (e) {
+    // 履歴が出ないだけで画面は使えるようにする
+    console.error("[billing] 請求書の取得に失敗:", e);
+    return [];
+  }
+}
 
 const ORDER_STATUS_LABEL: Record<string, string> = {
   pending_payment: "支払い待ち",
@@ -73,15 +112,32 @@ export default async function BillingPage({
   const isMember = me.paymentStatus === "PAID";
   const plan = PLANS[0];
 
-  const [balance, orders] = await Promise.all([
+  const [balance, orders, invoices] = await Promise.all([
     getCreditBalance(me.id),
     prisma.billingOrder.findMany({
-      where: { memberId: me.id },
+      // 支払いが成立したものだけを履歴に出す（Stripeへ行っただけの「支払い待ち」や
+      // 失敗・キャンセルは購入していないため除外・2026-08-11 ユーザー指示）
+      where: { memberId: me.id, status: { in: PURCHASED_STATUSES } },
       orderBy: { createdAt: "desc" },
       take: 20,
       include: { items: { select: { name: true } } },
     }),
+    listPaidInvoices(me.stripeCustomerId),
   ]);
+
+  // 単品購入・掲載オプション（自社DB）と、ビジネス会員の月額（Stripeの請求書）を1つの履歴にまとめる。
+  // クーポンで0円になった請求も「支払い済み」として残す。
+  const history: HistoryRow[] = [
+    ...orders.map((o) => ({
+      key: o.id,
+      date: o.createdAt,
+      name: o.items.map((it) => it.name).join("、"),
+      amount: o.totalAmount,
+      status: ORDER_STATUS_LABEL[o.status] ?? o.status,
+      refunded: o.status === "refunded",
+    })),
+    ...invoices,
+  ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
     <div className="flex flex-col gap-6">
@@ -183,35 +239,29 @@ export default async function BillingPage({
 
       {/* 購入履歴 */}
       <div className="max-w-[760px]">
-        <h2 className={h2Cls}>購入履歴（掲載オプション・紹介クレジット）</h2>
-        {orders.length === 0 ? (
+        <h2 className={h2Cls}>購入履歴（ビジネス会員・掲載オプション・紹介クレジット）</h2>
+        {history.length === 0 ? (
           <p className="mt-2 rounded-[10px] border border-dashed border-[var(--line)] bg-white p-5 text-[12px] text-[var(--muted)]">
             購入履歴はまだありません。
           </p>
         ) : (
           <div className="mt-2 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
-            {orders.map((o, i) => (
+            {history.map((h, i) => (
               <div
-                key={o.id}
+                key={h.key}
                 className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-[12px] ${i > 0 ? "border-t border-[var(--line)]" : ""}`}
               >
-                <span className="text-[var(--muted)]">
-                  {o.createdAt.toLocaleDateString("ja-JP")}
-                </span>
-                <span className="flex-1 font-medium text-[var(--ink)]">
-                  {o.items.map((it) => it.name).join("、")}
-                </span>
-                <span className="text-[var(--ink)]">¥{o.totalAmount.toLocaleString()}</span>
+                <span className="text-[var(--muted)]">{h.date.toLocaleDateString("ja-JP")}</span>
+                <span className="flex-1 font-medium text-[var(--ink)]">{h.name}</span>
+                <span className="text-[var(--ink)]">¥{h.amount.toLocaleString()}</span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] ${
-                    o.status === "fulfilled" || o.status === "paid"
-                      ? "bg-[var(--green-soft)] text-[var(--green-d)]"
-                      : o.status === "refunded" || o.status === "payment_failed"
-                        ? "bg-[var(--red-soft)] text-[var(--red)]"
-                        : "bg-[var(--line)] text-[var(--ink-2)]"
+                    h.refunded
+                      ? "bg-[var(--red-soft)] text-[var(--red)]"
+                      : "bg-[var(--green-soft)] text-[var(--green-d)]"
                   }`}
                 >
-                  {ORDER_STATUS_LABEL[o.status] ?? o.status}
+                  {h.status}
                 </span>
               </div>
             ))}
