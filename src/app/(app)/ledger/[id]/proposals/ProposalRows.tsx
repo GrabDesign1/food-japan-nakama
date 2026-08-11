@@ -179,12 +179,13 @@ export function ProposalRows({
                   aria-label="すべて選択"
                 />
               </th>
+              {/* 対応ボタンは右端だと横スクロールで隠れて見つけられないため先頭に置く（2026-08-12） */}
+              <th className="px-4 py-3 font-medium">対応</th>
               <th className="px-4 py-3 font-medium">ステータス</th>
               <th className="px-4 py-3 font-medium">{isGive ? "問い合わせ企業" : "提案企業"}</th>
               <th className="px-4 py-3 font-medium">提示額（税込）</th>
               <th className="px-4 py-3 font-medium">お気に入り・メモ（非公開）</th>
               <th className="px-4 py-3 font-medium">最終更新日</th>
-              <th className="px-4 py-3 font-medium">対応</th>
             </tr>
           </thead>
           <tbody>
@@ -200,6 +201,15 @@ export function ProposalRows({
                     onChange={() => toggle(r.threadId)}
                     aria-label={`${r.otherName} を選択`}
                   />
+                </td>
+
+                <td className="px-4 py-3 align-top">
+                  <Link
+                    href={`/ledger/${offeringId}/proposals/${r.threadId}`}
+                    className={`${btn(r.unread > 0 ? "action" : "primary", "sm")} whitespace-nowrap`}
+                  >
+                    {r.unread > 0 ? "対応する" : "やり取りを見る"}
+                  </Link>
                 </td>
 
                 <td className="px-4 py-3 align-top">
@@ -268,15 +278,6 @@ export function ProposalRows({
                   <div className="text-[10px] text-[var(--muted)]">
                     {r.lastFromMe ? "自分が送信" : "相手から"}
                   </div>
-                </td>
-
-                <td className="px-4 py-3 align-top">
-                  <Link
-                    href={`/ledger/${offeringId}/proposals/${r.threadId}`}
-                    className={`${btn(r.unread > 0 ? "action" : "secondary", "sm")} whitespace-nowrap`}
-                  >
-                    詳細へ
-                  </Link>
                 </td>
               </tr>
             ))}
