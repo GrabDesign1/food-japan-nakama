@@ -105,7 +105,8 @@ export function OfferingCard({
           </div>
         )}
         {urgent ? (
-          <span className="absolute left-0 top-0 rounded-br-lg bg-[var(--red)] px-2.5 py-1 text-[11px] font-bold text-white shadow">
+          // 急募は有料オプション。一覧で埋もれないよう新着より一回り大きく出す（2026-08-11 ユーザー指定）
+          <span className="absolute left-0 top-0 rounded-br-2xl bg-[var(--red)] px-4 py-2 text-[15px] font-bold text-white shadow-md">
             急募
           </span>
         ) : isNew ? (
