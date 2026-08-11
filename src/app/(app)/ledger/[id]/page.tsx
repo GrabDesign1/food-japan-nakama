@@ -131,12 +131,18 @@ export default async function OfferingDetailPage({
     : 0;
   const amount = formatAmount(offering);
   const hero = offering.imageUrls[0];
-  // CTAの行き先。探している（調達したい）案件でまだやり取りが無ければ、提案ページへ直接進む。
-  // 以前はページ内アンカーだけで、連絡セクションが近くにあるため「押しても動かない」ように見えた。
-  const ctaHref =
-    !isGiveDirection(offering.direction) && !existingThread
+  // CTAの行き先と文言。
+  // ①すでにこの案件でやり取りがある＝提案済みなので、もう一度提案させずメッセージへ送る
+  //   （2026-08-11。「提案済みなのに提案するボタンが出る」という指摘。判定は案件ID単位）
+  // ②探している（調達したい）案件で未提案なら、提案ページへ直接進む
+  // ③売りたい案件は同じページ内の問い合わせフォームへ
+  const ctaHref = existingThread
+    ? `/messages/${existingThread.id}`
+    : !isGiveDirection(offering.direction)
       ? `/ledger/${offering.id}/propose`
       : "#inquiry";
+  const ctaLabel = existingThread ? "メッセージを見る" : isGive ? "問い合わせる" : "提案する";
+  const ctaLabelTop = existingThread ? "メッセージを見る →" : isGive ? "問い合わせる ↓" : "提案する ↓";
   const gallery = offering.imageUrls.slice(1);
   const points = (offering.points ?? "")
     .split("\n")
@@ -265,7 +271,7 @@ export default async function OfferingDetailPage({
         </div>
         {!isOwner && offering.isPublic ? (
           <a href={ctaHref} className={`${btn("action", "sm")} mt-3 inline-block`}>
-            {isGive ? "問い合わせる ↓" : "提案する ↓"}
+            {ctaLabelTop}
           </a>
         ) : null}
 
@@ -619,7 +625,7 @@ export default async function OfferingDetailPage({
       {!isOwner && offering.isPublic ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <a href={ctaHref} className={`${btn("action", "lg")} block w-full text-center`}>
-            {isGive ? "問い合わせる" : "提案する"}
+            {ctaLabel}
           </a>
           <FavoriteButton offeringId={offering.id} initialFavorited={!!myFavorite} size="lg" fullWidth />
         </div>
