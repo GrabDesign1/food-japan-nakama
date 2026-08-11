@@ -13,9 +13,9 @@ import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 const SERVICE_MENU: { name: string; desc: string; price: string; type: string }[] = [
   { name: "販促プラン", desc: "SNS掲載、クーポン配信、アクセス分析", price: "月額33,000円", type: "promotion_plan" },
   { name: "販売強化プラン", desc: "特集制作、広告運用、販売企画、月次改善", price: "月額110,000円＋広告費", type: "sales_growth" },
-  { name: "売れる仕組み構築", desc: "LP、動画、クラウドファンディング、EC、キャンペーン開発", price: "100万〜500万円", type: "solution_build" },
+  { name: "売れる仕組み構築", desc: "LP、動画、クラウドファンディング、EC、キャンペーン開発", price: "50万円〜", type: "solution_build" },
   { name: "販売成果報酬", desc: "NAKAMA経由で確認できる売上（個別契約で条件確定後に開始）", price: "売上の10〜20％", type: "success_fee" },
-  { name: "共創・商品開発", desc: "相手探し、試作、販路、事業化", price: "300万〜1,000万円", type: "co_creation" },
+  { name: "共創・商品開発", desc: "相手探し、試作、販路、事業化", price: "200万円〜", type: "co_creation" },
 ];
 
 // 購入履歴に出す注文の状態＝実際に支払いが成立したもの（返金済みは支払いの記録として残す）
