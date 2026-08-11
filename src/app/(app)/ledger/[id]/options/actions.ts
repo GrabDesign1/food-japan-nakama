@@ -22,9 +22,15 @@ export async function buyListingOption(
   // 自分の案件か（IDOR対策）
   const offering = await prisma.offering.findFirst({
     where: { id: offeringId, memberId: me.id },
-    select: { id: true, direction: true },
+    select: { id: true, direction: true, isPublic: true },
   });
   if (!offering) return { error: "対象の案件が見つかりません。" };
+
+  // 下書き（非公開）のまま買えてしまうと、効果が出ないのに料金だけ発生する。
+  // 画面のボタンも無効化しているが、サーバー側でも止める（2026-08-11）。
+  if (!offering.isPublic) {
+    return { error: "この案件はまだ公開されていません。先に無料で公開してから、オプションをご購入ください。" };
+  }
 
   // 案件の向きに合う商品か（sell=GIVE / seek=WANT / both）
   const product = await prisma.billingProduct.findUnique({ where: { code: productCode } });

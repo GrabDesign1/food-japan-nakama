@@ -8,6 +8,8 @@ import { discountedUnitAmount } from "@/lib/billing-core";
 import { getActiveEffectsFor } from "@/lib/billing";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 import { BuyOptionButton } from "./BuyOptionButton";
+import { EffectPreview } from "./EffectPreview";
+import type { OfferingCardData } from "@/components/OfferingCard";
 
 const EFFECT_LABEL: Record<string, string> = {
   featured: "注目表示",
@@ -32,7 +34,32 @@ export default async function ListingOptionsPage({
 
   const offering = await prisma.offering.findFirst({
     where: { id, memberId: me.id },
-    select: { id: true, title: true, direction: true, isPublic: true },
+    select: {
+      id: true,
+      title: true,
+      direction: true,
+      isPublic: true,
+      // 「見え方」プレビューを実際のカードで描くための表示項目
+      category: true,
+      area: true,
+      imageUrls: true,
+      tags: true,
+      amountValue: true,
+      amountUnit: true,
+      amountPeriod: true,
+      amountText: true,
+      priceType: true,
+      priceAmount: true,
+      priceUnit: true,
+      minOrderText: true,
+      itemCondition: true,
+      supplyFrequency: true,
+      applicationDeadline: true,
+      listingPurpose: true,
+      tagline: true,
+      seekingType: true,
+      createdAt: true,
+    },
   });
   if (!offering) notFound();
 
@@ -59,6 +86,35 @@ export default async function ListingOptionsPage({
   const activeEffects = effectsMap.get(offering.id) ?? new Set<string>();
   const price = (p: { priceAmount: number; memberDiscountPercent: number }) =>
     discountedUnitAmount(p.priceAmount, p.memberDiscountPercent, isMember);
+
+  // プレビューには本人の案件そのものを使う（自分の案件がどう見えるかを見せる）
+  const sample: OfferingCardData = {
+    id: offering.id,
+    direction: offering.direction,
+    category: offering.category,
+    title: offering.title || "（無題の案件）",
+    area: offering.area,
+    imageUrls: offering.imageUrls,
+    amountValue: offering.amountValue,
+    amountUnit: offering.amountUnit,
+    amountPeriod: offering.amountPeriod,
+    amountText: offering.amountText,
+    memberName: me.name,
+    createdAt: offering.createdAt,
+    tags: offering.tags,
+    priceType: offering.priceType,
+    priceAmount: offering.priceAmount,
+    priceUnit: offering.priceUnit,
+    minOrderText: offering.minOrderText,
+    itemCondition: offering.itemCondition,
+    supplyFrequency: offering.supplyFrequency,
+    applicationDeadline: offering.applicationDeadline,
+    listingPurpose: offering.listingPurpose,
+    tagline: offering.tagline,
+    seekingType: offering.seekingType,
+  };
+  // 下書き（非公開）のままでは効果が出ない。購入はサーバー側でも止めている。
+  const isDraft = !offering.isPublic;
 
   const oneTime = products.filter((p) => p.billingType === "one_time");
   const bundles = oneTime.filter((p) => p.effectType === "bundle");
@@ -104,7 +160,14 @@ export default async function ListingOptionsPage({
           </p>
         ) : null}
         {extra}
-        <BuyOptionButton offeringId={offering.id} code={p.code} label="購入する（Stripe決済へ）" />
+        <EffectPreview effectType={p.effectType} sample={sample} />
+        {isDraft ? (
+          <div className="mt-2 rounded-md border border-[var(--line)] bg-[var(--canvas)] px-3 py-2 text-[11px] leading-5 text-[var(--muted)]">
+            この案件は<b>下書き（非公開）</b>のため購入できません。先に無料で公開してください。
+          </div>
+        ) : (
+          <BuyOptionButton offeringId={offering.id} code={p.code} label="購入する（Stripe決済へ）" />
+        )}
       </div>
     );
   };
@@ -123,6 +186,19 @@ export default async function ListingOptionsPage({
         <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-5 py-3 text-[13px] text-[var(--green-d)]">
           お支払いを確認しました。掲載オプションの状態はこのページと「プラン・お支払い」で確認できます。
           審査ありの商品は、内容を確認後に掲載開始日をお知らせします。
+        </div>
+      ) : null}
+
+      {isDraft ? (
+        <div className="rounded-[10px] border-2 border-[#F59E0B] bg-[#FEF6E7] px-5 py-3">
+          <p className="text-[13px] font-bold text-[#B77F0B]">まだ公開されていません</p>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            掲載オプションは、公開中の案件を目立たせるためのものです。下書きのままでは効果が出ないため、購入できないようにしています。
+            <Link href={`/ledger/${offering.id}/edit`} className="ml-1 font-bold text-[var(--green-d)] underline">
+              編集画面から無料で公開する →
+            </Link>
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--muted)]">公開前でも、下の「見え方を見る」で表示例は確認できます。</p>
         </div>
       ) : null}
 
@@ -195,9 +271,8 @@ export default async function ListingOptionsPage({
                   <div className="text-[13px] font-semibold text-[var(--ink)]">{p.name}</div>
                   {p.description ? <div className="text-[11px] text-[var(--muted)]">{p.description}</div> : null}
                 </div>
-                <div className="shrink-0 text-[13px] font-semibold text-[var(--green-d)]">
-                  ¥{p.priceAmount.toLocaleString()}〜
-                </div>
+                {/* 個別見積のため金額は出さない（2026-08-11 ユーザー決定）。内容と規模で変わるため */}
+                <div className="shrink-0 text-[13px] font-semibold text-[var(--green-d)]">要相談</div>
                 <Link href="/consultation" className={`${btn("secondary", "sm")} shrink-0`}>
                   相談する
                 </Link>
