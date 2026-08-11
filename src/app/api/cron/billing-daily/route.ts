@@ -8,7 +8,11 @@
 import type { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { refundUnreadCredits, expireCreditLots } from "@/lib/contact-credits";
+import {
+  refundUnreadCredits,
+  expireCreditLots,
+  grantMonthlyMemberCredits,
+} from "@/lib/contact-credits";
 import { isUnreadRefundDue } from "@/lib/billing-core";
 import { getMemberUserEmails } from "@/lib/member";
 import { notifyPromotionEnding, notifyUnreadRefund } from "@/lib/email";
@@ -164,7 +168,44 @@ export async function GET(req: NextRequest) {
   }
   summary.unreadRefunds = refunded;
 
-  // 5) 期限切れクレジットの失効
+  // 5) 月次クレジットの取りこぼし補填（2026-08-11）
+  // 付与の機会が「Webhookが届いた瞬間」だけだと、イベント設定漏れ・仕様変更・障害で落ちる。
+  // 実際にクーポン契約（請求0円）で付与されない事故が起きたため、日次で補う。
+  // 直近27日以内に月次付与があればスキップ（通常の invoice.paid と二重にしない）。
+  const paidMembers = await prisma.member.findMany({
+    where: { paymentStatus: "PAID", stripeSubscriptionId: { not: null } },
+    select: { id: true, tenantId: true },
+  });
+  const RECENT_MS = 27 * 24 * 60 * 60 * 1000;
+  const jst = new Date(now.getTime() + 9 * 3600 * 1000);
+  const ym = `${jst.getUTCFullYear()}-${String(jst.getUTCMonth() + 1).padStart(2, "0")}`;
+  let backfilled = 0;
+  for (const m of paidMembers) {
+    const recent = await prisma.contactCreditLedger.findFirst({
+      where: {
+        memberId: m.id,
+        entryType: "member_monthly",
+        quantity: { gt: 0 },
+        createdAt: { gte: new Date(now.getTime() - RECENT_MS) },
+      },
+      select: { id: true },
+    });
+    if (recent) continue;
+    // 冪等キーは会員×月。付与時に前月分の未使用ロットは失効する（繰越なしの担保）
+    const res = await grantMonthlyMemberCredits({
+      tenantId: m.tenantId,
+      memberId: m.id,
+      invoiceId: `backfill:${m.id}:${ym}`,
+      periodEnd: null,
+    });
+    if (res.granted) {
+      backfilled++;
+      console.warn(`[cron] 月次クレジットを補填しました member=${m.id} ${ym}`);
+    }
+  }
+  summary.monthlyBackfills = backfilled;
+
+  // 6) 期限切れクレジットの失効
   summary.expiredCredits = await expireCreditLots();
 
   return Response.json({ ok: true, at: now.toISOString(), ...summary });
