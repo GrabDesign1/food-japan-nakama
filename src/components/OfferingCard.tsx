@@ -54,6 +54,8 @@ export function OfferingCard({
   href,
   urgent = false,
   featured = false,
+  statusLabel = null,
+  statusTone = "green",
 }: {
   o: OfferingCardData;
   isOwn?: boolean;
@@ -61,6 +63,9 @@ export function OfferingCard({
   urgent?: boolean;
   /** 注目表示（有料オプション）の枠。橙色の枠で自然表示と区別する。 */
   featured?: boolean;
+  /** やり取りの状態（商談中・要返信など）。指定すると画像の右上に出す。 */
+  statusLabel?: string | null;
+  statusTone?: "green" | "orange";
 }) {
   const meta = categoryMeta(o.category);
   const thumb = o.imageUrls?.[0];
@@ -146,6 +151,16 @@ export function OfferingCard({
         {isOwn ? (
           <span className="absolute right-2 top-2 rounded bg-[#B77F0B] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
             あなたの投稿
+          </span>
+        ) : null}
+        {/* やり取りの状態（商談中・要返信など）。「あなたの投稿」と重ならないよう位置をずらす */}
+        {statusLabel ? (
+          <span
+            className={`absolute right-2 ${isOwn ? "top-9" : "top-2"} rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${
+              statusTone === "orange" ? "bg-[#E2591F]" : "bg-[var(--green)]"
+            }`}
+          >
+            {statusLabel}
           </span>
         ) : null}
         {/* 画像上のバッジ。狭い幅では単語の途中で改行されて読めなくなるため、

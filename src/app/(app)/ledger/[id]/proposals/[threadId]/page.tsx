@@ -179,6 +179,8 @@ export default async function OfferingThreadPage({
             meId={me.id}
             otherName={other?.name ?? "相手"}
             myName={me.name || "自分"}
+            myAvatarUrl={me.avatarUrl || me.companyLogoUrl}
+            otherAvatarUrl={other?.avatarUrl || other?.companyLogoUrl}
             variant="card"
             emptyText="まだやり取りはありません。下の入力欄から送れます。"
           />

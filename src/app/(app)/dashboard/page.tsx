@@ -173,7 +173,7 @@ export default async function DashboardPage() {
   const myOfferingIds = myOfferings.map((o) => o.id);
   const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
 
-  const [unreadGroups, viewGroups, favGroups, inquiryGroups, appMembers, viewMap] = await Promise.all([
+  const [unreadGroups, viewGroups, favGroups, inquiryGroups, appMembers, viewMap, dealThreads] = await Promise.all([
     // 商談スレッドごとの未読数（「要返信」判定）
     memberId && dealThreadIds.length
       ? prisma.message.groupBy({
@@ -214,6 +214,13 @@ export default async function DashboardPage() {
       : Promise.resolve([]),
     // 24時間以内の閲覧数（おすすめ＋自分の公開中案件のカード表示用）
     views24hMap([...recommended.map((o) => o.id), ...myOfferings.map((o) => o.id)]),
+    // 商談のスレッドが「どの案件のものか」（進行中の活動をカードで出すため）
+    dealThreadIds.length
+      ? prisma.thread.findMany({
+          where: { id: { in: dealThreadIds }, offeringId: { not: null } },
+          select: { id: true, offeringId: true },
+        })
+      : Promise.resolve([]),
   ]);
   const unreadByThread = new Map(unreadGroups.map((g) => [g.threadId, g._count._all]));
   const viewsByOffering = new Map(viewGroups.map((g) => [g.offeringId, g._count._all]));
@@ -223,10 +230,71 @@ export default async function DashboardPage() {
   );
   const appNameMap = new Map(appMembers.map((m) => [m.id, m.name]));
 
+  // ── 進行中の活動：案件に紐づく商談はカードで出す（案件が一目で分かるように・2026-08-11 ユーザー指示）──
+  // クリック先は案件ごとのやり取り画面（案件＋履歴＋返信が1画面）。
+  const dealOfferingIds = Array.from(
+    new Set(dealThreads.map((t) => t.offeringId).filter((v): v is string => !!v))
+  );
+  const dealOfferings = dealOfferingIds.length
+    ? await prisma.offering.findMany({
+        where: { id: { in: dealOfferingIds } },
+        select: {
+          id: true,
+          direction: true,
+          category: true,
+          title: true,
+          area: true,
+          imageUrls: true,
+          description: true,
+          amountValue: true,
+          amountUnit: true,
+          amountPeriod: true,
+          amountText: true,
+          priceType: true,
+          priceAmount: true,
+          priceUnit: true,
+          priceTaxType: true,
+          minOrderText: true,
+          itemCondition: true,
+          supplyFrequency: true,
+          applicationDeadline: true,
+          tagline: true,
+          listingPurpose: true,
+          seekingType: true,
+          createdAt: true,
+          member: { select: { name: true, companyLogoUrl: true } },
+        },
+      })
+    : [];
+  const offeringById = new Map(dealOfferings.map((o) => [o.id, o]));
+  const threadOfferingMap = new Map(
+    dealThreads.map((t) => [t.id, t.offeringId ? offeringById.get(t.offeringId) ?? null : null])
+  );
+  const activityCards = dealsWithOther
+    .map(({ deal }) => {
+      const offering = deal.threadId ? threadOfferingMap.get(deal.threadId) : null;
+      if (!offering || !deal.threadId) return null;
+      const unread = unreadByThread.get(deal.threadId) ?? 0;
+      return {
+        offering,
+        threadId: deal.threadId,
+        unread,
+        status: unread > 0 ? `要返信${unread > 1 ? ` ${unread}件` : ""}` : PHASES[deal.phase] ?? "商談中",
+        tone: (unread > 0 ? "orange" : "green") as "orange" | "green",
+        at: deal.lastActivityAt,
+      };
+    })
+    .filter((v): v is NonNullable<typeof v> => !!v)
+    .sort((a, b) => (b.unread > 0 ? 1 : 0) - (a.unread > 0 ? 1 : 0) || b.at.getTime() - a.at.getTime())
+    .slice(0, 4);
+  const cardThreadIds = new Set(activityCards.map((c) => c.threadId));
+
   // ── 進行中の活動（商談＋共創PJ＋応募進捗を統合・最大3件）──
   // 優先順位（指示書§13）: 0=要返信・未読 / 1=期限超過・間近 / 2=次回打合せが近い / 3=最終更新の新しい順
   const activities: ActivityItem[] = [
-    ...dealsWithOther.map(({ deal, other }) => {
+    ...dealsWithOther
+      .filter(({ deal }) => !(deal.threadId && cardThreadIds.has(deal.threadId)))
+      .map(({ deal, other }) => {
       const unread = deal.threadId ? (unreadByThread.get(deal.threadId) ?? 0) : 0;
       return {
         title: deal.nextAction || `${other?.name ?? "会員"}さんとの商談`,
@@ -433,14 +501,34 @@ export default async function DashboardPage() {
                 すべて見る →
               </Link>
             </div>
-            {activities.length === 0 ? (
+            {/* 案件に紐づく商談はカードで（クリックで案件＋やり取りの画面へ） */}
+            {activityCards.length > 0 ? (
+              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {activityCards.map((c) => (
+                  <div key={c.threadId}>
+                    <OfferingCard
+                      o={{
+                        ...c.offering,
+                        memberName: c.offering.member?.name ?? null,
+                        memberLogoUrl: c.offering.member?.companyLogoUrl ?? null,
+                      }}
+                      href={`/ledger/${c.offering.id}/proposals/${c.threadId}`}
+                      statusLabel={c.status}
+                      statusTone={c.tone}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {activities.length === 0 && activityCards.length === 0 ? (
               <EmptyState
                 compact
                 title="まだ進行中の活動はありません"
                 description="案件を探して、気になる相手に連絡してみましょう。"
                 actions={[{ label: "案件を探す", href: "/search", variant: "primary" }]}
               />
-            ) : (
+            ) : activities.length > 0 ? (
               <div className="overflow-hidden rounded-[14px] border border-[var(--line)] bg-white">
                 {activities.map((a, i) => (
                   <Link
@@ -458,7 +546,7 @@ export default async function DashboardPage() {
                   </Link>
                 ))}
               </div>
-            )}
+            ) : null}
           </section>
 
           {/* あなたの公開中の案件（台帳と同じカード表示＋反響） */}

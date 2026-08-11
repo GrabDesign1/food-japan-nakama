@@ -41,6 +41,8 @@ export function MessageList({
   meId,
   otherName,
   myName = "自分",
+  myAvatarUrl = null,
+  otherAvatarUrl = null,
   emptyText = "まだやり取りはありません。",
   variant = "bubble",
 }: {
@@ -49,6 +51,9 @@ export function MessageList({
   otherName: string;
   /** カード表示のときに自分の投稿へ出す名前 */
   myName?: string;
+  /** カード表示の投稿者アイコン（ヘッダーと同じ丸アイコン。無ければ頭文字） */
+  myAvatarUrl?: string | null;
+  otherAvatarUrl?: string | null;
   emptyText?: string;
   /**
    * bubble＝従来のチャット（/messages）。
@@ -86,10 +91,25 @@ export function MessageList({
                     mine ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)]"
                   }`}
                 >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="text-[14px] font-bold text-[var(--green-d)]">
-                      {mine ? myName : otherName}
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {/* ヘッダーと同じ丸アイコン（画像が無ければ頭文字） */}
+                      <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white font-serif text-[14px] text-[var(--green-d)]">
+                        {(mine ? myAvatarUrl : otherAvatarUrl) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={(mine ? myAvatarUrl : otherAvatarUrl) as string}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          ((mine ? myName : otherName)?.[0] ?? "?").toUpperCase()
+                        )}
+                      </span>
+                      <span className="truncate text-[14px] font-bold text-[var(--green-d)]">
+                        {mine ? myName : otherName}
+                      </span>
+                    </div>
                     <span className="text-[11px] text-[var(--muted)]">{timeStr(msg.createdAt)}</span>
                   </div>
                   <div className="mt-2 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink)]">
