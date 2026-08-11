@@ -9,10 +9,12 @@ import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { EmptyState } from "@/components/EmptyState";
 import { views24hMap } from "@/lib/offering-views";
-import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 type SP = {
   target?: string;
+  /** 検索タブ（want/give/coprojects/producers） */
+  t?: string;
   area?: string;
   category?: string;
   q?: string;
@@ -27,11 +29,24 @@ const PER_PAGE = 24;
 const inputCls =
   "rounded-lg border border-[var(--line)] bg-white px-3 py-2.5 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
 
-function parseTarget(v: string | undefined): Target {
-  if (v === "producers") return "producers";
-  if (v === "coprojects") return "coprojects";
-  // 旧URL（target=projects）は台帳検索として扱う
-  return "offerings";
+// 検索タブ。「売りたい」と「探している」は性質が違う（写真の有無・見る人が逆）ので分ける
+// （2026-08-11 ユーザー指示。従来は1つのタブ＋「売り・買い両方」のプルダウンだった）
+const TABS = [
+  { key: "want", label: "探している", target: "offerings" as Target, direction: "WANT" },
+  { key: "give", label: "売りたい", target: "offerings" as Target, direction: "GIVE" },
+  { key: "coprojects", label: "共創プロジェクト", target: "coprojects" as Target, direction: "" },
+  { key: "producers", label: "登録事業者", target: "producers" as Target, direction: "" },
+];
+
+/** タブを決める。新パラメータ t が最優先で、無ければ旧URL（target/direction）から復元する。 */
+function parseTab(sp: SP): (typeof TABS)[number] {
+  const byKey = TABS.find((t) => t.key === sp.t);
+  if (byKey) return byKey;
+  if (sp.target === "producers") return TABS[3];
+  if (sp.target === "coprojects") return TABS[2];
+  if (sp.direction === "GIVE") return TABS[1];
+  // 旧URLの「売り・買い両方」と既定は「探している」（トップも買い手の募集を先に見せている）
+  return TABS[0];
 }
 
 export default async function SearchPage({
@@ -44,11 +59,12 @@ export default async function SearchPage({
   const tenantId = su.app.tenantId;
 
   const sp = await searchParams;
-  const target = parseTarget(sp.target);
+  const tab = parseTab(sp);
+  const target = tab.target;
   const area = sp.area?.trim() || "";
   const category = sp.category?.trim() || "";
   const q = sp.q?.trim() || "";
-  const direction = sp.direction === "GIVE" || sp.direction === "WANT" ? sp.direction : "";
+  const direction = tab.direction;
   const page = Math.max(1, Math.trunc(Number(sp.page) || 1));
   const skip = (page - 1) * PER_PAGE;
 
@@ -77,7 +93,7 @@ export default async function SearchPage({
 
   const count =
     target === "producers" ? producers.length : target === "coprojects" ? coprojects.length : offerings.length;
-  const hasFilter = Boolean(area || category || q || direction);
+  const hasFilter = Boolean(area || category || q);
   // スポンサー枠（有料掲載）。自然表示の順位には混ぜず、広告表記つきで分離表示する。
   const sponsorDirection = direction === "GIVE" || direction === "WANT" ? direction : "WANT";
   const [viewMap, topPr, sponsored, effectsMap] = await Promise.all([
@@ -97,12 +113,21 @@ export default async function SearchPage({
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const pageQuery = (p: number) => {
     const params = new URLSearchParams();
-    params.set("target", target);
+    params.set("t", tab.key);
     if (area) params.set("area", area);
     if (category) params.set("category", category);
     if (q) params.set("q", q);
-    if (direction) params.set("direction", direction);
     if (p > 1) params.set("page", String(p));
+    return `/search?${params.toString()}`;
+  };
+
+  /** タブのリンク。いま絞り込んでいる条件は引き継ぐ（ページ番号は1に戻す）。 */
+  const tabHref = (key: string) => {
+    const params = new URLSearchParams();
+    params.set("t", key);
+    if (area) params.set("area", area);
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
     return `/search?${params.toString()}`;
   };
 
@@ -122,17 +147,15 @@ export default async function SearchPage({
         className="rounded-xl border border-[var(--line)] bg-[var(--green-soft)] p-4"
       >
         {/* 対象トグル */}
-        <div className="mb-3 flex w-full max-w-[560px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
-          <button name="target" value="offerings" className={toggleCls(target === "offerings")}>
-            売りたい・探している
-          </button>
-          <button name="target" value="coprojects" className={toggleCls(target === "coprojects")}>
-            共創プロジェクト
-          </button>
-          <button name="target" value="producers" className={toggleCls(target === "producers")}>
-            登録事業者
-          </button>
+        <div className="mb-3 flex w-full max-w-[680px] overflow-hidden rounded-lg border border-[var(--line)] bg-white text-[13px]">
+          {TABS.map((t) => (
+            <Link key={t.key} href={tabHref(t.key)} className={toggleCls(tab.key === t.key)}>
+              {t.label}
+            </Link>
+          ))}
         </div>
+        {/* 絞り込みの送信でタブが外れないように、いまのタブを持たせる */}
+        <input type="hidden" name="t" value={tab.key} />
 
         <div className="flex flex-wrap items-stretch gap-2">
           <label className="flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-white px-3">
@@ -166,28 +189,23 @@ export default async function SearchPage({
             className={`${inputCls} min-w-[180px] flex-1`}
           />
 
-          {target === "offerings" ? (
-            <select name="direction" defaultValue={direction} className={inputCls}>
-              <option value="">売り・買い両方</option>
-              <option value="GIVE">売りたい（提供したい）</option>
-              <option value="WANT">探している（調達したい）</option>
-            </select>
-          ) : null}
-
           <button className={btn("primary")}>
             検索
           </button>
         </div>
       </form>
 
-      <p className="text-[13px] text-[var(--ink-2)]">
-        {total} 件見つかりました
-        {totalPages > 1 ? `（${page} / ${totalPages}ページ）` : ""}
-      </p>
+      <div>
+        <h2 className={h2Cls}>{tab.label}</h2>
+        <p className="mt-1 text-[13px] text-[var(--ink-2)]">
+          {total} 件見つかりました
+          {totalPages > 1 ? `（${page} / ${totalPages}ページ）` : ""}
+        </p>
+      </div>
 
       {/* 結果 */}
       {count === 0 ? (
-        <Empty target={target} hasFilter={hasFilter} />
+        <Empty tabKey={tab.key} hasFilter={hasFilter} />
       ) : target === "producers" ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {producers.map((p) => (
@@ -268,11 +286,12 @@ export default async function SearchPage({
   );
 }
 
-function Empty({ target, hasFilter }: { target: Target; hasFilter: boolean }) {
+function Empty({ tabKey, hasFilter }: { tabKey: string; hasFilter: boolean }) {
   const crossLinks: { label: string; href: string }[] = [];
-  if (target !== "offerings") crossLinks.push({ label: "売りたい・探しているから探す", href: "/search?target=offerings" });
-  if (target !== "coprojects") crossLinks.push({ label: "共創プロジェクトから探す", href: "/search?target=coprojects" });
-  if (target !== "producers") crossLinks.push({ label: "登録事業者から探す", href: "/search?target=producers" });
+  if (tabKey !== "want") crossLinks.push({ label: "探している案件から探す", href: "/search?t=want" });
+  if (tabKey !== "give") crossLinks.push({ label: "売りたい案件から探す", href: "/search?t=give" });
+  if (tabKey !== "coprojects") crossLinks.push({ label: "共創プロジェクトから探す", href: "/search?t=coprojects" });
+  if (tabKey !== "producers") crossLinks.push({ label: "登録事業者から探す", href: "/search?t=producers" });
   return (
     <EmptyState
       title="条件に合うものが見つかりませんでした"
@@ -282,7 +301,7 @@ function Empty({ target, hasFilter }: { target: Target; hasFilter: boolean }) {
           : "掲載は順次増えています。先にあなたの「売りたい・探している」を登録しておくと、相手から見つけてもらえます。"
       }
       actions={[
-        ...(hasFilter ? [{ label: "条件をクリアして再検索", href: `/search?target=${target}` }] : []),
+        ...(hasFilter ? [{ label: "条件をクリアして再検索", href: `/search?t=${tabKey}` }] : []),
         ...crossLinks,
         { label: "売りたい・探しているを登録する", href: "/ledger", variant: "primary" as const },
       ]}
