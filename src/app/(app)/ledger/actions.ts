@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isSuperAdminRole, type SessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
+import { writeAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
@@ -29,15 +30,44 @@ import { missingForPublish } from "@/lib/offering-publish";
 
 const BUCKET = "member-images";
 
+/**
+ * 編集可能な案件を取得する。本人に加えて、**同一テナントの上位管理者（事務局）**も編集できる
+ * ＝掲載代行のため（2026-08-11 追加。買い手が自分で書くのは負担が大きく、電話ヒアリング→事務局が代筆する運用）。
+ * 代行時は isProxy=true を返し、呼び出し側で監査ログを残す。REVIEWER には許可しない（なりすまし投稿に相当するため）。
+ */
 async function ownOfferingOr404(offeringId: string) {
   const su = await getSessionUser();
   if (!su) throw new Error("ログインが必要です。");
   const member = await getOrCreateMemberForUser(su);
   const offering = await prisma.offering.findUnique({ where: { id: offeringId } });
-  if (!offering || offering.memberId !== member.id) {
-    throw new Error("台帳が見つかりません。");
+  if (!offering) throw new Error("台帳が見つかりません。");
+
+  if (offering.memberId === member.id) {
+    return { su, member, offering, isProxy: false };
   }
-  return { su, member, offering };
+
+  if (isSuperAdminRole(su.app.role)) {
+    const owner = await prisma.member.findFirst({
+      where: { id: offering.memberId, tenantId: su.app.tenantId },
+      select: { id: true },
+    });
+    if (owner) return { su, member, offering, isProxy: true };
+  }
+  throw new Error("台帳が見つかりません。");
+}
+
+/** 掲載代行の操作を監査ログに残す（本人の操作は記録しない）。 */
+async function auditProxy(
+  ctx: { su: SessionUser; isProxy: boolean; offering: { id: string; memberId: string; title: string } },
+  action: string,
+  detail?: string
+): Promise<void> {
+  if (!ctx.isProxy) return;
+  await writeAudit(ctx.su, action, {
+    targetType: "offering",
+    targetId: ctx.offering.id,
+    detail: `代理操作 member=${ctx.offering.memberId} title=${ctx.offering.title || "（無題）"}${detail ? ` / ${detail}` : ""}`,
+  });
 }
 
 /** 新規登録フォーム用：一時領域へ画像をアップロード（保存時に案件フォルダへ移動して紐付け）。 */
@@ -348,7 +378,8 @@ export async function saveOffering(
   _prev: OfferingState,
   formData: FormData
 ): Promise<OfferingState> {
-  const { offering } = await ownOfferingOr404(offeringId);
+  const ctx = await ownOfferingOr404(offeringId);
+  const { offering } = ctx;
   const parsed = parseOfferingForm(formData, offering.category);
   if (parsed.error || !parsed.data) return { error: parsed.error ?? "保存に失敗しました。" };
 
@@ -364,6 +395,8 @@ export async function saveOffering(
     );
   }
 
+  await auditProxy(ctx, "listing.proxy_save");
+
   revalidatePath(`/ledger/${offeringId}`);
   revalidatePath("/ledger");
   return { ok: true };
@@ -373,7 +406,8 @@ export async function togglePublish(
   offeringId: string,
   isPublic: boolean
 ): Promise<void> {
-  const { offering } = await ownOfferingOr404(offeringId);
+  const ctx = await ownOfferingOr404(offeringId);
+  const { offering } = ctx;
   // 公開は無料（2026-08-10 最終決定書：月額ゲート撤廃）
   // 公開時のみ必須チェック（不足があれば編集画面へ戻して表示）
   if (isPublic) {
@@ -386,12 +420,14 @@ export async function togglePublish(
     where: { id: offeringId },
     data: { isPublic },
   });
+  await auditProxy(ctx, isPublic ? "listing.proxy_publish" : "listing.proxy_unpublish");
   revalidatePath(`/ledger/${offeringId}`);
   revalidatePath("/ledger");
 }
 
 export async function deleteOffering(offeringId: string): Promise<void> {
-  const { offering } = await ownOfferingOr404(offeringId);
+  const ctx = await ownOfferingOr404(offeringId);
+  const { offering } = ctx;
   // 画像も削除（自分の台帳フォルダ配下のみ）
   const admin = createSupabaseAdminClient();
   const paths = offering.imageUrls
@@ -399,6 +435,7 @@ export async function deleteOffering(offeringId: string): Promise<void> {
     .filter((p): p is string => !!p);
   if (paths.length) await admin.storage.from(BUCKET).remove(paths);
 
+  await auditProxy(ctx, "listing.proxy_delete");
   await prisma.offering.delete({ where: { id: offeringId } });
   revalidatePath("/ledger");
   redirect("/ledger");

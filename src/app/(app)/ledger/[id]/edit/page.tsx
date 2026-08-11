@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isSuperAdminRole } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { OfferingForm, type OfferingData } from "../../_components/OfferingForm";
@@ -31,9 +31,19 @@ export default async function OfferingEditPage({
 
   const offering = await prisma.offering.findUnique({
     where: { id },
-    include: { requirements: { orderBy: { sortOrder: "asc" } } },
+    include: {
+      requirements: { orderBy: { sortOrder: "asc" } },
+      member: { select: { id: true, name: true, tenantId: true } },
+    },
   });
-  if (!offering || offering.memberId !== member.id) notFound();
+  if (!offering) notFound();
+
+  // 掲載代行：同一テナントの上位管理者（事務局）は他社の案件も編集できる
+  // （サーバー側の許可は src/app/(app)/ledger/actions.ts の ownOfferingOr404 と対）。
+  const isOwner = offering.memberId === member.id;
+  const isProxy =
+    !isOwner && isSuperAdminRole(su.app.role) && offering.member.tenantId === su.app.tenantId;
+  if (!isOwner && !isProxy) notFound();
 
   const data: OfferingData = {
     id: offering.id,
@@ -133,6 +143,18 @@ export default async function OfferingEditPage({
           )}
         </div>
       </div>
+
+      {isProxy ? (
+        <div className="rounded-[10px] border-2 border-[#F59E0B] bg-[#FEF6E7] px-4 py-3">
+          <p className="text-[13px] font-bold text-[#B77F0B]">
+            事務局として「{offering.member.name}」の案件を代理で編集しています
+          </p>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            この画面での保存・公開・削除は、すべて監査ログに記録されます。
+            公開する前に、必ず掲載者ご本人に内容をご確認ください。
+          </p>
+        </div>
+      ) : null}
 
       {sp.created ? (
         <p className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[13px] text-[var(--green-d)]">

@@ -1,10 +1,11 @@
 // 事務局：掲載の監視（事後チェック）。公開中の台帳・プロジェクトを一覧し、必要なら理由つきで非公開化する。
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSessionUser, isAdminRole } from "@/lib/auth";
+import { getSessionUser, isAdminRole, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 import { adminUnpublishOffering, adminUnpublishProject } from "../listing-actions";
+import { ProxyListingForm } from "../_components/ProxyListingForm";
 
 function fmt(d: Date): string {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
@@ -19,7 +20,9 @@ export default async function AdminListingsPage() {
   if (!isAdminRole(su.app.role)) redirect("/dashboard");
   const tenantId = su.app.tenantId;
 
-  const [offerings, projects] = await Promise.all([
+  const isSuper = isSuperAdminRole(su.app.role);
+
+  const [offerings, projects, proxyMembers] = await Promise.all([
     prisma.offering.findMany({
       where: { isPublic: true, title: { not: "" }, member: { tenantId } },
       orderBy: { updatedAt: "desc" },
@@ -29,6 +32,14 @@ export default async function AdminListingsPage() {
       where: { tenantId, status: "published" },
       orderBy: { updatedAt: "desc" },
     }),
+    // 掲載代行の対象（上位管理者のみ）。停止・退会済みは除く
+    isSuper
+      ? prisma.member.findMany({
+          where: { tenantId, status: { in: ["APPROVED", "PENDING", "DRAFT"] } },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const projMemberIds = Array.from(new Set(projects.map((p) => p.memberId)));
@@ -47,6 +58,20 @@ export default async function AdminListingsPage() {
           掲載は即時公開です。問題のある掲載は、ここから理由を添えて非公開にできます（掲載者へ自動でメール通知されます）。
         </p>
       </div>
+
+      {/* 掲載代行（電話ヒアリング→事務局が代筆→本人確認→公開） */}
+      {isSuper ? (
+        <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5">
+          <h2 className={h2Cls}>会員に代わって案件を作る（掲載代行）</h2>
+          <p className="mt-1 mb-3 text-[12px] leading-6 text-[var(--ink-2)]">
+            買い手にフォームを書いてもらう代わりに、事務局が聞き取った内容を代筆するための機能です。
+            作成した案件は<b>下書き（非公開）</b>で始まり、続けて編集画面が開きます。
+            代理での作成・保存・公開・削除は<b>すべて監査ログに記録</b>されます。
+            会員がまだ登録されていない場合は、先にご本人の同意を得て会員登録を済ませてください。
+          </p>
+          <ProxyListingForm members={proxyMembers} />
+        </div>
+      ) : null}
 
       {/* 台帳 */}
       <div>
