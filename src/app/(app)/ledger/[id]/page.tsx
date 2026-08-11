@@ -591,11 +591,18 @@ export default async function OfferingDetailPage({
       </div>
       )}
 
-      {/* 末尾CTA（問い合わせフォームへ戻る） */}
+      {/* 末尾CTA。提案（問い合わせ）とお気に入りを大きく2つ並べる（2026-08-11 ユーザー指定） */}
       {!isOwner && offering.isPublic ? (
-        <a href="#inquiry" className={`${btn("primary")} block w-full text-center`}>
-          {isGive ? "この案件について問い合わせる" : "商品・原料を提案する"}
-        </a>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <a href="#inquiry" className={`${btn("primary", "lg")} block w-full text-center`}>
+            {isGive ? "問い合わせる" : "提案する"}
+          </a>
+          <form action={toggleFavorite.bind(null, "offering", offering.id)} className="w-full">
+            <button className={`${btn("secondary", "lg")} w-full`}>
+              {myFavorite ? "★ お気に入り済み" : "☆ お気に入りに追加"}
+            </button>
+          </form>
+        </div>
       ) : null}
     </div>
   );
