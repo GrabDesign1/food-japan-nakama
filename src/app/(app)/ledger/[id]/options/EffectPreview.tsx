@@ -45,7 +45,7 @@ function PreviewBody({ effectType, sample }: Props) {
           </p>
           <SponsorLabel text="スポンサー（最上部PR）" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} />
+            <OfferingCard o={sample} isOwn />
           </div>
           <NaturalRow sample={sample} />
         </>
@@ -56,10 +56,14 @@ function PreviewBody({ effectType, sample }: Props) {
           <p className="mb-2 text-[12px] leading-5 text-[var(--ink-2)]">
             検索結果の上部にある<b>注目枠</b>に、<b className="text-[#B77F0B]">橙色の枠</b>付きで表示されます
             （最大4件・同条件の案件とは日替わりで入れ替わります）。広告表記が必ず付きます。
+            <br />
+            <span className="text-[var(--muted)]">
+              この枠に並ぶのはすべて注目表示の案件なので、枠は全部に付きます（下の例では、左が自分の案件です）。
+            </span>
           </p>
           <SponsorLabel text="スポンサー（注目表示）" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} featured />
+            <OfferingCard o={sample} featured isOwn />
             <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} featured />
             <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} featured />
           </div>
@@ -73,7 +77,7 @@ function PreviewBody({ effectType, sample }: Props) {
             カードの画像の上に<b>「急募」バッジ</b>が付きます。表示位置は変わりませんが、一覧の中で目に留まりやすくなります。
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} urgent />
+            <OfferingCard o={sample} urgent isOwn />
             <OfferingCard o={{ ...sample, title: "（バッジなしの案件）", tagline: null }} />
           </div>
         </>
