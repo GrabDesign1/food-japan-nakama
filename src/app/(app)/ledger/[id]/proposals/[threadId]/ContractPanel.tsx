@@ -136,6 +136,7 @@ export function ContractPanel({
   defaultTaxRate = "10",
   viewerRole,
   dealPhase,
+  issuedKinds,
 }: {
   offeringId: string;
   threadId: string;
@@ -146,6 +147,8 @@ export function ContractPanel({
   viewerRole: "seller" | "buyer";
   /** 現在の段階（入金確認ボタンを出すかの判定に使う） */
   dealPhase: number;
+  /** 発行済みの帳票の種類（invoice / delivery / receipt） */
+  issuedKinds: string[];
 }) {
   const [open, setOpen] = useState(false);
   const pending = offers.find((o) => o.status === "proposed") ?? null;
@@ -309,11 +312,47 @@ export function ContractPanel({
                 発送・受け取り完了（{agreed.completedAt}）
               </div>
               <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
-                合意した内容から帳票を作成できます。印刷画面からPDFとして保存し、相手へお送りください。
-                <b>NAKAMAは請求も代金の受け取りも行いません。</b>
+                {viewerRole === "seller" ? (
+                  <>
+                    合意した内容から帳票を作成できます。発行すると相手にも同じ内容が届きます。
+                    <b>NAKAMAは請求も代金の受け取りも行いません。</b>
+                  </>
+                ) : (
+                  <>
+                    <b>NAKAMAは請求も代金の受け取りも行いません。</b>
+                    お支払いはおふたりの取り決めに従ってください。
+                  </>
+                )}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {(
+                {/* 発行できるのは売り手だけ。買い手は発行済みのものを見るだけ */}
+                {viewerRole === "buyer"
+                  ? (
+                      [
+                        { type: "invoice", label: "請求書" },
+                        { type: "delivery", label: "納品書" },
+                        { type: "receipt", label: "領収書" },
+                      ] as const
+                    )
+                      .filter((d) => issuedKinds.includes(d.type))
+                      .map((d) => (
+                        <Link
+                          key={d.type}
+                          href={`/ledger/${offeringId}/proposals/${threadId}/document?type=${d.type}`}
+                          className={btn("secondary", "sm")}
+                        >
+                          {d.label}を見る
+                        </Link>
+                      ))
+                  : null}
+                {viewerRole === "buyer" && issuedKinds.length === 0 ? (
+                  <p className="text-[12px] leading-5 text-[var(--muted)]">
+                    納品書・請求書・領収書は、代金を請求する側（お相手）が発行します。
+                    発行されるとやり取りに届き、ここから同じ内容を保存できます。
+                  </p>
+                ) : null}
+                {viewerRole === "seller"
+                  ? (
                   [
                     { type: "invoice", label: "請求書", variant: "primary" as const },
                     { type: "delivery", label: "納品書", variant: "secondary" as const },
@@ -340,7 +379,8 @@ export function ContractPanel({
                       </Link>
                     )}
                   </ConfirmModal>
-                ))}
+                ))
+                  : null}
               </div>
 
               {/* 入金の確認は売り手しか分からない（NAKAMAは代金を預からない） */}

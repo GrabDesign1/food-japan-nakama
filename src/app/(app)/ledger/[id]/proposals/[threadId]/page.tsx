@@ -40,7 +40,7 @@ export default async function OfferingThreadPage({
   // 段階は手で動かせないので、記録された事実とずれていたらここで直す
   await reconcileDealPhase(thread.id);
 
-  const [other, messages, draft, templates, offering, deal, contractOffers, nda] = await Promise.all([
+  const [other, messages, draft, templates, offering, deal, contractOffers, nda, issuedDocs] = await Promise.all([
     prisma.member.findUnique({
       where: { id: otherId },
       select: {
@@ -95,6 +95,7 @@ export default async function OfferingThreadPage({
       orderBy: { createdAt: "desc" },
     }),
     prisma.ndaAgreement.findUnique({ where: { threadId: thread.id } }),
+    prisma.issuedDocument.findMany({ where: { threadId: thread.id }, select: { kind: true } }),
   ]);
   if (!offering) notFound();
 
@@ -189,6 +190,7 @@ export default async function OfferingThreadPage({
           }))}
           defaultTaxRate={String(defaultTaxRate(offering.category)) as "8" | "10"}
           dealPhase={deal?.phase ?? 0}
+          issuedKinds={issuedDocs.map((d) => d.kind)}
           viewerRole={
             sellerBuyerIds({
               direction: offering.direction,
