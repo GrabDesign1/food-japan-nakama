@@ -291,9 +291,12 @@ export default async function DashboardPage() {
       .filter(({ deal }) => !(deal.threadId && cardThreadIds.has(deal.threadId)))
       .map(({ deal, other }) => {
       const unread = deal.threadId ? (unreadByThread.get(deal.threadId) ?? 0) : 0;
+      // カードにできるのは案件に紐づく商談だけ。ここに残るのは案件なしの直接のやり取りなので、
+      // 「同じ相手が2つ出ている」と誤解されないよう、案件に紐づかないことを明示する（2026-08-11）。
+      const noListing = !deal.threadId || !threadOfferingMap.get(deal.threadId);
       return {
         title: deal.nextAction || `${other?.name ?? "会員"}さんとの商談`,
-        meta: `${other?.name ?? "（不明）"} ・ 最終更新 ${fmtShortDate(deal.lastActivityAt)}`,
+        meta: `${noListing ? "案件に紐づかないメッセージ" : (other?.name ?? "（不明）")} ・ 最終更新 ${fmtShortDate(deal.lastActivityAt)}`,
         status: unread > 0 ? `要返信${unread > 1 ? ` ${unread}件` : ""}` : PHASES[deal.phase] ?? "商談中",
         statusCls: unread > 0 ? STATUS_ORANGE : STATUS_GREEN,
         href: deal.threadId ? `/messages/${deal.threadId}` : "/deals",
