@@ -102,7 +102,7 @@ export default async function PublicHome() {
               </div>
             </div>
             <div className="flex flex-col rounded-[12px] border border-[var(--line)] bg-white p-6">
-              <h2 className={h2Cls}>必要な相手を探し、事業化まで伴走する。</h2>
+              <h2 className={h2Cls}>必要な相手を探し、事業化まで伴走します。</h2>
               <p className="mt-2 flex-1 text-[14px] leading-7 text-[var(--ink-2)]">
                 課題の整理、募集テーマの設計、候補者の探索・打診、商談、試作・実証計画まで、NAKAMA事務局が個別に支援します。
               </p>
