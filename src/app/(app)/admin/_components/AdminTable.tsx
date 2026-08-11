@@ -48,6 +48,7 @@ export type AdminRow = {
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
+  DRAFT: { label: "未提出（登録のみ）", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
   PENDING: { label: "審査中", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
   APPROVED: { label: "承認済み", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
   AWAITING_PAYMENT: { label: "お支払い待ち（旧・要承認し直し）", cls: "bg-[#FAF0D6] text-[#B77F0B]" },

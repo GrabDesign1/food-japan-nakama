@@ -24,7 +24,14 @@ export default async function AdminMembersPage() {
   ]);
   const pendingCount = members.filter((m) => m.status === "PENDING").length;
 
-  const rows: AdminRow[] = members.map((m) => ({
+  // 未提出（DRAFT）も一覧に出すようにしたため、審査中が下に埋もれないよう対応の優先度で並べ直す。
+  // 同じ状態の中の並び（更新の新しい順）はクエリの orderBy のまま。
+  const STATUS_ORDER = ["PENDING", "AWAITING_PAYMENT", "APPROVED", "DRAFT", "REJECTED", "SUSPENDED"];
+  const sorted = [...members].sort(
+    (a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status)
+  );
+
+  const rows: AdminRow[] = sorted.map((m) => ({
     id: m.id, name: m.name,
     contactName: m.contactName || m.users[0]?.name || "—",
     contactKana: m.contactKana, contactEmail: m.users[0]?.email ?? "—",

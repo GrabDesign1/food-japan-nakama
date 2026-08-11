@@ -174,10 +174,14 @@ export async function setMemberReview(
   return updated;
 }
 
-/** 事務局一覧用：下書き以外の会員を、担当者（登録ユーザー）付きで取得。 */
+/**
+ * 事務局一覧用：テナントの全会員を、担当者（登録ユーザー）付きで取得。
+ * 以前は下書き（DRAFT＝プロフィール未提出）を除外していたが、
+ * 登録だけして提出していない会員が事務局から一切見えず、承認・停止・削除もできなかったため全件返す。
+ */
 export async function listReviewMembers(tenantId: string) {
   return prisma.member.findMany({
-    where: { tenantId, status: { not: "DRAFT" } },
+    where: { tenantId },
     orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
     include: {
       users: {
