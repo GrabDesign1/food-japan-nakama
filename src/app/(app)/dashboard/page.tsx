@@ -24,7 +24,9 @@ import { btn, eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "マイページ｜FOOD JAPAN NAKAMA" };
 
-// 主操作3つ（これ以上増やさない）
+// 主操作（これ以上増やさない）。
+// 「事務局に相談する」は右カラムの「事務局と一緒に進める」パネルと重複していたため、
+// こちらから外した（2026-08-11 ユーザー指示。緑のパネル側を残す）。
 const MAIN_ACTIONS = [
   {
     href: "/search",
@@ -38,13 +40,6 @@ const MAIN_ACTIONS = [
     icon: "＋",
     label: "案件を登録する",
     desc: "売りたい（提供したい）／探している（調達したい）／共創パートナー募集",
-    primary: false,
-  },
-  {
-    href: "/consultation",
-    icon: "◎",
-    label: "事務局に相談する",
-    desc: "相手探しや企画段階から相談",
     primary: false,
   },
 ];
@@ -463,8 +458,8 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {/* 主操作3つ */}
-      <section aria-label="主な操作" className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+      {/* 主操作（探す・登録する。相談は右カラムのパネルに集約） */}
+      <section aria-label="主な操作" className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         {MAIN_ACTIONS.map((a) => (
           <Link
             key={a.href}
