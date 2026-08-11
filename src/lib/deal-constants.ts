@@ -31,6 +31,15 @@ export const PHASE_DOCS = 4;       // 納品書・請求書を発行した
 export const PHASE_PAID = 5;       // 売り手が入金を確認した
 export const PHASE_DONE = PHASES.length - 1; // 領収書を発行した＝完了
 
+/**
+ * 記録上の段階（最後に済んだこと）から、画面で光らせる「次にやること」を求める。
+ * 例：受け取りまで済んでいれば、現在地は「納品書・請求書発行」。
+ */
+export function activeStep(phase: number): number {
+  if (phase <= 0) return 0; // まだ商談中
+  return Math.min(phase + 1, PHASES.length - 1);
+}
+
 const STALE_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function isStale(lastActivityAt: Date): boolean {

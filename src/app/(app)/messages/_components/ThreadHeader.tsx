@@ -1,7 +1,7 @@
 // 案件ごとのやり取りのヘッダー（対象案件＋進捗ステッパー）。
 // クラウドワークスの「相談から契約まで」に相当。どの案件の話か、いまどの段階かを常に見せる（2026-08-11）。
 import Link from "next/link";
-import { PHASES, PHASE_DESC } from "@/lib/deal-constants";
+import { PHASES, activeStep } from "@/lib/deal-constants";
 import { formatAmount, formatPrice, formatDeadline, DIRECTION_SHORT } from "@/lib/offering-taxonomy";
 import { PhaseStepper } from "./PhaseStepper";
 
@@ -100,7 +100,7 @@ export function ThreadHeader({
         <div className="mt-3">
           <PhaseStepper phase={phase} />
           <p className="mt-1 text-[10px] text-[var(--muted)]">
-            現在：{PHASES[phase] ?? PHASES[0]}（{PHASE_DESC[phase] ?? PHASE_DESC[0]}）／段階は操作に応じて自動で進みます
+            次にやること：{PHASES[activeStep(phase)] ?? PHASES[0]}／段階は操作に応じて自動で進みます
           </p>
         </div>
       ) : null}
