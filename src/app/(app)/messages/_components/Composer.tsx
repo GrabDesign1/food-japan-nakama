@@ -46,8 +46,8 @@ function SubmitButton() {
   );
 }
 
-// 最初から用意されている定型文（削除不可）
-const DEFAULT_TEMPLATES: { name: string; body: string }[] = [
+// 最初から用意されている定型文（削除不可）。提案フォーム（/ledger/[id]/propose）でも同じものを使う
+export const DEFAULT_TEMPLATES: { name: string; body: string }[] = [
   {
     name: "はじめまして",
     body: "はじめまして。◯◯（事業者名）の△△と申します。\n貴社の取り組みを拝見し、ぜひ一度お話しできればと思いご連絡いたしました。\n共創に向けて、まずは気軽に情報交換させていただけますと幸いです。\nどうぞよろしくお願いいたします。",
@@ -491,7 +491,7 @@ export function Composer({
   );
 }
 
-function Modal({
+export function Modal({
   title,
   onClose,
   children,

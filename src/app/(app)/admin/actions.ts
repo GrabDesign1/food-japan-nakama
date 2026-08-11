@@ -220,7 +220,8 @@ export async function deleteMember(memberId: string): Promise<void> {
       ...offerings.map((o) => `offerings/${o.id}/`),
       ...projects.map((p) => `projects/${p.id}/`),
     ],
-    attachments: threads.map((t) => `${t.id}/`),
+    // 提案フォームの添付は送信前に `proposals/<memberId>/` へ置くため、スレッド配下とは別に消す
+    attachments: [...threads.map((t) => `${t.id}/`), `proposals/${memberId}/`],
   });
   await writeAudit(su, "member.delete", {
     targetType: "member",

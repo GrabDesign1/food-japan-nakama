@@ -91,13 +91,19 @@ export default async function ProposePage({
 
   // 価格は商品マスターから（無効なら購入ボタンを出さない）。独立クエリは並列化（直列3往復→1往復）
   const codes = ["contact_unlock_standard", "contact_unlock_verified_lead", "contact_credits_5", "contact_credits_10"];
-  const [existingUnlock, credits, products] = await Promise.all([
+  const [existingUnlock, credits, products, templates] = await Promise.all([
     prisma.contactUnlock.findUnique({
       where: { sellerMemberId_offeringId: { sellerMemberId: me.id, offeringId: offering.id } },
       select: { threadId: true },
     }),
     getCreditBreakdown(me.id),
     prisma.billingProduct.findMany({ where: { code: { in: codes }, active: true } }),
+    // 定型文はメッセージ画面と共用（提案フォームの操作をComposerと同じ仕様に統一）
+    prisma.messageTemplate.findMany({
+      where: { memberId: me.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, body: true },
+    }),
   ]);
   const balance = credits.total;
   const creditGroups = credits.groups.filter((g) => g.quantity > 0);
@@ -320,6 +326,9 @@ export default async function ProposePage({
               needsCredit={!canSendFree}
               creditBalance={balance}
               creditCost={creditCost}
+              initialTemplates={templates}
+              myCompanyName={me.name}
+              myPersonName={me.contactName || su!.app.name}
             />
           </div>
         </>

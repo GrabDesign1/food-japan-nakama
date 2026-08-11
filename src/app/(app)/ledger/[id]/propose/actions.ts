@@ -13,8 +13,15 @@ import { pricingTierFor, creditCostFor } from "@/lib/billing-core";
 import { consumeCreditsTx } from "@/lib/contact-credits";
 import { createOneTimeCheckout } from "@/lib/billing";
 import { canSendToOthers, MESSAGE_MAX } from "@/lib/security";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { safeAttachmentContentType } from "@/lib/upload";
 
 export type ProposeState = { error?: string };
+
+// 添付は非公開バケット。提案はまだスレッドが無いので、送信前は会員ごとのフォルダに置き、
+// 送信時にそのままメッセージへ紐づける（配信は /api/attachments/[messageId] が参加者検証をする）。
+const ATTACHMENT_BUCKET = "message-attachments";
+const PROPOSAL_PREFIX = "proposals";
 
 /** 提案対象として有効なWANT案件を取得（公開・承認済み会員・本人以外）。 */
 async function loadTarget(offeringId: string, meId: string, tenantId: string) {
@@ -37,6 +44,41 @@ async function loadTarget(offeringId: string, meId: string, tenantId: string) {
   return offering;
 }
 
+/**
+ * 提案に添付するファイルを先にアップロードする（送信前なのでスレッドはまだ無い）。
+ * 置き場所は `proposals/<memberId>/…` で、送信時にこのパスをメッセージへ紐づける。
+ * 送信されなかったファイルは孤児として残る（台帳の一時画像と同じ扱い・定期掃除は未実装）。
+ */
+export async function uploadProposalAttachment(
+  offeringId: string,
+  formData: FormData
+): Promise<{ url?: string; name?: string; size?: number; error?: string }> {
+  const su = await getSessionUser();
+  if (!su) return { error: "ログインが必要です。" };
+  const me = await getOrCreateMemberForUser(su);
+  if (!canSendToOthers(me.status)) return { error: "現在のご登録状態では送信できません。" };
+
+  // 提案できない案件（終了・非公開・自分の案件）ではアップロードもさせない
+  const offering = await loadTarget(offeringId, me.id, su.app.tenantId);
+  if (!offering) return { error: "この案件には提案できません。" };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "ファイルを選んでください。" };
+  // Server Action の bodySizeLimit(8MB) を超えるとここに届かないため、上限も8MBに合わせる
+  if (file.size > 8 * 1024 * 1024) return { error: "ファイルは8MBまでです。" };
+
+  const safe = file.name.replace(/[^\w.\-一-龠ぁ-んァ-ヶ]/g, "_");
+  const path = `${PROPOSAL_PREFIX}/${me.id}/${crypto.randomUUID()}-${safe}`;
+  const admin = createSupabaseAdminClient();
+  const { error: upErr } = await admin.storage
+    .from(ATTACHMENT_BUCKET)
+    // contentType はクライアント申告値を使わない（text/html等を配信させない）
+    .upload(path, file, { contentType: safeAttachmentContentType(safe) });
+  if (upErr) return { error: `アップロード失敗：${upErr.message}` };
+
+  return { url: path, name: file.name, size: file.size };
+}
+
 /** 初回提案を送信する。未解放なら紹介料（通常1・確認済み案件3クレジット）を消費して解放する。 */
 export async function sendProposal(
   offeringId: string,
@@ -56,6 +98,18 @@ export async function sendProposal(
 
   const body = String(formData.get("message") ?? "").trim().slice(0, MESSAGE_MAX);
   if (!body) return { error: "提案内容を入力してください。" };
+
+  // 添付は uploadProposalAttachment が返したパスのみ受け付ける
+  // （他人のファイルや任意のパスを紐づけられないよう、自分のフォルダ配下に限定する）
+  const rawUrl = String(formData.get("attachmentUrl") ?? "").trim();
+  const attachmentUrl = rawUrl.startsWith(`${PROPOSAL_PREFIX}/${me.id}/`) ? rawUrl : null;
+  const attachmentName = attachmentUrl ? String(formData.get("attachmentName") ?? "").slice(0, 200) : null;
+  const attachmentSizeRaw = Number(formData.get("attachmentSize") ?? 0);
+  const attachmentSize =
+    attachmentUrl && Number.isFinite(attachmentSizeRaw) && attachmentSizeRaw > 0
+      ? Math.floor(attachmentSizeRaw)
+      : null;
+  if (rawUrl && !attachmentUrl) return { error: "添付ファイルを認識できませんでした。もう一度添付してください。" };
 
   // ビジネス会員も提案クレジットを消費する（毎月50クレジット付与・繰越なし。2026-08-11確定）。
   // 会員特典は「毎月の付与」と「追加クレジット（単品購入）・掲載オプションの20%割引」に集約した。
@@ -132,7 +186,15 @@ export async function sendProposal(
 
       const message = await tx.message.create({
         // 案件の文脈を残す（引き合い課金の判定はメッセージ単位で行う。WANT提案は紹介料モデル＝対象外）
-        data: { threadId: thread.id, senderMemberId: me.id, body, offeringId: offering.id },
+        data: {
+          threadId: thread.id,
+          senderMemberId: me.id,
+          body,
+          offeringId: offering.id,
+          attachmentUrl,
+          attachmentName,
+          attachmentSize,
+        },
       });
       await tx.thread.update({ where: { id: thread.id }, data: { lastMessageAt: new Date() } });
 
