@@ -8,6 +8,7 @@ import {
   deleteMember,
   markMemberPaid,
   unmarkMemberPaid,
+  grantMonthlyCreditsManually,
 } from "../actions";
 import type { ReviewDecision } from "@/lib/member";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
@@ -109,6 +110,13 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
     });
   }
 
+  function grantMonthly(id: string) {
+    startTransition(async () => {
+      await grantMonthlyCreditsManually(id);
+      setOpenId(null);
+    });
+  }
+
   // 削除の確認はConfirmDeleteButtonのモーダル側で行う（売りたい（提供したい）・買いたいの削除と同じ仕様）
   async function remove(id: string) {
     await deleteMember(id);
@@ -182,6 +190,7 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
           onDelete={remove}
           onMarkPaid={markPaid}
           onUnmarkPaid={unmarkPaid}
+          onGrantMonthly={grantMonthly}
         />
       ) : null}
     </>
@@ -208,6 +217,7 @@ function DetailModal({
   onDelete,
   onMarkPaid,
   onUnmarkPaid,
+  onGrantMonthly,
 }: {
   row: AdminRow;
   pending: boolean;
@@ -218,6 +228,7 @@ function DetailModal({
   onDelete: (id: string) => Promise<void>;
   onMarkPaid: (id: string) => void;
   onUnmarkPaid: (id: string) => void;
+  onGrantMonthly: (id: string) => void;
 }) {
   const isSuspended = row.status === "SUSPENDED";
   const isPaid = row.paymentStatus === "PAID";
@@ -364,14 +375,24 @@ function DetailModal({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isPaid ? (
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => onUnmarkPaid(row.id)}
-                className={btn("secondary", "md")}
-              >
-                課金を解除（無料に戻す）
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => onGrantMonthly(row.id)}
+                  className={btn("amber", "md")}
+                >
+                  今月分のクレジット（30）を付与する
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => onUnmarkPaid(row.id)}
+                  className={btn("secondary", "md")}
+                >
+                  課金を解除（無料に戻す）
+                </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -384,7 +405,7 @@ function DetailModal({
             )}
           </div>
           <p className="mt-2 text-[11px] text-[var(--muted)]">
-            銀行振込・請求書払いなどで入金を確認したら「ビジネス会員（課金中）」にします。ビジネス会員の特典は、毎月30クレジット（繰越なし・1クレジットあたり733円）と、追加クレジット（単品購入）・掲載オプションの20%割引です。提案1件で消費するのは通常案件1クレジット・確認済み案件3クレジットです。※手動でビジネス会員にした場合、月次チケットは自動付与されません（Stripe決済時のみ付与）。
+            銀行振込・請求書払いなどで入金を確認したら「ビジネス会員（課金中）」にします。ビジネス会員の特典は、毎月30クレジット（繰越なし・1クレジットあたり733円）と、追加クレジット（単品購入）・掲載オプションの20%割引です。提案1件で消費するのは通常案件1クレジット・確認済み案件3クレジットです。※月次クレジットはStripeの決済（税込22,000円ちょうどの請求）でのみ自動付与されます。手動でビジネス会員にした場合や、割引つきの申込み・イベントの取りこぼしで付与されていない場合は、上の「今月分のクレジット（30）を付与する」を押してください（同じ月に何度押しても増えません）。
           </p>
         </div>
 

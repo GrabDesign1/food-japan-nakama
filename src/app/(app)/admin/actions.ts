@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe";
 import { writeAudit } from "@/lib/audit";
+import { grantCredits } from "@/lib/contact-credits";
+import { MEMBER_MONTHLY_CREDITS } from "@/lib/billing-core";
 import { setMemberReview, type ReviewDecision } from "@/lib/member";
 
 export async function reviewAction(
@@ -44,6 +46,48 @@ export async function markMemberPaid(memberId: string): Promise<void> {
   });
   await writeAudit(su, "member.mark_paid", { targetType: "member", targetId: memberId });
   revalidatePath("/admin");
+}
+
+/**
+ * ビジネス会員の月次クレジットを手動で付与する（2026-08-11）。
+ * 月次付与はStripeの invoice.paid（税込22,000円ちょうど）でしか走らないため、
+ * 手動でビジネス会員にした場合や、割引つき申込み・イベント取りこぼしでは0のままになる。
+ * 当月1回だけ付与する（同じ月に何度押しても増えない）。
+ */
+export async function grantMonthlyCreditsManually(memberId: string): Promise<void> {
+  const su = await requireSuperAdmin(); // 課金操作はREVIEWER不可
+  if (!memberId) return;
+  const tenantId = su.app.tenantId;
+  const m = await prisma.member.findFirst({
+    where: { id: memberId, tenantId },
+    select: { id: true, paymentStatus: true },
+  });
+  if (!m || m.paymentStatus !== "PAID") return;
+
+  // 「当月分」を1回だけ。有効期限は翌月の同日（次回更新日相当）
+  const now = new Date();
+  const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const expiresAt = new Date(now);
+  expiresAt.setUTCMonth(expiresAt.getUTCMonth() + 1);
+
+  const { granted } = await grantCredits({
+    tenantId,
+    memberId,
+    creditType: "standard",
+    quantity: MEMBER_MONTHLY_CREDITS,
+    entryType: "member_monthly",
+    expiresAt,
+    idempotencyKey: `member_monthly_manual:${memberId}:${ym}`,
+    note: `事務局による月次クレジットの手動付与（${ym}）`,
+  });
+
+  await writeAudit(su, "member.grant_monthly_credits", {
+    targetType: "member",
+    targetId: memberId,
+    detail: granted ? `${MEMBER_MONTHLY_CREDITS}クレジット付与（${ym}）` : `付与済みのため何もしない（${ym}）`,
+  });
+  revalidatePath("/admin");
+  revalidatePath("/admin/members");
 }
 
 /** 課金を解除して無料(FREE)に戻す。 */

@@ -118,21 +118,33 @@ export async function POST(req: NextRequest) {
       }
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        // 自社の月額プラン（NAKAMAビジネス会員）の請求書に限る。
-        // 金額を見ずに昇格させると、割引コードや手動発行の少額請求で特典を得られてしまう。
-        if (!isBusinessPlanInvoice(invoice)) {
+        // 自社の月額プランの請求書か（値引き前の金額で判定するので、クーポン適用でも該当する）
+        if (!isBusinessPlanSubscriptionInvoice(invoice)) {
           console.warn(`[stripe webhook] 対象外のinvoice.paidを無視しました invoice=${invoice.id}`);
           break;
         }
         const memberId = await memberIdFromInvoice(invoice);
         if (!memberId) break;
-        await markPaid(memberId, { customerId: idOf(invoice.customer) });
 
-        // ビジネス会員の月次チケット（30件・繰越なし）を請求書ごとに一度だけ付与する
+        // 昇格（無料→ビジネス会員）は定価どおり支払われた場合のみ。
+        // クーポンで0円の請求から自動昇格させると、割引コードが漏れた時に誰でも会員になれてしまう。
+        // 一方、すでに会員（事務局が承認した契約・キャンペーン等）の場合は、
+        // 割引の有無にかかわらず毎月のクレジットを付与する。
         const member = await prisma.member.findUnique({
           where: { id: memberId },
-          select: { tenantId: true },
+          select: { tenantId: true, paymentStatus: true },
         });
+        const fullyPaid = isBusinessPlanInvoice(invoice);
+        if (fullyPaid) {
+          await markPaid(memberId, { customerId: idOf(invoice.customer) });
+        } else if (member?.paymentStatus !== "PAID") {
+          console.warn(
+            `[stripe webhook] 割引つき請求で未会員のため付与しません invoice=${invoice.id} member=${memberId}`
+          );
+          break;
+        }
+
+        // ビジネス会員の月次クレジット（30件・繰越なし）を請求書ごとに一度だけ付与する
         if (member) {
           const periodEndSec = (invoice as unknown as { period_end?: number | null }).period_end;
           const nextPeriodEnd = periodEndSec ? new Date(periodEndSec * 1000) : null;
@@ -205,7 +217,27 @@ export async function POST(req: NextRequest) {
   return new Response("ok");
 }
 
-/** 自社の月額プラン（NAKAMAビジネス会員）の請求書か。金額と定期課金であることの両方で判定する。 */
+/**
+ * 自社の月額プランの定期課金の請求書か（値引き前の金額で判定）。
+ * クーポン（100%オフ等）が適用されると amount_paid は0になるため、
+ * 月次クレジットの付与判定にはこちらを使う（2026-08-11）。
+ */
+function isBusinessPlanSubscriptionInvoice(invoice: Stripe.Invoice): boolean {
+  const expected = PLANS.find((p) => p.code === "nakama")?.amount ?? null;
+  if (expected === null) return false;
+  const inv = invoice as unknown as {
+    subscription?: unknown;
+    parent?: { subscription_details?: unknown } | null;
+    subtotal?: number | null;
+  };
+  const isSubscription = !!inv.subscription || !!inv.parent?.subscription_details;
+  if (!isSubscription) return false;
+  if ((invoice.currency ?? "jpy").toLowerCase() !== "jpy") return false;
+  // 値引き前（subtotal）か実支払額のどちらかがプラン額と一致すれば自社プランとみなす
+  return (inv.subtotal ?? 0) === expected || (invoice.amount_paid ?? 0) === expected;
+}
+
+/** 自社の月額プランを定価どおり支払った請求書か（無料→会員への自動昇格に使う）。 */
 function isBusinessPlanInvoice(invoice: Stripe.Invoice): boolean {
   const expected = PLANS.find((p) => p.code === "nakama")?.amount ?? null;
   if (expected === null) return false;
