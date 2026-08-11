@@ -110,7 +110,8 @@ export function OfferingCard({
             急募
           </span>
         ) : isNew ? (
-          <span className="absolute left-0 top-0 rounded-br-lg bg-[var(--red)] px-2.5 py-1 text-[11px] font-bold text-white shadow">
+          // 新着は無料。有料の急募（赤）と色で区別する（2026-08-11 ユーザー指定）
+          <span className="absolute left-0 top-0 rounded-br-lg bg-[#2E86C1] px-2.5 py-1 text-[11px] font-bold text-white shadow">
             新着
           </span>
         ) : null}
