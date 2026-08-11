@@ -7,6 +7,7 @@ import { markThreadRead } from "../actions";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
 import { ScrollToLatest } from "../_components/ScrollToLatest";
+import { ThreadHeader } from "../_components/ThreadHeader";
 import { h1Cls } from "@/lib/ui";
 
 export default async function ThreadPage({
@@ -27,7 +28,7 @@ export default async function ThreadPage({
   // 既読化はサイドバーの未読バッジ表示と競合しないよう先に完了させる
   await markThreadRead(thread.id);
   // 取得系の独立クエリはまとめて並列実行（直列4往復→1往復）
-  const [other, messages, draft, templates] = await Promise.all([
+  const [other, messages, draft, templates, offering, deal] = await Promise.all([
     prisma.member.findUnique({
       where: { id: otherId },
       select: { id: true, name: true, avatarUrl: true },
@@ -44,6 +45,29 @@ export default async function ThreadPage({
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true, body: true },
     }),
+    // 対象案件（このスレッドがどの案件のやり取りか）
+    thread.offeringId
+      ? prisma.offering.findUnique({
+          where: { id: thread.offeringId },
+          select: {
+            id: true,
+            direction: true,
+            title: true,
+            imageUrls: true,
+            priceType: true,
+            priceAmount: true,
+            priceUnit: true,
+            amountValue: true,
+            amountUnit: true,
+            amountPeriod: true,
+            amountText: true,
+            minOrderText: true,
+            applicationDeadline: true,
+          },
+        })
+      : Promise.resolve(null),
+    // 進捗（商談）。スレッド単位＝案件単位
+    prisma.deal.findFirst({ where: { threadId: thread.id }, select: { id: true, phase: true } }),
   ]);
   const lastMessageId = messages[messages.length - 1]?.id ?? "none";
 
@@ -81,6 +105,9 @@ export default async function ThreadPage({
               {other?.name || "（不明）"}
             </Link>
           </div>
+
+          {/* 対象案件と進捗（案件ごとのやり取り） */}
+          <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} />
 
           {/* メッセージ */}
           <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5">

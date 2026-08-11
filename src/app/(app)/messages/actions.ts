@@ -43,6 +43,34 @@ async function notifyRecipientIfCaughtUp(params: {
 const ATTACHMENT_BUCKET = "message-attachments";
 
 /** 興味を送る：スレッドが無ければ作成し、最初のメッセージを送る。 */
+/**
+ * 案件ごとの会話（スレッド）を取得または作成する（2026-08-11）。
+ * 従来は会員ペアに1本だったため、同じ相手と複数の案件で話すと1つのスレッドに混ざり、
+ * どの案件の話か分からなかった。案件IDまで含めて分ける（案件なしの直接会話は1本のまま）。
+ */
+export async function findOrCreateThread(params: {
+  tenantId: string;
+  meId: string;
+  otherId: string;
+  offeringId: string | null;
+}) {
+  const { tenantId, meId, otherId, offeringId } = params;
+  const existing = await prisma.thread.findFirst({
+    where: {
+      tenantId,
+      offeringId: offeringId ?? null,
+      OR: [
+        { fromMemberId: meId, toMemberId: otherId },
+        { fromMemberId: otherId, toMemberId: meId },
+      ],
+    },
+  });
+  if (existing) return existing;
+  return prisma.thread.create({
+    data: { tenantId, fromMemberId: meId, toMemberId: otherId, offeringId: offeringId ?? null },
+  });
+}
+
 export async function sendInterest(
   toMemberId: string,
   offeringId: string | null,
@@ -81,26 +109,12 @@ export async function sendInterest(
   const body = trimTo(formData.get("message"), MESSAGE_MAX);
   if (!body) return;
 
-  let thread = await prisma.thread.findFirst({
-    where: {
-      tenantId: su!.app.tenantId,
-      OR: [
-        { fromMemberId: me.id, toMemberId },
-        { fromMemberId: toMemberId, toMemberId: me.id },
-      ],
-    },
+  const thread = await findOrCreateThread({
+    tenantId: su!.app.tenantId,
+    meId: me.id,
+    otherId: toMemberId,
+    offeringId: offeringId || null,
   });
-
-  if (!thread) {
-    thread = await prisma.thread.create({
-      data: {
-        tenantId: su!.app.tenantId,
-        fromMemberId: me.id,
-        toMemberId,
-        offeringId: offeringId || null,
-      },
-    });
-  }
 
   // 相手が既読済みか（通知判定は書き込み前に見る）
   const unreadBefore = await prisma.message.count({
@@ -159,22 +173,14 @@ export async function startConversation(toMemberId: string): Promise<void> {
   });
   if (!target) return;
 
-  let thread = await prisma.thread.findFirst({
-    where: {
-      tenantId: su!.app.tenantId,
-      OR: [
-        { fromMemberId: me.id, toMemberId },
-        { fromMemberId: toMemberId, toMemberId: me.id },
-      ],
-    },
-  });
-
   // 会話（スレッド）だけ用意する。商談・「やり取りあり」はメッセージ送信をトリガーに成立させる。
-  if (!thread) {
-    thread = await prisma.thread.create({
-      data: { tenantId: su!.app.tenantId, fromMemberId: me.id, toMemberId },
-    });
-  }
+  // 事業者への直接会話は案件に紐づかないため offeringId=null のスレッドを使う。
+  const thread = await findOrCreateThread({
+    tenantId: su!.app.tenantId,
+    meId: me.id,
+    otherId: toMemberId,
+    offeringId: null,
+  });
 
   redirect(`/messages/${thread.id}`);
 }

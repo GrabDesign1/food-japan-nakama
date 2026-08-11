@@ -37,6 +37,18 @@ export async function ThreadList({
   });
   const unreadMap = new Map(unread.map((g) => [g.threadId, g._count._all]));
 
+  // スレッドは案件ごとに分かれるため、どの案件のやり取りかを一覧でも示す（2026-08-11）
+  const offeringIds = Array.from(
+    new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
+  );
+  const offerings = offeringIds.length
+    ? await prisma.offering.findMany({
+        where: { id: { in: offeringIds } },
+        select: { id: true, title: true, direction: true },
+      })
+    : [];
+  const offeringMap = new Map(offerings.map((o) => [o.id, o]));
+
   if (threads.length === 0) {
     return (
       <div className="p-4">
@@ -102,6 +114,22 @@ export async function ThreadList({
                   {shortTime(t.lastMessageAt)}
                 </span>
               </div>
+              {t.offeringId && offeringMap.get(t.offeringId) ? (
+                <div className="mt-0.5 flex items-center gap-1">
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white ${
+                      offeringMap.get(t.offeringId)!.direction === "GIVE"
+                        ? "bg-[var(--green)]"
+                        : "bg-[#B77F0B]"
+                    }`}
+                  >
+                    案件
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--ink-2)]">
+                    {offeringMap.get(t.offeringId)!.title || "（無題）"}
+                  </span>
+                </div>
+              ) : null}
               <div className="mt-0.5 flex items-center gap-2">
                 <span
                   className={`min-w-0 flex-1 truncate text-[12px] ${

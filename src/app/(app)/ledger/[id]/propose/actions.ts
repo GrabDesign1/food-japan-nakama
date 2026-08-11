@@ -104,9 +104,11 @@ export async function sendProposal(
         });
       }
 
-      // スレッド（会員ペアで1本）を用意
+      // スレッドは案件ごとに分ける（2026-08-11。従来は会員ペアで1本だったため
+      // 同じ相手との別案件の会話が混ざっていた）
       let thread = await tx.thread.findFirst({
         where: {
+          offeringId: offering.id,
           OR: [
             { fromMemberId: me.id, toMemberId: offering.memberId },
             { fromMemberId: offering.memberId, toMemberId: me.id },

@@ -11,14 +11,19 @@ export async function ensureDeal(params: {
   otherId: string;
   threadId?: string | null;
 }) {
-  const existing = await prisma.deal.findFirst({
-    where: {
-      OR: [
-        { ownerMemberId: params.meId, counterpartMemberId: params.otherId },
-        { ownerMemberId: params.otherId, counterpartMemberId: params.meId },
-      ],
-    },
-  });
+  // 商談はスレッド（＝案件）単位に持つ（2026-08-11）。
+  // 従来は会員ペアに1件だったため、案件が違っても進捗が1つに混ざっていた。
+  // threadId が無い旧データとの互換のため、スレッド指定が無いときは従来どおりペアで探す。
+  const existing = params.threadId
+    ? await prisma.deal.findFirst({ where: { threadId: params.threadId } })
+    : await prisma.deal.findFirst({
+        where: {
+          OR: [
+            { ownerMemberId: params.meId, counterpartMemberId: params.otherId },
+            { ownerMemberId: params.otherId, counterpartMemberId: params.meId },
+          ],
+        },
+      });
   if (existing) return existing;
   return prisma.deal.create({
     data: {
