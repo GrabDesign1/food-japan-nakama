@@ -59,6 +59,8 @@ export async function ThreadList({
     select: { paymentStatus: true },
   });
   const showUpsell = me?.paymentStatus !== "PAID";
+  // 案内は未開封の**先頭の1件だけ**に出す（未開封が並ぶと同じ案内が何個も出て邪魔になる）
+  const firstLockedId = threads.find((t) => locked.has(t.id))?.id ?? null;
 
   if (threads.length === 0) {
     return (
@@ -161,7 +163,7 @@ export async function ThreadList({
             </div>
           </Link>
           {/* 未開封の行の下に会員案内（リンクは入れ子にできないので Link の外に出す） */}
-          {isLocked && showUpsell ? (
+          {isLocked && showUpsell && t.id === firstLockedId ? (
             <div className="border-b border-[var(--line-soft)] px-3 py-2.5">
               <BusinessMemberPromo compact />
             </div>
