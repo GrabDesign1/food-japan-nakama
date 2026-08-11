@@ -126,7 +126,11 @@ function Section({
                 <Link href={`/ledger/${o.id}/edit`} className={btn("secondary", "sm")}>
                   編集
                 </Link>
-                <Link href={`/ledger/${o.id}/proposals`} className={btn("secondary", "sm")}>
+                {/* 届いた件数があるときは目立たせる（案件一覧から対応状況が分かるように） */}
+                <Link
+                  href={`/ledger/${o.id}/proposals`}
+                  className={btn((receivedMap.get(o.id) ?? 0) > 0 ? "action" : "secondary", "sm")}
+                >
                   届いた{o.direction === "GIVE" ? "問い合わせ" : "提案"}
                   {(receivedMap.get(o.id) ?? 0) > 0 ? `（${receivedMap.get(o.id)}）` : ""}
                 </Link>

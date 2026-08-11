@@ -67,6 +67,8 @@ export default async function OfferingThreadPage({
         memberId: true,
         direction: true,
         title: true,
+        description: true,
+        usageContext: true,
         imageUrls: true,
         priceType: true,
         priceAmount: true,
@@ -142,12 +144,42 @@ export default async function OfferingThreadPage({
         {/* 対象案件の要点と進捗（メッセージ画面と同じ表示） */}
         <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} />
 
+        {/* 募集の内容（クラウドワークスと同じく、やり取りの上に依頼内容を置く） */}
+        {offering.description || offering.usageContext ? (
+          <details className="border-b border-[var(--line)] px-6 py-4" open>
+            <summary className="cursor-pointer text-[13px] font-bold text-[var(--ink)]">
+              {offering.direction === "GIVE" ? "この案件の内容" : "募集の内容"}
+            </summary>
+            {offering.description ? (
+              <p className="mt-2 whitespace-pre-wrap text-[13px] leading-7 text-[var(--ink-2)]">
+                {offering.description}
+              </p>
+            ) : null}
+            {offering.usageContext ? (
+              <>
+                <div className="mt-3 text-[12px] font-bold text-[var(--ink)]">使用目的・販売先</div>
+                <p className="mt-1 whitespace-pre-wrap text-[13px] leading-7 text-[var(--ink-2)]">
+                  {offering.usageContext}
+                </p>
+              </>
+            ) : null}
+            <Link
+              href={`/ledger/${offering.id}`}
+              className="mt-3 inline-block text-[12px] text-[var(--green-d)] underline"
+            >
+              案件ページで全部を見る →
+            </Link>
+          </details>
+        ) : null}
+
         {/* やり取り */}
         <div className="flex max-h-[62vh] flex-col">
           <MessageList
             messages={messages}
             meId={me.id}
             otherName={other?.name ?? "相手"}
+            myName={me.name || "自分"}
+            variant="card"
             emptyText="まだやり取りはありません。下の入力欄から送れます。"
           />
         </div>

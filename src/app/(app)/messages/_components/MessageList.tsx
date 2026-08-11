@@ -40,12 +40,21 @@ export function MessageList({
   messages,
   meId,
   otherName,
+  myName = "自分",
   emptyText = "まだやり取りはありません。",
+  variant = "bubble",
 }: {
   messages: MessageForList[];
   meId: string;
   otherName: string;
+  /** カード表示のときに自分の投稿へ出す名前 */
+  myName?: string;
   emptyText?: string;
+  /**
+   * bubble＝従来のチャット（/messages）。
+   * card＝投稿が全幅カードで時系列に並ぶ形（案件ごとのやり取り画面。クラウドワークスと同じ見せ方）。
+   */
+  variant?: "bubble" | "card";
 }) {
   const lastMessageId = messages[messages.length - 1]?.id ?? "none";
 
@@ -68,6 +77,63 @@ export function MessageList({
                 size: a.size as number | null,
               })),
             ];
+            const files_ = files;
+            if (variant === "card") {
+              return (
+                <div
+                  key={msg.id}
+                  className={`rounded-[10px] border bg-white p-4 ${
+                    mine ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)]"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="text-[14px] font-bold text-[var(--green-d)]">
+                      {mine ? myName : otherName}
+                    </span>
+                    <span className="text-[11px] text-[var(--muted)]">{timeStr(msg.createdAt)}</span>
+                  </div>
+                  <div className="mt-2 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink)]">
+                    {msg.body}
+                  </div>
+                  {files_.map((a) => (
+                    <div key={a.key} className="mt-3 rounded-[10px] border border-[var(--line)] bg-white p-3">
+                      {isImageName(a.name) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/attachments/${msg.id}${a.query}`}
+                          alt={a.name ?? "添付画像"}
+                          className="mb-2 max-h-[280px] w-auto rounded object-contain"
+                        />
+                      ) : (
+                        <div className="mb-2 text-[28px] leading-none">📄</div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                        <span className="break-all text-[var(--ink)]">
+                          {a.name ?? "添付ファイル"}
+                          {a.size ? (
+                            <span className="text-[var(--muted)]">（{formatBytes(a.size)}）</span>
+                          ) : null}
+                        </span>
+                        <a
+                          href={`/api/attachments/${msg.id}${a.query}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
+                        >
+                          プレビュー
+                        </a>
+                        <a
+                          href={`/api/attachments/${msg.id}${a.query ? `${a.query}&` : "?"}download=1`}
+                          className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
+                        >
+                          ダウンロード
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
             return (
               <div key={msg.id} className={mine ? "text-right" : "text-left"}>
                 <div className="mb-1 text-[11px] text-[var(--muted)]">
