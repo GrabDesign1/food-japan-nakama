@@ -15,6 +15,26 @@ type Props = {
 
 type ButtonProps = Props & { productName: string };
 
+// 表示例に並べるダミーの他社（実在の会員と紛れないよう、架空の社名にする）
+const OTHERS: { memberName: string; area: string }[] = [
+  { memberName: "株式会社スーパーA", area: "神奈川県" },
+  { memberName: "株式会社スーパーB", area: "大阪府" },
+  { memberName: "株式会社食品工場", area: "愛知県" },
+];
+
+/** 表示例のカードは押せないようにする（モーダルから詳細ページへ飛ばないように）。 */
+const Sample = ({ children }: { children: React.ReactNode }) => (
+  <div className="pointer-events-none select-none">{children}</div>
+);
+
+const other = (sample: OfferingCardData, i: number, title: string): OfferingCardData => ({
+  ...sample,
+  title,
+  tagline: null,
+  memberName: OTHERS[i].memberName,
+  area: OTHERS[i].area,
+});
+
 const SponsorLabel = ({ text }: { text: string }) => (
   <div className="mb-1 flex items-center gap-2">
     <span className="rounded bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-white">広告</span>
@@ -27,9 +47,11 @@ const NaturalRow = ({ sample }: { sample: OfferingCardData }) => (
   <div className="mt-3">
     <div className="mb-1 text-[11px] text-[var(--muted)]">通常の検索結果（無料掲載）</div>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <OfferingCard o={{ ...sample, title: "（ほかの案件）", tagline: null }} />
-      <OfferingCard o={{ ...sample, title: "（ほかの案件）", tagline: null }} />
-      <OfferingCard o={{ ...sample, title: "（ほかの案件）", tagline: null }} />
+      {OTHERS.map((_, i) => (
+        <Sample key={i}>
+          <OfferingCard o={other(sample, i, "（ほかの案件）")} />
+        </Sample>
+      ))}
     </div>
   </div>
 );
@@ -45,7 +67,9 @@ function PreviewBody({ effectType, sample }: Props) {
           </p>
           <SponsorLabel text="スポンサー（最上部PR）" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} isOwn />
+            <Sample>
+              <OfferingCard o={sample} isOwn />
+            </Sample>
           </div>
           <NaturalRow sample={sample} />
         </>
@@ -63,9 +87,14 @@ function PreviewBody({ effectType, sample }: Props) {
           </p>
           <SponsorLabel text="スポンサー（注目表示）" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} featured isOwn />
-            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} featured />
-            <OfferingCard o={{ ...sample, title: "（ほかのスポンサー案件）", tagline: null }} featured />
+            <Sample>
+              <OfferingCard o={sample} featured isOwn />
+            </Sample>
+            {[0, 1].map((i) => (
+              <Sample key={i}>
+                <OfferingCard o={other(sample, i, "（ほかのスポンサー案件）")} featured />
+              </Sample>
+            ))}
           </div>
           <NaturalRow sample={sample} />
         </>
@@ -77,8 +106,12 @@ function PreviewBody({ effectType, sample }: Props) {
             カードの画像の上に<b>「急募」バッジ</b>が付きます。表示位置は変わりませんが、一覧の中で目に留まりやすくなります。
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <OfferingCard o={sample} urgent isOwn />
-            <OfferingCard o={{ ...sample, title: "（バッジなしの案件）", tagline: null }} />
+            <Sample>
+              <OfferingCard o={sample} urgent isOwn />
+            </Sample>
+            <Sample>
+              <OfferingCard o={other(sample, 0, "（バッジなしの案件）")} />
+            </Sample>
           </div>
         </>
       );
