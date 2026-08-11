@@ -6,7 +6,7 @@
 //   <button className={btn("primary")}>保存する</button>
 //   <Link className={btn("secondary", "sm")}>編集</Link>
 
-type Variant = "primary" | "amber" | "secondary" | "danger" | "ghost";
+type Variant = "primary" | "action" | "amber" | "secondary" | "danger" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 // 共通の土台
@@ -24,6 +24,8 @@ const sizes: Record<Size, string> = {
 const variants: Record<Variant, string> = {
   // 主アクション（緑塗り）
   primary: "bg-[var(--green)] text-white hover:bg-[var(--green-d)] shadow-sm hover:shadow",
+  // 赤みのあるオレンジ（提案・問い合わせなど、行動を促す最重要CTA。2026-08-11 追加）
+  action: "bg-[#E2591F] text-white hover:bg-[#C74B16] shadow-sm hover:shadow",
   // 山吹色（買いたい・課金など、緑の主アクションと区別したいもの）
   amber: "bg-[#B77F0B] text-white hover:bg-[#9A6A08] shadow-sm hover:shadow",
   // 副アクション（白・枠線）
