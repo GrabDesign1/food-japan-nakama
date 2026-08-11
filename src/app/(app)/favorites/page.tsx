@@ -4,7 +4,6 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { OfferingCard } from "@/components/OfferingCard";
-import { OfferingRow } from "@/components/OfferingRow";
 import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -90,22 +89,12 @@ export default async function FavoritesPage() {
             <div>
               <h2 className={`${h2Cls} mb-3`}>売りたい・探している</h2>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {offerings.map((o) => {
-                  const data = {
-                    ...o,
-                    memberName: o.member.name,
-                    memberLogoUrl: o.member.companyLogoUrl,
-                    views24h: viewMap.get(o.id) ?? 0,
-                  };
-                  // 探している（調達したい）は横長の行で表示する
-                  return o.direction === "WANT" ? (
-                    <div key={o.id} className="col-span-full">
-                      <OfferingRow o={data} />
-                    </div>
-                  ) : (
-                    <OfferingCard key={o.id} o={data} />
-                  );
-                })}
+                {offerings.map((o) => (
+                  <OfferingCard
+                    key={o.id}
+                    o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl, views24h: viewMap.get(o.id) ?? 0 }}
+                  />
+                ))}
               </div>
             </div>
           ) : null}

@@ -10,7 +10,6 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { OfferingCard } from "@/components/OfferingCard";
-import { OfferingRow } from "@/components/OfferingRow";
 import { views24hMap } from "@/lib/offering-views";
 import { EmptyState } from "@/components/EmptyState";
 import { countMissingProfileFields } from "@/lib/member";
@@ -515,22 +514,12 @@ export default async function DashboardPage() {
               />
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {recommended.map((o) => {
-                  const data = {
-                    ...o,
-                    memberName: o.member.name,
-                    memberLogoUrl: o.member.companyLogoUrl,
-                    views24h: viewMap.get(o.id) ?? 0,
-                  };
-                  // 探している（調達したい）は横長の行で表示する
-                  return o.direction === "WANT" ? (
-                    <div key={o.id} className="sm:col-span-2">
-                      <OfferingRow o={data} />
-                    </div>
-                  ) : (
-                    <OfferingCard key={o.id} o={data} />
-                  );
-                })}
+                {recommended.map((o) => (
+                  <OfferingCard
+                    key={o.id}
+                    o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl, views24h: viewMap.get(o.id) ?? 0 }}
+                  />
+                ))}
               </div>
             )}
           </section>
