@@ -4,6 +4,7 @@
 // 保存はしない。印刷ダイアログからPDFにするのは当事者の操作。
 import { useState } from "react";
 import { DocumentTools, type DocExtra } from "./DocumentTools";
+import { taxBreakdown } from "@/lib/invoice";
 
 export type DocumentData = {
   kind: "invoice" | "delivery" | "receipt";
@@ -36,18 +37,26 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
     receivedOn: "",
     purpose: "",
     note: "",
+    reduced: data.rate === 8,
   });
   const isInvoice = data.kind === "invoice";
   const isReceipt = data.kind === "receipt";
   // 金額の内訳を出すのは請求書と領収書（納品書は数量と品名だけ）
   const showMoney = isInvoice || isReceipt;
   const title = isInvoice ? "請求書" : isReceipt ? "領収書" : "納品書";
+  // 税率は発行時のチェックで切り替える。金額（税込）は合意額のまま、内訳だけ計算し直す
+  const amounts = taxBreakdown(data.including, extra.reduced ? 8 : 10);
 
   return (
     <div className="mx-auto max-w-[820px]">
       <style>{`@page { size: A4; margin: 14mm; }`}</style>
 
-      <DocumentTools kind={data.kind} defaultDocNo={data.docNo} onChange={setExtra} />
+      <DocumentTools
+        kind={data.kind}
+        defaultDocNo={data.docNo}
+        defaultReduced={data.rate === 8}
+        onChange={setExtra}
+      />
 
       {/* 売り手に足りない項目があれば画面上だけで知らせる */}
       {showMoney && data.viewerIsSeller && (!data.regNoOk || (isInvoice && !data.seller.bank)) ? (
@@ -139,23 +148,23 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
             <tr>
               <td className="border border-[var(--line)] px-3 py-3 align-top">
                 {data.itemName}
-                {data.rate === 8 ? <span className="ml-1 text-[11px]">※</span> : null}
+                {amounts.rate === 8 ? <span className="ml-1 text-[11px]">※</span> : null}
                 {data.terms ? (
                   <div className="mt-1 whitespace-pre-wrap text-[11px] text-[var(--ink-2)]">{data.terms}</div>
                 ) : null}
               </td>
               <td className="border border-[var(--line)] px-3 py-3 align-top">{data.quantityText ?? "―"}</td>
-              <td className="border border-[var(--line)] px-3 py-3 text-right align-top">{data.rate}%</td>
+              <td className="border border-[var(--line)] px-3 py-3 text-right align-top">{amounts.rate}%</td>
               {showMoney ? (
                 <td className="border border-[var(--line)] px-3 py-3 text-right align-top">
-                  {yen(data.excluding)}
+                  {yen(amounts.excluding)}
                 </td>
               ) : null}
             </tr>
           </tbody>
         </table>
 
-        {data.rate === 8 ? (
+        {amounts.rate === 8 ? (
           <p className="mt-1 text-[11px] text-[var(--ink-2)]">※は軽減税率（8%）の対象品目です。</p>
         ) : null}
 
@@ -165,12 +174,12 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
             <table className="border-collapse text-[12px]">
               <tbody>
                 <tr>
-                  <td className="border border-[var(--line)] px-3 py-1.5">{data.rate}%対象（税抜）</td>
-                  <td className="border border-[var(--line)] px-3 py-1.5 text-right">{yen(data.excluding)}</td>
+                  <td className="border border-[var(--line)] px-3 py-1.5">{amounts.rate}%対象（税抜）</td>
+                  <td className="border border-[var(--line)] px-3 py-1.5 text-right">{yen(amounts.excluding)}</td>
                 </tr>
                 <tr>
-                  <td className="border border-[var(--line)] px-3 py-1.5">消費税額（{data.rate}%）</td>
-                  <td className="border border-[var(--line)] px-3 py-1.5 text-right">{yen(data.tax)}</td>
+                  <td className="border border-[var(--line)] px-3 py-1.5">消費税額（{amounts.rate}%）</td>
+                  <td className="border border-[var(--line)] px-3 py-1.5 text-right">{yen(amounts.tax)}</td>
                 </tr>
                 <tr className="font-bold">
                   <td className="border border-[var(--line)] px-3 py-1.5">合計（税込）</td>

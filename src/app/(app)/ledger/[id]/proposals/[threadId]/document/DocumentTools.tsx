@@ -17,6 +17,8 @@ export type DocExtra = {
   /** 領収書：但し書き */
   purpose: string;
   note: string;
+  /** 軽減税率（8%）の対象品目か。チェックすると帳票の税率と内訳が8%になる */
+  reduced: boolean;
 };
 
 const LABEL: Record<"invoice" | "delivery" | "receipt", string> = {
@@ -28,10 +30,12 @@ const LABEL: Record<"invoice" | "delivery" | "receipt", string> = {
 export function DocumentTools({
   kind,
   defaultDocNo,
+  defaultReduced,
   onChange,
 }: {
   kind: "invoice" | "delivery" | "receipt";
   defaultDocNo: string;
+  defaultReduced: boolean;
   onChange: (v: DocExtra) => void;
 }) {
   const [v, setV] = useState<DocExtra>({
@@ -41,6 +45,7 @@ export function DocumentTools({
     receivedOn: "",
     purpose: "",
     note: "",
+    reduced: defaultReduced,
   });
   const set = (patch: Partial<DocExtra>) => {
     const next = { ...v, ...patch };
@@ -110,6 +115,20 @@ export function DocumentTools({
         </label>
 
       </div>
+
+      {/* 軽減税率の切り替え（飲食料品は8%） */}
+      <label className="mt-3 flex items-start gap-2 text-[12px] leading-5 text-[var(--ink-2)]">
+        <input
+          type="checkbox"
+          checked={v.reduced}
+          onChange={(e) => set({ reduced: e.target.checked })}
+          className="mt-0.5"
+        />
+        <span>
+          <b>軽減税率（8%）の対象品目</b>にする（酒類・外食を除く飲食料品）。
+          チェックを外すと標準税率10%で計算します。送料・資材・役務が含まれる場合はご注意ください。
+        </span>
+      </label>
 
       {/* 備考は長くなるので独立した行にする */}
       <div className="mt-3 flex flex-wrap items-end gap-3">
