@@ -12,13 +12,13 @@ export default function ContactPage() {
       <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
         <table className="w-full text-[13px]">
           <tbody>
-            <tr className="border-b border-[#EDF0EA]">
+            <tr className="border-b border-[var(--line-soft)]">
               <th className="w-[150px] bg-[var(--green-soft)] px-4 py-3 text-left font-medium text-[var(--ink-2)]">メール</th>
               <td className="px-4 py-3 text-[var(--ink)]">
                 <a href="mailto:info@grab-design.com" className="text-[var(--green-d)] underline">info@grab-design.com</a>
               </td>
             </tr>
-            <tr className="border-b border-[#EDF0EA]">
+            <tr className="border-b border-[var(--line-soft)]">
               <th className="bg-[var(--green-soft)] px-4 py-3 text-left font-medium text-[var(--ink-2)]">電話</th>
               <td className="px-4 py-3 text-[var(--ink)]">03-6825-3901</td>
             </tr>

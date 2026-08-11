@@ -27,7 +27,7 @@ import {
   REWARD_POLICIES,
   EVENT_FLAGS,
 } from "@/lib/project-taxonomy";
-import { btn } from "@/lib/ui";
+import { btn, input, h2FormCls } from "@/lib/ui";
 
 export type ProjectData = {
   id: string | null; // null = 新規作成（保存時にレコード作成）
@@ -73,7 +73,7 @@ export type ProjectData = {
 
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 const inputCls =
-  "rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  input();
 
 function Req() {
   return <span className="ml-1 text-[11px] text-[var(--red)]">必須</span>;
@@ -98,7 +98,7 @@ function PreviewBlock({ label, text }: { label: string; text: string }) {
 function SectionHead({ title, desc }: { title: string; desc?: string }) {
   return (
     <div className="border-t border-[var(--line)] pt-5">
-      <h2 className="text-[16px] font-bold text-[var(--ink)]">{title}</h2>
+      <h2 className={h2FormCls}>{title}</h2>
       {desc ? <p className="mt-0.5 text-[12px] text-[var(--muted)]">{desc}</p> : null}
     </div>
   );
@@ -188,7 +188,7 @@ export function ProjectForm({ project }: { project: ProjectData }) {
 
         {/* ── 目的と基本情報 ── */}
         <div>
-          <h2 className="text-[16px] font-bold text-[var(--ink)]">目的と基本情報</h2>
+          <h2 className={h2FormCls}>目的と基本情報</h2>
           <p className="mt-0.5 text-[12px] text-[var(--muted)]">
             質問に答えるだけで、読みやすい募集ページが完成します。
           </p>
@@ -757,7 +757,7 @@ export function ProjectForm({ project }: { project: ProjectData }) {
 
       {/* ── 公開ページの見え方（ライブプレビュー） ── */}
       <aside className="h-fit rounded-[12px] border border-[var(--line)] bg-white p-5 lg:sticky lg:top-20">
-        <h2 className="text-[15px] font-bold text-[var(--ink)]">公開ページの見え方</h2>
+        <h2 className={h2FormCls}>公開ページの見え方</h2>
         <div className="mt-3 grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-[var(--green-soft)]">
           {(isCreate ? tempImages[0] : project.imageUrls[0]) ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -773,7 +773,7 @@ export function ProjectForm({ project }: { project: ProjectData }) {
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--muted)]">
           <span className="rounded bg-[var(--green)] px-1.5 py-0.5 font-bold text-white">共創プロジェクト</span>
           {eventFlags.includes("fjs_origin") ? (
-            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">FJS発</span>
+            <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 font-bold text-[var(--amber)]">FJS発</span>
           ) : null}
         </div>
         <div className="mt-1 line-clamp-2 text-[14px] font-semibold leading-5 text-[var(--ink)]">
@@ -784,7 +784,7 @@ export function ProjectForm({ project }: { project: ProjectData }) {
         ) : null}
         <dl className="mt-3 border-t border-[var(--line)]">
           {previewRows.map((r) => (
-            <div key={r.label} className="flex items-start justify-between gap-3 border-b border-[#EDF0EA] py-2">
+            <div key={r.label} className="flex items-start justify-between gap-3 border-b border-[var(--line-soft)] py-2">
               <dt className="shrink-0 text-[12px] text-[var(--muted)]">{r.label}</dt>
               <dd className="m-0 text-right text-[12px] font-bold">
                 {r.value ? (

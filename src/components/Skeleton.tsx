@@ -36,7 +36,7 @@ export function RowsSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 border-b border-[#EDF0EA] px-4 py-4 last:border-0">
+        <div key={i} className="flex items-center gap-3 border-b border-[var(--line-soft)] px-4 py-4 last:border-0">
           <Sk className="h-10 w-10 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Sk className="h-3.5 w-1/3" />

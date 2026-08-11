@@ -5,10 +5,10 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { createOfferingForMember, type ProxyListingState } from "../listing-proxy-actions";
 import { OFFERING_CATEGORIES } from "@/lib/offering-taxonomy";
-import { btn } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
 
 const fieldCls =
-  "w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  `${input("sm")} w-full`;
 const labelCls = "text-[12px] font-medium text-[var(--ink-2)]";
 
 function SubmitButton() {

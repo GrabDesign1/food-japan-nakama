@@ -2,10 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { submitConsultation, type ConsultationState } from "./actions";
-import { btn } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
 
 const inputCls =
-  "rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  input();
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 
 const SERVICE_OPTIONS = [

@@ -6,7 +6,7 @@
 // ＝実物と必ず一致させるため（スクリーンショットを別途用意すると必ずズレる）。
 import { useState } from "react";
 import { OfferingCard, type OfferingCardData } from "@/components/OfferingCard";
-import { btn } from "@/lib/ui";
+import { btn, h2FormCls } from "@/lib/ui";
 
 type Props = {
   effectType: string;
@@ -180,7 +180,7 @@ function PreviewBody({ effectType, sample }: Props) {
       return (
         <>
           <p className="mb-2 text-[12px] leading-5 text-[var(--ink-2)]">
-            検索結果の上部にある<b>注目枠</b>に、<b className="text-[#B77F0B]">橙色の枠</b>付きで表示されます
+            検索結果の上部にある<b>注目枠</b>に、<b className="text-[var(--amber)]">橙色の枠</b>付きで表示されます
             （最大4件・同条件の案件とは日替わりで入れ替わります）。広告表記が必ず付きます。
             <br />
             <span className="text-[var(--muted)]">
@@ -228,7 +228,7 @@ function PreviewBody({ effectType, sample }: Props) {
             <div className="border-b border-[var(--line)] px-4 py-2 text-[11px] text-[var(--muted)]">
               相手から見た詳細ページ（抜粋）
             </div>
-            <dl className="divide-y divide-[#EDF0EA] text-[12px]">
+            <dl className="divide-y divide-[var(--line-soft)] text-[12px]">
               <div className="flex gap-3 px-4 py-2">
                 <dt className="w-[100px] shrink-0 text-[var(--muted)]">事業者名</dt>
                 <dd className="font-bold text-[var(--ink-2)]">非公開（提案・承認後に開示）</dd>
@@ -294,7 +294,7 @@ export function EffectPreview({ effectType, sample, productName }: ButtonProps) 
             className="relative flex max-h-[88vh] w-full max-w-[900px] flex-col rounded-[14px] border border-[var(--line)] bg-white shadow-xl"
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-3">
-              <h2 id="effect-preview-title" className="text-[15px] font-bold text-[var(--ink)]">
+              <h2 id="effect-preview-title" className={h2FormCls}>
                 {productName}の見え方
               </h2>
               <button

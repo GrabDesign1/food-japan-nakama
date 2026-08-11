@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import { buyListingOption, type OptionState } from "./actions";
-import { btn } from "@/lib/ui";
+import { btn, h2FormCls } from "@/lib/ui";
 
 export function BuyOptionButton({
   offeringId,
@@ -82,7 +82,7 @@ export function BuyOptionButton({
             aria-labelledby="buy-option-title"
             className="relative max-h-[86vh] w-full max-w-[460px] overflow-y-auto rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-xl"
           >
-            <h2 id="buy-option-title" className="text-[16px] font-bold text-[var(--ink)]">
+            <h2 id="buy-option-title" className={h2FormCls}>
               購入内容の確認
             </h2>
             <p className="mt-1 text-[12px] text-[var(--muted)]">
@@ -93,7 +93,7 @@ export function BuyOptionButton({
               {rows.map(([k, v], i) => (
                 <div
                   key={k}
-                  className={`flex gap-3 px-3 py-2 text-[12px] ${i > 0 ? "border-t border-[#EDF0EA]" : ""}`}
+                  className={`flex gap-3 px-3 py-2 text-[12px] ${i > 0 ? "border-t border-[var(--line-soft)]" : ""}`}
                 >
                   <dt className="w-[92px] shrink-0 text-[var(--muted)]">{k}</dt>
                   <dd className="flex-1 leading-5 text-[var(--ink)]">{v}</dd>

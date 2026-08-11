@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signIn, signUp, type AuthState } from "../actions";
 import { GoogleButton } from "./GoogleButton";
-import { btn, h1Cls } from "@/lib/ui";
+import { btn, h1Cls, input } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -61,7 +61,7 @@ export function AuthForm({
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+          className={input()}
           placeholder="you@example.com"
         />
       </label>
@@ -74,7 +74,7 @@ export function AuthForm({
           required
           minLength={mode === "signup" ? 8 : undefined}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+          className={input()}
           placeholder="••••••••"
         />
       </label>
@@ -89,7 +89,7 @@ export function AuthForm({
               required
               minLength={8}
               autoComplete="new-password"
-              className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+              className={input()}
               placeholder="••••••••"
             />
           </label>

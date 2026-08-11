@@ -127,7 +127,7 @@ export function ProjectTempImageUploader({
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={onPick} />
       {error ? <p className="text-[12px] text-[var(--red)]">{error}</p> : null}
       {warning ? (
-        <p className="rounded-md bg-[#FAF0D6] px-3 py-2 text-[12px] leading-5 text-[#7A5A0B]">⚠️ {warning}</p>
+        <p className="rounded-md bg-[var(--amber-soft)] px-3 py-2 text-[12px] leading-5 text-[var(--amber-ink)]">⚠️ {warning}</p>
       ) : null}
     </div>
   );

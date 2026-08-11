@@ -3,6 +3,7 @@
 // 紹介料の説明。初回は開いた状態、2回目以降は畳んだ状態で表示する（2026-08-11）。
 // 毎回読むものではないが、初めての人には必ず見せる必要がある（料金の事前明示）。
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { h2FormCls } from "@/lib/ui";
 
 const SEEN_KEY = "nakama.proposeFeeNotice.seen";
 
@@ -35,7 +36,7 @@ export function FeeNotice({ summary, children }: { summary: ReactNode; children:
   return (
     <div className="rounded-[10px] border border-[var(--line)] bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[15px] font-bold text-[var(--ink)]">初回紹介料について</h2>
+        <h2 className={h2FormCls}>初回紹介料について</h2>
         <button
           type="button"
           onClick={() => setManual(!open)}

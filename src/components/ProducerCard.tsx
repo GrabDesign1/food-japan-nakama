@@ -25,7 +25,7 @@ export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?
     <Link href={`/producers/${p.id}`} className="group block transition-transform hover:-translate-y-0.5">
       <div
         className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] shadow-sm transition group-hover:shadow-md ${
-          isOwn ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]" : "border-[var(--line)] group-hover:border-[var(--green)]"
+          isOwn ? "border-2 border-[var(--amber)] ring-2 ring-[var(--amber-soft)]" : "border-[var(--line)] group-hover:border-[var(--green)]"
         }`}
       >
         {thumb ? (
@@ -55,7 +55,7 @@ export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?
           </div>
         ) : null}
         {isOwn ? (
-          <span className="absolute right-2 top-2 rounded bg-[#B77F0B] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+          <span className="absolute right-2 top-2 rounded bg-[var(--amber)] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
             あなたの会社
           </span>
         ) : null}

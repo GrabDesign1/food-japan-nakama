@@ -4,7 +4,7 @@
 import { useActionState, useState } from "react";
 import { requestWithdrawal } from "../actions";
 import type { ProfileState } from "../actions";
-import { btn } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
 
 const initial: ProfileState = {};
 
@@ -14,7 +14,7 @@ export function WithdrawalSection({ requestedAt }: { requestedAt: Date | null })
 
   if (requestedAt) {
     return (
-      <div className="rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] p-5">
+      <div className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-5">
         <div className="text-[13px] font-bold text-[var(--ink)]">退会のお申し出を受け付けています</div>
         <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
           {requestedAt.toLocaleDateString("ja-JP")}に受け付けました。事務局で内容を確認のうえ、
@@ -54,7 +54,7 @@ export function WithdrawalSection({ requestedAt }: { requestedAt: Date | null })
             <textarea
               name="reason"
               rows={3}
-              className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+              className={input()}
               placeholder="例：事業の方針が変わったため"
             />
           </label>

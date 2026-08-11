@@ -27,7 +27,7 @@ export type ProjectCardData = {
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   draft: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
-  pending: { label: "承認待ち", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  pending: { label: "承認待ち", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   published: { label: "掲載中", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
   closed: { label: "終了", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
 };
@@ -73,10 +73,10 @@ export function ProjectCard({ p, href }: { p: ProjectCardData; href?: string }) 
             </span>
           ) : null}
           {p.fjsOrigin ? (
-            <span className="rounded border border-[#E7D9A6] bg-[#FFFBF0] px-1.5 py-0.5 text-[10px] text-[#7A5A0B]">FJS発</span>
+            <span className="rounded border border-[var(--amber-line)] bg-[var(--amber-bg)] px-1.5 py-0.5 text-[10px] text-[var(--amber-ink)]">FJS発</span>
           ) : null}
           {p.supportOfficial ? (
-            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] text-[#B77F0B]">事務局伴走中</span>
+            <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] text-[var(--amber)]">事務局伴走中</span>
           ) : null}
         </div>
       ) : null}
@@ -90,9 +90,9 @@ export function ProjectCard({ p, href }: { p: ProjectCardData; href?: string }) 
         {p.memberName ? <span className="truncate">{p.memberName}</span> : null}
         {p.area ? <span className="shrink-0">📍{p.area}</span> : null}
         {deadlineText ? (
-          <span className="ml-auto shrink-0 text-[#B77F0B]">{deadlineText}</span>
+          <span className="ml-auto shrink-0 text-[var(--amber)]">{deadlineText}</span>
         ) : p.budget ? (
-          <span className="ml-auto shrink-0 text-[#B77F0B]">予算 {p.budget}</span>
+          <span className="ml-auto shrink-0 text-[var(--amber)]">予算 {p.budget}</span>
         ) : null}
       </div>
     </Link>

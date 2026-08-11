@@ -20,7 +20,7 @@ import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
 import { duplicateOffering } from "../actions";
 import { FavoriteButton } from "./FavoriteButton";
-import { btn, h1Cls, h2Cls } from "@/lib/ui";
+import { btn, h1Cls, h2Cls, input } from "@/lib/ui";
 
 function isGiveDirection(direction: string): boolean {
   return direction === "GIVE";
@@ -218,7 +218,7 @@ export default async function OfferingDetailPage({
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span
             className={`rounded px-2.5 py-1 text-[12px] font-bold text-white ${
-              isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+              isGive ? "bg-[var(--green)]" : "bg-[var(--amber)]"
             }`}
           >
             {DIRECTION_SHORT[offering.direction]}
@@ -227,12 +227,12 @@ export default async function OfferingDetailPage({
             {meta?.icon} {offering.category}
           </span>
           {offering.listingPurpose === "challenge" ? (
-            <span className="rounded bg-[#FAF0D6] px-2.5 py-1 text-[12px] font-bold text-[#B77F0B]">
+            <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
               課題を一緒に解決したい
             </span>
           ) : null}
           {!isGive && offering.seekingType ? (
-            <span className="rounded bg-[#FAF0D6] px-2.5 py-1 text-[12px] font-bold text-[#B77F0B]">
+            <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
               {SEEKING_TYPE_LABEL[offering.seekingType] ?? offering.seekingType}
             </span>
           ) : null}
@@ -311,7 +311,7 @@ export default async function OfferingDetailPage({
         <table className="w-full text-[14px]">
           <tbody>
             {infoRows.map(([k, v]) => (
-              <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+              <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                 <th className="w-[140px] bg-[var(--green-soft)] px-4 py-3 text-left font-medium text-[var(--ink-2)]">
                   {k}
                 </th>
@@ -345,7 +345,7 @@ export default async function OfferingDetailPage({
                     level === "must"
                       ? "border-[#E7C7BE] bg-[#FBF1EE]"
                       : level === "want"
-                        ? "border-[#E7D9A6] bg-[#FFFBF0]"
+                        ? "border-[var(--amber-line)] bg-[var(--amber-bg)]"
                         : "border-[var(--green)] bg-[var(--green-soft)]"
                   }`}
                 >
@@ -354,7 +354,7 @@ export default async function OfferingDetailPage({
                       level === "must"
                         ? "text-[var(--red)]"
                         : level === "want"
-                          ? "text-[#7A5A0B]"
+                          ? "text-[var(--amber-ink)]"
                           : "text-[var(--green-d)]"
                     }`}
                   >
@@ -386,7 +386,7 @@ export default async function OfferingDetailPage({
             <table className="w-full text-[14px]">
               <tbody>
                 {tradeRows.map(([k, v]) => (
-                  <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+                  <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                     <th className="w-[140px] bg-[var(--green-soft)] px-4 py-3 text-left align-top font-medium text-[var(--ink-2)]">
                       {k}
                     </th>
@@ -462,7 +462,7 @@ export default async function OfferingDetailPage({
               required
               rows={3}
               placeholder={`はじめまして。「${offering.title || "こちらの投稿"}」について相談させてください。`}
-              className="w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+              className={`${input()} w-full`}
             />
             <div className="mt-2 flex items-center justify-between">
               <span className="text-[11px] text-[var(--muted)]">
@@ -515,7 +515,7 @@ export default async function OfferingDetailPage({
 
       {/* 課題（課題解決型のみ・入力がある項目だけ表示） */}
       {offering.challengeCurrent || offering.challengeAsk || offering.challengeValue ? (
-        <div className="rounded-[12px] border border-[#E7D9A6] bg-[#FFFBF0] p-5">
+        <div className="rounded-[12px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-5">
           <h2 className={`${h2Cls} mb-3`}>いま起きている課題と、求めている協力</h2>
           <div className="flex flex-col gap-4">
             {(
@@ -530,7 +530,7 @@ export default async function OfferingDetailPage({
               .filter(([, v]) => !!v)
               .map(([k, v]) => (
                 <div key={k}>
-                  <h3 className="text-[13px] font-bold text-[#7A5A0B]">{k}</h3>
+                  <h3 className="text-[13px] font-bold text-[var(--amber-ink)]">{k}</h3>
                   <p className="mt-1 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{v}</p>
                 </div>
               ))}
@@ -613,7 +613,7 @@ export default async function OfferingDetailPage({
                   ["従業員数", offering.member.size || "なし"],
                 ] as [string, string][]
               ).map(([k, v]) => (
-                <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+                <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                   <th className="w-[140px] bg-[var(--green-soft)] px-4 py-3 text-left font-medium text-[var(--ink-2)]">
                     {k}
                   </th>

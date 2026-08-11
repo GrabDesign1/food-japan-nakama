@@ -174,7 +174,7 @@ export default async function BillingPage({
             利用できるクレジット：<b className="text-[16px] text-[var(--green-d)]">{balance}</b> クレジット
           </span>
           {isMember ? (
-            <span className="font-semibold text-[#A87F2F]">
+            <span className="font-semibold text-[var(--gold-d)]">
               ビジネス会員：毎月50クレジットが自動付与されます（繰越なし）
             </span>
           ) : null}
@@ -189,11 +189,11 @@ export default async function BillingPage({
       </div>
 
       {/* NAKAMAビジネス会員プラン（ゴールド基調） */}
-      <div className="max-w-[760px] rounded-[12px] border-2 border-[#C9A053] bg-[#FDF9EF] p-6">
+      <div className="max-w-[760px] rounded-[12px] border-2 border-[var(--gold)] bg-[#FDF9EF] p-6">
         <div className="flex flex-wrap items-center gap-3">
           <div className="text-[15px] font-semibold text-[var(--ink)]">{plan.name}</div>
           {isMember ? (
-            <span className="rounded-full bg-[#F7EED9] px-2.5 py-1 text-[10px] font-bold text-[#A87F2F]">
+            <span className="rounded-full bg-[#F7EED9] px-2.5 py-1 text-[10px] font-bold text-[var(--gold-d)]">
               ご契約中
             </span>
           ) : null}
@@ -206,7 +206,7 @@ export default async function BillingPage({
         <ul className="mt-3 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
           {plan.features.map((f) => (
             <li key={f} className="flex gap-1.5">
-              <span className="font-bold text-[#C9A053]">✓</span>
+              <span className="font-bold text-[var(--gold)]">✓</span>
               {f}
             </li>
           ))}

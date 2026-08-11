@@ -42,7 +42,7 @@ import {
   REQUIREMENT_LEVEL_LABEL,
   categoryMeta,
 } from "@/lib/offering-taxonomy";
-import { btn } from "@/lib/ui";
+import { btn, input, h2FormCls } from "@/lib/ui";
 
 export type OfferingData = {
   id: string | null; // null = 新規作成（保存時にレコード作成）
@@ -94,7 +94,7 @@ export type OfferingData = {
 
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 const inputCls =
-  "rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  input();
 
 function Req() {
   return <span className="ml-1 text-[11px] text-[var(--red)]">必須</span>;
@@ -119,7 +119,7 @@ function PreviewBlock({ label, text }: { label: string; text: string }) {
 function SectionHead({ title, desc }: { title: string; desc?: string }) {
   return (
     <div className="border-t border-[var(--line)] pt-5">
-      <h2 className="text-[16px] font-bold text-[var(--ink)]">{title}</h2>
+      <h2 className={h2FormCls}>{title}</h2>
       {desc ? <p className="mt-0.5 text-[12px] text-[var(--muted)]">{desc}</p> : null}
     </div>
   );
@@ -234,7 +234,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {/* ── 募集タイプ（探している（調達したい）のみ） ── */}
         {!isGive ? (
           <div>
-            <h2 className="text-[16px] font-bold text-[var(--ink)]">何を探していますか？<Req /></h2>
+            <h2 className={h2FormCls}>何を探していますか？<Req /></h2>
             <p className="mt-0.5 text-[12px] text-[var(--muted)]">
               {ex.seekingIntro}
             </p>
@@ -271,7 +271,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {/* ── 掲載タイプ（売りたい（提供したい）のみ） ── */}
         {isGive ? (
           <div>
-            <h2 className="text-[16px] font-bold text-[var(--ink)]">今回、何をしたいですか？</h2>
+            <h2 className={h2FormCls}>今回、何をしたいですか？</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {LISTING_PURPOSES.map(([value, label, desc]) => (
                 <label
@@ -304,7 +304,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         {/* ── 基本情報 ── */}
         <div className="border-t border-[var(--line)] pt-5">
-          <h2 className="text-[16px] font-bold text-[var(--ink)]">基本情報</h2>
+          <h2 className={h2FormCls}>基本情報</h2>
           <p className="mt-0.5 text-[12px] text-[var(--muted)]">
             カテゴリに合わせて、必要な入力項目が切り替わります。
           </p>
@@ -457,7 +457,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                       value={r.level}
                       onChange={(e) => updateRequirement(i, { level: e.target.value })}
                       className={`${inputCls} font-bold sm:w-[110px] ${
-                        r.level === "must" ? "text-[var(--red)]" : r.level === "want" ? "text-[#B77F0B]" : "text-[var(--green-d)]"
+                        r.level === "must" ? "text-[var(--red)]" : r.level === "want" ? "text-[var(--amber)]" : "text-[var(--green-d)]"
                       }`}
                     >
                       {REQUIREMENT_LEVELS.map(([v, l]) => (
@@ -546,9 +546,9 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             </div>
 
             {listingPurpose === "challenge" ? (
-              <div className="flex flex-col gap-4 rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] p-4">
+              <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
                 <div>
-                  <div className="text-[13px] font-bold text-[#7A5A0B]">課題について教えてください</div>
+                  <div className="text-[13px] font-bold text-[var(--amber-ink)]">課題について教えてください</div>
                   <p className="mt-0.5 text-[11px] text-[var(--muted)]">
                     背景が伝わると、協力したい相手が動きやすくなります。
                   </p>
@@ -970,7 +970,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
       {/* ── 相手からの見え方（ライブプレビュー） ── */}
       <aside className="h-fit rounded-[12px] border border-[var(--line)] bg-white p-5 lg:sticky lg:top-20">
-        <h2 className="text-[15px] font-bold text-[var(--ink)]">
+        <h2 className={h2FormCls}>
           {isGive ? "買い手からの見え方" : "売り手からの見え方"}
         </h2>
         <div className="mt-3 grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-[var(--green-soft)]">
@@ -988,16 +988,16 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--muted)]">
           <span
             className={`rounded px-1.5 py-0.5 font-bold text-white ${
-              isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+              isGive ? "bg-[var(--green)]" : "bg-[var(--amber)]"
             }`}
           >
             {isGive ? "売りたい（提供したい）" : "探している（調達したい）"}
           </span>
           {isGive && listingPurpose === "challenge" ? (
-            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">課題解決</span>
+            <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 font-bold text-[var(--amber)]">課題解決</span>
           ) : null}
           {!isGive && seekingType ? (
-            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 font-bold text-[#B77F0B]">
+            <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 font-bold text-[var(--amber)]">
               {SEEKING_TYPE_SHORT[seekingType] ?? seekingType}
             </span>
           ) : null}
@@ -1011,7 +1011,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         ) : null}
         <dl className="mt-3 border-t border-[var(--line)]">
           {previewRows.map((r) => (
-            <div key={r.label} className="flex items-start justify-between gap-3 border-b border-[#EDF0EA] py-2">
+            <div key={r.label} className="flex items-start justify-between gap-3 border-b border-[var(--line-soft)] py-2">
               <dt className="shrink-0 text-[12px] text-[var(--muted)]">{r.label}</dt>
               <dd className="m-0 text-right text-[12px] font-bold">
                 {r.value ? (
@@ -1055,7 +1055,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                             r.level === "must"
                               ? "bg-[#FBF1EE] text-[var(--red)]"
                               : r.level === "want"
-                                ? "bg-[#FAF0D6] text-[#B77F0B]"
+                                ? "bg-[var(--amber-soft)] text-[var(--amber)]"
                                 : "bg-[var(--green-soft)] text-[var(--green-d)]"
                           }`}
                         >
@@ -1074,8 +1074,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             <PreviewBlock label="生まれた背景・販売したい理由" text={backgroundStory} />
             {listingPurpose === "challenge" &&
             (challengeCurrent.trim() || challengeAsk.trim() || challengeValue.trim()) ? (
-              <div className="mt-3 rounded-[8px] border border-[#E7D9A6] bg-[#FFFBF0] p-2.5">
-                <div className="text-[11px] font-bold text-[#7A5A0B]">いま起きている課題と、求めている協力</div>
+              <div className="mt-3 rounded-[8px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-2.5">
+                <div className="text-[11px] font-bold text-[var(--amber-ink)]">いま起きている課題と、求めている協力</div>
                 <div className="mt-1 flex flex-col gap-2">
                   {(
                     [
@@ -1087,7 +1087,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                     .filter(([, v]) => v.trim())
                     .map(([k, v]) => (
                       <div key={k}>
-                        <div className="text-[10px] font-bold text-[#7A5A0B]">{k}</div>
+                        <div className="text-[10px] font-bold text-[var(--amber-ink)]">{k}</div>
                         <p className="line-clamp-3 whitespace-pre-wrap text-[12px] leading-5 text-[var(--ink-2)]">
                           {v.trim()}
                         </p>

@@ -2,7 +2,7 @@
 
 // 汎用の確認モーダルつきボタン（公開・申請など）。確認してから server action を実行する。
 import { useState, useTransition } from "react";
-import { btn } from "@/lib/ui";
+import { btn, h2FormCls } from "@/lib/ui";
 
 export function ConfirmActionButton({
   action,
@@ -43,7 +43,7 @@ export function ConfirmActionButton({
             aria-labelledby="confirm-action-title"
             className="relative w-full max-w-[400px] rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-xl"
           >
-            <h2 id="confirm-action-title" className="text-[16px] font-bold text-[var(--ink)]">
+            <h2 id="confirm-action-title" className={h2FormCls}>
               {title}
             </h2>
             {description ? (

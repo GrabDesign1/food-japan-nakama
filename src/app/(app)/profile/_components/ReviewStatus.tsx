@@ -6,9 +6,9 @@ import { btn } from "@/lib/ui";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   DRAFT: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
-  PENDING: { label: "審査中", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  PENDING: { label: "審査中", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   APPROVED: { label: "承認済み", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
-  AWAITING_PAYMENT: { label: "お支払い待ち", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  AWAITING_PAYMENT: { label: "お支払い待ち", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   REJECTED: { label: "要修正", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
   SUSPENDED: { label: "停止中", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
 };

@@ -76,7 +76,7 @@ export default async function AdminMembersPage() {
                   申請 {w.withdrawalRequestedAt?.toLocaleDateString("ja-JP")}
                 </span>
                 {w.paymentStatus === "PAID" ? (
-                  <span className="ml-2 rounded bg-white px-2 py-0.5 text-[10px] font-bold text-[#A87F2F]">
+                  <span className="ml-2 rounded bg-white px-2 py-0.5 text-[10px] font-bold text-[var(--gold-d)]">
                     ビジネス会員 課金中（先に解約が必要）
                   </span>
                 ) : null}

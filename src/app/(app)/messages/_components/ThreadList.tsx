@@ -77,11 +77,11 @@ export async function ThreadList({
           <Link
             key={t.id}
             href={`/messages/${t.id}`}
-            className={`relative flex items-center gap-3 border-b border-[#EDF0EA] py-3 pl-5 pr-4 transition ${
+            className={`relative flex items-center gap-3 border-b border-[var(--line-soft)] py-3 pl-5 pr-4 transition ${
               active
                 ? "bg-[var(--green-soft)]"
                 : unreadN > 0
-                  ? "bg-[#FFF7EF] hover:bg-[#FFEFE2]"
+                  ? "bg-[var(--orange-soft)] hover:bg-[#FFEFE2]"
                   : "hover:bg-[var(--canvas)]"
             }`}
           >
@@ -120,7 +120,7 @@ export async function ThreadList({
                     className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold text-white ${
                       offeringMap.get(t.offeringId)!.direction === "GIVE"
                         ? "bg-[var(--green)]"
-                        : "bg-[#B77F0B]"
+                        : "bg-[var(--amber)]"
                     }`}
                   >
                     案件

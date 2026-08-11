@@ -12,10 +12,10 @@ import {
   PROGRESS_LABEL,
   MEETING_WISH_LABEL,
 } from "@/lib/project-taxonomy";
-import { btn } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
 
 const inputCls =
-  "rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[13px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  input("sm");
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 
 export type ApplicantData = {
@@ -44,8 +44,8 @@ export type ApplicantData = {
 
 const STAGE_BADGE: Record<string, string> = {
   inquiry: "bg-[#EEF2FA] text-[#3C4A62]",
-  meeting: "bg-[#FAF0D6] text-[#B77F0B]",
-  planning: "bg-[#FAF0D6] text-[#B77F0B]",
+  meeting: "bg-[var(--amber-soft)] text-[var(--amber)]",
+  planning: "bg-[var(--amber-soft)] text-[var(--amber)]",
   pilot: "bg-[var(--green-soft)] text-[var(--green-d)]",
   contract: "bg-[var(--green)] text-white",
   hold: "bg-[var(--line)] text-[var(--ink-2)]",
@@ -75,7 +75,7 @@ export function ApplicantProgressCard({ app }: { app: ApplicantData }) {
         {app.dueState === "overdue" ? (
           <span className="rounded-full bg-[#FBF1EE] px-2.5 py-1 text-[11px] font-bold text-[var(--red)]">⚠ 期限超過</span>
         ) : app.dueState === "soon" ? (
-          <span className="rounded-full bg-[#FAF0D6] px-2.5 py-1 text-[11px] font-bold text-[#B77F0B]">⏰ 期限が近い</span>
+          <span className="rounded-full bg-[var(--amber-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--amber)]">⏰ 期限が近い</span>
         ) : app.dueState === "none" ? (
           <span className="rounded-full border border-dashed border-[var(--line)] px-2.5 py-1 text-[11px] text-[var(--muted)]">次の行動を設定</span>
         ) : null}

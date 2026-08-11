@@ -56,7 +56,7 @@ export default async function AdminAuditPage() {
       ) : (
         <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
           {logs.map((l) => (
-            <div key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#EDF0EA] px-4 py-2.5 text-[12px] last:border-0">
+            <div key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--line-soft)] px-4 py-2.5 text-[12px] last:border-0">
               <span className="text-[var(--muted)]">{fmt(l.createdAt)}</span>
               <span className="font-medium text-[var(--ink)]">{ACTION_LABEL[l.action] ?? l.action}</span>
               {l.targetId ? <span className="text-[var(--muted)]">{l.targetType}:{l.targetId}</span> : null}

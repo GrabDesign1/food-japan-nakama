@@ -40,7 +40,7 @@ export default async function PublicOfferingPreview({
       <div className="flex flex-col gap-2">
         <span
           className={`w-fit rounded-full px-3 py-1 text-[11px] font-bold text-white ${
-            isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+            isGive ? "bg-[var(--green)]" : "bg-[var(--amber)]"
           }`}
         >
           {DIRECTION_SHORT[o.direction] ?? (isGive ? "売りたい（提供したい）" : "探している（調達したい）")}

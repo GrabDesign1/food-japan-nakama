@@ -3,7 +3,7 @@
 // 提案画面の「対象案件」の詳細をモーダルで見せる（2026-08-11）。
 // 従来は案件ページへのリンクで、提案の途中で別ページへ移動してしまい入力が中断していた。
 import { useState } from "react";
-import { btn } from "@/lib/ui";
+import { btn, h2FormCls } from "@/lib/ui";
 
 export type OfferingDetailData = {
   title: string;
@@ -20,7 +20,7 @@ export type OfferingDetailData = {
 
 const LEVEL_STYLE: Record<string, string> = {
   must: "bg-[#FBF1EE] text-[var(--red)]",
-  want: "bg-[#FAF0D6] text-[#B77F0B]",
+  want: "bg-[var(--amber-soft)] text-[var(--amber)]",
   negotiable: "bg-[var(--green-soft)] text-[var(--green-d)]",
 };
 
@@ -48,7 +48,7 @@ export function OfferingDetailModal({ data }: { data: OfferingDetailData }) {
                   {data.category}
                   {data.seekingTypeLabel ? `　/　${data.seekingTypeLabel}` : ""}
                 </div>
-                <h2 id="offering-detail-title" className="mt-0.5 text-[16px] font-bold text-[var(--ink)]">
+                <h2 id="offering-detail-title" className={`${h2FormCls} mt-0.5`}>
                   {data.title}
                 </h2>
                 <div className="mt-0.5 text-[11px] text-[var(--muted)]">掲載者：{data.memberName}</div>
@@ -111,7 +111,7 @@ export function OfferingDetailModal({ data }: { data: OfferingDetailData }) {
                     {data.facts.map(([k, v], i) => (
                       <div
                         key={k}
-                        className={`flex gap-3 px-3 py-2 text-[12px] ${i > 0 ? "border-t border-[#EDF0EA]" : ""}`}
+                        className={`flex gap-3 px-3 py-2 text-[12px] ${i > 0 ? "border-t border-[var(--line-soft)]" : ""}`}
                       >
                         <dt className="w-[110px] shrink-0 text-[var(--muted)]">{k}</dt>
                         <dd className="flex-1 text-[var(--ink)]">{v}</dd>

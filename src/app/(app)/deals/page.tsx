@@ -10,7 +10,7 @@ import { setDealNext } from "./actions";
 import { EmptyState } from "@/components/EmptyState";
 import { MyListingsTable } from "@/components/MyListingsTable";
 import { loadMyListingRows } from "@/lib/listing-stats";
-import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls, input, inputBare } from "@/lib/ui";
 
 // レンダー中の Date.now 直呼びは lint（react-hooks/purity）が禁止しているため関数に切り出す
 function isOverdue(d: Date | null): boolean {
@@ -146,7 +146,7 @@ export default async function DealsPage({
                         <>
                           <span
                             className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
-                              offering.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+                              offering.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[var(--amber)]"
                             }`}
                           >
                             {DIRECTION_SHORT[offering.direction] ?? ""}
@@ -162,7 +162,7 @@ export default async function DealsPage({
                         <span className="text-[13px] text-[var(--muted)]">案件に紐づかないメッセージ</span>
                       )}
                       {unread > 0 ? (
-                        <span className="rounded-full bg-[#E2591F] px-2 py-0.5 text-[10px] font-bold text-white">
+                        <span className="rounded-full bg-[var(--action)] px-2 py-0.5 text-[10px] font-bold text-white">
                           要返信 {unread}
                         </span>
                       ) : null}
@@ -191,13 +191,13 @@ export default async function DealsPage({
                       defaultValue={deal.nextAction ?? ""}
                       rows={3}
                       placeholder={"例：面談日を調整する\n・条件面のポイント\n・次回アジェンダ\nなど、メモを複数行で残せます。"}
-                      className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[13px] leading-6 outline-none focus:border-[var(--green)]"
+                      className={`${input("sm")} leading-6`}
                     />
                   </label>
                   <div className="flex flex-wrap items-end gap-2">
                     <label className="flex flex-col gap-1 text-[11px] text-[var(--muted)]">
                       期限
-                      <input type="date" name="dueDate" defaultValue={ymd(deal.dueDate)} className={`rounded-md border bg-white px-3 py-1.5 text-[13px] outline-none focus:border-[var(--green)] ${overdue ? "border-[var(--red)] text-[var(--red)]" : "border-[var(--line)]"}`} />
+                      <input type="date" name="dueDate" defaultValue={ymd(deal.dueDate)} className={`${inputBare("sm")} border bg-white ${overdue ? "border-[var(--red)] text-[var(--red)]" : "border-[var(--line)]"}`} />
                     </label>
                     <button className={btn("primary", "sm")}>
                       保存

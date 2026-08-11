@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { requestPasswordReset, type AuthState } from "../actions";
-import { btn, h1Cls } from "@/lib/ui";
+import { btn, h1Cls, input } from "@/lib/ui";
 
 const initial: AuthState = {};
 
@@ -28,7 +28,7 @@ export function ForgotPasswordForm() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+          className={input()}
           placeholder="you@example.com"
         />
       </label>

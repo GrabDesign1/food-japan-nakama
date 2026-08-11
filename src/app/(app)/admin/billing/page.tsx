@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { requireAdmin, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 import {
   adminSeedProducts,
   adminUpdateProduct,
@@ -16,7 +16,7 @@ import {
 import { ProductSaveForm } from "../_components/ProductSaveForm";
 
 const inputCls =
-  "w-24 rounded-md border border-[var(--line)] px-2 py-1 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  `${input("xs")} w-24`;
 
 const ORDER_STATUS: Record<string, string> = {
   pending_payment: "支払い待ち",
@@ -118,7 +118,7 @@ export default async function AdminBillingPage() {
         ) : (
           <div className="mt-2 flex flex-col gap-2">
             {pendingPromos.map((p) => (
-              <div key={p.id} className="rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] p-4">
+              <div key={p.id} className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
                 <div className="flex flex-wrap items-center gap-2 text-[13px]">
                   <b>{PROMO_LABEL[p.effectType] ?? p.effectType}</b>
                   <Link href={`/ledger/${p.offeringId}`} className="text-[var(--green-d)] underline">
@@ -158,7 +158,7 @@ export default async function AdminBillingPage() {
         ) : (
           <div className="mt-2 flex flex-col gap-2">
             {notices.map((n) => (
-              <div key={n.id} className="rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] p-4">
+              <div key={n.id} className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
                 <div className="text-[13px]">
                   <Link href={`/ledger/${n.offeringId}`} className="text-[var(--green-d)] underline">
                     {titleMap.get(n.offeringId) || n.offeringId}
@@ -348,7 +348,7 @@ export default async function AdminBillingPage() {
               </thead>
               <tbody>
                 {products.map((p) => (
-                  <tr key={p.id} className="border-b border-[#EDF0EA] last:border-0">
+                  <tr key={p.id} className="border-b border-[var(--line-soft)] last:border-0">
                     <td className="px-3 py-2">
                       <div className="font-medium text-[var(--ink)]">{p.name}</div>
                       <div className="text-[10px] text-[var(--muted)]">{p.code}</div>
@@ -400,7 +400,7 @@ function BillingProductRowForm({
           type="number"
           defaultValue={p.memberDiscountPercent}
           form={formId}
-          className="w-16 rounded-md border border-[var(--line)] px-2 py-1 text-[12px] outline-none focus:border-[var(--green)]"
+          className={`${input("xs")} w-16`}
         />
       </td>
       <td className="px-3 py-2">

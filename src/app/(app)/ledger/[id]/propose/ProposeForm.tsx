@@ -9,7 +9,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { sendProposal, buyProposalProduct, uploadProposalAttachment, type ProposeState } from "./actions";
 import { createTemplate, deleteTemplate } from "../../../messages/actions";
 import { Modal, formatBytes } from "../../../messages/_components/Composer";
-import { btn } from "@/lib/ui";
+import { btn, input, inputBare } from "@/lib/ui";
 import { MAX_ATTACHMENTS } from "@/lib/attachments";
 import { ScheduleModal } from "@/components/ScheduleModal";
 
@@ -282,8 +282,8 @@ function SendForm({
             }
           }}
           onDragLeave={() => setDragOver(false)}
-          className={`w-full rounded-lg border bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)] ${
-            dragOver ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)]"
+          className={`${inputBare()} w-full border ${
+            dragOver ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)] bg-white"
           }`}
         />
         <p className="mt-1 text-[11px] text-[var(--muted)]">
@@ -307,7 +307,7 @@ function SendForm({
             name="proposedAmount"
             inputMode="numeric"
             placeholder="例：120000"
-            className="w-[220px] rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+            className={`${input()} w-[220px]`}
           />
           <span className="text-[11px] text-[var(--muted)]">
             おおよその金額を入れておくと、相手が検討しやすくなります（この時点では契約ではありません）。
@@ -426,7 +426,7 @@ function SendForm({
                 <input
                   value={tName}
                   onChange={(e) => setTName(e.target.value)}
-                  className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                  className={input()}
                 />
               </label>
               <label className="flex flex-col gap-1 text-[13px] text-[var(--ink-2)]">

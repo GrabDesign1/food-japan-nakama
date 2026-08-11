@@ -17,6 +17,25 @@
   --red-soft: #fbe4e0;
 
   --orange: #f59e0b;     /* オレンジ（差し色） */
+  --orange-soft: #fff7ef; /* 淡いオレンジの地 */
+
+  /* 金：「探している（調達したい）」と課金まわり。btn("amber") とバッジ・注記 */
+  --amber: #b77f0b;      /* 主色（文字・塗り） */
+  --amber-d: #9a6a08;    /* ホバー */
+  --amber-ink: #7a5a0b;  /* 金地の上に置く文字 */
+  --amber-line: #e7d9a6; /* 金の罫線 */
+  --amber-soft: #faf0d6; /* 金の地 */
+  --amber-bg: #fffbf0;   /* ごく淡い金の地 */
+
+  /* ゴールド：NAKAMAビジネス会員のバッジ・プラン表示 */
+  --gold: #c9a053;
+  --gold-d: #a87f2f;
+
+  /* 赤みのオレンジ：提案・問い合わせの最重要CTA。btn("action") */
+  --action: #e2591f;
+  --action-d: #c74b16;
+
+  --line-soft: #edf0ea;  /* --line より薄い罫線（カード内の区切り） */
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -249,8 +268,8 @@ a.fjn-hero__tag:hover { background: rgba(0, 47, 34, 0.06); }
   display: none; /* オーバーレイなし（画像はそのまま表示） */
 }
 
-@media (max-width: 1500px) {
-  /* 項目が増えても1行で収まるよう、狭い幅では詰める */
+@media (max-width: 1620px) {
+  /* 項目が増えても1行で収まるよう、狭い幅では詰める（1500pxだと1520px前後で折り返したため1620pxに拡大） */
   .fjn-nav { gap: 8px 12px; }
   .fjn-nav a { font-size: 13px; }
   .fjn-nav .fjn-nav__login { min-width: 0; padding: 14px 18px; }

@@ -3,7 +3,7 @@
 // 取引条件の提示・同意（Phase 1）。お金は動かさず、当事者間の合意を記録するだけ。
 import { useActionState, useState } from "react";
 import { proposeContract, respondToContract, type OfferState } from "./actions";
-import { btn, h2Cls } from "@/lib/ui";
+import { btn, h2Cls, input } from "@/lib/ui";
 
 export type OfferRow = {
   id: string;
@@ -19,7 +19,7 @@ export type OfferRow = {
 };
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  proposed: { label: "提示中", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  proposed: { label: "提示中", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   accepted: { label: "合意", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
   declined: { label: "見送り", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
   superseded: { label: "置き換え", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
@@ -29,7 +29,7 @@ function Row({ o }: { o: OfferRow }) {
   const s = STATUS_LABEL[o.status] ?? STATUS_LABEL.superseded;
   const active = o.status === "proposed" || o.status === "accepted";
   return (
-    <tr className={`border-b border-[#EDF0EA] last:border-b-0 ${active ? "" : "opacity-60"}`}>
+    <tr className={`border-b border-[var(--line-soft)] last:border-b-0 ${active ? "" : "opacity-60"}`}>
       <td className="whitespace-nowrap px-4 py-3 align-top">
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${s.cls}`}>{s.label}</span>
       </td>
@@ -170,7 +170,7 @@ export function ContractPanel({
                   required
                   inputMode="numeric"
                   placeholder="例：120000"
-                  className="w-[180px] rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                  className={`${input()} w-[180px]`}
                 />
               </label>
               <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
@@ -178,7 +178,7 @@ export function ContractPanel({
                 <input
                   name="quantityText"
                   placeholder="例：20kg × 4回"
-                  className="w-[200px] rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                  className={`${input()} w-[200px]`}
                 />
               </label>
               <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
@@ -186,7 +186,7 @@ export function ContractPanel({
                 <input
                   type="date"
                   name="deliveryDate"
-                  className="rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                  className={input()}
                 />
               </label>
             </div>
@@ -196,7 +196,7 @@ export function ContractPanel({
                 name="terms"
                 rows={3}
                 placeholder="例：規格はM〜L混合。送料は当方負担。支払いは月末締め翌月末払い。"
-                className="w-full rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                className={`${input()} w-full`}
               />
             </label>
             {proposeState.error ? (

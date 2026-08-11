@@ -122,8 +122,8 @@ export default async function ProjectDetailPage({
     <div className="mx-auto flex max-w-[820px] flex-col gap-6">
       {/* 事務局向け：承認待ちの内容確認と承認・差し戻し */}
       {isAdmin && project.status === "pending" ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] px-4 py-3">
-          <span className="text-[13px] font-bold text-[#7A5A0B]">
+        <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-4 py-3">
+          <span className="text-[13px] font-bold text-[var(--amber-ink)]">
             承認待ちのプロジェクトです。内容を確認して承認・差し戻しをしてください。
           </span>
           <div className="ml-auto flex items-center gap-2">
@@ -175,7 +175,7 @@ export default async function ProjectDetailPage({
             </span>
           ) : null}
           {project.supportOfficial ? (
-            <span className="rounded bg-[#FAF0D6] px-2.5 py-1 text-[12px] font-bold text-[#B77F0B]">
+            <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
               事務局伴走中
             </span>
           ) : null}
@@ -188,7 +188,7 @@ export default async function ProjectDetailPage({
           <span>{owner?.name}</span>
           {project.area ? <span>📍 {project.area}</span> : owner?.prefecture ? <span>📍 {owner.prefecture}</span> : null}
           {project.deadline ? (
-            <span className={deadlinePassed ? "text-[var(--red)]" : "text-[#B77F0B]"}>
+            <span className={deadlinePassed ? "text-[var(--red)]" : "text-[var(--amber)]"}>
               ⏳ 募集期限 {formatProjectDeadline(project.deadline)}
             </span>
           ) : null}
@@ -198,7 +198,7 @@ export default async function ProjectDetailPage({
         {project.eventFlags.length ? (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {project.eventFlags.map((f) => (
-              <span key={f} className="rounded-full border border-[#E7D9A6] bg-[#FFFBF0] px-2.5 py-0.5 text-[11px] text-[#7A5A0B]">
+              <span key={f} className="rounded-full border border-[var(--amber-line)] bg-[var(--amber-bg)] px-2.5 py-0.5 text-[11px] text-[var(--amber-ink)]">
                 {EVENT_FLAG_LABEL[f] ?? f}
               </span>
             ))}
@@ -233,8 +233,8 @@ export default async function ProjectDetailPage({
         <Section title="なぜ取り組むのか・背景にある課題">
           <div className="flex flex-col gap-3">
             {project.challengeIssue ? (
-              <div className="rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] p-4">
-                <div className="text-[12px] font-bold text-[#7A5A0B]">いま起きている課題</div>
+              <div className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
+                <div className="text-[12px] font-bold text-[var(--amber-ink)]">いま起きている課題</div>
                 <p className="mt-1 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{project.challengeIssue}</p>
               </div>
             ) : null}
@@ -295,7 +295,7 @@ export default async function ProjectDetailPage({
         <Section title="主催者が提供できるもの">
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {project.resources.map((r) => (
-              <div key={r.id} className="flex flex-col gap-0.5 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
+              <div key={r.id} className="flex flex-col gap-0.5 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
                 <div className="text-[13px] font-bold text-[var(--ink)]">
                   ✓ {RESOURCE_KIND_LABEL[r.kind] ?? r.kind}
                 </div>
@@ -345,7 +345,7 @@ export default async function ProjectDetailPage({
                 {conditionRows
                   .filter(([, v]) => v)
                   .map(([k, v]) => (
-                    <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+                    <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                       <th className="w-[38%] bg-[#FAFBF9] px-4 py-2.5 text-left font-medium text-[var(--muted)]">{k}</th>
                       <td className="px-4 py-2.5 text-[var(--ink)]">{v}</td>
                     </tr>

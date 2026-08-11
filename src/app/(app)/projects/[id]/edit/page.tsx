@@ -108,7 +108,7 @@ export default async function ProjectEditPage({
               cancelLabel="今はしない"
             />
           ) : project.status === "pending" ? (
-            <span className="rounded-full bg-[#FAF0D6] px-3 py-1 text-[11px] text-[#B77F0B]">承認待ち</span>
+            <span className="rounded-full bg-[var(--amber-soft)] px-3 py-1 text-[11px] text-[var(--amber)]">承認待ち</span>
           ) : (
             <>
               <span className="flex items-center gap-2 rounded-full bg-[#F59E0B] px-4 py-2 text-[14px] font-bold text-white shadow-md">
@@ -133,8 +133,8 @@ export default async function ProjectEditPage({
       ) : null}
       {/* 事務局からの差し戻し理由（再申請すると消える） */}
       {project.reviewNote && project.status === "draft" ? (
-        <div className="rounded-[10px] border border-[#E7D9A6] bg-[#FFFBF0] px-4 py-3">
-          <p className="text-[13px] font-bold text-[#7A5A0B]">事務局から差し戻しがありました。次の点を修正して、再度「掲載を申請」してください。</p>
+        <div className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-4 py-3">
+          <p className="text-[13px] font-bold text-[var(--amber-ink)]">事務局から差し戻しがありました。次の点を修正して、再度「掲載を申請」してください。</p>
           <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-6 text-[var(--ink-2)]">{project.reviewNote}</p>
         </div>
       ) : null}

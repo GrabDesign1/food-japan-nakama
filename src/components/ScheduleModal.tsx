@@ -5,7 +5,7 @@
 // ここでは「所要時間を1回選ぶ → 日付を選ぶ → 時刻を押す」で1候補が積み上がるようにしている。
 // 生成する文面は従来と同じ（【面談候補日】…）。
 import { useState } from "react";
-import { btn, h2Cls } from "@/lib/ui";
+import { btn, h2Cls, input } from "@/lib/ui";
 
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 const DURATIONS = [30, 60, 90];
@@ -245,7 +245,7 @@ export function ScheduleModal({
               onChange={(e) => setRemark(e.target.value)}
               rows={2}
               placeholder="例：オンライン・対面どちらでも対応できます。"
-              className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+              className={input()}
             />
           </label>
 

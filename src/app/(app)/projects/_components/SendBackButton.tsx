@@ -4,7 +4,7 @@
 // 理由は必須。掲載者の編集画面に表示され、メールでも届く。
 import { useActionState, useState } from "react";
 import { adminSendBackProject, type ProjectState } from "../actions";
-import { btn } from "@/lib/ui";
+import { btn, input, h2FormCls } from "@/lib/ui";
 
 export function SendBackButton({
   projectId,
@@ -37,7 +37,7 @@ export function SendBackButton({
           >
             {state.ok ? (
               <>
-                <h2 id="send-back-title" className="text-[16px] font-bold text-[var(--ink)]">
+                <h2 id="send-back-title" className={h2FormCls}>
                   差し戻しました
                 </h2>
                 <p className="mt-2 text-[13px] leading-6 text-[var(--ink-2)]">
@@ -51,7 +51,7 @@ export function SendBackButton({
               </>
             ) : (
               <form action={formAction}>
-                <h2 id="send-back-title" className="text-[16px] font-bold text-[var(--ink)]">
+                <h2 id="send-back-title" className={h2FormCls}>
                   掲載を差し戻しますか？
                 </h2>
                 <p className="mt-2 text-[13px] leading-6 text-[var(--ink-2)]">
@@ -67,7 +67,7 @@ export function SendBackButton({
                     rows={5}
                     autoFocus
                     placeholder={"例：\n・募集する役割に「お願いしたいこと」を具体的に書いてください\n・実施地域と募集期限の記載をお願いします"}
-                    className="rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+                    className={input()}
                   />
                 </label>
                 {state.error ? (

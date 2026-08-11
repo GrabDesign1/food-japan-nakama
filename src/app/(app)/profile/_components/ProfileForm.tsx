@@ -12,7 +12,7 @@ import {
   SIZES,
   START_TIMINGS,
 } from "@/lib/member-taxonomy";
-import { btn } from "@/lib/ui";
+import { btn, inputBare } from "@/lib/ui";
 
 export type MemberData = {
   name: string;
@@ -50,10 +50,10 @@ const TABS = ["基本情報", "事業内容", "組みたい相手"] as const;
 
 const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 const inputBase =
-  "rounded-md px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  inputBare();
 const normalSkin = "border border-[var(--line)] bg-white";
 // 未入力の重要項目を促すための淡い黄色ハイライト
-const guideSkin = "border border-[#E7D9A6] bg-[#FEFBF0]";
+const guideSkin = "border border-[var(--amber-line)] bg-[var(--amber-bg)]";
 const inputCls = `${inputBase} ${normalSkin}`;
 
 // 記入を促したい項目と、それが属するタブ（アドバイス＆ハイライト用）
@@ -102,7 +102,7 @@ function Field({
       <span>
         {label}
         {required ? <span className="text-[var(--red)]"> ＊</span> : null}
-        {hl ? <span className="ml-1 text-[11px] text-[#B77F0B]">未入力</span> : null}
+        {hl ? <span className="ml-1 text-[11px] text-[var(--amber)]">未入力</span> : null}
       </span>
       <input
         name={name}
@@ -132,7 +132,7 @@ function Area({
     <label className={labelCls}>
       <span>
         {label}
-        {hl ? <span className="ml-1 text-[11px] text-[#B77F0B]">未入力</span> : null}
+        {hl ? <span className="ml-1 text-[11px] text-[var(--amber)]">未入力</span> : null}
       </span>
       <textarea
         name={name}
@@ -163,7 +163,7 @@ function SelectField({
     <label className={labelCls}>
       <span>
         {label}
-        {hl ? <span className="ml-1 text-[11px] text-[#B77F0B]">未選択</span> : null}
+        {hl ? <span className="ml-1 text-[11px] text-[var(--amber)]">未選択</span> : null}
       </span>
       <select
         name={name}
@@ -211,11 +211,11 @@ export function ProfileForm({ member }: { member: MemberData }) {
     <form action={formAction} className="flex flex-col gap-5">
       {/* 記入アドバイス */}
       {missing.length > 0 ? (
-        <div className="rounded-[10px] border border-[#E7D9A6] bg-[#FEFBF0] p-4">
-          <div className="text-[13px] font-semibold text-[#7A5A0B]">
+        <div className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
+          <div className="text-[13px] font-semibold text-[var(--amber-ink)]">
             あと {missing.length}項目でプロフィールが完成します
           </div>
-          <p className="mt-1 text-[12px] leading-5 text-[#7A5A0B]">
+          <p className="mt-1 text-[12px] leading-5 text-[var(--amber-ink)]">
             埋めるほど検索で上位に表示され、共創パートナーに見つけてもらいやすくなります。未入力の欄は黄色くハイライトしています（クリックで移動）。
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -224,7 +224,7 @@ export function ProfileForm({ member }: { member: MemberData }) {
                 type="button"
                 key={f.key}
                 onClick={() => setTab(f.tab)}
-                className="rounded-full border border-[#E7D9A6] bg-white px-2.5 py-1 text-[11px] font-medium text-[#7A5A0B] transition hover:bg-[#FAF0D6]"
+                className="rounded-full border border-[var(--amber-line)] bg-white px-2.5 py-1 text-[11px] font-medium text-[var(--amber-ink)] transition hover:bg-[var(--amber-soft)]"
               >
                 {f.label} →
               </button>
@@ -295,7 +295,7 @@ export function ProfileForm({ member }: { member: MemberData }) {
         <label className={labelCls}>
           <span>
             会員種別（大分類）<span className="text-[var(--red)]"> ＊</span>
-            {isEmpty(l1) ? <span className="ml-1 text-[11px] text-[#B77F0B]">未選択</span> : null}
+            {isEmpty(l1) ? <span className="ml-1 text-[11px] text-[var(--amber)]">未選択</span> : null}
           </span>
           <select
             name="categoryL1"
@@ -314,7 +314,7 @@ export function ProfileForm({ member }: { member: MemberData }) {
         <label className={labelCls}>
           <span>
             会員種別（細分類）
-            {isEmpty(l2) ? <span className="ml-1 text-[11px] text-[#B77F0B]">未選択</span> : null}
+            {isEmpty(l2) ? <span className="ml-1 text-[11px] text-[var(--amber)]">未選択</span> : null}
           </span>
           <select
             name="categoryL2"

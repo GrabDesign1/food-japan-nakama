@@ -111,7 +111,7 @@ export default async function AdminInquiriesPage() {
         ) : (
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {threads.map((t) => (
-              <div key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
+              <div key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
                 <span className="text-[13px] font-semibold text-[var(--ink)]">
                   {nameMap.get(t.fromMemberId) ?? "（不明）"}
                   <span className="mx-1 text-[var(--muted)]">→</span>
@@ -140,7 +140,7 @@ export default async function AdminInquiriesPage() {
         ) : (
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {apps.map((a) => (
-              <div key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
+              <div key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
                 <span className="text-[13px] font-semibold text-[var(--ink)]">
                   {nameMap.get(a.applicantMemberId) ?? "（不明）"}
                 </span>

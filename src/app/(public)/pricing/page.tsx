@@ -49,8 +49,8 @@ export default function PricingPage() {
       </section>
 
       {/* 月額会員 */}
-      <section className="rounded-[12px] border-2 border-[#C9A053] bg-[#FDF9EF] p-6">
-        <div className="text-[13px] font-bold text-[#A87F2F]">NAKAMAビジネス会員（任意）</div>
+      <section className="rounded-[12px] border-2 border-[var(--gold)] bg-[#FDF9EF] p-6">
+        <div className="text-[13px] font-bold text-[var(--gold-d)]">NAKAMAビジネス会員（任意）</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="font-serif text-[32px] text-[var(--ink)]">22,000</span>
           <span className="text-[14px] text-[var(--ink-2)]">円 / 月（税込）</span>

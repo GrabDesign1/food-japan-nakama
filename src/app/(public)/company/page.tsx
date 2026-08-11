@@ -19,7 +19,7 @@ export default function CompanyPage() {
         <table className="w-full text-[13px]">
           <tbody>
             {ROWS.map(([k, v]) => (
-              <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+              <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                 <th className="w-[150px] bg-[var(--green-soft)] px-4 py-3 text-left align-top font-medium text-[var(--ink-2)]">{k}</th>
                 <td className="px-4 py-3 leading-7 text-[var(--ink)]">{v}</td>
               </tr>

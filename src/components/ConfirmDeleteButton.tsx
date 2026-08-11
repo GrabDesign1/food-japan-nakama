@@ -2,7 +2,7 @@
 
 // 削除の確認モーダル。「今はしない」「削除する」で確認してから server action を実行する。
 import { useState, useTransition } from "react";
-import { btn } from "@/lib/ui";
+import { btn, h2FormCls } from "@/lib/ui";
 
 export function ConfirmDeleteButton({
   action,
@@ -42,7 +42,7 @@ export function ConfirmDeleteButton({
             aria-labelledby="confirm-delete-title"
             className="relative w-full max-w-[400px] rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-xl"
           >
-            <h2 id="confirm-delete-title" className="text-[16px] font-bold text-[var(--ink)]">
+            <h2 id="confirm-delete-title" className={h2FormCls}>
               {title}
             </h2>
             <p className="mt-2 text-[13px] leading-6 text-[var(--ink-2)]">{description}</p>

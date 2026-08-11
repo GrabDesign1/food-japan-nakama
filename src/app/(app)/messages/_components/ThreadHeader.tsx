@@ -71,7 +71,7 @@ export function ThreadHeader({
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
-                offering.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+                offering.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[var(--amber)]"
               }`}
             >
               {DIRECTION_SHORT[offering.direction] ?? ""}

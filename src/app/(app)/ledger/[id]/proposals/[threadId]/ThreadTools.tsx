@@ -5,7 +5,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { closeThread, reopenThread, requestNda, respondNda, type OfferState } from "./actions";
-import { btn, h2Cls } from "@/lib/ui";
+import { btn, h2Cls, input } from "@/lib/ui";
 
 export type NdaView = {
   status: string;
@@ -75,7 +75,7 @@ export function ThreadTools({
               締結済み{nda.agreedAt ? `（${nda.agreedAt}）` : ""}
             </span>
           ) : nda?.status === "requested" ? (
-            <span className="rounded-full bg-[#FAF0D6] px-3 py-1 text-[11px] font-bold text-[#B77F0B]">
+            <span className="rounded-full bg-[var(--amber-soft)] px-3 py-1 text-[11px] font-bold text-[var(--amber)]">
               同意リクエスト中
             </span>
           ) : null}
@@ -142,7 +142,7 @@ export function ThreadTools({
                     name="specialTerms"
                     rows={3}
                     placeholder="雛形に追加したい取り決めがあれば記入してください。"
-                    className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                    className={input()}
                   />
                 </label>
                 {ndaState.error ? (
@@ -183,7 +183,7 @@ export function ThreadTools({
                   name="reason"
                   rows={3}
                   placeholder="例：今回は数量が合わないため見送らせていただきます。"
-                  className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+                  className={input()}
                 />
               </label>
               {closeState.error ? (

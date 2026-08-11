@@ -171,7 +171,7 @@ export default async function ProposePage({
               NAKAMA確認済み優良案件
             </span>
           ) : null}
-          <span className="rounded bg-[#B77F0B] px-2 py-0.5 text-[10px] font-bold text-white">探している</span>
+          <span className="rounded bg-[var(--amber)] px-2 py-0.5 text-[10px] font-bold text-white">探している</span>
           <span className="text-[11px] text-[var(--muted)]">
             {offering.category}
             {detailData.seekingTypeLabel ? `　/　${detailData.seekingTypeLabel}` : ""}

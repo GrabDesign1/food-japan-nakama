@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, isAdminRole, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 import { adminUnpublishOffering, adminUnpublishProject } from "../listing-actions";
 import { ProxyListingForm } from "../_components/ProxyListingForm";
 
@@ -12,7 +12,7 @@ function fmt(d: Date): string {
 }
 
 const inputCls =
-  "min-w-[220px] flex-1 rounded-md border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  `${input("xs")} min-w-[220px] flex-1`;
 
 export default async function AdminListingsPage() {
   const su = await getSessionUser();
@@ -83,8 +83,8 @@ export default async function AdminListingsPage() {
         ) : (
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {offerings.map((o) => (
-              <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
-                <span className={`rounded px-2 py-0.5 text-[11px] font-bold text-white ${o.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"}`}>
+              <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
+                <span className={`rounded px-2 py-0.5 text-[11px] font-bold text-white ${o.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[var(--amber)]"}`}>
                   {o.direction === "GIVE" ? "売りたい（提供したい）" : "探している（調達したい）"}
                 </span>
                 <Link href={`/ledger/${o.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--ink)] hover:underline">
@@ -114,7 +114,7 @@ export default async function AdminListingsPage() {
         ) : (
           <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
             {projects.map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
+              <div key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
                 <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--ink)] hover:underline">
                   {p.title || "（無題）"}
                 </Link>

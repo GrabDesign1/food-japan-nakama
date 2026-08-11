@@ -51,10 +51,13 @@ Project(共創プロジェクト)+ProjectApplication, Deal(phase 0-5=進捗ボ�
 Favorite, Announcement, Banner, CuratedArticle(食の注目記事), **Consultation(個別相談)**。
 
 ## UI規約（統一済み。崩さない）
-- ボタン: **`btn(variant, size)`**（`src/lib/ui.ts`）。variant=primary/amber/secondary/danger/ghost, size=sm/md/lg。角丸`rounded-lg`統一。
-- 見出し: `eyebrowCls`/`h1Cls`(22px serif)/`h2Cls`(18px serif)/`h3Cls`(15px semibold)（`src/lib/ui.ts`）。
+- ボタン: **`btn(variant, size)`**（`src/lib/ui.ts`）。variant=primary/action/amber/secondary/danger/ghost, size=sm/md/lg。角丸`rounded-lg`統一。
+- 入力欄: **`input(size)`**（`src/lib/ui.ts`。2026-08-12 新設）。size=xs(12px・表の中の数値)/sm(13px)/md(14px・既定)。角丸`rounded-md`・枠線`--line`・白地・focusで緑枠までを内包し、**幅やレイアウト（`w-full` 等）だけ後ろに足す**。枠線と背景を自前で出し分けたい場合（未入力ハイライト・期限超過の赤枠）は **`inputBare(size)`** を使い border/bg を呼び出し側で指定する。**新しい入力欄をクラス直書きで作らないこと**。
+- 見出しは**2系統**（2026-08-12 に明文化）:
+  - ページ側 = `eyebrowCls`/`h1Cls`(22px serif)/`h2Cls`(18px serif)/`h3Cls`(15px semibold)
+  - **フォームの章見出しと確認・プレビュー系モーダルのタイトル = `h2FormCls`(16px bold ゴシック)**。入力欄が密集する場所では明朝18pxが重くなるため別系統にしている。会員ゾーンと共通コンポーネント用（公開ページは独自のタイプスケールなので対象外）。
 - 押せるカード=影＋ホバーで浮く＋緑枠（OfferingCard/ProducerCard/ProjectCard）。押せない=フラット。
-- 配色は `--green`/`--green-soft`/`--ink` 等の CSS変数。背景は白。
+- 配色は CSS変数（`src/app/globals.css`）。背景は白。緑`--green`/`--green-d`/`--green-soft`、赤`--red`/`--red-soft`、オレンジ`--orange`/`--orange-soft`、罫線`--line`/`--line-soft`(薄い方)、**金`--amber`/`--amber-d`/`--amber-ink`/`--amber-line`/`--amber-soft`/`--amber-bg`（「探している」と課金まわり）**、**ゴールド`--gold`/`--gold-d`（ビジネス会員）**、**`--action`/`--action-d`（赤みのオレンジ＝提案・問い合わせの最重要CTA）**。2026-08-12 に金色系216箇所を変数化した。**色は直書きせず変数を使うこと**（直書きすると色の調整で数十ファイルを触ることになる）。
 - **レイアウトの注意（指摘あり）**: 2カラム内に高さの違うボタン等を混ぜない。CTAは行として切り出して全幅で整列させる。
 
 ## 料金・法務

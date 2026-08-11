@@ -226,7 +226,7 @@ export default function SalesChannelPage() {
             </thead>
             <tbody>
               {SERVICE_MENU.map((s) => (
-                <tr key={s.type} className="border-b border-[#EDF0EA] last:border-b-0">
+                <tr key={s.type} className="border-b border-[var(--line-soft)] last:border-b-0">
                   <td className="px-4 py-3 text-[var(--ink-2)]">{s.problem}</td>
                   <td className="px-4 py-3 font-semibold text-[var(--ink)]">
                     {s.href ? (

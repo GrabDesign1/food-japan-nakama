@@ -12,17 +12,17 @@ import {
   PROJECT_PURPOSES,
   PROJECT_STAGES,
 } from "@/lib/project-taxonomy";
-import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   draft: { label: "下書き", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
-  pending: { label: "承認待ち", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  pending: { label: "承認待ち", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   published: { label: "掲載中", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
   closed: { label: "終了", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
 };
 
 const selectCls =
-  "rounded-md border border-[var(--line)] bg-white px-2.5 py-2 text-[13px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  input("sm");
 
 export default async function ProjectsPage({
   searchParams,
@@ -223,7 +223,7 @@ export default async function ProjectsPage({
             {mine.map((p) => {
               const s = STATUS_LABEL[p.status] ?? STATUS_LABEL.draft;
               return (
-                <div key={p.id} className="flex items-center gap-3 border-b border-[#EDF0EA] px-4 py-3 last:border-0">
+                <div key={p.id} className="flex items-center gap-3 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] ${s.cls}`}>{s.label}</span>
                   <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate text-[14px] text-[var(--ink)] hover:underline">
                     {p.title || "（無題）"}

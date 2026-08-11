@@ -9,7 +9,7 @@ import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { EmptyState } from "@/components/EmptyState";
 import { views24hMap } from "@/lib/offering-views";
-import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 
 type SP = {
   target?: string;
@@ -27,7 +27,7 @@ type Target = "offerings" | "coprojects" | "producers";
 const PER_PAGE = 24;
 
 const inputCls =
-  "rounded-lg border border-[var(--line)] bg-white px-3 py-2.5 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]";
+  input();
 
 // 検索タブ。「売りたい」と「探している」は性質が違う（写真の有無・見る人が逆）ので分ける
 // （2026-08-11 ユーザー指示。従来は1つのタブ＋「売り・買い両方」のプルダウンだった）

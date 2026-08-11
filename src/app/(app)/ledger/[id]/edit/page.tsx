@@ -146,7 +146,7 @@ export default async function OfferingEditPage({
 
       {isProxy ? (
         <div className="rounded-[10px] border-2 border-[#F59E0B] bg-[#FEF6E7] px-4 py-3">
-          <p className="text-[13px] font-bold text-[#B77F0B]">
+          <p className="text-[13px] font-bold text-[var(--amber)]">
             事務局として「{offering.member.name}」の案件を代理で編集しています
           </p>
           <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">

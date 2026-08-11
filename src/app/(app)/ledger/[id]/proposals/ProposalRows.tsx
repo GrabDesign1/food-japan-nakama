@@ -5,7 +5,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { saveProposalNote, bulkSendToProposals } from "./actions";
-import { btn } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
 
 export type ProposalRow = {
   threadId: string;
@@ -80,7 +80,7 @@ function MemoBox({
         onChange={(e) => setValue(e.target.value)}
         rows={2}
         placeholder="社内メモ（相手には見えません）"
-        className="w-[190px] rounded-md border border-[var(--line)] px-2 py-1 text-[12px] outline-none focus:border-[var(--green)]"
+        className={`${input("xs")} w-[190px]`}
       />
       <button className={`${btn("secondary", "sm")} w-fit`}>保存</button>
     </form>
@@ -151,7 +151,7 @@ export function ProposalRows({
             rows={6}
             defaultValue={compose === "decline" ? declineTemplate : ""}
             placeholder="本文を入力してください"
-            className="mt-2 w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
+            className={`${input()} mt-2 w-full`}
           />
           <p className="mt-1 text-[11px] text-[var(--muted)]">
             同じ本文が1通ずつ届きます（相手には個別のやり取りとして表示されます）。
@@ -191,7 +191,7 @@ export function ProposalRows({
             {rows.map((r) => (
               <tr
                 key={r.threadId}
-                className={`border-b border-[#EDF0EA] last:border-b-0 ${r.unread > 0 ? "bg-[#FFF7EF]" : ""}`}
+                className={`border-b border-[var(--line-soft)] last:border-b-0 ${r.unread > 0 ? "bg-[var(--orange-soft)]" : ""}`}
               >
                 <td className="px-3 py-3 align-top">
                   <input

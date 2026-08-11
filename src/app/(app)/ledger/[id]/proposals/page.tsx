@@ -10,7 +10,7 @@ import { PHASES } from "@/lib/deal-constants";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { EmptyState } from "@/components/EmptyState";
 import { ProposalRows } from "./ProposalRows";
-import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
+import { btn, eyebrowCls, h1Cls, input } from "@/lib/ui";
 
 function fmtDateTime(d: Date): string {
   const j = new Date(d.getTime() + 9 * 3600 * 1000);
@@ -177,7 +177,7 @@ export default async function OfferingProposalsPage({
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <span
             className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
-              isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+              isGive ? "bg-[var(--green)]" : "bg-[var(--amber)]"
             }`}
           >
             {DIRECTION_SHORT[offering.direction] ?? ""}
@@ -265,7 +265,7 @@ export default async function OfferingProposalsPage({
             <select
               name="sort"
               defaultValue={sort}
-              className="rounded-lg border border-[var(--line)] bg-white px-3 py-1.5 text-[13px] outline-none focus:border-[var(--green)]"
+              className={input("sm")}
             >
               {SORTS.map(([v, label]) => (
                 <option key={v} value={v}>

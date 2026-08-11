@@ -147,7 +147,7 @@ export default async function ListingOptionsPage({
                 ¥{p.priceAmount.toLocaleString()}
               </span>
               ¥{discounted.toLocaleString()}
-              <span className="ml-1 rounded bg-[#F7EED9] px-1 py-0.5 text-[10px] font-bold text-[#A87F2F]">ビジネス会員20%OFF</span>
+              <span className="ml-1 rounded bg-[#F7EED9] px-1 py-0.5 text-[10px] font-bold text-[var(--gold-d)]">ビジネス会員20%OFF</span>
             </>
           ) : (
             <>¥{discounted.toLocaleString()}</>
@@ -158,7 +158,7 @@ export default async function ListingOptionsPage({
           </span>
         </div>
         {dup ? (
-          <p className="mt-1 rounded bg-[#FFFBF0] px-2 py-1 text-[11px] text-[#7A5A0B]">
+          <p className="mt-1 rounded bg-[var(--amber-bg)] px-2 py-1 text-[11px] text-[var(--amber-ink)]">
             ⚠ 「{EFFECT_LABEL[p.effectType] ?? p.effectType}」は現在適用中です。追加購入すると期間が延長されます。
           </p>
         ) : null}
@@ -206,7 +206,7 @@ export default async function ListingOptionsPage({
 
       {isDraft ? (
         <div className="rounded-[10px] border-2 border-[#F59E0B] bg-[#FEF6E7] px-5 py-3">
-          <p className="text-[13px] font-bold text-[#B77F0B]">まだ公開されていません</p>
+          <p className="text-[13px] font-bold text-[var(--amber)]">まだ公開されていません</p>
           <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
             掲載オプションは、公開中の案件を目立たせるためのものです。下書きのままでは効果が出ないため、購入できないようにしています。
             <Link href={`/ledger/${offering.id}/edit`} className="ml-1 font-bold text-[var(--green-d)] underline">

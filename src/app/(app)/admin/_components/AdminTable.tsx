@@ -49,9 +49,9 @@ export type AdminRow = {
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   DRAFT: { label: "未提出（登録のみ）", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
-  PENDING: { label: "審査中", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  PENDING: { label: "審査中", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   APPROVED: { label: "承認済み", cls: "bg-[var(--green-soft)] text-[var(--green-d)]" },
-  AWAITING_PAYMENT: { label: "お支払い待ち（旧・要承認し直し）", cls: "bg-[#FAF0D6] text-[#B77F0B]" },
+  AWAITING_PAYMENT: { label: "お支払い待ち（旧・要承認し直し）", cls: "bg-[var(--amber-soft)] text-[var(--amber)]" },
   REJECTED: { label: "非承認", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
   SUSPENDED: { label: "停止中", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
 };
@@ -59,7 +59,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const PAYMENT: Record<string, { label: string; cls: string }> = {
   FREE: { label: "無料", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
   UNPAID: { label: "未決済", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
-  PAID: { label: "ビジネス会員（課金中）", cls: "bg-[#F7EED9] text-[#A87F2F]" },
+  PAID: { label: "ビジネス会員（課金中）", cls: "bg-[#F7EED9] text-[var(--gold-d)]" },
 };
 
 function Badge({ map, value }: { map: typeof STATUS; value: string }) {
@@ -148,7 +148,7 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
               </tr>
             ) : (
               rows.map((m) => (
-                <tr key={m.id} className="border-b border-[#EDF0EA]">
+                <tr key={m.id} className="border-b border-[var(--line-soft)]">
                   <td className="px-4 py-3">
                     <button
                       type="button"
@@ -201,7 +201,7 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
 function Row({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
-    <div className="grid grid-cols-[130px_1fr] gap-3 border-b border-[#EDF0EA] py-2">
+    <div className="grid grid-cols-[130px_1fr] gap-3 border-b border-[var(--line-soft)] py-2">
       <div className="text-[12px] text-[var(--muted)]">{label}</div>
       <div className="whitespace-pre-wrap text-[13px] text-[var(--ink)]">{value}</div>
     </div>
@@ -310,7 +310,7 @@ function DetailModal({
           <Row label="事業紹介" value={row.description} />
 
           {row.imageUrls.length > 0 ? (
-            <div className="border-b border-[#EDF0EA] py-2">
+            <div className="border-b border-[var(--line-soft)] py-2">
               <div className="mb-2 text-[12px] text-[var(--muted)]">サムネイル画像</div>
               <div className="flex flex-wrap gap-2">
                 {row.imageUrls.map((u) => (

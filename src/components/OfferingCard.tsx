@@ -100,7 +100,7 @@ export function OfferingCard({
           featured
             ? "border-2 border-[#F59E0B] ring-2 ring-[#FEF0D9]"
             : isOwn
-              ? "border-2 border-[#B77F0B] ring-2 ring-[#FAF0D6]"
+              ? "border-2 border-[var(--amber)] ring-2 ring-[var(--amber-soft)]"
               : "border-[var(--line)] group-hover:border-[var(--green)]"
         }`}
       >
@@ -149,7 +149,7 @@ export function OfferingCard({
           </span>
         ) : null}
         {isOwn ? (
-          <span className="absolute right-2 top-2 rounded bg-[#B77F0B] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+          <span className="absolute right-2 top-2 rounded bg-[var(--amber)] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
             あなたの投稿
           </span>
         ) : null}
@@ -157,7 +157,7 @@ export function OfferingCard({
         {statusLabel ? (
           <span
             className={`absolute right-2 ${isOwn ? "top-9" : "top-2"} rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm ${
-              statusTone === "orange" ? "bg-[#E2591F]" : "bg-[var(--green)]"
+              statusTone === "orange" ? "bg-[var(--action)]" : "bg-[var(--green)]"
             }`}
           >
             {statusLabel}
@@ -174,13 +174,13 @@ export function OfferingCard({
           ) : null}
           <span
             className={`whitespace-nowrap rounded px-2 py-0.5 text-[11px] font-bold text-white ${
-              isGive ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+              isGive ? "bg-[var(--green)]" : "bg-[var(--amber)]"
             }`}
           >
             {DIRECTION_SHORT[o.direction] ?? ""}
           </span>
           {!isGive && o.seekingType && SEEKING_TYPE_SHORT[o.seekingType] ? (
-            <span className="whitespace-nowrap rounded bg-white/90 px-2 py-0.5 text-[11px] font-bold text-[#B77F0B]">
+            <span className="whitespace-nowrap rounded bg-white/90 px-2 py-0.5 text-[11px] font-bold text-[var(--amber)]">
               {SEEKING_TYPE_SHORT[o.seekingType]}
             </span>
           ) : null}
@@ -191,7 +191,7 @@ export function OfferingCard({
         <span>{meta?.icon}</span>
         <span>{o.category}</span>
         {o.listingPurpose === "challenge" ? (
-          <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] font-bold text-[#B77F0B]">課題解決</span>
+          <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--amber)]">課題解決</span>
         ) : null}
         {deadlineText ? (
           <span className={`ml-auto ${deadlineText === "募集終了" ? "text-[var(--red)]" : ""}`}>

@@ -54,13 +54,13 @@ export function MyListingsTable({
             <div
               key={r.id}
               className={`rounded-[12px] border p-4 ${
-                r.unread > 0 ? "border-[var(--red)] bg-[#FFF7EF]" : "border-[var(--line)] bg-white"
+                r.unread > 0 ? "border-[var(--red)] bg-[var(--orange-soft)]" : "border-[var(--line)] bg-white"
               }`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
-                    r.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+                    r.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[var(--amber)]"
                   }`}
                 >
                   {DIRECTION_SHORT[r.direction] ?? ""}
@@ -77,7 +77,7 @@ export function MyListingsTable({
                       ? "bg-[var(--green-soft)] text-[var(--green-d)]"
                       : state === "expired"
                         ? "bg-[var(--line)] text-[var(--ink-2)]"
-                        : "bg-[#FAF0D6] text-[#B77F0B]"
+                        : "bg-[var(--amber-soft)] text-[var(--amber)]"
                   }`}
                 >
                   {state === "public" ? "公開中" : state === "expired" ? "募集終了" : "下書き"}
@@ -88,7 +88,7 @@ export function MyListingsTable({
                 {r.unread > 0 ? (
                   <span className="font-bold text-[var(--red)]">未返信 {r.unread}件</span>
                 ) : stale ? (
-                  <span className="font-bold text-[#E2591F]">放置 {idle}日</span>
+                  <span className="font-bold text-[var(--action)]">放置 {idle}日</span>
                 ) : (
                   <span className="text-[var(--muted)]">対応が必要なものはありません</span>
                 )}
@@ -143,12 +143,12 @@ export function MyListingsTable({
             // 放置＝未返信は無いが、最後のやり取りから日が空いている（こちらから動く番）
             const stale = r.received > 0 && r.unread === 0 && idle !== null && idle >= STALE_DAYS;
             return (
-              <tr key={r.id} className={`border-b border-[#EDF0EA] last:border-b-0 ${r.unread > 0 ? "bg-[#FFF7EF]" : ""}`}>
+              <tr key={r.id} className={`border-b border-[var(--line-soft)] last:border-b-0 ${r.unread > 0 ? "bg-[var(--orange-soft)]" : ""}`}>
                 <td className="px-4 py-3 align-top">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
-                        r.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+                        r.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[var(--amber)]"
                       }`}
                     >
                       {DIRECTION_SHORT[r.direction] ?? ""}
@@ -174,7 +174,7 @@ export function MyListingsTable({
                           ? "bg-[var(--green-soft)] text-[var(--green-d)]"
                           : state === "expired"
                             ? "bg-[var(--line)] text-[var(--ink-2)]"
-                            : "bg-[#FAF0D6] text-[#B77F0B]"
+                            : "bg-[var(--amber-soft)] text-[var(--amber)]"
                       }`}
                     >
                       {state === "public" ? "公開中" : state === "expired" ? "募集終了" : "下書き"}
@@ -198,9 +198,9 @@ export function MyListingsTable({
                       </div>
                     </div>
                   ) : stale ? (
-                    <div className="min-w-[92px] rounded-md border border-[#E2591F] bg-[#FFF7EF] px-2 py-1.5 text-center">
-                      <div className="text-[10px] font-bold text-[#E2591F]">放置</div>
-                      <div className="text-[12px] font-bold text-[#E2591F]">{idle}日</div>
+                    <div className="min-w-[92px] rounded-md border border-[var(--action)] bg-[var(--orange-soft)] px-2 py-1.5 text-center">
+                      <div className="text-[10px] font-bold text-[var(--action)]">放置</div>
+                      <div className="text-[12px] font-bold text-[var(--action)]">{idle}日</div>
                     </div>
                   ) : (
                     <span className="text-[13px] text-[var(--muted)]">なし</span>

@@ -32,7 +32,7 @@ export default function TokushohoPage() {
         <table className="w-full text-[13px]">
           <tbody>
             {ROWS.map(([k, v]) => (
-              <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+              <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                 <th className="w-[190px] bg-[var(--green-soft)] px-4 py-3 text-left align-top font-medium text-[var(--ink-2)]">
                   {k}
                 </th>

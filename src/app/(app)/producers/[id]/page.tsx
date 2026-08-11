@@ -140,7 +140,7 @@ export default async function ProducerDetailPage({
               <button
                 className={`w-full rounded-lg px-4 py-2 text-[13px] font-medium transition ${
                   isFavorited
-                    ? "bg-[var(--yuzu-soft,#FAF0D6)] text-[#B77F0B]"
+                    ? "bg-[var(--yuzu-soft,#FAF0D6)] text-[var(--amber)]"
                     : "border border-[var(--green)] text-[var(--green-d)] hover:bg-[var(--green-soft)]"
                 }`}
               >
@@ -191,7 +191,7 @@ export default async function ProducerDetailPage({
                 {detailRows
                   .filter(([, v]) => v)
                   .map(([k, v]) => (
-                    <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+                    <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                       <th className="w-[150px] bg-[var(--green-soft)] px-4 py-3 text-left align-top font-medium text-[var(--ink-2)]">
                         {k}
                       </th>
@@ -240,7 +240,7 @@ export default async function ProducerDetailPage({
           <table className="w-full text-[14px]">
             <tbody>
               {infoRows.map(([k, v]) => (
-                <tr key={k} className="border-b border-[#EDF0EA] last:border-0">
+                <tr key={k} className="border-b border-[var(--line-soft)] last:border-0">
                   <th className="w-[140px] bg-[var(--green-soft)] px-4 py-3 text-left font-medium text-[var(--ink-2)]">
                     {k}
                   </th>

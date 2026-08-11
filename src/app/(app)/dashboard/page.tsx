@@ -64,7 +64,7 @@ const PROJECT_STATUS: Record<string, string> = {
   closed: "終了",
 };
 
-const STATUS_ORANGE = "bg-[#FAF0D6] text-[#B77F0B]";
+const STATUS_ORANGE = "bg-[var(--amber-soft)] text-[var(--amber)]";
 const STATUS_GREEN = "bg-[var(--green-soft)] text-[var(--green-d)]";
 
 function fmtShortDate(d: Date): string {
@@ -351,7 +351,7 @@ export default async function DashboardPage() {
         {/* 会員バッジと、事務局の場合は担当の役割バッジ（ユーザー名の上に表示） */}
         <div className="mb-1 mt-0.5 flex flex-wrap items-center gap-2">
           {isPaid ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C9A053] bg-[#FDF9EF] px-3 py-1 text-[11px] font-bold tracking-wide text-[#A87F2F]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--gold)] bg-[#FDF9EF] px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--gold-d)]">
               NAKAMA <span className="font-normal">ビジネス会員</span>
             </span>
           ) : null}
@@ -376,7 +376,7 @@ export default async function DashboardPage() {
             <Link
               key={i}
               href={a.href}
-              className="flex items-center gap-3 rounded-[10px] border border-[#E7D9A6] bg-[#FAF0D6] px-4 py-3 text-[#7A5A0B] transition hover:-translate-y-0.5 hover:shadow-sm"
+              className="flex items-center gap-3 rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-soft)] px-4 py-3 text-[var(--amber-ink)] transition hover:-translate-y-0.5 hover:shadow-sm"
             >
               <span>{a.icon}</span>
               <span className="min-w-0 flex-1 text-[13px] font-semibold">{a.label}</span>
@@ -504,7 +504,7 @@ export default async function DashboardPage() {
                   <Link
                     key={i}
                     href={a.href}
-                    className="flex items-start gap-3 border-b border-[#EDF0EA] px-5 py-4 transition last:border-0 hover:bg-[var(--green-soft)]/40"
+                    className="flex items-start gap-3 border-b border-[var(--line-soft)] px-5 py-4 transition last:border-0 hover:bg-[var(--green-soft)]/40"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14px] font-semibold text-[var(--ink)]">{a.title}</span>
@@ -568,7 +568,7 @@ export default async function DashboardPage() {
                 <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3.5 marker:hidden">
                   <span className="shrink-0">📣</span>
                   {newest.pinned ? (
-                    <span className="shrink-0 rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] font-bold text-[#B77F0B]">重要</span>
+                    <span className="shrink-0 rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--amber)]">重要</span>
                   ) : null}
                   <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--ink)]">
                     {newest.title}
@@ -592,12 +592,12 @@ export default async function DashboardPage() {
                     他 {restAnnouncements.length}件のお知らせを見る
                     <span className="ml-1 inline-block transition group-open:rotate-90">›</span>
                   </summary>
-                  <div className="flex flex-col divide-y divide-[#EDF0EA] border-t border-[var(--line)]">
+                  <div className="flex flex-col divide-y divide-[var(--line-soft)] border-t border-[var(--line)]">
                     {restAnnouncements.map((a) => (
                       <div key={a.id} className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           {a.pinned ? (
-                            <span className="rounded bg-[#FAF0D6] px-1.5 py-0.5 text-[10px] text-[#B77F0B]">重要</span>
+                            <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] text-[var(--amber)]">重要</span>
                           ) : null}
                           <span className="text-[11px] text-[var(--muted)]">
                             {a.createdAt.getFullYear()}年{a.createdAt.getMonth() + 1}月{a.createdAt.getDate()}日
@@ -656,7 +656,7 @@ export default async function DashboardPage() {
             <h2 className={h2Cls}>ご利用状況</h2>
             <div className="mt-1 flex items-center justify-between border-b border-[var(--line)] py-2.5 text-[13px]">
               <span className="text-[var(--muted)]">会員状態</span>
-              <b className={isPaid ? "text-[#A87F2F]" : "text-[#B77F0B]"}>{memberStateLabel}</b>
+              <b className={isPaid ? "text-[var(--gold-d)]" : "text-[var(--amber)]"}>{memberStateLabel}</b>
             </div>
             <div className="flex items-center justify-between py-2.5 text-[13px]">
               <span className="text-[var(--muted)]">プロフィール審査</span>
@@ -684,7 +684,7 @@ export default async function DashboardPage() {
                 {/* ビジネス会員へのアップグレード（ゴールド） */}
                 <Link
                   href="/billing"
-                  className="mt-3 block rounded-md bg-[#C9A053] py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[#B58C3D]"
+                  className="mt-3 block rounded-md bg-[var(--gold)] py-2.5 text-center text-[13px] font-bold text-white transition hover:bg-[#B58C3D]"
                 >
                   ビジネス会員になる
                 </Link>
