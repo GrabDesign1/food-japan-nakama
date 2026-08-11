@@ -165,6 +165,9 @@ export function ContractPanel({
   const [open, setOpen] = useState(false);
   const pending = offers.find((o) => o.status === "proposed") ?? null;
   const agreed = offers.find((o) => o.status === "accepted") ?? null;
+  // 発送・受け取りの記録か帳票の発行まで進んだら、条件は動かせない
+  const locked =
+    !!agreed && (!!agreed.shippedAt || !!agreed.receivedAt || !!agreed.completedAt || issuedKinds.length > 0);
 
   const [proposeState, proposeAction, proposing] = useActionState<OfferState, FormData>(
     proposeContract.bind(null, offeringId, threadId),
@@ -486,11 +489,18 @@ export function ContractPanel({
         </div>
       ) : null}
 
-      {/* 自分から提示する */}
+      {/* 自分から提示する（発送・受け取り・帳票の発行まで進んだら変更できない） */}
       <div className="mt-3">
-        {!open ? (
+        {locked ? (
+          <p className="text-[12px] leading-5 text-[var(--muted)]">
+            {issuedKinds.length > 0
+              ? "帳票を発行済みのため、条件は変更できません。"
+              : "発送・受け取りが記録されているため、条件は変更できません。"}
+            変更が必要な場合は、下のメッセージでご相談ください。
+          </p>
+        ) : !open ? (
           <button type="button" onClick={() => setOpen(true)} className={btn("action")}>
-            ＋ {pending ? "新しい条件を提示する" : "条件を提示する"}
+            ＋ {agreed ? "条件を変更する（相手の同意が必要）" : pending ? "新しい条件を提示する" : "条件を提示する"}
           </button>
         ) : (
           <form action={proposeAction} className="rounded-[10px] border border-[var(--line)] bg-white p-4">

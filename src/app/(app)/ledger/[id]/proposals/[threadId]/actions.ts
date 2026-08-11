@@ -101,6 +101,26 @@ export async function proposeContract(
   const { me, otherId } = await participantOr404(offeringId, threadId);
   if (!canSendToOthers(me.status)) return { error: "現在のご登録状態では提示できません。" };
 
+  // 合意したあと、発送・受け取り・帳票の発行まで進んでいたら条件は変えさせない
+  // （発行済みの帳票の金額とずれるため）。画面でもボタンを出していない。
+  const agreed = await prisma.contractOffer.findFirst({
+    where: { threadId, status: "accepted" },
+    orderBy: { createdAt: "desc" },
+    select: { shippedAt: true, receivedAt: true, completedAt: true },
+  });
+  if (agreed && (agreed.shippedAt || agreed.receivedAt || agreed.completedAt)) {
+    return {
+      error:
+        "発送・受け取りが記録されているため、条件は変更できません。変更が必要な場合はメッセージでご相談ください。",
+    };
+  }
+  const issued = await prisma.issuedDocument.count({ where: { threadId } });
+  if (issued > 0) {
+    return {
+      error: "帳票を発行済みのため、条件は変更できません。変更が必要な場合はメッセージでご相談ください。",
+    };
+  }
+
   const amountRaw = Number(String(formData.get("amount") ?? "").replace(/[^\d]/g, ""));
   if (!Number.isFinite(amountRaw) || amountRaw <= 0 || amountRaw > 1_000_000_000) {
     return { error: "金額を正しく入力してください。" };
