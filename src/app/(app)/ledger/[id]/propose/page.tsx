@@ -329,6 +329,7 @@ export default async function ProposePage({
               initialTemplates={templates}
               myCompanyName={me.name}
               myPersonName={me.contactName || su!.app.name}
+              listingTitle={offering.title}
             />
           </div>
         </>

@@ -8,11 +8,60 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { sendProposal, buyProposalProduct, uploadProposalAttachment, type ProposeState } from "./actions";
 import { createTemplate, deleteTemplate } from "../../../messages/actions";
-import { DEFAULT_TEMPLATES, Modal, formatBytes } from "../../../messages/_components/Composer";
+import { Modal, formatBytes } from "../../../messages/_components/Composer";
 import { btn } from "@/lib/ui";
 import { MAX_ATTACHMENTS } from "@/lib/attachments";
+import { ScheduleModal } from "@/components/ScheduleModal";
 
 type Template = { id: string; name: string; body: string };
+
+// 提案用の定型文（メッセージ画面の汎用文とは別。募集内容を見て提案する場面に合わせている）。
+// ■■（案件名）は開いている募集のタイトルに置き換わる。
+const PROPOSE_TEMPLATES: { name: string; body: string }[] = [
+  {
+    name: "募集を見て提案する",
+    body:
+      "はじめまして。◯◯（事業者名）の△△と申します。\n" +
+      "「■■（案件名）」の募集を拝見し、お力になれそうでしたのでご提案いたします。\n\n" +
+      "【ご提案する商品・原料】\n" +
+      "【産地・原料】\n" +
+      "【規格・サイズ・荷姿】\n" +
+      "【ご用意できる量】\n" +
+      "【希望価格】\n" +
+      "【最小取引量】\n" +
+      "【出荷できる時期】\n\n" +
+      "サンプルの送付も可能です。ご検討のほど、よろしくお願いいたします。",
+  },
+  {
+    name: "条件を確認してから提案したい",
+    body:
+      "はじめまして。◯◯（事業者名）の△△と申します。\n" +
+      "「■■（案件名）」の募集を拝見しました。ご提案の前に、下記について教えていただけますでしょうか。\n\n" +
+      "・ご希望の数量と納品の頻度\n" +
+      "・ご希望の価格帯\n" +
+      "・必要な規格や認証\n" +
+      "・納品先とご希望の時期\n\n" +
+      "お手数ですが、よろしくお願いいたします。",
+  },
+  {
+    name: "代わりのご提案をする",
+    body:
+      "はじめまして。◯◯（事業者名）の△△と申します。\n" +
+      "「■■（案件名）」の募集を拝見しました。ご指定の条件とは少し異なりますが、目的に合いそうなものがございましたのでご提案いたします。\n\n" +
+      "【ご提案する商品・原料】\n" +
+      "【ご指定の条件と異なる点】\n" +
+      "【それでもお役に立てると考えた理由】\n" +
+      "【価格・数量・時期】\n\n" +
+      "ご要望に合わないようでしたら、遠慮なくお申し付けください。",
+  },
+  {
+    name: "打ち合わせをお願いする",
+    body:
+      "「■■（案件名）」の件でご提案いたします、◯◯（事業者名）の△△と申します。\n" +
+      "詳しい条件は一度お話しさせていただいた方が早いかと思いますので、オンラインで30分ほどお時間をいただけないでしょうか。\n" +
+      "下記の候補からご都合のよい日時をお知らせください。",
+  },
+];
 /** 添付1件（preview は画像のときだけ入るローカルURL） */
 type Attach = { url: string; name: string; size: number; preview: string | null };
 
@@ -27,6 +76,8 @@ export function ProposeForm(props: {
   initialTemplates?: Template[];
   myCompanyName?: string;
   myPersonName?: string;
+  /** 提案先の募集タイトル（定型文の■■に差し込む） */
+  listingTitle?: string;
 }) {
   if (props.mode === "buy") {
     return (
@@ -48,6 +99,7 @@ function SendForm({
   initialTemplates = [],
   myCompanyName = "",
   myPersonName = "",
+  listingTitle = "",
 }: {
   offeringId: string;
   needsCredit?: boolean;
@@ -56,6 +108,7 @@ function SendForm({
   initialTemplates?: Template[];
   myCompanyName?: string;
   myPersonName?: string;
+  listingTitle?: string;
 }) {
   const [state, action, sending] = useActionState<ProposeState, FormData>(
     sendProposal.bind(null, offeringId),
@@ -73,10 +126,6 @@ function SendForm({
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
 
-
-  // 面談日程
-  const [rows, setRows] = useState([{ date: "", start: "", end: "" }]);
-  const [remark, setRemark] = useState("");
 
   // テンプレート作成
   const [tName, setTName] = useState("");
@@ -103,7 +152,8 @@ function SendForm({
   const fillTemplate = (body: string) =>
     body
       .replace(/◯◯（事業者名）/g, myCompanyName.trim() || "◯◯（事業者名）")
-      .replace(/△△/g, myPersonName.trim() || "△△");
+      .replace(/△△/g, myPersonName.trim() || "△△")
+      .replace(/■■（案件名）/g, listingTitle.trim() || "■■（案件名）");
 
   function appendText(t: string) {
     const el = textareaRef.current;
@@ -186,26 +236,6 @@ function SendForm({
       await deleteTemplate(id);
       setTemplates(templates.filter((t) => t.id !== id));
     });
-  }
-
-  function insertSchedule() {
-    const lines = rows
-      .filter((r) => r.date)
-      .map((r) => {
-        const dt = new Date(r.date);
-        const w = ["日", "月", "火", "水", "木", "金", "土"][dt.getDay()];
-        const p = (n: number) => String(n).padStart(2, "0");
-        const range = r.start && r.end ? ` ${r.start}〜${r.end}` : r.start ? ` ${r.start}〜` : "";
-        return `・${dt.getFullYear()}/${p(dt.getMonth() + 1)}/${p(dt.getDate())}（${w}）${range}`;
-      });
-    if (lines.length) {
-      let text = "【面談候補日】\n" + lines.join("\n");
-      if (remark.trim()) text += "\n備考：" + remark.trim();
-      appendText(text);
-    }
-    setModal(null);
-    setRows([{ date: "", start: "", end: "" }]);
-    setRemark("");
   }
 
   // 確認済み案件は3クレジット必要。残高が足りているかは必要数で判定する
@@ -370,7 +400,7 @@ function SendForm({
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {DEFAULT_TEMPLATES.map((t) => (
+              {PROPOSE_TEMPLATES.map((t) => (
                 <div key={t.name} className="rounded-lg border border-[var(--line)] p-3">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14px] font-medium text-[var(--ink)]">
@@ -428,73 +458,16 @@ function SendForm({
         </Modal>
       ) : null}
 
-      {/* 面談日程モーダル（メッセージ画面と同じ） */}
+      {/* 面談日程（候補日を押して積み上げる。実装は共通コンポーネント） */}
       {modal === "schedule" ? (
-        <Modal title="面談日程調整" onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-4">
-            <div className="rounded-lg bg-[var(--canvas)] p-4">
-              <div className="mb-2 text-[13px] font-semibold text-[var(--ink-2)]">候補日</div>
-              <div className="flex flex-col gap-2">
-                {rows.map((r, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="date"
-                      value={r.date}
-                      onChange={(e) => setRows(rows.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))}
-                      className="rounded-md border border-[var(--line)] bg-white px-2 py-1.5 text-[13px]"
-                    />
-                    <input
-                      type="time"
-                      value={r.start}
-                      onChange={(e) => setRows(rows.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))}
-                      className="rounded-md border border-[var(--line)] bg-white px-2 py-1.5 text-[13px]"
-                    />
-                    <span>〜</span>
-                    <input
-                      type="time"
-                      value={r.end}
-                      onChange={(e) => setRows(rows.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))}
-                      className="rounded-md border border-[var(--line)] bg-white px-2 py-1.5 text-[13px]"
-                    />
-                    {rows.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => setRows(rows.filter((_, j) => j !== i))}
-                        className="text-[12px] text-[var(--red)]"
-                      >
-                        削除
-                      </button>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setRows([...rows, { date: "", start: "", end: "" }])}
-                className={`${btn("secondary", "sm")} mt-3`}
-              >
-                候補日を追加する
-              </button>
-            </div>
-            <label className="flex flex-col gap-1 text-[13px] text-[var(--ink-2)]">
-              備考
-              <textarea
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                rows={3}
-                className="rounded-md border border-[var(--line)] px-3 py-2 text-[14px] outline-none focus:border-[var(--green)]"
-              />
-            </label>
-            <div className="flex gap-2">
-              <button type="button" onClick={insertSchedule} className={btn("primary", "sm")}>
-                提案文に反映
-              </button>
-              <button type="button" onClick={() => setModal(null)} className={btn("secondary", "sm")}>
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <ScheduleModal
+          onClose={() => setModal(null)}
+          insertLabel="提案文に反映"
+          onInsert={(text) => {
+            appendText(text);
+            setModal(null);
+          }}
+        />
       ) : null}
     </>
   );
