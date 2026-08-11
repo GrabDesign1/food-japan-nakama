@@ -273,6 +273,7 @@ export default async function OfferingThreadPage({
           threadId={thread.id}
           closed={!!thread.closedAt}
           closedReason={thread.closedReason}
+          otherName={other?.name ?? "お相手"}
           nda={
             nda
               ? {

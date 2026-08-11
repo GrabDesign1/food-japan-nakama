@@ -6,6 +6,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { closeThread, reopenThread, requestNda, respondNda, type OfferState } from "./actions";
 import { btn, h2Cls, input } from "@/lib/ui";
+import { ReportModal } from "./ReportModal";
 
 export type NdaView = {
   status: string;
@@ -24,12 +25,15 @@ export function ThreadTools({
   closed,
   closedReason,
   nda,
+  otherName,
 }: {
   offeringId: string;
   threadId: string;
   closed: boolean;
   closedReason: string | null;
   nda: NdaView | null;
+  /** 違反報告のモーダルで「誰とのやり取りか」を出すため */
+  otherName: string;
 }) {
   const [open, setOpen] = useState<null | "close" | "nda">(null);
   const [closeState, closeAction, closing] = useActionState<OfferState, FormData>(
@@ -214,12 +218,7 @@ export function ThreadTools({
           必要な記録はお手元に保存してください。
         </span>
 
-        <Link
-          href={`/report?targetType=thread&targetId=${threadId}`}
-          className="text-[12px] text-[var(--muted)] underline hover:text-[var(--red)]"
-        >
-          違反報告する
-        </Link>
+        <ReportModal threadId={threadId} otherName={otherName} />
       </div>
     </div>
   );
