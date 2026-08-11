@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/EmptyState";
 import { loadLockedLeadThreadIds, LEAD_LOCKED_TEXT } from "@/lib/lead-unlock";
+import { MEMBER_MONTHLY_CREDITS } from "@/lib/billing-core";
+import { btn } from "@/lib/ui";
 
 export async function ThreadList({
   meId,
@@ -52,6 +54,12 @@ export async function ThreadList({
 
   // 未開封のリードは、一覧のプレビューにも本文を出さない
   const locked = await loadLockedLeadThreadIds(meId, threads);
+  // 未開封の行の下にビジネス会員の案内を出す（すでに会員の人には出さない）
+  const me = await prisma.member.findUnique({
+    where: { id: meId },
+    select: { paymentStatus: true },
+  });
+  const showUpsell = me?.paymentStatus !== "PAID";
 
   if (threads.length === 0) {
     return (
@@ -79,9 +87,10 @@ export async function ThreadList({
           : last
             ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
             : "（メッセージはまだありません）";
+        const isLocked = locked.has(t.id);
         return (
+          <div key={t.id} className="flex flex-col">
           <Link
-            key={t.id}
             href={`/messages/${t.id}`}
             className={`relative flex items-center gap-3 border-b border-[var(--line-soft)] py-3 pl-5 pr-4 transition ${
               active
@@ -152,6 +161,20 @@ export async function ThreadList({
               </div>
             </div>
           </Link>
+          {/* 未開封の行の下に会員案内（リンクは入れ子にできないので Link の外に出す） */}
+          {isLocked && showUpsell ? (
+            <div className="border-b border-[var(--line-soft)] bg-[var(--amber-bg)] px-5 py-2.5">
+              <p className="text-[11px] leading-4 text-[var(--amber-ink)]">
+                全文が読めるクレジットが<b>月間{MEMBER_MONTHLY_CREDITS}回</b>まで使える！
+                <br />
+                NAKAMAビジネス会員
+              </p>
+              <Link href="/billing" className={`${btn("amber", "sm")} mt-1.5 w-full`}>
+                詳しくはこちら
+              </Link>
+            </div>
+          ) : null}
+          </div>
         );
       })}
     </div>
