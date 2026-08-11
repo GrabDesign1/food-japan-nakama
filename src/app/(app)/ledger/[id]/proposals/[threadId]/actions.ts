@@ -10,6 +10,7 @@ import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
+import { sellerBuyerIds } from "@/lib/invoice";
 
 export type OfferState = { ok?: boolean; error?: string };
 
@@ -192,58 +193,110 @@ export async function respondToContract(
 }
 
 /**
- * 発送・受け渡しの完了を記録する（合意済みの条件が対象）。
- * どちらの当事者からでも押せる（売り手が発送した／買い手が受け取った、のどちらの起点もあるため）。
+ * 発送・受け取りの記録（合意済みの条件が対象）。
+ * **売り手は「発送しました」、買い手は「受け取りました」しか押せない**。
+ * 両方そろった時点で completedAt が入り、納品書・請求書を作成できるようになる。
  * これ自体は事実の記録であり、支払いの完了を意味しない。
  */
-export async function completeContract(
+export async function markDelivery(
   offeringId: string,
   threadId: string,
   offerId: string,
+  step: "shipped" | "received",
   _prev: OfferState,
   _formData: FormData
 ): Promise<OfferState> {
-  const { me, otherId } = await participantOr404(offeringId, threadId);
+  const { me, thread, otherId } = await participantOr404(offeringId, threadId);
+  const offering = await prisma.offering.findUnique({
+    where: { id: offeringId },
+    select: { direction: true, memberId: true },
+  });
+  if (!offering) return { error: "案件が見つかりません。" };
+
+  const { sellerId, buyerId } = sellerBuyerIds({
+    direction: offering.direction,
+    offeringMemberId: offering.memberId,
+    participantAId: thread.fromMemberId,
+    participantBId: thread.toMemberId,
+  });
+  // 立場と操作が食い違うものは受け付けない（買い手が発送を押す等）
+  if (step === "shipped" && me.id !== sellerId) {
+    return { error: "発送の記録は、商品をお渡しする側のみ行えます。" };
+  }
+  if (step === "received" && me.id !== buyerId) {
+    return { error: "受け取りの記録は、商品を受け取る側のみ行えます。" };
+  }
+
   const offer = await prisma.contractOffer.findFirst({
     where: { id: offerId, threadId, status: "accepted" },
   });
   if (!offer) return { error: "合意済みの条件が見つかりません。画面を再読み込みしてください。" };
-  if (offer.completedAt) return { ok: true };
+  if (step === "shipped" && offer.shippedAt) return { ok: true };
+  if (step === "received" && offer.receivedAt) return { ok: true };
 
   const now = new Date();
+  // 相手側が済んでいれば、この操作で両方そろう＝完了
+  const otherDone = step === "shipped" ? !!offer.receivedAt : !!offer.shippedAt;
   await prisma.contractOffer.update({
     where: { id: offer.id },
-    data: { completedAt: now, completedBy: me.id },
+    data: {
+      ...(step === "shipped"
+        ? { shippedAt: now, shippedBy: me.id }
+        : { receivedAt: now, receivedBy: me.id }),
+      ...(otherDone ? { completedAt: now, completedBy: me.id } : {}),
+    },
   });
 
+  const stepLabel = step === "shipped" ? "発送しました" : "受け取りました";
   await postSystemMessage({
     threadId,
     offeringId,
     senderMemberId: me.id,
     senderName: me.name,
     recipientId: otherId,
-    body:
-      `【発送・受け渡しが完了しました】\n` +
-      `・完了日：${fmtDate(now)}\n` +
-      `・金額：${fmtAmount(offer.amount)}\n` +
-      (offer.quantityText ? `・数量：${offer.quantityText}\n` : "") +
-      `\nやり取りの画面から納品書・請求書を作成できます（NAKAMAは代金を預かりません）。`,
+    body: otherDone
+      ? `【${stepLabel}】\n` +
+        `・記録日：${fmtDate(now)}\n\n` +
+        `発送と受け取りの両方が記録され、この取引は完了しました。\n` +
+        `・金額：${fmtAmount(offer.amount)}\n` +
+        (offer.quantityText ? `・数量：${offer.quantityText}\n` : "") +
+        `\nやり取りの画面から納品書・請求書を作成できます（NAKAMAは代金を預かりません）。`
+      : `【${stepLabel}】\n` +
+        `・記録日：${fmtDate(now)}\n\n` +
+        (step === "shipped"
+          ? `お手元に届きましたら、やり取りの画面で「受け取りました」を押してください。\n両方そろうと納品書・請求書を作成できます。`
+          : `お相手の「発送しました」の記録がそろうと、納品書・請求書を作成できます。`),
   });
 
   revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
   return { ok: true };
 }
 
-/** 完了の記録を取り消す（押し間違いの取り消し用）。 */
-export async function undoCompleteContract(
+/** 自分が記録した分を取り消す（押し間違いの取り消し用）。完了も解除する。 */
+export async function undoDelivery(
   offeringId: string,
   threadId: string,
-  offerId: string
+  offerId: string,
+  step: "shipped" | "received"
 ): Promise<void> {
-  await participantOr404(offeringId, threadId);
-  await prisma.contractOffer.updateMany({
+  const { me } = await participantOr404(offeringId, threadId);
+  const offer = await prisma.contractOffer.findFirst({
     where: { id: offerId, threadId, status: "accepted" },
-    data: { completedAt: null, completedBy: null },
+  });
+  if (!offer) return;
+  // 自分が記録したものだけ取り消せる
+  const mine = step === "shipped" ? offer.shippedBy === me.id : offer.receivedBy === me.id;
+  if (!mine) return;
+
+  await prisma.contractOffer.update({
+    where: { id: offer.id },
+    data: {
+      ...(step === "shipped"
+        ? { shippedAt: null, shippedBy: null }
+        : { receivedAt: null, receivedBy: null }),
+      completedAt: null,
+      completedBy: null,
+    },
   });
   revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
 }

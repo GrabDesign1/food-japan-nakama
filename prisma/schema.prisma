@@ -544,7 +544,13 @@ model ContractOffer {
   status           String    @default("proposed")
   respondedAt      DateTime? @map("responded_at")
   respondedBy      String?   @map("responded_by")
-  /// 発送・受け渡しが完了した日時（合意後に当事者が記録する）
+  /// 売り手が「発送しました」を記録した日時
+  shippedAt        DateTime? @map("shipped_at")
+  shippedBy        String?   @map("shipped_by")
+  /// 買い手が「受け取りました」を記録した日時
+  receivedAt       DateTime? @map("received_at")
+  receivedBy       String?   @map("received_by")
+  /// 発送と受け取りの**両方**がそろった日時。帳票（納品書・請求書）はこれを見る
   completedAt      DateTime? @map("completed_at")
   completedBy      String?   @map("completed_by")
   createdAt        DateTime  @default(now()) @map("created_at")

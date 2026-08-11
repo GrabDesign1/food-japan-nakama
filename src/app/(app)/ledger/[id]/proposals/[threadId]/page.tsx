@@ -13,7 +13,7 @@ import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
 import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
 import { ContractPanel, type OfferRow } from "./ContractPanel";
-import { defaultTaxRate, normalizeTaxRate } from "@/lib/invoice";
+import { defaultTaxRate, normalizeTaxRate, sellerBuyerIds } from "@/lib/invoice";
 import { ThreadTools } from "./ThreadTools";
 import { ndaBody } from "@/lib/nda";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
@@ -171,6 +171,12 @@ export default async function OfferingThreadPage({
             respondedAt: o.respondedAt
               ? `${o.respondedAt.getFullYear()}/${o.respondedAt.getMonth() + 1}/${o.respondedAt.getDate()}`
               : null,
+            shippedAt: o.shippedAt
+              ? `${o.shippedAt.getFullYear()}/${o.shippedAt.getMonth() + 1}/${o.shippedAt.getDate()}`
+              : null,
+            receivedAt: o.receivedAt
+              ? `${o.receivedAt.getFullYear()}/${o.receivedAt.getMonth() + 1}/${o.receivedAt.getDate()}`
+              : null,
             completedAt: o.completedAt
               ? `${o.completedAt.getFullYear()}/${o.completedAt.getMonth() + 1}/${o.completedAt.getDate()}`
               : null,
@@ -179,6 +185,16 @@ export default async function OfferingThreadPage({
             proposerName: o.proposerMemberId === me.id ? me.name : other?.name ?? "相手",
           }))}
           defaultTaxRate={String(defaultTaxRate(offering.category)) as "8" | "10"}
+          viewerRole={
+            sellerBuyerIds({
+              direction: offering.direction,
+              offeringMemberId: offering.memberId,
+              participantAId: thread.fromMemberId,
+              participantBId: thread.toMemberId,
+            }).sellerId === me.id
+              ? "seller"
+              : "buyer"
+          }
         />
 
         {/* 募集の内容（クラウドワークスと同じく、やり取りの上に依頼内容を置く） */}

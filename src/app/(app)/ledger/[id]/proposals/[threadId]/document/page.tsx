@@ -84,7 +84,8 @@ export default async function DocumentPage({
         <div className="mt-4 rounded-[10px] border border-[var(--line)] bg-white p-6 text-[13px] leading-7 text-[var(--ink-2)]">
           <b className="text-[var(--ink)]">まだ帳票を作成できません。</b>
           <p className="mt-2">
-            条件に合意し、「発送・受け渡し完了」を記録すると、その内容から納品書・請求書を作成できます。
+            条件に合意したあと、<b>お渡しする側の「発送しました」と、受け取る側の「受け取りました」の両方</b>
+            が記録されると、その内容から納品書・請求書を作成できます。
           </p>
           <Link href={backHref} className={`${btn("primary", "sm")} mt-4`}>
             やり取りの画面へ

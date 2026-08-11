@@ -1,10 +1,11 @@
 "use client";
 
 // 取引条件の提示・同意（Phase 1）。お金は動かさず、当事者間の合意を記録するだけ。
-// 合意後は「発送・受け渡し完了」を記録でき、そこから納品書・請求書を作成できる。
+// 合意後は売り手が「発送しました」、買い手が「受け取りました」を記録し、
+// **両方そろって初めて完了**＝納品書・請求書を作成できるようになる。
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { proposeContract, respondToContract, completeContract, type OfferState } from "./actions";
+import { proposeContract, respondToContract, markDelivery, type OfferState } from "./actions";
 import { btn, h2Cls, input } from "@/lib/ui";
 
 export type OfferRow = {
@@ -16,6 +17,8 @@ export type OfferRow = {
   status: string;
   createdAt: string;
   respondedAt: string | null;
+  shippedAt: string | null;
+  receivedAt: string | null;
   completedAt: string | null;
   taxRate: number;
   fromMe: boolean;
@@ -49,9 +52,13 @@ function Row({ o }: { o: OfferRow }) {
           消費税{o.taxRate}%　/　{o.quantityText ? `数量：${o.quantityText}　/　` : ""}
           納品・完了：{o.deliveryDate ?? "未定"}
         </div>
-        {o.completedAt ? (
-          <div className="mt-1 text-[12px] font-bold text-[var(--green-d)]">
-            発送・受け渡し完了（{o.completedAt}）
+        {o.shippedAt || o.receivedAt || o.completedAt ? (
+          <div className={`mt-1 text-[12px] font-bold ${o.completedAt ? "text-[var(--red)]" : "text-[var(--green-d)]"}`}>
+            {o.completedAt
+              ? `発送・受け取り完了（${o.completedAt}）`
+              : o.shippedAt
+                ? `発送済み（${o.shippedAt}）・受け取り待ち`
+                : `受け取り済み（${o.receivedAt}）・発送の記録待ち`}
           </div>
         ) : null}
         {o.terms ? (
@@ -71,12 +78,15 @@ export function ContractPanel({
   threadId,
   offers,
   defaultTaxRate = "10",
+  viewerRole,
 }: {
   offeringId: string;
   threadId: string;
   offers: OfferRow[];
   /** 案件の分類から決めた既定の税率（飲食料品は8%） */
   defaultTaxRate?: "8" | "10";
+  /** 見ている人の立場。売り手だけが発送、買い手だけが受け取りを記録できる */
+  viewerRole: "seller" | "buyer";
 }) {
   const [open, setOpen] = useState(false);
   const pending = offers.find((o) => o.status === "proposed") ?? null;
@@ -94,8 +104,12 @@ export function ContractPanel({
     respondToContract.bind(null, offeringId, threadId, pending?.id ?? "", "decline"),
     {}
   );
-  const [completeState, completeAction, completing] = useActionState<OfferState, FormData>(
-    completeContract.bind(null, offeringId, threadId, agreed?.id ?? ""),
+  const [shipState, shipAction, shipping] = useActionState<OfferState, FormData>(
+    markDelivery.bind(null, offeringId, threadId, agreed?.id ?? "", "shipped"),
+    {}
+  );
+  const [recvState, recvAction, receiving] = useActionState<OfferState, FormData>(
+    markDelivery.bind(null, offeringId, threadId, agreed?.id ?? "", "received"),
     {}
   );
 
@@ -140,24 +154,62 @@ export function ContractPanel({
           {!agreed.completedAt ? (
             <>
               <div className="text-[13px] font-bold text-[var(--ink)]">
-                商品の発送・受け渡しは終わりましたか？
+                発送と受け取りの記録
               </div>
               <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
-                記録するとやり取りに残り、相手にも通知されます。記録後に納品書・請求書を作成できます。
+                お渡しする側が「発送しました」、受け取る側が「受け取りました」を押します。
+                <b>両方そろうと納品書・請求書を作成できます。</b>
+                記録はやり取りに残り、相手にも通知されます。
               </p>
-              <form action={completeAction} className="mt-3">
-                <button disabled={completing} className={`${btn("action")} disabled:opacity-50`}>
-                  {completing ? "処理中…" : "発送・受け渡し完了"}
-                </button>
-              </form>
-              {completeState.error ? (
-                <p className="mt-2 text-[12px] text-[var(--red)]">{completeState.error}</p>
-              ) : null}
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {/* 発送（売り手のみ） */}
+                <div className="rounded-[10px] border border-[var(--line)] bg-white p-3">
+                  <div className="text-[12px] font-bold text-[var(--ink)]">① 発送（お渡しする側）</div>
+                  {agreed.shippedAt ? (
+                    <div className="mt-2 text-[12px] font-bold text-[var(--green-d)]">
+                      ✓ 記録済み（{agreed.shippedAt}）
+                    </div>
+                  ) : viewerRole === "seller" ? (
+                    <form action={shipAction} className="mt-2">
+                      <button disabled={shipping} className={`${btn("action", "sm")} disabled:opacity-50`}>
+                        {shipping ? "処理中…" : "発送しました"}
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="mt-2 text-[12px] text-[var(--muted)]">お相手の記録待ちです。</div>
+                  )}
+                  {shipState.error ? (
+                    <p className="mt-2 text-[12px] text-[var(--red)]">{shipState.error}</p>
+                  ) : null}
+                </div>
+
+                {/* 受け取り（買い手のみ） */}
+                <div className="rounded-[10px] border border-[var(--line)] bg-white p-3">
+                  <div className="text-[12px] font-bold text-[var(--ink)]">② 受け取り（受け取る側）</div>
+                  {agreed.receivedAt ? (
+                    <div className="mt-2 text-[12px] font-bold text-[var(--green-d)]">
+                      ✓ 記録済み（{agreed.receivedAt}）
+                    </div>
+                  ) : viewerRole === "buyer" ? (
+                    <form action={recvAction} className="mt-2">
+                      <button disabled={receiving} className={`${btn("action", "sm")} disabled:opacity-50`}>
+                        {receiving ? "処理中…" : "受け取りました"}
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="mt-2 text-[12px] text-[var(--muted)]">お相手の記録待ちです。</div>
+                  )}
+                  {recvState.error ? (
+                    <p className="mt-2 text-[12px] text-[var(--red)]">{recvState.error}</p>
+                  ) : null}
+                </div>
+              </div>
             </>
           ) : (
             <>
-              <div className="text-[13px] font-bold text-[var(--green-d)]">
-                発送・受け渡し完了（{agreed.completedAt}）
+              <div className="text-[13px] font-bold text-[var(--red)]">
+                発送・受け取り完了（{agreed.completedAt}）
               </div>
               <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
                 合意した内容から帳票を作成できます。印刷画面からPDFとして保存し、相手へお送りください。
