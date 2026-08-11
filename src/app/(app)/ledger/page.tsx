@@ -40,19 +40,21 @@ export default async function LedgerPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-end justify-between">
-        <div>
+      {/* 見出しとボタンを横並びに固定していたため、ボタンに幅を取られて見出しが
+          「探してい／る）」で改行していた。入りきらないときはボタンを下の行へ折り返す。 */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-[280px] flex-1">
           <p className={eyebrowCls}>LISTINGS</p>
           <h1 className={h1Cls}>案件を登録する（売りたい・探している）</h1>
           <p className="mt-1 text-[13px] text-[var(--ink-2)]">
-            商品・原料・食品副産物・協業テーマなど、「売りたい（提供したい）」「探している（調達したい）」を1件ずつ登録します。
+            商品・原料・食品副産物・資材・サービス・協業テーマなど「売りたい（提供したい）」「探している（調達したい）」を登録しましょう。
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/ledger/new?direction=GIVE" className={btn("primary")}>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/ledger/new?direction=GIVE" className={`${btn("primary")} whitespace-nowrap`}>
             ＋ 売りたい（提供したい）を登録
           </Link>
-          <Link href="/ledger/new?direction=WANT" className={btn("amber")}>
+          <Link href="/ledger/new?direction=WANT" className={`${btn("amber")} whitespace-nowrap`}>
             ＋ 探している（調達したい）を登録する
           </Link>
         </div>
