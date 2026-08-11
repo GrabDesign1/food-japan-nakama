@@ -48,7 +48,7 @@ export default async function PublicHome() {
         <div className="fjn-hero__body">
           <div className="fjn-hero__copy">
             <h1 id="fjn-hero-title">
-              食の「売りたい」「探している」「あったらいいな」を、共創でつなぐ。
+              食の「売りたい」「探している」「あったらいいな」を共創でつなぐ
             </h1>
             <p className="fjn-hero__lead">
               全国の食品メーカー・飲食店・卸・小売と、新しい取引や共創のきっかけをつくる。
