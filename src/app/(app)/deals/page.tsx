@@ -3,10 +3,17 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { PHASES, isStale, loadMemberDeals } from "@/lib/deal";
+import { prisma } from "@/lib/db";
+import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
 import { PhaseSelect } from "./_components/PhaseSelect";
 import { setDealNext } from "./actions";
 import { EmptyState } from "@/components/EmptyState";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
+
+// レンダー中の Date.now 直呼びは lint（react-hooks/purity）が禁止しているため関数に切り出す
+function isOverdue(d: Date | null): boolean {
+  return !!d && d.getTime() < Date.now();
+}
 
 function ymd(d: Date | null): string {
   if (!d) return "";
@@ -24,6 +31,39 @@ export default async function DealsPage({
   const me = await getOrCreateMemberForUser(su);
   const all = await loadMemberDeals(me.id);
 
+  // どの案件の商談かを出す（案件ごとにスレッドを分けたため、会社名だけでは区別できない）。
+  // 未読は「要返信」の判定に使う。ダッシュボード・提案一覧と同じ見せ方に揃える（2026-08-11）。
+  const threadIds = all.map((d) => d.deal.threadId).filter((v): v is string => !!v);
+  const [threads, unreadGroups] = await Promise.all([
+    threadIds.length
+      ? prisma.thread.findMany({
+          where: { id: { in: threadIds } },
+          select: { id: true, offeringId: true },
+        })
+      : Promise.resolve([]),
+    threadIds.length
+      ? prisma.message.groupBy({
+          by: ["threadId"],
+          where: { threadId: { in: threadIds }, senderMemberId: { not: me.id }, readAt: null },
+          _count: { _all: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const offeringIds = Array.from(
+    new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
+  );
+  const offerings = offeringIds.length
+    ? await prisma.offering.findMany({
+        where: { id: { in: offeringIds } },
+        select: { id: true, title: true, direction: true },
+      })
+    : [];
+  const offeringById = new Map(offerings.map((o) => [o.id, o]));
+  const offeringByThread = new Map(
+    threads.map((t) => [t.id, t.offeringId ? offeringById.get(t.offeringId) ?? null : null])
+  );
+  const unreadByThread = new Map(unreadGroups.map((g) => [g.threadId, g._count._all]));
+
   const sp = await searchParams;
   const activePhase = sp.phase !== undefined ? Number(sp.phase) : null;
   const counts = PHASES.map((_, i) => all.filter((d) => d.deal.phase === i).length);
@@ -34,7 +74,7 @@ export default async function DealsPage({
       <div className="flex items-end justify-between">
         <div>
           <p className={eyebrowCls}>DEALS</p>
-          <h1 className={h1Cls}>商談管理</h1>
+          <h1 className={h1Cls}>進行中の活動</h1>
         </div>
         <Link href="/deals/board" className={btn("secondary", "sm")}>
           ステータスボードで見る →
@@ -59,7 +99,15 @@ export default async function DealsPage({
         <div className="flex flex-col gap-4">
           {list.map(({ deal, other }) => {
             const stale = isStale(deal.lastActivityAt);
-            const overdue = deal.dueDate ? deal.dueDate.getTime() < Date.now() : false;
+            const overdue = isOverdue(deal.dueDate);
+            const offering = deal.threadId ? offeringByThread.get(deal.threadId) : null;
+            const unread = deal.threadId ? unreadByThread.get(deal.threadId) ?? 0 : 0;
+            // やり取りの行き先は案件ごとの画面（案件＋履歴＋返信が1画面）。案件が無いものは従来のメッセージ画面
+            const threadHref = deal.threadId
+              ? offering
+                ? `/ledger/${offering.id}/proposals/${deal.threadId}`
+                : `/messages/${deal.threadId}`
+              : null;
             return (
               <div key={deal.id} className="rounded-[10px] border border-[var(--line)] bg-white p-5">
                 <div className="flex items-start gap-3">
@@ -72,7 +120,34 @@ export default async function DealsPage({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <Link href={other ? `/producers/${other.id}` : "#"} className="text-[16px] font-semibold text-[var(--ink)] hover:underline">
+                    {/* どの案件の商談かを最初に出す（会社名だけでは区別できないため） */}
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      {offering ? (
+                        <>
+                          <span
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
+                              offering.direction === "GIVE" ? "bg-[var(--green)]" : "bg-[#B77F0B]"
+                            }`}
+                          >
+                            {DIRECTION_SHORT[offering.direction] ?? ""}
+                          </span>
+                          <Link
+                            href={`/ledger/${offering.id}`}
+                            className="truncate text-[15px] font-bold text-[var(--ink)] hover:text-[var(--green-d)] hover:underline"
+                          >
+                            {offering.title || "（無題）"}
+                          </Link>
+                        </>
+                      ) : (
+                        <span className="text-[13px] text-[var(--muted)]">案件に紐づかないメッセージ</span>
+                      )}
+                      {unread > 0 ? (
+                        <span className="rounded-full bg-[#E2591F] px-2 py-0.5 text-[10px] font-bold text-white">
+                          要返信 {unread}
+                        </span>
+                      ) : null}
+                    </div>
+                    <Link href={other ? `/producers/${other.id}` : "#"} className="text-[13px] font-semibold text-[var(--ink-2)] hover:underline">
                       {other?.name || "（不明）"}
                     </Link>
                     <p className="mt-0.5 line-clamp-1 text-[12px] text-[var(--muted)]">
@@ -107,9 +182,9 @@ export default async function DealsPage({
                     <button className={btn("primary", "sm")}>
                       保存
                     </button>
-                    {deal.threadId ? (
-                      <Link href={`/messages/${deal.threadId}`} className="ml-auto text-[12px] text-[var(--green-d)] underline">
-                        メッセージ →
+                    {threadHref ? (
+                      <Link href={threadHref} className={`${btn(unread > 0 ? "action" : "secondary", "sm")} ml-auto whitespace-nowrap`}>
+                        やり取りを見る →
                       </Link>
                     ) : null}
                   </div>
