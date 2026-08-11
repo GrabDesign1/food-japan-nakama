@@ -326,9 +326,9 @@ export default async function OfferingDetailPage({
           </p>
         </div>
       ) : null}
-      {!isGive && offering.requirements.length ? (
+      {offering.requirements.length ? (
         <div>
-          <h2 className={`${h2Cls} mb-2`}>条件</h2>
+          <h2 className={`${h2Cls} mb-2`}>{isGive ? "取引の条件" : "条件"}</h2>
           <div className="flex flex-col gap-3">
             {REQUIREMENT_LEVELS.map(([level, levelLabel]) => {
               const rows = offering.requirements.filter((r) => r.level === level);

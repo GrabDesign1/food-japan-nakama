@@ -154,7 +154,9 @@ export async function sendInterest(
     threadId: thread.id,
   });
 
-  redirect(`/messages/${thread.id}`);
+  // 案件に紐づく問い合わせは、案件＋やり取り＋返信が1画面の画面へ送る（提案と同じ体験にする・2026-08-11）。
+  // 案件に紐づかない会話は従来どおりメッセージ画面。
+  redirect(offeringId ? `/ledger/${offeringId}/proposals/${thread.id}` : `/messages/${thread.id}`);
 }
 
 /** 事業者に問い合わせる：会話（スレッド）を用意してメッセージ画面へ直行する。 */

@@ -419,10 +419,18 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               </span>
             </div>
 
-            <SectionHead
-              title="条件（必須・希望・相談可能）"
-              desc="条件ごとに「必須／希望／相談可能」を選べます。"
-            />
+          </>
+        ) : null}
+
+        {/* ── 条件（必須・希望・相談可能）。売り・買いの両方で使う（2026-08-11 追加） ── */}
+        <SectionHead
+          title={isGive ? "取引の条件（必須・希望・相談可能）" : "条件（必須・希望・相談可能）"}
+          desc={
+            isGive
+              ? "譲れない条件と相談できる条件を分けて書けます。買い手が問い合わせ前に判断しやすくなります。"
+              : "条件ごとに「必須／希望／相談可能」を選べます。"
+          }
+        />
             <div id="f-requirements" className="scroll-mt-24">
               <div className="flex flex-col gap-2">
                 {requirements.map((r, i) => (
@@ -480,8 +488,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                 <p className="text-[11px] text-[var(--muted)]">{requirementHint(category)}</p>
               </div>
             </div>
-          </>
-        ) : null}
 
         {/* ── 魅力と背景（質問に答える形式・売りたい（提供したい）のみ） ── */}
         {isGive ? (
@@ -1033,9 +1039,11 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                 </a>
               </div>
             )}
+          </>
+        ) : null}
             {requirements.filter((r) => r.text.trim()).length ? (
               <div className="mt-3">
-                <div className="text-[11px] font-bold text-[var(--muted)]">条件</div>
+                <div className="text-[11px] font-bold text-[var(--muted)]">{isGive ? "取引の条件" : "条件"}</div>
                 <ul className="mt-1 flex flex-col gap-1">
                   {requirements
                     .filter((r) => r.text.trim())
@@ -1059,8 +1067,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                 </ul>
               </div>
             ) : null}
-          </>
-        ) : null}
+
         {isGive ? (
           <>
             <PreviewBlock label="特徴・こだわり" text={featureDiff} />
