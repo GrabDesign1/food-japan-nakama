@@ -15,11 +15,115 @@ type Props = {
 
 type ButtonProps = Props & { productName: string };
 
-// 表示例に並べるダミーの他社（実在の会員と紛れないよう、架空の社名にする）
-const OTHERS: { memberName: string; area: string }[] = [
-  { memberName: "株式会社スーパーA", area: "神奈川県" },
-  { memberName: "株式会社スーパーB", area: "大阪府" },
-  { memberName: "株式会社食品工場", area: "愛知県" },
+// 表示例に並べるダミーの他社（実在の会員と紛れないよう架空の社名にする）。
+// 価格・数量・条件も1件ずつ変えて、実際の一覧に近い見え方にする。
+type OtherSample = Partial<OfferingCardData> & { memberName: string; area: string };
+
+const OTHERS_WANT: OtherSample[] = [
+  {
+    memberName: "株式会社スーパーA",
+    area: "神奈川県",
+    title: "業務用の冷凍ブルーベリーを探している",
+    category: "食材・原料",
+    seekingType: "specific",
+    priceType: "fixed",
+    priceAmount: 1000,
+    priceUnit: "円/kg",
+    amountValue: 500,
+    amountUnit: "kg",
+    amountPeriod: "月",
+    amountText: null,
+    minOrderText: "10kgから",
+    tagline: null,
+  },
+  {
+    memberName: "株式会社スーパーB",
+    area: "大阪府",
+    title: "PB向けドレッシングのOEM製造先を探している",
+    category: "食材・原料",
+    seekingType: "oem",
+    priceType: "negotiable",
+    priceAmount: null,
+    priceUnit: null,
+    amountValue: null,
+    amountUnit: null,
+    amountPeriod: null,
+    amountText: "初回1,000本〜",
+    minOrderText: "1,000本から",
+    tagline: null,
+    createdAt: null,
+  },
+  {
+    memberName: "株式会社食品工場",
+    area: "愛知県",
+    title: "規格外の野菜を通年で仕入れたい",
+    category: "食材・原料",
+    seekingType: "surplus",
+    priceType: "fixed",
+    priceAmount: 80,
+    priceUnit: "円/kg",
+    amountValue: 2,
+    amountUnit: "t",
+    amountPeriod: "月",
+    amountText: null,
+    minOrderText: "100kgから",
+    supplyFrequency: "継続",
+    tagline: null,
+    createdAt: null,
+  },
+];
+
+const OTHERS_GIVE: OtherSample[] = [
+  {
+    memberName: "株式会社スーパーA",
+    area: "神奈川県",
+    title: "冷凍ブルーベリー（加工用・国産）",
+    category: "食材・原料",
+    priceType: "fixed",
+    priceAmount: 1200,
+    priceUnit: "円/kg",
+    amountValue: 800,
+    amountUnit: "kg",
+    amountPeriod: "月",
+    amountText: null,
+    minOrderText: "10kgから",
+    itemCondition: "冷凍",
+    tagline: null,
+  },
+  {
+    memberName: "株式会社スーパーB",
+    area: "大阪府",
+    title: "ドレッシングのOEM製造を承ります",
+    category: "技術・ノウハウ",
+    priceType: "negotiable",
+    priceAmount: null,
+    priceUnit: null,
+    amountValue: null,
+    amountUnit: null,
+    amountPeriod: null,
+    amountText: "初回1,000本から",
+    minOrderText: "1,000本から",
+    tagline: null,
+    createdAt: null,
+  },
+  {
+    memberName: "株式会社食品工場",
+    area: "愛知県",
+    title: "規格外野菜（加工用・通年）",
+    category: "食材・原料",
+    priceType: "fixed",
+    priceAmount: 90,
+    priceUnit: "円/kg",
+    amountValue: 3,
+    amountUnit: "t",
+    amountPeriod: "月",
+    amountText: null,
+    minOrderText: "100kgから",
+    supplyFrequency: "継続",
+    itemCondition: "規格外",
+    tagline: null,
+    createdAt: null,
+  },
 ];
 
 /** 表示例のカードは押せないようにする（モーダルから詳細ページへ飛ばないように）。 */
@@ -27,13 +131,11 @@ const Sample = ({ children }: { children: React.ReactNode }) => (
   <div className="pointer-events-none select-none">{children}</div>
 );
 
-const other = (sample: OfferingCardData, i: number, title: string): OfferingCardData => ({
-  ...sample,
-  title,
-  tagline: null,
-  memberName: OTHERS[i].memberName,
-  area: OTHERS[i].area,
-});
+/** 自分の案件をベースに、他社のダミー内容を重ねる（向きは自分の案件に合わせる）。 */
+const other = (sample: OfferingCardData, i: number): OfferingCardData => {
+  const list = sample.direction === "GIVE" ? OTHERS_GIVE : OTHERS_WANT;
+  return { ...sample, applicationDeadline: null, ...list[i] };
+};
 
 const SponsorLabel = ({ text }: { text: string }) => (
   <div className="mb-1 flex items-center gap-2">
@@ -47,9 +149,9 @@ const NaturalRow = ({ sample }: { sample: OfferingCardData }) => (
   <div className="mt-3">
     <div className="mb-1 text-[11px] text-[var(--muted)]">通常の検索結果（無料掲載）</div>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      {OTHERS.map((_, i) => (
+      {[0, 1, 2].map((i) => (
         <Sample key={i}>
-          <OfferingCard o={other(sample, i, "（ほかの案件）")} />
+          <OfferingCard o={other(sample, i)} />
         </Sample>
       ))}
     </div>
@@ -92,7 +194,7 @@ function PreviewBody({ effectType, sample }: Props) {
             </Sample>
             {[0, 1].map((i) => (
               <Sample key={i}>
-                <OfferingCard o={other(sample, i, "（ほかのスポンサー案件）")} featured />
+                <OfferingCard o={other(sample, i)} featured />
               </Sample>
             ))}
           </div>
@@ -110,7 +212,7 @@ function PreviewBody({ effectType, sample }: Props) {
               <OfferingCard o={sample} urgent isOwn />
             </Sample>
             <Sample>
-              <OfferingCard o={other(sample, 0, "（バッジなしの案件）")} />
+              <OfferingCard o={other(sample, 0)} />
             </Sample>
           </div>
         </>

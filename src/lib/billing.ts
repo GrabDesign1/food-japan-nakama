@@ -606,7 +606,7 @@ export async function getSponsoredOfferings(direction: "GIVE" | "WANT", limit = 
       visibility: "public",
       member: { status: "APPROVED" },
     },
-    include: { member: { select: { name: true } } },
+    include: { member: { select: { name: true, companyLogoUrl: true } } },
   });
   // 同条件はローテーション（日替わりで先頭を変える）
   const day = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
@@ -631,7 +631,7 @@ export async function getTopPrOffering(direction: "GIVE" | "WANT") {
   const ids = Array.from(new Set(promos.map((p) => p.offeringId)));
   const offerings = await prisma.offering.findMany({
     where: { id: { in: ids }, direction, isPublic: true, visibility: "public", member: { status: "APPROVED" } },
-    include: { member: { select: { name: true } } },
+    include: { member: { select: { name: true, companyLogoUrl: true } } },
   });
   if (offerings.length === 0) return null;
   const day = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));

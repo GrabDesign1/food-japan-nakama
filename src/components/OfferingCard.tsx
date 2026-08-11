@@ -14,7 +14,9 @@ export type OfferingCardData = {
   amountUnit: string | null;
   amountPeriod: string | null;
   amountText: string | null;
+  description?: string | null;
   memberName?: string | null;
+  memberLogoUrl?: string | null;
   createdAt?: string | Date | null;
   tags?: string[];
   views24h?: number | null;
@@ -22,6 +24,7 @@ export type OfferingCardData = {
   priceType?: string | null;
   priceAmount?: number | null;
   priceUnit?: string | null;
+  priceTaxType?: string | null;
   minOrderText?: string | null;
   itemCondition?: string | null;
   supplyFrequency?: string | null;
@@ -70,6 +73,12 @@ export function OfferingCard({
     priceUnit: o.priceUnit ?? null,
   });
   const deadlineText = deadlineLabel(o.applicationDeadline);
+  // 写真の代わりに出す要点（探している案件用。値があるものだけ）
+  const summary = [
+    price ? `希望価格：${price}` : null,
+    amount ? `数量：${amount}` : null,
+    o.minOrderText ? `最小：${o.minOrderText}` : null,
+  ].filter((v): v is string => !!v);
   // 取引条件の要点（値があるものだけ・最大3つ）
   const conditions = [
     o.minOrderText ? `最小 ${o.minOrderText}` : null,
@@ -90,7 +99,26 @@ export function OfferingCard({
               : "border-[var(--line)] group-hover:border-[var(--green)]"
         }`}
       >
-        {thumb ? (
+        {!thumb && !isGive ? (
+          // 探している（調達したい）は写真が無いのが普通。プレースホルダーで面積を使わず、
+          // 概要と条件をここに出す（2026-08-11 ユーザー指定）。
+          <div className="flex h-full w-full flex-col gap-1 p-3 text-left">
+            {o.description ? (
+              <p className="line-clamp-4 text-[11px] leading-4 text-[var(--ink-2)]">{o.description}</p>
+            ) : (
+              <p className="text-[11px] leading-4 text-[var(--muted)]">（詳しい説明は詳細ページに掲載）</p>
+            )}
+            {summary.length ? (
+              <div className="mt-auto flex flex-col gap-0.5">
+                {summary.map((s) => (
+                  <div key={s} className="truncate text-[11px] font-medium text-[var(--ink)]">
+                    {s}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : thumb ? (
           // next/image: 表示サイズに合わせて縮小・WebP変換した画像を配信（fill=親のaspect枠いっぱい）
           <Image
             src={thumb}
@@ -172,7 +200,20 @@ export function OfferingCard({
         <div className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{conditions.join(" ・ ")}</div>
       ) : null}
       {o.memberName ? (
-        <div className="mt-0.5 text-[11px] text-[var(--muted)]">{o.memberName}</div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
+          {o.memberLogoUrl ? (
+            // 会社ロゴ（登録されている場合のみ）。比率を保つため object-contain
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={o.memberLogoUrl}
+              alt=""
+              className="h-4 w-4 shrink-0 rounded-sm object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : null}
+          <span className="truncate">{o.memberName}</span>
+        </div>
       ) : null}
 
       {o.views24h && o.views24h > 0 ? (

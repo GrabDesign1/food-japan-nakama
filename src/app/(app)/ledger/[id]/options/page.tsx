@@ -39,6 +39,7 @@ export default async function ListingOptionsPage({
       title: true,
       direction: true,
       isPublic: true,
+      description: true,
       // 「見え方」プレビューを実際のカードで描くための表示項目
       category: true,
       area: true,
@@ -99,7 +100,9 @@ export default async function ListingOptionsPage({
     amountUnit: offering.amountUnit,
     amountPeriod: offering.amountPeriod,
     amountText: offering.amountText,
+    description: offering.description,
     memberName: me.name,
+    memberLogoUrl: me.companyLogoUrl,
     createdAt: offering.createdAt,
     tags: offering.tags,
     priceType: offering.priceType,

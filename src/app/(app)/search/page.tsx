@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
+import { OfferingRow } from "@/components/OfferingRow";
 import { getSponsoredOfferings, getTopPrOffering, getActiveEffectsFor } from "@/lib/billing";
 import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -212,9 +213,20 @@ export default async function SearchPage({
                 <span className="rounded bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-white">広告</span>
                 <span className="text-[11px] text-[var(--muted)]">スポンサー（最上部PR）</span>
               </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                <OfferingCard o={{ ...topPr, memberName: topPr.member.name }} isOwn={topPr.memberId === ownMemberId} />
-              </div>
+              {topPr.direction === "WANT" ? (
+                <OfferingRow
+                  o={{ ...topPr, memberName: topPr.member.name, memberLogoUrl: topPr.member.companyLogoUrl }}
+                  isOwn={topPr.memberId === ownMemberId}
+                  featured
+                />
+              ) : (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  <OfferingCard
+                    o={{ ...topPr, memberName: topPr.member.name, memberLogoUrl: topPr.member.companyLogoUrl }}
+                    isOwn={topPr.memberId === ownMemberId}
+                  />
+                </div>
+              )}
             </div>
           ) : null}
           {/* 注目表示（スポンサー枠） */}
@@ -225,21 +237,37 @@ export default async function SearchPage({
                 <span className="text-[11px] text-[var(--muted)]">スポンサー（注目表示）</span>
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {sponsored.map((o) => (
-                  <OfferingCard key={`sp-${o.id}`} o={{ ...o, memberName: o.member.name }} isOwn={o.memberId === ownMemberId} featured />
-                ))}
+                {sponsored.map((o) => {
+                  const data = { ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl };
+                  return o.direction === "WANT" ? (
+                    <div key={`sp-${o.id}`} className="col-span-full">
+                      <OfferingRow o={data} isOwn={o.memberId === ownMemberId} featured />
+                    </div>
+                  ) : (
+                    <OfferingCard key={`sp-${o.id}`} o={data} isOwn={o.memberId === ownMemberId} featured />
+                  );
+                })}
               </div>
             </div>
           ) : null}
+          {/* 探している（調達したい）は横長の行（col-span-full）で概要・条件まで見せる */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {offerings.map((o) => (
-              <OfferingCard
-                key={o.id}
-                o={{ ...o, memberName: o.member.name, views24h: viewMap.get(o.id) ?? 0 }}
-                isOwn={o.memberId === ownMemberId}
-                urgent={effectsMap.get(o.id)?.has("urgent") ?? false}
-              />
-            ))}
+            {offerings.map((o) => {
+              const data = {
+                ...o,
+                memberName: o.member.name,
+                memberLogoUrl: o.member.companyLogoUrl,
+                views24h: viewMap.get(o.id) ?? 0,
+              };
+              const isUrgent = effectsMap.get(o.id)?.has("urgent") ?? false;
+              return o.direction === "WANT" ? (
+                <div key={o.id} className="col-span-full">
+                  <OfferingRow o={data} isOwn={o.memberId === ownMemberId} urgent={isUrgent} />
+                </div>
+              ) : (
+                <OfferingCard key={o.id} o={data} isOwn={o.memberId === ownMemberId} urgent={isUrgent} />
+              );
+            })}
           </div>
         </>
       )}
@@ -317,7 +345,7 @@ async function searchOfferings(f: {
       orderBy: { createdAt: "desc" },
       skip: f.skip,
       take: PER_PAGE,
-      include: { member: { select: { name: true } } },
+      include: { member: { select: { name: true, companyLogoUrl: true } } },
     }),
     prisma.offering.count({ where }),
   ]);

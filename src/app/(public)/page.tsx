@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getLandingContent } from "@/lib/public-content";
 import { OfferingCard } from "@/components/OfferingCard";
+import { OfferingRow } from "@/components/OfferingRow";
 import { ProjectCard } from "@/components/ProjectCard";
 import { btn, h2Cls } from "@/lib/ui";
 import { HeroMobileMenu } from "./_components/HeroMobileMenu";
@@ -143,12 +144,13 @@ export default async function PublicHome() {
           empty="現在、食品メーカー・飲食店・小売事業者の仕入れ案件を順次登録しています。掲載され次第このページに表示されます。"
           hasItems={wants.length > 0}
         >
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {/* 探している（調達したい）は写真が無いことが多いため、横長の行で概要と条件を見せる */}
+          <div className="flex flex-col gap-3">
             {wants.map((o) => (
-              <OfferingCard
+              <OfferingRow
                 key={o.id}
                 href={`/preview/offerings/${o.id}`}
-                o={{ ...o, memberName: o.member.name }}
+                o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl }}
               />
             ))}
           </div>
@@ -229,7 +231,7 @@ export default async function PublicHome() {
               <OfferingCard
                 key={o.id}
                 href={`/preview/offerings/${o.id}`}
-                o={{ ...o, memberName: o.member.name }}
+                o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl }}
               />
             ))}
           </div>

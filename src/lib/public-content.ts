@@ -57,13 +57,13 @@ export async function getLandingContent() {
       where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "GIVE", member: { tenantId, status: "APPROVED" } },
       orderBy: { createdAt: "desc" },
       take: 4,
-      include: { member: { select: { name: true } } },
+      include: { member: { select: { name: true, companyLogoUrl: true } } },
     }),
     prisma.offering.findMany({
       where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "WANT", member: { tenantId, status: "APPROVED" } },
       orderBy: { createdAt: "desc" },
       take: 4,
-      include: { member: { select: { name: true } } },
+      include: { member: { select: { name: true, companyLogoUrl: true } } },
     }),
     // 件数（トップのティザー表示用）
     prisma.offering.count({
@@ -108,6 +108,6 @@ export async function getPublicProject(id: string) {
 export async function getPublicOffering(id: string) {
   return prisma.offering.findFirst({
     where: { id, isPublic: true, visibility: "public", title: { not: "" }, member: { status: "APPROVED" } },
-    include: { member: { select: { name: true } } },
+    include: { member: { select: { name: true, companyLogoUrl: true } } },
   });
 }
