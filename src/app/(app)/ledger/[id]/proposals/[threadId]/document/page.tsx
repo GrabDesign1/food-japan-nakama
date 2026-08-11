@@ -29,7 +29,8 @@ export default async function DocumentPage({
 }) {
   const { id, threadId } = await params;
   const { type } = await searchParams;
-  const kind: "invoice" | "delivery" = type === "delivery" ? "delivery" : "invoice";
+  const kind: "invoice" | "delivery" | "receipt" =
+    type === "delivery" ? "delivery" : type === "receipt" ? "receipt" : "invoice";
 
   const su = await getSessionUser();
   if (!su) redirect("/login");
@@ -146,6 +147,12 @@ export default async function DocumentPage({
             className={btn(kind === "delivery" ? "primary" : "secondary", "sm")}
           >
             納品書
+          </Link>
+          <Link
+            href={`${backHref}/document?type=receipt`}
+            className={btn(kind === "receipt" ? "primary" : "secondary", "sm")}
+          >
+            領収書
           </Link>
         </div>
       </div>

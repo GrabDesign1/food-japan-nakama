@@ -3,10 +3,10 @@
 // 納品書・請求書の用紙（画面表示＝そのまま印刷される）。
 // 保存はしない。印刷ダイアログからPDFにするのは当事者の操作。
 import { useState } from "react";
-import { DocumentTools } from "./DocumentTools";
+import { DocumentTools, type DocExtra } from "./DocumentTools";
 
 export type DocumentData = {
-  kind: "invoice" | "delivery";
+  kind: "invoice" | "delivery" | "receipt";
   docNo: string;
   issuedAt: string;
   completedAt: string;
@@ -29,18 +29,21 @@ export type DocumentData = {
 const yen = (n: number) => `${n.toLocaleString()} 円`;
 
 export function DocumentSheet({ data }: { data: DocumentData }) {
-  const [extra, setExtra] = useState({ dueText: "", note: "" });
+  const [extra, setExtra] = useState<DocExtra>({ dueText: "", note: "", receivedOn: "", purpose: "" });
   const isInvoice = data.kind === "invoice";
-  const title = isInvoice ? "請求書" : "納品書";
+  const isReceipt = data.kind === "receipt";
+  // 金額の内訳を出すのは請求書と領収書（納品書は数量と品名だけ）
+  const showMoney = isInvoice || isReceipt;
+  const title = isInvoice ? "請求書" : isReceipt ? "領収書" : "納品書";
 
   return (
     <div className="mx-auto max-w-[820px]">
       <style>{`@page { size: A4; margin: 14mm; }`}</style>
 
-      <DocumentTools showPayment={isInvoice} onChange={setExtra} />
+      <DocumentTools kind={data.kind} onChange={setExtra} />
 
       {/* 売り手に足りない項目があれば画面上だけで知らせる */}
-      {isInvoice && data.viewerIsSeller && (!data.regNoOk || !data.seller.bank) ? (
+      {showMoney && data.viewerIsSeller && (!data.regNoOk || (isInvoice && !data.seller.bank)) ? (
         <div className="print:hidden mb-4 rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4 text-[12px] leading-6 text-[var(--amber-ink)]">
           <b>請求書に載せる情報が足りません。</b>
           <ul className="mt-1 list-disc pl-5">
@@ -66,7 +69,7 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
 
         <div className="mt-6 flex justify-between text-[12px]">
           <div>
-            <div className="text-[11px] text-[var(--muted)]">{isInvoice ? "請求書番号" : "納品書番号"}</div>
+            <div className="text-[11px] text-[var(--muted)]">{isInvoice ? "請求書番号" : isReceipt ? "領収書番号" : "納品書番号"}</div>
             <div>{data.docNo}</div>
           </div>
           <div className="text-right">
@@ -97,13 +100,20 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
           </div>
         </div>
 
-        {isInvoice ? (
-          <div className="mt-6 flex items-end gap-4">
-            <div className="text-[13px]">ご請求金額（税込）</div>
-            <div className="flex-1 border-b-2 border-[var(--ink)] pb-1 text-right text-[24px] font-bold">
-              {yen(data.including)}
+        {showMoney ? (
+          <>
+            <div className="mt-6 flex items-end gap-4">
+              <div className="text-[13px]">{isReceipt ? "領収金額（税込）" : "ご請求金額（税込）"}</div>
+              <div className="flex-1 border-b-2 border-[var(--ink)] pb-1 text-right text-[24px] font-bold">
+                {yen(data.including)}
+              </div>
             </div>
-          </div>
+            {isReceipt ? (
+              <div className="mt-2 text-[13px]">
+                但し　{extra.purpose || "商品代"}　として、上記正に領収いたしました。
+              </div>
+            ) : null}
+          </>
         ) : null}
 
         {/* 明細 */}
@@ -113,7 +123,7 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
               <th className="border border-[var(--line)] px-3 py-2 text-left font-medium">品名・内容</th>
               <th className="border border-[var(--line)] px-3 py-2 text-left font-medium">数量</th>
               <th className="border border-[var(--line)] px-3 py-2 text-right font-medium">税率</th>
-              {isInvoice ? (
+              {showMoney ? (
                 <th className="border border-[var(--line)] px-3 py-2 text-right font-medium">金額（税抜）</th>
               ) : null}
             </tr>
@@ -129,7 +139,7 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
               </td>
               <td className="border border-[var(--line)] px-3 py-3 align-top">{data.quantityText ?? "―"}</td>
               <td className="border border-[var(--line)] px-3 py-3 text-right align-top">{data.rate}%</td>
-              {isInvoice ? (
+              {showMoney ? (
                 <td className="border border-[var(--line)] px-3 py-3 text-right align-top">
                   {yen(data.excluding)}
                 </td>
@@ -143,7 +153,7 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
         ) : null}
 
         {/* 税率ごとの区分（適格請求書の必須記載事項） */}
-        {isInvoice ? (
+        {showMoney ? (
           <div className="mt-4 flex justify-end">
             <table className="border-collapse text-[12px]">
               <tbody>
@@ -177,6 +187,12 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
                 <td className="border border-[var(--line)] px-3 py-2">{data.deliveryDate}</td>
               </tr>
             ) : null}
+            {isReceipt && extra.receivedOn ? (
+              <tr>
+                <td className="border border-[var(--line)] bg-[#FAFBF9] px-3 py-2">代金受領日</td>
+                <td className="border border-[var(--line)] px-3 py-2">{extra.receivedOn}</td>
+              </tr>
+            ) : null}
             {isInvoice && extra.dueText ? (
               <tr>
                 <td className="border border-[var(--line)] bg-[#FAFBF9] px-3 py-2">お支払い期限</td>
@@ -197,6 +213,13 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
             ) : null}
           </tbody>
         </table>
+
+        {isReceipt ? (
+          <p className="mt-4 text-[10px] leading-5 text-[var(--ink-2)]">
+            本書は電磁的記録（PDF）として交付するため、収入印紙の貼付は不要です。
+            紙に出力して交付する場合は、記載金額に応じた印紙税の取り扱いをご確認ください。
+          </p>
+        ) : null}
 
         <p className="mt-6 text-[10px] leading-5 text-[var(--muted)]">
           本書は、FOOD JAPAN NAKAMA の画面で当事者が作成した書類です。NAKAMA（株式会社グラブデザイン）は

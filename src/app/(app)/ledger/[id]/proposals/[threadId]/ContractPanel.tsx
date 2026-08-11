@@ -228,6 +228,12 @@ export function ContractPanel({
                 >
                   納品書を発行する
                 </Link>
+                <Link
+                  href={`/ledger/${offeringId}/proposals/${threadId}/document?type=receipt`}
+                  className={btn("secondary", "sm")}
+                >
+                  領収書を発行する
+                </Link>
               </div>
             </>
           )}

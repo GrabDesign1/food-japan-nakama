@@ -39,12 +39,13 @@ export function taxBreakdown(including: number, rate: TaxRate): TaxBreakdown {
 }
 
 /** 帳票番号。保存せず毎回同じ値になるよう、発行対象のIDから決定的に作る。 */
-export function documentNo(kind: "invoice" | "delivery", offerId: string, issuedAt: Date): string {
+export function documentNo(kind: "invoice" | "delivery" | "receipt", offerId: string, issuedAt: Date): string {
   const y = issuedAt.getFullYear();
   const m = String(issuedAt.getMonth() + 1).padStart(2, "0");
   const d = String(issuedAt.getDate()).padStart(2, "0");
   const seq = offerId.slice(-6).toUpperCase();
-  return `${kind === "invoice" ? "INV" : "DLV"}-${y}${m}${d}-${seq}`;
+  const prefix = kind === "invoice" ? "INV" : kind === "receipt" ? "RCP" : "DLV";
+  return `${prefix}-${y}${m}${d}-${seq}`;
 }
 
 /**
