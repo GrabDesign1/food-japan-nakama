@@ -257,6 +257,16 @@ export default async function OfferingThreadPage({
           />
         </div>
 
+        {/* 返信（下書き・テンプレート・面談日程・添付。メッセージ画面と同じ） */}
+        <Composer
+          key={lastMessageId}
+          threadId={thread.id}
+          otherName={other?.name ?? "相手"}
+          initialDraft={draft?.body ?? ""}
+          initialTemplates={templates}
+          myCompanyName={me.name}
+          myPersonName={me.contactName || su.app.name}
+        />
         {/* 見送り・秘密保持契約・違反報告 */}
         <ThreadTools
           offeringId={offering.id}
@@ -285,16 +295,6 @@ export default async function OfferingThreadPage({
           }
         />
 
-        {/* 返信（下書き・テンプレート・面談日程・添付。メッセージ画面と同じ） */}
-        <Composer
-          key={lastMessageId}
-          threadId={thread.id}
-          otherName={other?.name ?? "相手"}
-          initialDraft={draft?.body ?? ""}
-          initialTemplates={templates}
-          myCompanyName={me.name}
-          myPersonName={me.contactName || su.app.name}
-        />
       </div>
     </div>
   );
