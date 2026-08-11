@@ -35,6 +35,8 @@ export type MemberData = {
   featureText: string | null;
   hasLicense: boolean;
   licenseName: string | null;
+  invoiceRegNo: string | null;
+  bankAccount: string | null;
   productItems: string | null;
   productVolume: string | null;
   equipmentText: string | null;
@@ -444,6 +446,33 @@ export function ProfileForm({ member }: { member: MemberData }) {
               className={inputCls}
             />
           ) : null}
+        </div>
+
+        {/* 請求書の作成に使う項目（任意）。記入率には影響しない */}
+        <div className="flex flex-col gap-2 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-4">
+          <div className="text-[13px] font-bold text-[var(--ink)]">請求書に使う情報（任意）</div>
+          <p className="text-[11px] leading-5 text-[var(--muted)]">
+            取引が成立したあとに納品書・請求書を作るときだけ使います。
+            相手に見えるのは、あなたが発行した書類の上だけです。
+          </p>
+          <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+            適格請求書発行事業者の登録番号
+            <input
+              name="invoiceRegNo"
+              defaultValue={member.invoiceRegNo ?? ""}
+              placeholder="T1234567890123（未登録の場合は空欄のまま）"
+              className={inputCls}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+            振込先
+            <input
+              name="bankAccount"
+              defaultValue={member.bankAccount ?? ""}
+              placeholder="例：○○銀行 △△支店 普通 1234567 カ）グラブデザイン"
+              className={inputCls}
+            />
+          </label>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

@@ -98,6 +98,9 @@ export type ProfileInput = {
   featureText: string;
   hasLicense: boolean;
   licenseName: string;
+  /** 請求書の作成に使う。記入率（RATE_FIELDS）には含めない＝任意項目 */
+  invoiceRegNo: string;
+  bankAccount: string;
   productItems: string;
   productVolume: string;
   equipmentText: string;

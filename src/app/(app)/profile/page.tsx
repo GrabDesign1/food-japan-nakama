@@ -33,6 +33,8 @@ export default async function ProfilePage() {
     featureText: member.featureText,
     hasLicense: member.hasLicense,
     licenseName: member.licenseName,
+    invoiceRegNo: member.invoiceRegNo,
+    bankAccount: member.bankAccount,
     productItems: member.productItems,
     productVolume: member.productVolume,
     equipmentText: member.equipmentText,

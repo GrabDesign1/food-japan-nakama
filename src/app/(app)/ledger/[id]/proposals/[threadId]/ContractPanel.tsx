@@ -1,8 +1,10 @@
 "use client";
 
 // 取引条件の提示・同意（Phase 1）。お金は動かさず、当事者間の合意を記録するだけ。
+// 合意後は「発送・受け渡し完了」を記録でき、そこから納品書・請求書を作成できる。
 import { useActionState, useState } from "react";
-import { proposeContract, respondToContract, type OfferState } from "./actions";
+import Link from "next/link";
+import { proposeContract, respondToContract, completeContract, type OfferState } from "./actions";
 import { btn, h2Cls, input } from "@/lib/ui";
 
 export type OfferRow = {
@@ -14,6 +16,8 @@ export type OfferRow = {
   status: string;
   createdAt: string;
   respondedAt: string | null;
+  completedAt: string | null;
+  taxRate: number;
   fromMe: boolean;
   proposerName: string;
 };
@@ -42,9 +46,14 @@ function Row({ o }: { o: OfferRow }) {
           <span className="ml-0.5 text-[11px] font-normal text-[var(--muted)]">円（税込）</span>
         </div>
         <div className="mt-0.5 text-[12px] text-[var(--ink-2)]">
-          {o.quantityText ? `数量：${o.quantityText}　/　` : ""}
+          消費税{o.taxRate}%　/　{o.quantityText ? `数量：${o.quantityText}　/　` : ""}
           納品・完了：{o.deliveryDate ?? "未定"}
         </div>
+        {o.completedAt ? (
+          <div className="mt-1 text-[12px] font-bold text-[var(--green-d)]">
+            発送・受け渡し完了（{o.completedAt}）
+          </div>
+        ) : null}
         {o.terms ? (
           <p className="mt-1 whitespace-pre-wrap text-[12px] leading-5 text-[var(--muted)]">{o.terms}</p>
         ) : null}
@@ -61,10 +70,13 @@ export function ContractPanel({
   offeringId,
   threadId,
   offers,
+  defaultTaxRate = "10",
 }: {
   offeringId: string;
   threadId: string;
   offers: OfferRow[];
+  /** 案件の分類から決めた既定の税率（飲食料品は8%） */
+  defaultTaxRate?: "8" | "10";
 }) {
   const [open, setOpen] = useState(false);
   const pending = offers.find((o) => o.status === "proposed") ?? null;
@@ -80,6 +92,10 @@ export function ContractPanel({
   );
   const [declineState, declineAction, declining] = useActionState<OfferState, FormData>(
     respondToContract.bind(null, offeringId, threadId, pending?.id ?? "", "decline"),
+    {}
+  );
+  const [completeState, completeAction, completing] = useActionState<OfferState, FormData>(
+    completeContract.bind(null, offeringId, threadId, agreed?.id ?? ""),
     {}
   );
 
@@ -117,6 +133,54 @@ export function ContractPanel({
           まだ条件の提示はありません。金額・数量・納品予定日を提示すると、相手が同意できます。
         </p>
       )}
+
+      {/* 合意後：発送・受け渡しの完了を記録し、そこから帳票を作る */}
+      {agreed ? (
+        <div className="mt-3 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-4">
+          {!agreed.completedAt ? (
+            <>
+              <div className="text-[13px] font-bold text-[var(--ink)]">
+                商品の発送・受け渡しは終わりましたか？
+              </div>
+              <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+                記録するとやり取りに残り、相手にも通知されます。記録後に納品書・請求書を作成できます。
+              </p>
+              <form action={completeAction} className="mt-3">
+                <button disabled={completing} className={`${btn("action")} disabled:opacity-50`}>
+                  {completing ? "処理中…" : "発送・受け渡し完了"}
+                </button>
+              </form>
+              {completeState.error ? (
+                <p className="mt-2 text-[12px] text-[var(--red)]">{completeState.error}</p>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div className="text-[13px] font-bold text-[var(--green-d)]">
+                発送・受け渡し完了（{agreed.completedAt}）
+              </div>
+              <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+                合意した内容から帳票を作成できます。印刷画面からPDFとして保存し、相手へお送りください。
+                <b>NAKAMAは請求も代金の受け取りも行いません。</b>
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href={`/ledger/${offeringId}/proposals/${threadId}/document?type=invoice`}
+                  className={btn("primary", "sm")}
+                >
+                  請求書を発行する
+                </Link>
+                <Link
+                  href={`/ledger/${offeringId}/proposals/${threadId}/document?type=delivery`}
+                  className={btn("secondary", "sm")}
+                >
+                  納品書を発行する
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
 
       {/* 相手からの提示に回答する */}
       {pending && !pending.fromMe ? (
@@ -180,6 +244,13 @@ export function ContractPanel({
                   placeholder="例：20kg × 4回"
                   className={`${input()} w-[200px]`}
                 />
+              </label>
+              <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+                消費税率
+                <select name="taxRate" defaultValue={defaultTaxRate} className={`${input()} w-[190px]`}>
+                  <option value="8">8%（飲食料品・軽減税率）</option>
+                  <option value="10">10%（標準税率）</option>
+                </select>
               </label>
               <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
                 納品・完了の予定日（任意）

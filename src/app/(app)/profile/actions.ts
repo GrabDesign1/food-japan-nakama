@@ -232,6 +232,8 @@ export async function saveProfile(
     featureText: gl("featureText"),
     hasLicense: g("hasLicense") === "yes",
     licenseName: g("hasLicense") === "yes" ? g("licenseName") : "",
+    invoiceRegNo: g("invoiceRegNo"),
+    bankAccount: g("bankAccount"),
     productItems: gl("productItems"),
     productVolume: gl("productVolume"),
     equipmentText: gl("equipmentText"),

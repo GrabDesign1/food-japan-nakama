@@ -130,6 +130,11 @@ model Member {
   hasLicense  Boolean @default(false) @map("has_license") // 許認可あり/なし
   licenseName String? @map("license_name")                // 許認可名
 
+  /// 適格請求書発行事業者の登録番号（T+13桁）。請求書の作成に使う。未登録（免税事業者）は空のまま
+  invoiceRegNo String? @map("invoice_reg_no")
+  /// 請求書に印字する振込先（銀行名・支店・種別・番号・名義を1行で）。NAKAMAは代金を預からない
+  bankAccount  String? @map("bank_account")
+
   productItems  String? @map("product_items")  // 生産品目名（例：リーフレタス、ネギ、ブロッコリー）
   productVolume String? @map("product_volume") // 生産量（例：露地2ha／各品目50ケース/週）
 
@@ -533,10 +538,15 @@ model ContractOffer {
   deliveryDate     DateTime? @map("delivery_date")
   /// 内容・条件の補足
   terms            String?
+  /// 消費税率（8＝軽減税率の飲食料品／10＝標準）。請求書の税率区分に使う
+  taxRate          Int?      @map("tax_rate")
   /// proposed（提示中）／accepted（合意）／declined（辞退）／superseded（新しい提示に置き換え）
   status           String    @default("proposed")
   respondedAt      DateTime? @map("responded_at")
   respondedBy      String?   @map("responded_by")
+  /// 発送・受け渡しが完了した日時（合意後に当事者が記録する）
+  completedAt      DateTime? @map("completed_at")
+  completedBy      String?   @map("completed_by")
   createdAt        DateTime  @default(now()) @map("created_at")
 
   thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
