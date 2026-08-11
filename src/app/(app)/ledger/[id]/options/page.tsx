@@ -166,7 +166,19 @@ export default async function ListingOptionsPage({
             この案件は<b>下書き（非公開）</b>のため購入できません。先に無料で公開してください。
           </div>
         ) : (
-          <BuyOptionButton offeringId={offering.id} code={p.code} label="購入する（Stripe決済へ）" />
+          <BuyOptionButton
+            offeringId={offering.id}
+            code={p.code}
+            label="購入する（内容を確認）"
+            productName={p.name}
+            offeringTitle={offering.title}
+            amount={discounted}
+            listAmount={p.priceAmount}
+            durationDays={p.durationDays}
+            requiresReview={p.requiresReview}
+            unitLimit={p.unitLimit}
+            effectType={p.effectType}
+          />
         )}
       </div>
     );
