@@ -57,8 +57,8 @@ export async function sendProposal(
   const body = String(formData.get("message") ?? "").trim().slice(0, MESSAGE_MAX);
   if (!body) return { error: "提案内容を入力してください。" };
 
-  // ビジネス会員も提案チケットを消費する（毎月20件付与・繰越なし。2026-08-11確定）。
-  // 会員特典は「追加チケットと掲載オプションの20%割引」に集約した。
+  // ビジネス会員も提案チケットを消費する（毎月30件付与・繰越なし。2026-08-11確定）。
+  // 会員特典は「毎月の付与」と「追加チケット（1件購入）・掲載オプションの20%割引」に集約した。
   const tier = pricingTierFor(offering.verifiedLeadAt, new Date());
   const creditType = creditTypeForTier(tier);
 

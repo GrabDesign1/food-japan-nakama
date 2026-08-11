@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
         if (!memberId) break;
         await markPaid(memberId, { customerId: idOf(invoice.customer) });
 
-        // ビジネス会員の月次チケット（20件・繰越なし）を請求書ごとに一度だけ付与する
+        // ビジネス会員の月次チケット（30件・繰越なし）を請求書ごとに一度だけ付与する
         const member = await prisma.member.findUnique({
           where: { id: memberId },
           select: { tenantId: true },

@@ -36,8 +36,10 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   // 初回紹介料・クレジット
   { code: "contact_unlock_standard", name: "通常案件・1件紹介", description: "「探している（調達したい）」案件1件・1相手への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock", priceAmount: 1100, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 10 },
   { code: "contact_unlock_verified_lead", name: "NAKAMA確認済み優良案件・1件紹介", description: "事務局確認済みの優良案件への初回提案", billingType: "one_time", audience: "sell", effectType: "contact_unlock_verified", priceAmount: 3300, unitLimit: 1, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 11 },
-  { code: "contact_credits_5", name: "紹介クレジット5件パック", description: "有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 4400, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 5, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 12 },
-  { code: "contact_credits_10", name: "紹介クレジット10件パック", description: "有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 7700, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 10, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 13 },
+  // パックは「まとめ買いの手間を省く」ためのもので、単価は1件1,100円と同じ（2026-08-11 価格整合）。
+  // まとめ買い割引を残すと、会費（22,000円で30件＝733円/件）より安く買えて会員プランが破綻する。
+  { code: "contact_credits_5", name: "紹介クレジット5件パック", description: "1件1,100円×5件・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 5500, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 5, memberDiscountPercent: 0, sortOrder: 12 },
+  { code: "contact_credits_10", name: "紹介クレジット10件パック", description: "1件1,100円×10件・有効期限180日", billingType: "one_time", audience: "sell", effectType: "contact_credits", priceAmount: 11000, durationDays: CREDIT_PACK_EXPIRY_DAYS, unitLimit: 10, memberDiscountPercent: 0, sortOrder: 13 },
   // 掲載オプション（売りたい（提供したい））
   { code: "sell_featured_7d", name: "注目表示", description: "一覧のスポンサー枠に7日間表示（広告表記つき）", billingType: "one_time", audience: "sell", effectType: "featured", priceAmount: 5500, durationDays: 7, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 20 },
   { code: "sell_top_pr_7d", name: "最上部PR", description: "対象ページ上部のスポンサー枠に7日間表示（審査あり）", billingType: "one_time", audience: "sell", effectType: "top_pr", priceAmount: 22000, durationDays: 7, requiresReview: true, memberDiscountPercent: MEMBER_OPTION_DISCOUNT_PERCENT, sortOrder: 21 },

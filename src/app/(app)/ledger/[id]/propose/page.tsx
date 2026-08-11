@@ -72,7 +72,7 @@ export default async function ProposePage({
   const price = (p: { priceAmount: number; memberDiscountPercent: number } | undefined) =>
     p ? discountedUnitAmount(p.priceAmount, p.memberDiscountPercent, isMember) : null;
 
-  // ビジネス会員もチケットを消費する（毎月20件付与）。無料で送れるのは解放済みの案件だけ。
+  // ビジネス会員もチケットを消費する（毎月30件付与）。無料で送れるのは解放済みの案件だけ。
   const canSendFree = !!existingUnlock;
 
   return (
@@ -141,7 +141,7 @@ export default async function ProposePage({
                   </span>
                   <span className="text-[var(--muted)]">
                     残高：{balance}件
-                    {isMember ? "（ビジネス会員：毎月20件付与・繰越なし）" : ""}
+                    {isMember ? "（ビジネス会員：毎月30件付与・繰越なし）" : ""}
                   </span>
                 </>
               )}
@@ -174,7 +174,7 @@ export default async function ProposePage({
                 />
               )}
               <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-                NAKAMAビジネス会員（22,000円・税込／月）は毎月20件の提案チケットが付与され、追加チケットと掲載オプションが20%割引になります。
+                NAKAMAビジネス会員（22,000円・税込／月）は毎月30件の提案チケットが付与され（1件あたり733円・繰越なし）、追加チケット（1件購入）と掲載オプションが20%割引になります。月に20件以上提案する場合は会員のほうが安く済みます。
                 <Link href="/billing" className="ml-1 text-[var(--green-d)] underline">詳しく見る →</Link>
               </p>
             </div>
