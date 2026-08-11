@@ -260,6 +260,8 @@ export default async function OfferingDetailPage({
       </div>
 
       {/* ヒーロー画像 */}
+      {/* 写真が無い場合はヒーロー枠ごと出さない（アイコンだけの大きな空白を作らない。
+          売りたい・探しているとも同じ扱い。2026-08-11 ユーザー指定） */}
       {hero ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -267,11 +269,7 @@ export default async function OfferingDetailPage({
           alt=""
           className="max-h-[440px] w-full rounded-xl border border-[var(--line)] object-cover"
         />
-      ) : (
-        <div className="grid aspect-[16/9] w-full place-items-center rounded-xl border border-[var(--line)] bg-[var(--green-soft)] text-[64px] opacity-60">
-          {meta?.icon ?? "📦"}
-        </div>
-      )}
+      ) : null}
 
       {/* 情報表 */}
       <div className="overflow-hidden rounded-[10px] border border-[var(--line)]">
