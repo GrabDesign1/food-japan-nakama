@@ -1,43 +1,73 @@
 "use client";
 
 // 帳票の画面上だけのツールバー（印刷では消える）。
-// 支払期限・備考は帳票に反映するだけで保存しない（保存すると電子帳簿保存法の要件を負うため）。
+// ここで入れた値は帳票に反映するだけで保存しない（保存すると電子帳簿保存法の要件を負うため）。
 import { useState } from "react";
 import { btn, input } from "@/lib/ui";
 
-export type DocExtra = { dueText: string; note: string; receivedOn: string; purpose: string };
+export type DocExtra = {
+  /** 書類番号。既定は自動採番。手で書き換えられる（自社の採番規則に合わせるため） */
+  docNo: string;
+  /** 発行日（納品書・請求書で入力。空なら今日） */
+  issuedOn: string;
+  /** 請求書：お支払い期限 */
+  dueText: string;
+  /** 領収書：代金を受け取った日 */
+  receivedOn: string;
+  /** 領収書：但し書き */
+  purpose: string;
+  note: string;
+};
+
+const LABEL: Record<"invoice" | "delivery" | "receipt", string> = {
+  invoice: "請求書番号",
+  delivery: "納品書番号",
+  receipt: "領収書番号",
+};
 
 export function DocumentTools({
   kind,
+  defaultDocNo,
   onChange,
 }: {
   kind: "invoice" | "delivery" | "receipt";
+  defaultDocNo: string;
   onChange: (v: DocExtra) => void;
 }) {
-  const [v, setV] = useState<DocExtra>({ dueText: "", note: "", receivedOn: "", purpose: "" });
+  const [v, setV] = useState<DocExtra>({
+    docNo: defaultDocNo,
+    issuedOn: "",
+    dueText: "",
+    receivedOn: "",
+    purpose: "",
+    note: "",
+  });
   const set = (patch: Partial<DocExtra>) => {
     const next = { ...v, ...patch };
     setV(next);
     onChange(next);
   };
 
+  const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
+
   return (
     <div className="print:hidden mb-4 rounded-[10px] border border-[var(--line)] bg-[#FAFBF9] p-4">
       <div className="flex flex-wrap items-end gap-3">
-        {kind === "invoice" ? (
-          <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-            お支払い期限（任意）
+        {kind !== "receipt" ? (
+          <label className={labelCls}>
+            発行日
             <input
-              value={v.dueText}
-              onChange={(e) => set({ dueText: e.target.value })}
-              placeholder="例：2026年9月30日"
+              value={v.issuedOn}
+              onChange={(e) => set({ issuedOn: e.target.value })}
+              placeholder="例：2026年9月5日（空欄なら本日）"
               className={`${input("sm")} w-[220px]`}
             />
           </label>
         ) : null}
+
         {kind === "receipt" ? (
           <>
-            <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+            <label className={labelCls}>
               代金を受け取った日
               <input
                 value={v.receivedOn}
@@ -46,7 +76,7 @@ export function DocumentTools({
                 className={`${input("sm")} w-[200px]`}
               />
             </label>
-            <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+            <label className={labelCls}>
               但し書き
               <input
                 value={v.purpose}
@@ -57,7 +87,33 @@ export function DocumentTools({
             </label>
           </>
         ) : null}
-        <label className="flex flex-1 flex-col gap-1 text-[12px] text-[var(--ink-2)]">
+
+        {kind === "invoice" ? (
+          <label className={labelCls}>
+            お支払い期限（任意）
+            <input
+              value={v.dueText}
+              onChange={(e) => set({ dueText: e.target.value })}
+              placeholder="例：2026年9月30日"
+              className={`${input("sm")} w-[220px]`}
+            />
+          </label>
+        ) : null}
+
+        <label className={labelCls}>
+          {LABEL[kind]}（自動採番・変更できます）
+          <input
+            value={v.docNo}
+            onChange={(e) => set({ docNo: e.target.value })}
+            className={`${input("sm")} w-[220px]`}
+          />
+        </label>
+
+      </div>
+
+      {/* 備考は長くなるので独立した行にする */}
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className={`${labelCls} min-w-[260px] flex-1`}>
           備考（任意）
           <input
             value={v.note}
@@ -66,6 +122,7 @@ export function DocumentTools({
             className={`${input("sm")} w-full`}
           />
         </label>
+
         <button type="button" onClick={() => window.print()} className={btn("primary", "sm")}>
           印刷 / PDFで保存
         </button>

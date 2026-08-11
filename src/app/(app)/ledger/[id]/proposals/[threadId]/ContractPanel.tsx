@@ -6,7 +6,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { proposeContract, respondToContract, markDelivery, type OfferState } from "./actions";
-import { btn, h2Cls, input } from "@/lib/ui";
+import { btn, h2Cls, h2FormCls, input } from "@/lib/ui";
 
 export type OfferRow = {
   id: string;
@@ -31,6 +31,55 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   declined: { label: "見送り", cls: "bg-[var(--red-soft)] text-[var(--red)]" },
   superseded: { label: "置き換え", cls: "bg-[var(--line)] text-[var(--ink-2)]" },
 };
+
+const ISSUE_NOTE =
+  "入力した内容は保存されません。印刷ダイアログで「PDFに保存」を選ぶとファイル保存し、その後、ご自身で相手先へご送付ください。";
+
+/**
+ * 確認モーダル。押し間違いを防ぐため、記録も帳票の発行も一度確認してから実行する。
+ * children に実行側のボタン（form の submit でも Link でも）を入れる。
+ */
+function ConfirmModal({
+  trigger,
+  title,
+  note,
+  cancelLabel,
+  children,
+}: {
+  trigger: (open: () => void) => React.ReactNode;
+  title: string;
+  note?: string;
+  cancelLabel: string;
+  children: (close: () => void) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      {trigger(() => setOpen(true))}
+      {open ? (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-[420px] rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-xl"
+          >
+            <h2 className={h2FormCls}>{title}</h2>
+            {note ? (
+              <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">{note}</p>
+            ) : null}
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => setOpen(false)} className={btn("secondary", "sm")}>
+                {cancelLabel}
+              </button>
+              {children(() => setOpen(false))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
 
 function Row({ o }: { o: OfferRow }) {
   const s = STATUS_LABEL[o.status] ?? STATUS_LABEL.superseded;
@@ -171,11 +220,28 @@ export function ContractPanel({
                       ✓ 記録済み（{agreed.shippedAt}）
                     </div>
                   ) : viewerRole === "seller" ? (
-                    <form action={shipAction} className="mt-2">
-                      <button disabled={shipping} className={`${btn("action", "sm")} disabled:opacity-50`}>
-                        {shipping ? "処理中…" : "発送しました"}
-                      </button>
-                    </form>
+                    <ConfirmModal
+                      title="確実に相手へ発送（お届け）しましたか？"
+                      cancelLabel="まだしていない"
+                      trigger={(openModal) => (
+                        <button
+                          type="button"
+                          onClick={openModal}
+                          className={`${btn("action", "sm")} mt-2 disabled:opacity-50`}
+                          disabled={shipping}
+                        >
+                          {shipping ? "処理中…" : "発送しました"}
+                        </button>
+                      )}
+                    >
+                      {(close) => (
+                        <form action={shipAction} onSubmit={() => close()}>
+                          <button disabled={shipping} className={`${btn("action", "sm")} disabled:opacity-50`}>
+                            発送した
+                          </button>
+                        </form>
+                      )}
+                    </ConfirmModal>
                   ) : (
                     <div className="mt-2 text-[12px] text-[var(--muted)]">お相手の記録待ちです。</div>
                   )}
@@ -192,11 +258,28 @@ export function ContractPanel({
                       ✓ 記録済み（{agreed.receivedAt}）
                     </div>
                   ) : viewerRole === "buyer" ? (
-                    <form action={recvAction} className="mt-2">
-                      <button disabled={receiving} className={`${btn("action", "sm")} disabled:opacity-50`}>
-                        {receiving ? "処理中…" : "受け取りました"}
-                      </button>
-                    </form>
+                    <ConfirmModal
+                      title="確実に受け取りましたか？"
+                      cancelLabel="まだ確認出来ていない"
+                      trigger={(openModal) => (
+                        <button
+                          type="button"
+                          onClick={openModal}
+                          className={`${btn("action", "sm")} mt-2 disabled:opacity-50`}
+                          disabled={receiving}
+                        >
+                          {receiving ? "処理中…" : "受け取りました"}
+                        </button>
+                      )}
+                    >
+                      {(close) => (
+                        <form action={recvAction} onSubmit={() => close()}>
+                          <button disabled={receiving} className={`${btn("action", "sm")} disabled:opacity-50`}>
+                            受け取った！
+                          </button>
+                        </form>
+                      )}
+                    </ConfirmModal>
                   ) : (
                     <div className="mt-2 text-[12px] text-[var(--muted)]">お相手の記録待ちです。</div>
                   )}
@@ -216,24 +299,34 @@ export function ContractPanel({
                 <b>NAKAMAは請求も代金の受け取りも行いません。</b>
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Link
-                  href={`/ledger/${offeringId}/proposals/${threadId}/document?type=invoice`}
-                  className={btn("primary", "sm")}
-                >
-                  請求書を発行する
-                </Link>
-                <Link
-                  href={`/ledger/${offeringId}/proposals/${threadId}/document?type=delivery`}
-                  className={btn("secondary", "sm")}
-                >
-                  納品書を発行する
-                </Link>
-                <Link
-                  href={`/ledger/${offeringId}/proposals/${threadId}/document?type=receipt`}
-                  className={btn("secondary", "sm")}
-                >
-                  領収書を発行する
-                </Link>
+                {(
+                  [
+                    { type: "invoice", label: "請求書", variant: "primary" as const },
+                    { type: "delivery", label: "納品書", variant: "secondary" as const },
+                    { type: "receipt", label: "領収書", variant: "secondary" as const },
+                  ]
+                ).map((d) => (
+                  <ConfirmModal
+                    key={d.type}
+                    title={`${d.label}を発行してもよいですか？`}
+                    note={ISSUE_NOTE}
+                    cancelLabel="発行しない"
+                    trigger={(openModal) => (
+                      <button type="button" onClick={openModal} className={btn(d.variant, "sm")}>
+                        {d.label}を発行する
+                      </button>
+                    )}
+                  >
+                    {() => (
+                      <Link
+                        href={`/ledger/${offeringId}/proposals/${threadId}/document?type=${d.type}`}
+                        className={btn("primary", "sm")}
+                      >
+                        発行する
+                      </Link>
+                    )}
+                  </ConfirmModal>
+                ))}
               </div>
             </>
           )}

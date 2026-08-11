@@ -9,9 +9,13 @@
 
 export type TaxRate = 8 | 10;
 
-/** 税率の既定＝飲食料品は軽減8%、それ以外は10%。カテゴリから推定する。 */
-export function defaultTaxRate(category: string | null | undefined): TaxRate {
-  return category === "食材・原料" ? 8 : 10;
+/**
+ * 税率の既定は **10%（標準税率）**。
+ * 飲食料品でも、送料・資材・役務が混ざると軽減税率にならないことがあるため、
+ * 8%（軽減税率）は提示する人が明示的に選ぶ。カテゴリからの自動判定はしない。
+ */
+export function defaultTaxRate(_category?: string | null): TaxRate {
+  return 10;
 }
 
 export function normalizeTaxRate(v: number | null | undefined, fallback: TaxRate = 10): TaxRate {

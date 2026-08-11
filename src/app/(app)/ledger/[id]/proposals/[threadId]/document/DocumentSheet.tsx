@@ -29,7 +29,14 @@ export type DocumentData = {
 const yen = (n: number) => `${n.toLocaleString()} 円`;
 
 export function DocumentSheet({ data }: { data: DocumentData }) {
-  const [extra, setExtra] = useState<DocExtra>({ dueText: "", note: "", receivedOn: "", purpose: "" });
+  const [extra, setExtra] = useState<DocExtra>({
+    docNo: data.docNo,
+    issuedOn: "",
+    dueText: "",
+    receivedOn: "",
+    purpose: "",
+    note: "",
+  });
   const isInvoice = data.kind === "invoice";
   const isReceipt = data.kind === "receipt";
   // 金額の内訳を出すのは請求書と領収書（納品書は数量と品名だけ）
@@ -40,7 +47,7 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
     <div className="mx-auto max-w-[820px]">
       <style>{`@page { size: A4; margin: 14mm; }`}</style>
 
-      <DocumentTools kind={data.kind} onChange={setExtra} />
+      <DocumentTools kind={data.kind} defaultDocNo={data.docNo} onChange={setExtra} />
 
       {/* 売り手に足りない項目があれば画面上だけで知らせる */}
       {showMoney && data.viewerIsSeller && (!data.regNoOk || (isInvoice && !data.seller.bank)) ? (
@@ -70,11 +77,11 @@ export function DocumentSheet({ data }: { data: DocumentData }) {
         <div className="mt-6 flex justify-between text-[12px]">
           <div>
             <div className="text-[11px] text-[var(--muted)]">{isInvoice ? "請求書番号" : isReceipt ? "領収書番号" : "納品書番号"}</div>
-            <div>{data.docNo}</div>
+            <div>{extra.docNo || data.docNo}</div>
           </div>
           <div className="text-right">
             <div className="text-[11px] text-[var(--muted)]">発行日</div>
-            <div>{data.issuedAt}</div>
+            <div>{extra.issuedOn || data.issuedAt}</div>
           </div>
         </div>
 
