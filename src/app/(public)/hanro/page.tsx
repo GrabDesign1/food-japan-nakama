@@ -37,8 +37,15 @@ const SESSION_DELIVERABLES = [
   "90日間のアクションプラン",
 ];
 
-const SESSION_FINAL_DELIVERABLE = [
-  "商品・販路戦略書（PDF／目安8〜12ページ）",
+// 最終成果物「商品・販路戦略書」に記載する項目
+const SESSION_REPORT_CONTENTS = [
+  "商品・販売条件の現状整理",
+  "商品の強みと訴求ポイント",
+  "想定顧客・利用場面",
+  "優先して狙う販路と選定理由",
+  "販路ごとの提案方針",
+  "販路開拓前に改善すべき課題",
+  "90日間のアクションプラン",
 ];
 
 const SESSION_EXCLUDED = [
@@ -148,7 +155,16 @@ export default function SalesChannelPage() {
         <Block title="こんな方におすすめ"><List items={SESSION_FOR} /></Block>
         <Block title="実施する業務"><List items={SESSION_WORK} /></Block>
         <Block title="実施後に共有するもの"><List items={SESSION_DELIVERABLES} /></Block>
-        <Block title="最終成果物"><List items={SESSION_FINAL_DELIVERABLE} /></Block>
+        <Block title="最終成果物">
+          <p className="mt-2 text-[13px] font-semibold leading-6 text-[var(--ink)]">
+            商品・販路戦略書（PDF／目安8〜12ページ）
+          </p>
+          <List items={SESSION_REPORT_CONTENTS} />
+          <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+            なお、準委任契約にする場合も、契約書には次のように定められます。業務遂行の結果を報告する資料として、「商品・販路戦略書」を作成し、PDF形式で共有します。
+            本資料は、売上、商談、商品採用その他の成果を保証するものではありません。
+          </p>
+        </Block>
         <Block title="含まれないもの"><List items={SESSION_EXCLUDED} /></Block>
 
         <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
