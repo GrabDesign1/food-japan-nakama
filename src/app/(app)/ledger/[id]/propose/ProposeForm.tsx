@@ -9,7 +9,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { sendProposal, buyProposalProduct, uploadProposalAttachment, type ProposeState } from "./actions";
 import { createTemplate, deleteTemplate } from "../../../messages/actions";
 import { DEFAULT_TEMPLATES, Modal, formatBytes } from "../../../messages/_components/Composer";
-import { btn, h2Cls } from "@/lib/ui";
+import { btn } from "@/lib/ui";
 
 type Template = { id: string; name: string; body: string };
 
@@ -62,7 +62,7 @@ function SendForm({
   const draftKey = `nakama.proposeDraft.${offeringId}`;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [modal, setModal] = useState<null | "template" | "schedule" | "file">(null);
+  const [modal, setModal] = useState<null | "template" | "schedule">(null);
   const [creating, setCreating] = useState(false);
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
   const [attachment, setAttachment] = useState<{ url: string; name: string; size: number } | null>(null);
@@ -70,11 +70,8 @@ function SendForm({
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  // 添付モーダル（アップロード完了後に開く）
+  // 添付のプレビュー（画像はローカルURLでその場に出す。モーダルは出さない＝2026-08-11 ユーザー指示）
   const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [fileBaseName, setFileBaseName] = useState("");
-  const [fileExt, setFileExt] = useState("");
-  const [fileMessage, setFileMessage] = useState("");
 
   // 面談日程
   const [rows, setRows] = useState([{ date: "", start: "", end: "" }]);
@@ -130,9 +127,6 @@ function SendForm({
     fd.append("file", file);
     // 画像はその場でプレビューできるようにローカルURLを作る（アップロード結果は非公開URLのため）
     const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
-    const dot = file.name.lastIndexOf(".");
-    setFileBaseName(dot > 0 ? file.name.slice(0, dot) : file.name);
-    setFileExt(dot > 0 ? file.name.slice(dot) : "");
     setUploading(true);
     startTransition(async () => {
       const res = await uploadProposalAttachment(offeringId, fd);
@@ -144,33 +138,20 @@ function SendForm({
         return;
       }
       if (res.url && res.name) {
+        // 前の添付のプレビューURLは破棄する（添付し直しでも増えないように）
+        if (filePreview) URL.revokeObjectURL(filePreview);
         setAttachment({ url: res.url, name: res.name, size: res.size ?? 0 });
         setFilePreview(localPreview);
-        setFileMessage("");
-        setModal("file");
+        showToast("提案に添付しました");
       }
     });
   }
 
-  /** 添付モーダルを閉じる（添付しないで閉じた場合は破棄する）。 */
-  function closeFileModal(keepAttachment: boolean) {
+  /** 添付を取り消す。 */
+  function clearAttachment() {
     if (filePreview) URL.revokeObjectURL(filePreview);
     setFilePreview(null);
-    setModal(null);
-    if (!keepAttachment) setAttachment(null);
-  }
-
-  /**
-   * 添付を確定する。メッセージ画面はここで即送信するが、提案は送信でクレジットを消費するため、
-   * ファイルは提案文と一緒に送る（モーダルで書いた文章は提案文の末尾に足す）。
-   */
-  function onAttachFile() {
-    if (!attachment) return;
-    const name = `${fileBaseName.trim() || "file"}${fileExt}`;
-    setAttachment({ ...attachment, name });
-    if (fileMessage.trim()) appendText(fileMessage.trim());
-    closeFileModal(true);
-    showToast("提案に添付しました");
+    setAttachment(null);
   }
 
   function onCreateTemplate() {
@@ -242,19 +223,31 @@ function SendForm({
           </div>
         ) : null}
 
+        {/* 添付は提案文のすぐ下に出す（画像はそのままプレビュー）。相手にも同じ形で届く */}
         {attachment ? (
-          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-[var(--green)] bg-white px-3 py-2 text-[12px]">
-            <span className="font-semibold text-[var(--green-d)]">📎 {attachment.name}</span>
-            <span className="text-[11px] text-[var(--ink-2)]">
-              を添付しました（{formatBytes(attachment.size)}・提案を送信すると相手に届きます）
-            </span>
-            <button
-              type="button"
-              onClick={() => setAttachment(null)}
-              className="ml-auto text-[var(--red)] underline"
-            >
-              取り消す
-            </button>
+          <div className="mt-2 rounded-[10px] border border-[var(--green)] bg-white p-3">
+            {filePreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={filePreview}
+                alt={attachment.name}
+                className="mb-2 max-h-[220px] w-auto rounded object-contain"
+              />
+            ) : (
+              <div className="mb-2 text-[28px] leading-none">📄</div>
+            )}
+            <div className="flex flex-wrap items-center gap-2 text-[12px]">
+              <span className="break-all text-[var(--ink)]">
+                {attachment.name}
+                <span className="text-[var(--muted)]">（{formatBytes(attachment.size)}）</span>
+              </span>
+              <button type="button" onClick={clearAttachment} className="shrink-0 text-[var(--red)] underline">
+                取り消す
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              提案を送信すると相手に届きます（相手はプレビューとダウンロードができます）。
+            </p>
             <input type="hidden" name="attachmentUrl" value={attachment.url} />
             <input type="hidden" name="attachmentName" value={attachment.name} />
             <input type="hidden" name="attachmentSize" value={attachment.size} />
@@ -303,82 +296,6 @@ function SendForm({
           ) : null}
         </div>
       </form>
-
-      {/* 添付ファイルの確認（アップロード完了後に開く。メッセージ画面と同じ内容） */}
-      {modal === "file" && attachment ? (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => !pending && closeFileModal(false)} />
-          <div className="relative z-10 flex max-h-[86vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[12px] bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3.5">
-              <h2 className={h2Cls}>ファイルの添付</h2>
-              <button
-                type="button"
-                onClick={() => !pending && closeFileModal(false)}
-                className="text-[20px] leading-none text-[var(--muted)] hover:text-[var(--ink)]"
-                aria-label="閉じる"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-                ファイルに関するメッセージ（任意・提案文の末尾に追加します）
-                <textarea
-                  autoFocus
-                  rows={3}
-                  value={fileMessage}
-                  onChange={(e) => setFileMessage(e.target.value)}
-                  placeholder="例：規格書をお送りします。ご確認ください。"
-                  className="rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
-                />
-              </label>
-
-              <label className="mt-4 flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-                ファイル名
-                <span className="flex items-center gap-2">
-                  <input
-                    value={fileBaseName}
-                    onChange={(e) => setFileBaseName(e.target.value)}
-                    className="min-w-0 flex-1 rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
-                  />
-                  <span className="shrink-0 text-[13px] text-[var(--muted)]">{fileExt}</span>
-                </span>
-              </label>
-
-              <div className="mt-4 grid place-items-center rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] p-4">
-                {filePreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={filePreview} alt="" className="max-h-[240px] w-auto object-contain" />
-                ) : (
-                  <div className="py-8 text-center text-[13px] text-[var(--muted)]">
-                    <div className="text-[28px]">📄</div>
-                    {fileBaseName}
-                    {fileExt}
-                  </div>
-                )}
-              </div>
-              <p className="mt-2 text-[11px] text-[var(--muted)]">
-                {formatBytes(attachment.size)}・このファイルは提案を送ったあと、相手だけが開けます。
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 border-t border-[var(--line)] px-5 py-3.5">
-              <button
-                type="button"
-                onClick={() => closeFileModal(false)}
-                disabled={pending}
-                className={btn("secondary")}
-              >
-                キャンセル
-              </button>
-              <button type="button" onClick={onAttachFile} disabled={pending} className={btn("primary")}>
-                この内容で添付する
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {/* トースト */}
       {toast ? (

@@ -155,6 +155,12 @@ export default async function ThreadPage({
                             >
                               プレビュー
                             </a>
+                            <a
+                              href={`/api/attachments/${msg.id}?download=1`}
+                              className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
+                            >
+                              ダウンロード
+                            </a>
                           </div>
                         </div>
                       ) : null}

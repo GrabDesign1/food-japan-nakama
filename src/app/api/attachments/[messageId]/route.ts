@@ -12,10 +12,12 @@ const BUCKET = "message-attachments";
 const SIGNED_URL_TTL_SEC = 60;
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ messageId: string }> }
 ) {
   const { messageId } = await params;
+  // ?download=1 のときは、ブラウザで開かずに保存させる（署名付きURLに Content-Disposition を付ける）
+  const wantsDownload = req.nextUrl.searchParams.get("download") === "1";
 
   const su = await getSessionUser();
   if (!su) return new NextResponse("unauthorized", { status: 401 });
@@ -23,7 +25,7 @@ export async function GET(
 
   const message = await prisma.message.findUnique({
     where: { id: messageId },
-    select: { id: true, attachmentUrl: true, threadId: true },
+    select: { id: true, attachmentUrl: true, attachmentName: true, threadId: true },
   });
   if (!message?.attachmentUrl) return new NextResponse("not found", { status: 404 });
 
@@ -35,7 +37,11 @@ export async function GET(
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.storage
     .from(BUCKET)
-    .createSignedUrl(message.attachmentUrl, SIGNED_URL_TTL_SEC);
+    .createSignedUrl(
+      message.attachmentUrl,
+      SIGNED_URL_TTL_SEC,
+      wantsDownload ? { download: message.attachmentName || true } : undefined
+    );
   if (error || !data?.signedUrl) {
     console.error("[attachments] 署名付きURLの発行に失敗:", error);
     return new NextResponse("not found", { status: 404 });
