@@ -101,7 +101,7 @@ export default async function ThreadPage({
               )}
             </div>
             <Link
-              href={`/producers/${otherId}`}
+              href={`/producers/${otherId}?from=${encodeURIComponent(`/messages/${id}`)}`}
               className="text-[17px] font-semibold text-[var(--ink)] hover:underline"
             >
               {other?.name || "（不明）"}

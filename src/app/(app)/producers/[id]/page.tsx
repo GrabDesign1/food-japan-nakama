@@ -8,13 +8,21 @@ import { views24hMap } from "@/lib/offering-views";
 import { toggleFavoriteMember } from "../actions";
 import { startConversation } from "../../messages/actions";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
+import { safeInternalPath } from "@/lib/security";
 
 export default async function ProducerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  // 呼び出し元（届いた提案の一覧など）から ?from= で戻り先を受け取る。
+  // 指定が無ければ従来どおり検索へ戻す。外部URLは safeInternalPath で弾く。
+  const sp = (await searchParams) ?? {};
+  const backHref = sp.from ? safeInternalPath(sp.from, "/search") : "/search";
+  const backLabel = backHref === "/search" ? "← 検索に戻る" : "← 戻る";
   const su = await getSessionUser();
   if (!su) redirect("/login");
 
@@ -89,8 +97,8 @@ export default async function ProducerDetailPage({
 
   return (
     <div className="mx-auto flex max-w-[820px] flex-col gap-6">
-      <Link href="/search" className="text-[12px] text-[var(--green-d)] underline">
-        ← 検索に戻る
+      <Link href={backHref} className="text-[12px] text-[var(--green-d)] underline">
+        {backLabel}
       </Link>
 
       {/* ヘッダー */}

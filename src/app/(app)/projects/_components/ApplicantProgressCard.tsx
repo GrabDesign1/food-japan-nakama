@@ -53,7 +53,11 @@ const STAGE_BADGE: Record<string, string> = {
   done: "bg-[var(--green-soft)] text-[var(--green-d)]",
 };
 
-export function ApplicantProgressCard({ app }: { app: ApplicantData }) {
+// backHref＝応募者名から事業者ページへ飛んだときの戻り先（未指定なら事業者ページの既定）
+export function ApplicantProgressCard({ app, backHref }: { app: ApplicantData; backHref?: string }) {
+  const producerHref = backHref
+    ? `/producers/${app.applicantMemberId}?from=${encodeURIComponent(backHref)}`
+    : `/producers/${app.applicantMemberId}`;
   const action = updateApplicationProgress.bind(null, app.applicationId);
   const [state, formAction, pending] = useActionState<ProjectState, FormData>(action, {});
   const [stage, setStage] = useState(app.progressStage);
@@ -64,7 +68,7 @@ export function ApplicantProgressCard({ app }: { app: ApplicantData }) {
       {/* ヘッダー：応募者・段階・期限アラート */}
       <div className="flex flex-wrap items-center gap-2">
         <Link
-          href={`/producers/${app.applicantMemberId}`}
+          href={producerHref}
           className="text-[15px] font-bold text-[var(--ink)] hover:underline"
         >
           {app.applicantName}
@@ -110,7 +114,7 @@ export function ApplicantProgressCard({ app }: { app: ApplicantData }) {
               メッセージを開く →
             </Link>
           ) : (
-            <Link href={`/producers/${app.applicantMemberId}`} className="text-[12px] font-bold text-[var(--green-d)] underline">
+            <Link href={producerHref} className="text-[12px] font-bold text-[var(--green-d)] underline">
               プロフィールを見て連絡する →
             </Link>
           )}

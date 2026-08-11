@@ -138,7 +138,7 @@ export default async function OfferingThreadPage({
           </div>
           <div className="min-w-0">
             <Link
-              href={`/producers/${otherId}`}
+              href={`/producers/${otherId}?from=${encodeURIComponent(`/ledger/${id}/proposals/${threadId}`)}`}
               className="text-[16px] font-semibold text-[var(--ink)] hover:underline"
             >
               {other?.name || "（名称未設定）"}

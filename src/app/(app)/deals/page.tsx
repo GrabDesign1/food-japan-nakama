@@ -167,7 +167,7 @@ export default async function DealsPage({
                         </span>
                       ) : null}
                     </div>
-                    <Link href={other ? `/producers/${other.id}` : "#"} className="text-[13px] font-semibold text-[var(--ink-2)] hover:underline">
+                    <Link href={other ? `/producers/${other.id}?from=%2Fdeals` : "#"} className="text-[13px] font-semibold text-[var(--ink-2)] hover:underline">
                       {other?.name || "（不明）"}
                     </Link>
                     <p className="mt-0.5 line-clamp-1 text-[12px] text-[var(--muted)]">

@@ -83,7 +83,7 @@ export default async function AdminReportsPage() {
                     案件を開く
                   </Link>
                 ) : r.targetType === "member" ? (
-                  <Link href={`/producers/${r.targetId}`} className="ml-1 text-[var(--green-d)] underline">
+                  <Link href={`/producers/${r.targetId}?from=%2Fadmin%2Freports`} className="ml-1 text-[var(--green-d)] underline">
                     事業者を開く
                   </Link>
                 ) : (

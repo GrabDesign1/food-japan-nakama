@@ -236,8 +236,9 @@ export function ProposalRows({
                       )}
                     </div>
                     <div className="min-w-0">
+                      {/* 事業者ページの戻り先をこの一覧にする（既定は /search で戻れなかった） */}
                       <Link
-                        href={`/producers/${r.otherId}`}
+                        href={`/producers/${r.otherId}?from=${encodeURIComponent(`/ledger/${offeringId}/proposals`)}`}
                         className="block max-w-[190px] truncate font-bold text-[var(--ink)] hover:text-[var(--green-d)] hover:underline"
                       >
                         {r.otherName}

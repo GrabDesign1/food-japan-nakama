@@ -60,7 +60,7 @@ export default async function DealBoardPage() {
                               (other?.name?.[0] ?? "?").toUpperCase()
                             )}
                           </div>
-                          <Link href={other ? `/producers/${other.id}` : "#"} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--ink)] hover:underline">
+                          <Link href={other ? `/producers/${other.id}?from=%2Fdeals%2Fboard` : "#"} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--ink)] hover:underline">
                             {other?.name || "（不明）"}
                           </Link>
                         </div>

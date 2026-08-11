@@ -178,7 +178,9 @@ export default async function ProjectApplicantsPage({
                 進行中の応募はありません。
               </p>
             ) : (
-              active.map((a) => <ApplicantProgressCard key={a.id} app={toData(a)} />)
+              active.map((a) => (
+                <ApplicantProgressCard key={a.id} app={toData(a)} backHref={`/projects/${id}/applicants`} />
+              ))
             )}
           </div>
 
@@ -189,7 +191,7 @@ export default async function ProjectApplicantsPage({
               </summary>
               <div className="mt-3 flex flex-col gap-4">
                 {closed.map((a) => (
-                  <ApplicantProgressCard key={a.id} app={toData(a)} />
+                  <ApplicantProgressCard key={a.id} app={toData(a)} backHref={`/projects/${id}/applicants`} />
                 ))}
               </div>
             </details>

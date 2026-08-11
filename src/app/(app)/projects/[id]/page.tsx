@@ -370,7 +370,7 @@ export default async function ProjectDetailPage({
             <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--green-soft)] text-[18px]">🏢</span>
           )}
           <div className="min-w-0">
-            <Link href={`/producers/${project.memberId}`} className="text-[14px] font-bold text-[var(--ink)] hover:underline">
+            <Link href={`/producers/${project.memberId}?from=${encodeURIComponent(`/projects/${project.id}`)}`} className="text-[14px] font-bold text-[var(--ink)] hover:underline">
               {owner?.name}
             </Link>
             <div className="text-[12px] text-[var(--muted)]">

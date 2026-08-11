@@ -118,7 +118,7 @@ export default async function FavoritesPage() {
               <h2 className={`${h2Cls} mb-3`}>企業</h2>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {members.map((m) => (
-                  <ProducerCard key={m.id} p={m} />
+                  <ProducerCard key={m.id} p={m} from="/favorites" />
                 ))}
               </div>
             </div>

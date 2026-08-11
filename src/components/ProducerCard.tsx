@@ -16,13 +16,23 @@ export type ProducerCardData = {
   description: string | null;
 };
 
-export function ProducerCard({ p, isOwn = false }: { p: ProducerCardData; isOwn?: boolean }) {
+// from＝事業者ページの「戻る」リンクの行き先。未指定なら事業者ページ側の既定（/search）に戻る。
+export function ProducerCard({
+  p,
+  isOwn = false,
+  from,
+}: {
+  p: ProducerCardData;
+  isOwn?: boolean;
+  from?: string;
+}) {
   const initial = (p.name?.[0] ?? "?").toUpperCase();
   const area = [p.prefecture, p.city].filter(Boolean).join(" ");
   const thumb = p.imageUrls?.[0] ?? p.avatarUrl ?? null;
+  const href = from ? `/producers/${p.id}?from=${encodeURIComponent(from)}` : `/producers/${p.id}`;
 
   return (
-    <Link href={`/producers/${p.id}`} className="group block transition-transform hover:-translate-y-0.5">
+    <Link href={href} className="group block transition-transform hover:-translate-y-0.5">
       <div
         className={`relative aspect-[4/3] overflow-hidden rounded-xl border bg-[var(--green-soft)] shadow-sm transition group-hover:shadow-md ${
           isOwn ? "border-2 border-[var(--amber)] ring-2 ring-[var(--amber-soft)]" : "border-[var(--line)] group-hover:border-[var(--green)]"
