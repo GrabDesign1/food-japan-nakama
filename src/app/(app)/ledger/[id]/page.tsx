@@ -18,8 +18,12 @@ import {
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
-import { toggleFavorite } from "../../favorites/actions";
+import { FavoriteButton } from "./FavoriteButton";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
+
+function isGiveDirection(direction: string): boolean {
+  return direction === "GIVE";
+}
 
 // レンダー中のDate.now直呼びをlintが禁止しているため関数に切り出す
 function last24hStart(): Date {
@@ -113,6 +117,12 @@ export default async function OfferingDetailPage({
   const isGive = offering.direction === "GIVE";
   const amount = formatAmount(offering);
   const hero = offering.imageUrls[0];
+  // CTAの行き先。探している（調達したい）案件でまだやり取りが無ければ、提案ページへ直接進む。
+  // 以前はページ内アンカーだけで、連絡セクションが近くにあるため「押しても動かない」ように見えた。
+  const ctaHref =
+    !isGiveDirection(offering.direction) && !existingThread
+      ? `/ledger/${offering.id}/propose`
+      : "#inquiry";
   const gallery = offering.imageUrls.slice(1);
   const points = (offering.points ?? "")
     .split("\n")
@@ -170,11 +180,7 @@ export default async function OfferingDetailPage({
             編集する
           </Link>
         ) : offering.isPublic ? (
-          <form action={toggleFavorite.bind(null, "offering", offering.id)}>
-            <button className={btn("secondary", "sm")}>
-              {myFavorite ? "★ お気に入り済み" : "☆ お気に入りに追加"}
-            </button>
-          </form>
+          <FavoriteButton offeringId={offering.id} initialFavorited={!!myFavorite} size="sm" />
         ) : null}
       </div>
 
@@ -240,7 +246,7 @@ export default async function OfferingDetailPage({
           人が閲覧しています
         </div>
         {!isOwner && offering.isPublic ? (
-          <a href="#inquiry" className={`${btn("action", "sm")} mt-3 inline-block`}>
+          <a href={ctaHref} className={`${btn("action", "sm")} mt-3 inline-block`}>
             {isGive ? "問い合わせる ↓" : "提案する ↓"}
           </a>
         ) : null}
@@ -594,14 +600,10 @@ export default async function OfferingDetailPage({
       {/* 末尾CTA。提案（問い合わせ）とお気に入りを大きく2つ並べる（2026-08-11 ユーザー指定） */}
       {!isOwner && offering.isPublic ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <a href="#inquiry" className={`${btn("action", "lg")} block w-full text-center`}>
+          <a href={ctaHref} className={`${btn("action", "lg")} block w-full text-center`}>
             {isGive ? "問い合わせる" : "提案する"}
           </a>
-          <form action={toggleFavorite.bind(null, "offering", offering.id)} className="w-full">
-            <button className={`${btn("secondary", "lg")} w-full`}>
-              {myFavorite ? "★ お気に入り済み" : "☆ お気に入りに追加"}
-            </button>
-          </form>
+          <FavoriteButton offeringId={offering.id} initialFavorited={!!myFavorite} size="lg" fullWidth />
         </div>
       ) : null}
     </div>
