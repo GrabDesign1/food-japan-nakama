@@ -71,7 +71,7 @@ export function DocumentTools({
         </button>
       </div>
       <p className="mt-2 text-[11px] leading-5 text-[var(--red)]">
-        入力した内容は保存されません。印刷ダイアログで「PDFに保存」を選ぶとファイル保存し、その後自身で相手先へご送付ください。
+        入力した内容は保存されません。印刷ダイアログで「PDFに保存」を選ぶとファイル保存し、その後、ご自身で相手先へご送付ください。
       </p>
     </div>
   );
