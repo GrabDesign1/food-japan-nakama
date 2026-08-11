@@ -5,6 +5,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { saveProposalNote, bulkSendToProposals } from "./actions";
+import { BusinessMemberPromo } from "@/components/BusinessMemberPromo";
 import { btn, input } from "@/lib/ui";
 
 export type ProposalRow = {
@@ -93,10 +94,13 @@ export function ProposalRows({
   offeringId,
   rows,
   isGive,
+  showMemberPromo = false,
 }: {
   offeringId: string;
   rows: ProposalRow[];
   isGive: boolean;
+  /** 未開封がある＆まだビジネス会員でないときだけ、会員の案内を出す */
+  showMemberPromo?: boolean;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [compose, setCompose] = useState<null | "message" | "decline">(null);
@@ -167,6 +171,10 @@ export function ProposalRows({
             </button>
           </div>
         </form>
+      ) : null}
+
+      {showMemberPromo && rows.some((r) => r.locked) ? (
+        <BusinessMemberPromo />
       ) : null}
 
       <div className="overflow-x-auto rounded-[12px] border border-[var(--line)] bg-white">

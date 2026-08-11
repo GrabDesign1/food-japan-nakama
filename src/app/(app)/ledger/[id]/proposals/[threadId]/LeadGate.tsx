@@ -5,6 +5,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { openLeadAction, type OfferState } from "./actions";
+import { BusinessMemberPromo } from "@/components/BusinessMemberPromo";
 import { btn, h2FormCls } from "@/lib/ui";
 
 export function LeadGate({
@@ -14,6 +15,7 @@ export function LeadGate({
   preview,
   receivedAt,
   balance,
+  showMemberPromo = false,
 }: {
   offeringId: string;
   threadId: string;
@@ -22,6 +24,8 @@ export function LeadGate({
   preview: string;
   receivedAt: string;
   balance: number;
+  /** まだビジネス会員でないときだけ、会員の案内を出す */
+  showMemberPromo?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<OfferState, FormData>(
     openLeadAction.bind(null, offeringId, threadId),
@@ -73,6 +77,13 @@ export function LeadGate({
             あとで見る
           </Link>
         </div>
+
+        {/* 1件ずつ買うより会員のほうが安くなることを、開く直前のここで見せる */}
+        {showMemberPromo ? (
+          <div className="mt-4">
+            <BusinessMemberPromo />
+          </div>
+        ) : null}
       </div>
     </div>
   );

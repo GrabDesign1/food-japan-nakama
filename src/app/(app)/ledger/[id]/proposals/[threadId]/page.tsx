@@ -187,6 +187,7 @@ export default async function OfferingThreadPage({
                 : "―"
             }
             balance={balance}
+            showMemberPromo={me.paymentStatus !== "PAID"}
           />
         ) : (
           <>

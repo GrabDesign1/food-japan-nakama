@@ -3,8 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/EmptyState";
 import { loadLockedLeadThreadIds, LEAD_LOCKED_TEXT } from "@/lib/lead-unlock";
-import { MEMBER_MONTHLY_CREDITS } from "@/lib/billing-core";
-import { btn } from "@/lib/ui";
+import { BusinessMemberPromo } from "@/components/BusinessMemberPromo";
 
 export async function ThreadList({
   meId,
@@ -163,15 +162,8 @@ export async function ThreadList({
           </Link>
           {/* 未開封の行の下に会員案内（リンクは入れ子にできないので Link の外に出す） */}
           {isLocked && showUpsell ? (
-            <div className="border-b border-[var(--line-soft)] bg-[var(--amber-bg)] px-5 py-2.5">
-              <p className="text-[11px] leading-4 text-[var(--amber-ink)]">
-                全文が読めるクレジットが<b>月間{MEMBER_MONTHLY_CREDITS}回</b>まで使える！
-                <br />
-                NAKAMAビジネス会員
-              </p>
-              <Link href="/billing" className={`${btn("amber", "sm")} mt-1.5 w-full`}>
-                詳しくはこちら
-              </Link>
+            <div className="border-b border-[var(--line-soft)] px-3 py-2.5">
+              <BusinessMemberPromo compact />
             </div>
           ) : null}
           </div>

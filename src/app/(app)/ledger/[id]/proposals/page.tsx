@@ -283,6 +283,7 @@ export default async function OfferingProposalsPage({
           <ProposalRows
             offeringId={offering.id}
             isGive={isGive}
+            showMemberPromo={me.paymentStatus !== "PAID"}
             rows={rows.map((r) => ({
               threadId: r.thread.id,
               offeringId: offering.id,
