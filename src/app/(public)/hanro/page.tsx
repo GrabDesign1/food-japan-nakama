@@ -121,12 +121,7 @@ export default function SalesChannelPage() {
     >
       {/* 入口商品1：商品・販路戦略セッション */}
       <section id="strategy-session" className="scroll-mt-6 rounded-[12px] border-2 border-[var(--green)] bg-white p-6">
-        <div className="text-[12px] font-bold text-[var(--green-d)]">入口商品 1</div>
-        <h2 className="mt-1 text-[20px] font-bold leading-7 text-[var(--ink)]">商品・販路戦略セッション</h2>
-        <div className="mt-1 font-serif text-[26px] text-[var(--ink)]">
-          110,000円〜
-          <span className="ml-1 text-[12px] text-[var(--muted)]">（税込）</span>
-        </div>
+        <h2 className="text-[20px] font-bold leading-7 text-[var(--ink)]">商品・販路戦略セッション</h2>
         <p className="mt-3 text-[13px] leading-7 text-[var(--ink-2)]">
           商品はあるものの、「誰に、どのように提案すればよいか」が整理できていない事業者向けの戦略設計サービスです。
           商品の特徴、価格、ロット、供給条件、現在の販売状況を確認し、優先して狙う市場と販路開拓の進め方を整理します。
@@ -145,16 +140,14 @@ export default function SalesChannelPage() {
             商品と販路について相談する
           </Link>
         </div>
+        <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
+          目安の費用：110,000円〜（税込）
+        </p>
       </section>
 
       {/* 入口商品2：販路開拓トライアル */}
       <section id="channel-trial" className="scroll-mt-6 rounded-[12px] border-2 border-[var(--green)] bg-white p-6">
-        <div className="text-[12px] font-bold text-[var(--green-d)]">入口商品 2</div>
-        <h2 className="mt-1 text-[20px] font-bold leading-7 text-[var(--ink)]">販路開拓トライアル</h2>
-        <div className="mt-1 font-serif text-[26px] text-[var(--ink)]">
-          440,000円〜
-          <span className="ml-1 text-[12px] text-[var(--muted)]">（税込）／1商品・45日間</span>
-        </div>
+        <h2 className="text-[20px] font-bold leading-7 text-[var(--ink)]">販路開拓トライアル</h2>
         <p className="mt-3 text-[13px] leading-7 text-[var(--ink-2)]">
           商品の販売条件と提案内容を整理し、買い手となり得る企業の調査・選定から、候補先への初期打診までを行う短期の販路開拓支援です。
           食品業界に特化した知見とFood Japan Summitで培ったネットワークを活用し、自社だけでは接点をつくりにくい相手へのアプローチを進めます。
@@ -176,6 +169,9 @@ export default function SalesChannelPage() {
             自分の商品が対象になるか相談する
           </Link>
         </div>
+        <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
+          目安の費用：440,000円〜（税込）／1商品・45日間
+        </p>
       </section>
 
       {/* 共通の契約条件 */}
