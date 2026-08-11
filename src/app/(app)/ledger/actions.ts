@@ -21,7 +21,7 @@ import {
   LISTING_PURPOSES,
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
-  SEEKING_TYPES,
+  ALL_SEEKING_TYPE_KEYS,
   ALL_REQUIREMENT_KIND_KEYS,
   REQUIREMENT_LEVELS,
 } from "@/lib/offering-taxonomy";
@@ -367,7 +367,7 @@ function parseOfferingForm(
       sampleAvailability: pick("sampleAvailability", SAMPLE_AVAILABILITY),
       priceTaxType: pick("priceTaxType", PRICE_TAX_TYPES),
       // 探している（WANT）
-      seekingType: SEEKING_TYPES.some(([v]) => v === g("seekingType"))
+      seekingType: ALL_SEEKING_TYPE_KEYS.includes(g("seekingType"))
         ? g("seekingType")
         : null,
       usageContext: g("usageContext", 4000) || null,

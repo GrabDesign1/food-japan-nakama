@@ -82,7 +82,9 @@ export const PRICE_TAX_TYPES = ["税込", "税別"];
 
 // ── 探している（WANT）改善（2026-08-10 買い手指示書） ─────────────────
 // 募集タイプ：[DB値, 表示名, 補足文]
-export const SEEKING_TYPES: [string, string, string][] = [
+// 募集タイプもカテゴリ群で出し分ける（2026-08-11）。
+// モノ向けの6種だけだと、人材・技術・地域課題では当てはまるものがほとんど無かった。
+const SEEKING_TYPES_GOODS: [string, string, string][] = [
   ["specific", "特定の商品・原料を探している", "商品名や原料名が決まっている仕入れ・調達です。"],
   ["proposal", "条件に合う商品を提案してほしい", "商品名が未定でもOK。用途や条件に合う提案を募集します。"],
   ["oem", "OEM・PBの製造先を探している", "自社ブランド商品の製造パートナーを探します。"],
@@ -90,9 +92,43 @@ export const SEEKING_TYPES: [string, string, string][] = [
   ["codev", "共同開発できる相手を探している", "一緒に商品をつくる相手を探します。"],
   ["other", "その他", "上記に当てはまらない探しものはこちら。"],
 ];
+
+const SEEKING_TYPES_SERVICE: [string, string, string][] = [
+  ["provider", "対応してくれる相手を探している", "依頼したい内容が決まっています。"],
+  ["how_proposal", "やり方から提案してほしい", "進め方が固まっていなくても大丈夫です。"],
+  ["spot", "スポット・短期でお願いしたい", "単発の依頼や、繁忙期だけの体制づくりに。"],
+  ["ongoing", "継続的にお願いしたい", "長期の委託・常時の体制を前提に探します。"],
+  ["partner", "一緒に取り組むパートナーを探している", "受発注ではなく、協業・共同事業として。"],
+  ["other", "その他", "上記に当てはまらない探しものはこちら。"],
+];
+
+const SEEKING_TYPES_SUPPORT: [string, string, string][] = [
+  ["funding", "資金・補助の出し手を探している", "出資、補助制度、支援メニューなど。"],
+  ["partner", "一緒に取り組む相手を探している", "地域や事業者と組んで進めたい場合に。"],
+  ["expert", "詳しい相手に相談したい", "知見・経験のある事業者や専門家を探します。"],
+  ["how_proposal", "進め方の提案がほしい", "課題はあるが、進め方が決まっていない場合に。"],
+  ["other", "その他", "上記に当てはまらない探しものはこちら。"],
+];
+
+/** 既定（モノ）の募集タイプ。既存の参照との互換のため残す。 */
+export const SEEKING_TYPES = SEEKING_TYPES_GOODS;
+
+/** カテゴリに応じた募集タイプ。 */
+export function seekingTypesFor(category: string): [string, string, string][] {
+  const g = categoryGroup(category);
+  if (g === "service") return SEEKING_TYPES_SERVICE;
+  if (g === "support") return SEEKING_TYPES_SUPPORT;
+  return SEEKING_TYPES_GOODS;
+}
+
+// 表示用ラベルは全群の和集合（カテゴリを変えても既存の値が「未知」にならないように）
 export const SEEKING_TYPE_LABEL: Record<string, string> = Object.fromEntries(
-  SEEKING_TYPES.map(([v, l]) => [v, l])
+  [...SEEKING_TYPES_SUPPORT, ...SEEKING_TYPES_SERVICE, ...SEEKING_TYPES_GOODS].map(([v, l]) => [v, l])
 );
+
+/** 全群を通した募集タイプのキー（サーバー側の検証用）。 */
+export const ALL_SEEKING_TYPE_KEYS = Object.keys(SEEKING_TYPE_LABEL);
+
 // カード表示用の短いラベル
 export const SEEKING_TYPE_SHORT: Record<string, string> = {
   specific: "商品指定",
@@ -100,6 +136,13 @@ export const SEEKING_TYPE_SHORT: Record<string, string> = {
   oem: "OEM・PB",
   surplus: "余剰品・規格外",
   codev: "共同開発",
+  provider: "対応先を募集",
+  how_proposal: "やり方を提案募集",
+  spot: "スポット",
+  ongoing: "継続依頼",
+  partner: "パートナー募集",
+  funding: "資金・補助",
+  expert: "相談先を募集",
   other: "その他",
 };
 
@@ -174,6 +217,117 @@ export const REQUIREMENT_KIND_LABEL: Record<string, string> = Object.fromEntries
 
 /** 全群を通した条件分類のキー（サーバー側の検証用。群を切り替えても値が失われないように）。 */
 export const ALL_REQUIREMENT_KIND_KEYS = Object.keys(REQUIREMENT_KIND_LABEL);
+
+/**
+ * 入力例（グレー文字）と一部の見出し。カテゴリ群 × 売りたい／探している で切り替える。
+ * 食品前提の例文が人材・技術・地域課題にも出ていて、書き方が伝わらなかったため（2026-08-11）。
+ */
+export type FormExamples = {
+  title: string;
+  description: string;
+  descriptionLabel: string;
+  points: string;
+  tags: string;
+  area: string;
+  usageLabel: string;
+  usagePlaceholder: string;
+  seekingIntro: string;
+};
+
+export function formExamples(category: string, direction: string): FormExamples {
+  const isGive = direction === "GIVE";
+  const group = categoryGroup(category);
+
+  if (group === "service") {
+    return isGive
+      ? {
+          title: "例：小ロットの惣菜OEM製造を承ります（レトルト対応）",
+          descriptionLabel: "この技術・サービスについて",
+          description:
+            "どのような技術・サービスですか？ 対応できる範囲、設備・体制、実績、進め方などを紹介してください。",
+          points: "小ロット（100食）から対応できます\n試作は最短2週間でお出しできます",
+          tags: "小ロット, 短納期, レトルト",
+          area: "例：九州全域（訪問対応可）",
+          usageLabel: "対応できる範囲",
+          usagePlaceholder: "",
+          seekingIntro: "",
+        }
+      : {
+          title: "例：年末の店頭販売を手伝ってくれる方を探している",
+          descriptionLabel: "何を探していますか？（詳しく）",
+          description:
+            "例：12月の繁忙期に、百貨店の催事で店頭販売をお願いできる方を探しています。\n土日を中心に1日6時間程度、接客経験のある方だと助かります。商品説明はこちらで研修します。",
+          points: "毎年12月だけ人手が足りません\n来年以降も継続してお願いする可能性があります",
+          tags: "短期, 週2日, 未経験可",
+          area: "例：宮崎市内（勤務地）",
+          usageLabel: "依頼の背景・目的",
+          usagePlaceholder:
+            "例：\n・目的：年末催事の売り場運営\n・期間：12月中旬〜12月25日\n・場所：宮崎市内の百貨店\n・人数／体制：2名（交代制）\n・必要な経験・資格：接客経験があれば尚可\n・稼働：1日6時間・週3日程度\n・費用の目安：時給1,200円前後で相談\n・契約形態：業務委託または短期雇用\n\n繁忙期のみの募集ですが、来年以降も継続してお願いできる方を希望しています。",
+          seekingIntro:
+            "依頼内容が固まっていなくても、目的や条件から募集できます。途中で変更しても入力内容は消えません。",
+        };
+  }
+
+  if (group === "support") {
+    return isGive
+      ? {
+          title: "例：6次産業化の補助金申請を伴走支援します",
+          descriptionLabel: "この支援について",
+          description:
+            "どのような支援ですか？ 対象、支援できる範囲、進め方、これまでの実績などを紹介してください。",
+          points: "申請書の作成から実績報告まで対応できます\n初回相談は無料です",
+          tags: "補助金, 事業計画, 伴走支援",
+          area: "例：宮崎県内（オンライン可）",
+          usageLabel: "支援できる範囲",
+          usagePlaceholder: "",
+          seekingIntro: "",
+        }
+      : {
+          title: "例：加工場の整備に使える補助金・出資先を探している",
+          descriptionLabel: "何を探していますか？（詳しく）",
+          description:
+            "例：地域の農産物を加工する小規模な工場を整備したいと考えています。\n総額3,000万円程度を見込んでおり、補助金の活用と、一部を出資でまかなう方法を検討しています。事業計画は作成中です。",
+          points: "地域の雇用づくりにつながる取り組みです\n自治体とも連携を進めています",
+          tags: "補助金, 設備投資, 地域連携",
+          area: "例：宮崎県日南市（対象エリア）",
+          usageLabel: "背景・目的",
+          usagePlaceholder:
+            "例：\n・目的：地域の未利用果実を加工して商品化する\n・対象エリア：宮崎県日南市\n・規模／予算：総額3,000万円程度（うち自己資金1,000万円）\n・時期：2027年春の稼働をめざす\n・現在の状況：事業計画を作成中、候補地は確保済み\n・相談したいこと：使える制度、資金の組み立て方、必要な体制\n\n同じような取り組みの経験がある方のご意見もいただきたいです。",
+          seekingIntro:
+            "進め方が決まっていなくても、課題や目的から募集できます。途中で変更しても入力内容は消えません。",
+        };
+  }
+
+  // モノ（食材・原料／加工設備）＝従来の例文
+  return isGive
+    ? {
+        title: "例：宮崎産の柑橘を使った香り豊かなクラフトビール",
+        descriptionLabel: "この商品・原料について",
+        description:
+          "どのような商品・原料ですか？ 産地・製法・味わい・用途などを紹介してください。",
+        points: "高品質な果実の生産ノウハウがあります\n少量からでも相談可能です",
+        tags: "規格外, 加工用, 少量可",
+        area: "例：宮崎県 宮崎市",
+        usageLabel: "使用目的・販売先",
+        usagePlaceholder: "",
+        seekingIntro: "",
+      }
+    : {
+        title: "例：クリスマスで使うイチゴを探している",
+        descriptionLabel: "何を探していますか？（詳しく）",
+        description:
+          "例：クリスマスケーキの製造に使用する国産いちごを探しています。\nデコレーション用途のため、粒揃いがよく、色付き・形状が安定したものを希望しています。品種は問いませんが、ケーキに使用した際に見栄えがよく、適度な酸味と甘みがあるものを希望します。",
+        points:
+          "毎年クリスマスになるとケーキに使ういちごが不足しています\nはじめてのお取引から再発注につながる可能性もございます",
+        tags: "規格外, 加工用, 少量可",
+        area: "例：東京都 千代田区（納品先）",
+        usageLabel: "使用目的・販売先",
+        usagePlaceholder:
+          "例：\n・用途：クリスマスケーキのデコレーション\n・産地：国産\n・規格：秀品〜優品相当を希望\n・サイズ：M〜L中心（粒揃い希望）\n・荷姿：パック・平詰め等、応相談\n・必要数量：1日あたり50〜100パック程度\n・納品希望：12月20日〜25日\n・納品場所：東京都内店舗\n・価格：相場を踏まえてご相談\n・継続取引：条件が合えば通常期の仕入れも検討\n\nクリスマス期間は使用量が多いため、必要数量を安定して確保したいと考えています。",
+        seekingIntro:
+          "商品名が決まっていなくても、用途や条件から募集できます。途中で変更しても入力内容は消えません。",
+      };
+}
 
 /** 数量欄の見出し（カテゴリ群 × 売りたい／探している）。 */
 export function amountLabel(category: string, direction: string): string {

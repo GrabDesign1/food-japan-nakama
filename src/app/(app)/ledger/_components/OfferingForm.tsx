@@ -29,7 +29,8 @@ import {
   LISTING_PURPOSES,
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
-  SEEKING_TYPES,
+  seekingTypesFor,
+  formExamples,
   SEEKING_TYPE_SHORT,
   requirementKindsFor,
   defaultRequirementKind,
@@ -204,6 +205,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
     ? `${deadline.slice(0, 4)}年${Number(deadline.slice(5, 7))}月${Number(deadline.slice(8, 10))}日まで`
     : null;
   const meta = categoryMeta(category);
+  // 入力例・一部の見出しはカテゴリ群×方向で切り替える
+  const ex = formExamples(category, isGive ? "GIVE" : "WANT");
 
   // プレビュー行はカテゴリに連動させる（入力欄が無い項目は表示しない）。
   // 未入力時は該当の入力欄へジャンプできるリンクを出す。
@@ -233,10 +236,10 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           <div>
             <h2 className="text-[16px] font-bold text-[var(--ink)]">何を探していますか？<Req /></h2>
             <p className="mt-0.5 text-[12px] text-[var(--muted)]">
-              商品名が決まっていなくても、用途や条件から募集できます。途中で変更しても入力内容は消えません。
+              {ex.seekingIntro}
             </p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {SEEKING_TYPES.map(([value, label, desc]) => (
+              {seekingTypesFor(category).map(([value, label, desc]) => (
                 <label
                   key={value}
                   className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-3.5 py-3 transition ${
@@ -345,7 +348,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               name="area"
               value={area}
               onChange={(e) => setArea(e.target.value)}
-              placeholder={isGive ? "例：宮崎県 宮崎市" : "例：東京都 千代田区（納品先）"}
+              placeholder={ex.area}
               className={inputCls}
             />
           </label>
@@ -357,11 +360,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={
-              isGive
-                ? "例：宮崎産の柑橘を使った香り豊かなクラフトビール"
-                : "例：クリスマスで使うイチゴを探している"
-            }
+            placeholder={ex.title}
             className={inputCls}
           />
         </label>
@@ -382,18 +381,15 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
 
         <div className={labelCls}>
           <span>
-            {isGive ? <>この商品・原料について<Req /></> : <>何を探していますか？（詳しく）<Req /></>}
+            {ex.descriptionLabel}
+            <Req />
           </span>
           <textarea
             name="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
-            placeholder={
-              isGive
-                ? "どのような商品・原料ですか？ 産地・製法・味わい・用途などを紹介してください。"
-                : "例：クリスマスケーキの製造に使用する国産いちごを探しています。\nデコレーション用途のため、粒揃いがよく、色付き・形状が安定したものを希望しています。品種は問いませんが、ケーキに使用した際に見栄えがよく、適度な酸味と甘みがあるものを希望します。"
-            }
+            placeholder={ex.description}
             className={inputCls}
           />
           {!isCreate ? (
@@ -409,15 +405,13 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {!isGive ? (
           <>
             <div id="f-usage" className={`${labelCls} scroll-mt-24`}>
-              <span>使用目的・販売先<Req /></span>
+              <span>{ex.usageLabel}<Req /></span>
               <textarea
                 name="usageContext"
                 value={usageContext}
                 onChange={(e) => setUsageContext(e.target.value)}
                 rows={13}
-                placeholder={
-                  "例：\n・用途：クリスマスケーキのデコレーション\n・産地：国産\n・規格：秀品〜優品相当を希望\n・サイズ：M〜L中心（粒揃い希望）\n・荷姿：パック・平詰め等、応相談\n・必要数量：1日あたり50〜100パック程度\n・納品希望：12月20日〜25日\n・納品場所：東京都内店舗\n・価格：相場を踏まえてご相談\n・継続取引：条件が合えば通常期の仕入れも検討\n\nクリスマス期間は使用量が多いため、必要数量を安定して確保したいと考えています。"
-                }
+                placeholder={ex.usagePlaceholder}
                 className={inputCls}
               />
               <span className="text-[11px] text-[var(--muted)]">
@@ -934,11 +928,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             value={points}
             onChange={(e) => setPoints(e.target.value)}
             rows={3}
-            placeholder={
-              isGive
-                ? "高品質な果実の生産ノウハウがあります\n少量からでも相談可能です"
-                : "毎年クリスマスになるとケーキに使ういちごが不足しています\nはじめてのお取引から再発注につながる可能性もございます"
-            }
+            placeholder={ex.points}
             className={inputCls}
           />
           {!isCreate ? (
@@ -955,7 +945,7 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             name="tags"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="規格外, 加工用, 少量可"
+            placeholder={ex.tags}
             className={inputCls}
           />
         </label>
