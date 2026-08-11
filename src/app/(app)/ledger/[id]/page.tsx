@@ -18,6 +18,7 @@ import {
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { sendInterest } from "../../messages/actions";
+import { PendingButton } from "@/components/PendingButton";
 import { duplicateOffering } from "../actions";
 import { FavoriteButton } from "./FavoriteButton";
 import { btn, h1Cls, h2Cls, input } from "@/lib/ui";
@@ -468,9 +469,9 @@ export default async function OfferingDetailPage({
               <span className="text-[11px] text-[var(--muted)]">
                 送信すると {memberDisplayName} にメッセージが届きます。
               </span>
-              <button className={btn("primary")}>
+              <PendingButton className={btn("primary")} pendingText="送信中…">
                 メッセージを送る
-              </button>
+              </PendingButton>
             </div>
           </form>
         )

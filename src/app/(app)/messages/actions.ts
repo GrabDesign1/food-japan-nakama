@@ -72,6 +72,20 @@ export async function findOrCreateThread(params: {
   });
 }
 
+/**
+ * 直近に同じ本文を送っていないか（二重送信のガード）。
+ * 反応が遅いと感じて何度も押され、同じメッセージが並んでしまう事故があったため。
+ * 押し間違いの範囲を超えないよう2分に限定する（本当に同じ文面を続けて送りたい場合もあるため）。
+ */
+async function isDuplicateMessage(threadId: string, senderMemberId: string, body: string): Promise<boolean> {
+  const since = new Date(Date.now() - 2 * 60 * 1000);
+  const found = await prisma.message.findFirst({
+    where: { threadId, senderMemberId, body, createdAt: { gte: since } },
+    select: { id: true },
+  });
+  return !!found;
+}
+
 export async function sendInterest(
   toMemberId: string,
   offeringId: string | null,
@@ -116,6 +130,11 @@ export async function sendInterest(
     otherId: toMemberId,
     offeringId: offeringId || null,
   });
+
+  // 反応が遅いと感じて連打されたときに同じ文面が並ばないようにする
+  if (await isDuplicateMessage(thread.id, me.id, body)) {
+    redirect(`/messages/${thread.id}`);
+  }
 
   // 相手が既読済みか（通知判定は書き込み前に見る）
   const unreadBefore = await prisma.message.count({
@@ -227,6 +246,8 @@ export async function sendMessage(
     });
   }
   if (!body && !attachments.length) return;
+  // 連打による二重送信を防ぐ（添付つきは同じ本文でも別物なので対象外）
+  if (body && !attachments.length && (await isDuplicateMessage(threadId, me.id, body))) return;
 
   const unreadBefore = await prisma.message.count({
     where: { threadId, senderMemberId: me.id, readAt: null },
