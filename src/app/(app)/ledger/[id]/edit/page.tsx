@@ -7,7 +7,7 @@ import { OfferingForm, type OfferingData } from "../../_components/OfferingForm"
 import { togglePublish, deleteOffering } from "../../actions";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { ConfirmActionButton } from "@/components/ConfirmActionButton";
-import { missingForPublish } from "@/lib/offering-publish";
+import { missingForPublish, recommendedMissingForWant } from "@/lib/offering-publish";
 import { btn, h1Cls } from "@/lib/ui";
 
 function toDateInput(d: Date | null): string | null {
@@ -185,6 +185,21 @@ export default async function OfferingEditPage({
           );
         })()
       ) : null}
+
+      {/* 探している：公開はできるが、書いてあると提案が集まりやすい項目（公開は止めない） */}
+      {(() => {
+        const rec = recommendedMissingForWant(offering);
+        return rec.length ? (
+          <div className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-4 py-3 text-[13px] leading-6 text-[var(--amber-ink)]">
+            <b>未入力の項目があります：{rec.join("・")}</b>
+            <span className="mt-1 block text-[12px] leading-6 text-[var(--ink-2)]">
+              これらが空でも公開できます。ただし提案する側は<b>クレジットを使って</b>提案するため、
+              数量・時期・予算が分からないと提案をためらいます。分かる範囲で書いておくと、
+              条件に合う提案が届きやすくなります。
+            </span>
+          </div>
+        ) : null;
+      })()}
 
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
         {/* updatedAt を key にして、保存後に最新値で再表示する */}

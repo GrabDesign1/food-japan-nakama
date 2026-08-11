@@ -76,3 +76,32 @@ export function missingForPublish(o: PublishCheckInput): string[] {
   }
   return missing;
 }
+
+/**
+ * 「探している（WANT）」で、公開はできるが**書いてあると提案しやすい**項目。
+ *
+ * 公開の必須は「タイトル・募集タイプ・使用目的」の3つだけにしてある（買い手に13項目を
+ * 書かせると案件が集まらないため）。ただし提案する側は**クレジットを払って**提案するので、
+ * 数量・時期・予算が空だと判断材料が無いまま払うことになる。そこで**公開は止めず、
+ * 掲載者には警告を、提案者には未記載を明示する**（2026-08-12）。
+ */
+export function recommendedMissingForWant(o: {
+  direction: string;
+  amountValue?: number | null;
+  amountText?: string | null;
+  timing?: string | null;
+  priceType?: string | null;
+  applicationDeadline?: Date | null;
+  area?: string | null;
+  description?: string | null;
+}): string[] {
+  if (o.direction === "GIVE") return [];
+  const missing: string[] = [];
+  if (o.amountValue == null && !o.amountText) missing.push("必要数量");
+  if (!o.timing) missing.push("希望する納品時期");
+  if (!o.priceType) missing.push("予算感（希望価格）");
+  if (!o.applicationDeadline) missing.push("募集期限");
+  if (!o.area) missing.push("発送先・受取地域");
+  if (!o.description) missing.push("詳しい説明");
+  return missing;
+}

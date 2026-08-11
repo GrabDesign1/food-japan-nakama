@@ -19,6 +19,7 @@ import {
 import { ProposeForm } from "./ProposeForm";
 import { OfferingDetailModal, type OfferingDetailData } from "./OfferingDetailModal";
 import { FeeNotice } from "./FeeNotice";
+import { recommendedMissingForWant } from "@/lib/offering-publish";
 
 // レンダー中のDate.now直呼びをlintが禁止しているため関数に切り出す
 function isPastDeadline(d: Date | null): boolean {
@@ -202,6 +203,19 @@ export default async function ProposePage({
             ))}
           </div>
         ) : null}
+
+        {/* クレジットを使う前に、判断材料が足りているかを出す（掲載側の必須は3項目のみのため） */}
+        {(() => {
+          const rec = recommendedMissingForWant(offering);
+          return rec.length ? (
+            <p className="mt-3 rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-3 py-2 text-[12px] leading-6 text-[var(--amber-ink)]">
+              <b>この案件で未記載の項目：{rec.join("・")}</b>
+              <span className="mt-0.5 block text-[var(--ink-2)]">
+                足りない条件は、提案文で確認する形にできます（例：「必要数量と納品時期をお教えください」）。
+              </span>
+            </p>
+          ) : null;
+        })()}
 
         {deadlinePassed ? (
           <p className="mt-2 text-[12px] font-bold text-[var(--red)]">この案件は募集を終了しています。</p>
