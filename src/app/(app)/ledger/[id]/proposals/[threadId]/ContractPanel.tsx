@@ -88,13 +88,22 @@ function ConfirmModal({
   );
 }
 
-function Row({ o }: { o: OfferRow }) {
+function Row({ o, latest = false }: { o: OfferRow; latest?: boolean }) {
   const s = STATUS_LABEL[o.status] ?? STATUS_LABEL.superseded;
   const active = o.status === "proposed" || o.status === "accepted";
   return (
-    <tr className={`border-b border-[var(--line-soft)] last:border-b-0 ${active ? "" : "opacity-60"}`}>
+    <tr
+      className={`border-b border-[var(--line-soft)] last:border-b-0 ${active ? "" : "opacity-60"} ${
+        latest ? "bg-[var(--amber-bg)]" : ""
+      }`}
+    >
       <td className="whitespace-nowrap px-4 py-3 align-top">
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${s.cls}`}>{s.label}</span>
+        {latest ? (
+          <span className="ml-1 rounded-full bg-[var(--orange)] px-2 py-0.5 text-[10px] font-bold text-white">
+            最新
+          </span>
+        ) : null}
       </td>
       <td className="whitespace-nowrap px-4 py-3 align-top text-[12px] text-[var(--ink-2)]">
         {o.fromMe ? "自分" : o.proposerName}
@@ -137,6 +146,7 @@ export function ContractPanel({
   viewerRole,
   dealPhase,
   issuedKinds,
+  listingTerms,
 }: {
   offeringId: string;
   threadId: string;
@@ -149,6 +159,8 @@ export function ContractPanel({
   dealPhase: number;
   /** 発行済みの帳票の種類（invoice / delivery / receipt） */
   issuedKinds: string[];
+  /** 案件そのものの募集条件（比較の基準として一覧の先頭に出す） */
+  listingTerms: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const pending = offers.find((o) => o.status === "proposed") ?? null;
@@ -182,7 +194,7 @@ export function ContractPanel({
   return (
     <div className="border-b border-[var(--line)] px-6 py-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className={h2Cls}>取引の条件</h2>
+        <h2 className={h2Cls}>これまでの条件提示</h2>
         {agreed ? (
           <span className="rounded-full bg-[var(--green)] px-3 py-1 text-[11px] font-bold text-white">
             合意済み（{agreed.amount.toLocaleString()}円）
@@ -202,8 +214,21 @@ export function ContractPanel({
               </tr>
             </thead>
             <tbody>
-              {offers.map((o) => (
-                <Row key={o.id} o={o} />
+              {/* 比較の基準として、案件そのものの募集条件を先頭に置く */}
+              <tr className="border-b border-[var(--line-soft)] bg-[var(--canvas)]">
+                <td className="whitespace-nowrap px-4 py-3 align-top">
+                  <span className="rounded-full border border-[var(--line)] bg-white px-2.5 py-1 text-[11px] font-bold text-[var(--ink-2)]">
+                    募集条件
+                  </span>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 align-top text-[12px] text-[var(--muted)]">—</td>
+                <td className="px-4 py-3 align-top text-[12px] text-[var(--ink-2)]">
+                  {listingTerms || "この案件に金額の指定はありません"}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 align-top text-[12px] text-[var(--muted)]">—</td>
+              </tr>
+              {offers.map((o, i) => (
+                <Row key={o.id} o={o} latest={i === 0} />
               ))}
             </tbody>
           </table>

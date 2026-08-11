@@ -12,7 +12,7 @@ import { reconcileDealPhase } from "@/lib/deal";
 import { Composer } from "../../../../messages/_components/Composer";
 import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
-import { DIRECTION_SHORT } from "@/lib/offering-taxonomy";
+import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { ContractPanel, type OfferRow } from "./ContractPanel";
 import { defaultTaxRate, normalizeTaxRate, sellerBuyerIds } from "@/lib/invoice";
 import { ThreadTools } from "./ThreadTools";
@@ -191,6 +191,18 @@ export default async function OfferingThreadPage({
           defaultTaxRate={String(defaultTaxRate(offering.category)) as "8" | "10"}
           dealPhase={deal?.phase ?? 0}
           issuedKinds={issuedDocs.map((d) => d.kind)}
+          listingTerms={
+            [
+              formatPrice(offering) ? `希望価格：${formatPrice(offering)}` : null,
+              formatAmount(offering) ? `数量：${formatAmount(offering)}` : null,
+              offering.minOrderText ? `最小取引量：${offering.minOrderText}` : null,
+              formatDeadline(offering.applicationDeadline)
+                ? `募集期限：${formatDeadline(offering.applicationDeadline)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join("　/　") || null
+          }
           viewerRole={
             sellerBuyerIds({
               direction: offering.direction,
