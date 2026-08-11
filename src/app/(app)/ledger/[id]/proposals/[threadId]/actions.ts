@@ -11,7 +11,22 @@ import { prisma } from "@/lib/db";
 import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
 import { sellerBuyerIds } from "@/lib/invoice";
-import { PHASE_CONTRACTED } from "@/lib/deal-constants";
+import {
+  PHASE_CONTRACTED,
+  PHASE_SHIPPED,
+  PHASE_RECEIVED,
+  PHASE_DOCS,
+  PHASE_PAID,
+  PHASE_DONE,
+} from "@/lib/deal-constants";
+
+/** 商談の段階を前に進める（戻さない）。段階は操作から自動で決まる。 */
+async function advancePhase(threadId: string, target: number): Promise<void> {
+  await prisma.deal.updateMany({
+    where: { threadId, phase: { lt: target } },
+    data: { phase: target, lastActivityAt: new Date() },
+  });
+}
 
 export type OfferState = { ok?: boolean; error?: string };
 
@@ -167,10 +182,7 @@ export async function respondToContract(
 
   // 合意したら商談の進捗も「ご契約」に進める（手で直す手間を省く）
   if (decision === "accept") {
-    await prisma.deal.updateMany({
-      where: { threadId },
-      data: { phase: PHASE_CONTRACTED, lastActivityAt: new Date() },
-    });
+    await advancePhase(threadId, PHASE_CONTRACTED);
   }
 
   await postSystemMessage({
@@ -187,6 +199,46 @@ export async function respondToContract(
           (note ? `\n${note}\n` : "") +
           `\n※この合意は当事者間のものです。支払い・納品の方法は、おふたりで取り決めてください。`
         : `【条件を見送りました】\n${note || "今回は見送らせていただきます。"}`,
+  });
+
+  revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
+  return { ok: true };
+}
+
+/**
+ * 入金を確認したことを記録する（売り手のみ）。
+ * NAKAMAは代金を預からないので、実際の入金は当事者しか確認できない。
+ */
+export async function markPaymentReceived(
+  offeringId: string,
+  threadId: string,
+  _prev: OfferState,
+  _formData: FormData
+): Promise<OfferState> {
+  const { me, thread, otherId } = await participantOr404(offeringId, threadId);
+  const offering = await prisma.offering.findUnique({
+    where: { id: offeringId },
+    select: { direction: true, memberId: true },
+  });
+  if (!offering) return { error: "案件が見つかりません。" };
+  const { sellerId } = sellerBuyerIds({
+    direction: offering.direction,
+    offeringMemberId: offering.memberId,
+    participantAId: thread.fromMemberId,
+    participantBId: thread.toMemberId,
+  });
+  if (me.id !== sellerId) return { error: "入金の確認は、代金を受け取る側のみ記録できます。" };
+
+  await advancePhase(threadId, PHASE_PAID);
+  await postSystemMessage({
+    threadId,
+    offeringId,
+    senderMemberId: me.id,
+    senderName: me.name,
+    recipientId: otherId,
+    body:
+      "【入金を確認しました】\n" +
+      "ありがとうございました。領収書を発行すると、この取引は完了になります。",
   });
 
   revalidatePath(`/ledger/${offeringId}/proposals/${threadId}`);
@@ -257,6 +309,9 @@ export async function issueDocument(
     create: data,
     update: data,
   });
+
+  // 領収書＝完了、納品書・請求書＝発行済みの段階へ進める
+  await advancePhase(threadId, kind === "receipt" ? PHASE_DONE : PHASE_DOCS);
 
   const label = DOC_LABEL[kind] ?? "書類";
   await postSystemMessage({
@@ -332,6 +387,8 @@ export async function markDelivery(
       ...(otherDone ? { completedAt: now, completedBy: me.id } : {}),
     },
   });
+
+  await advancePhase(threadId, step === "shipped" ? PHASE_SHIPPED : PHASE_RECEIVED);
 
   const stepLabel = step === "shipped" ? "発送しました" : "受け取りました";
   await postSystemMessage({

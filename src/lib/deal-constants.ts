@@ -22,10 +22,14 @@ export const PHASE_DESC: string[] = [
   "領収書を発行し、この取引は完了",
 ];
 
-/** 契約（合意）済みを表すフェーズ番号。条件に同意したときここまで進める */
-export const PHASE_CONTRACTED = 1;
-/** 完了を表すフェーズ番号 */
-export const PHASE_DONE = PHASES.length - 1;
+// 段階は**実際の操作から自動で進む**。利用者が手で動かすと事実と食い違うため、
+// 画面では表示だけにしている（クリックで変更しない）。
+export const PHASE_CONTRACTED = 1; // 条件に同意した
+export const PHASE_SHIPPED = 2;    // 売り手が発送を記録した
+export const PHASE_RECEIVED = 3;   // 買い手が受け取りを記録した
+export const PHASE_DOCS = 4;       // 納品書・請求書を発行した
+export const PHASE_PAID = 5;       // 売り手が入金を確認した
+export const PHASE_DONE = PHASES.length - 1; // 領収書を発行した＝完了
 
 const STALE_MS = 30 * 24 * 60 * 60 * 1000;
 

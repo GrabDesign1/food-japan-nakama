@@ -185,6 +185,7 @@ export default async function OfferingThreadPage({
             proposerName: o.proposerMemberId === me.id ? me.name : other?.name ?? "相手",
           }))}
           defaultTaxRate={String(defaultTaxRate(offering.category)) as "8" | "10"}
+          dealPhase={deal?.phase ?? 0}
           viewerRole={
             sellerBuyerIds({
               direction: offering.direction,

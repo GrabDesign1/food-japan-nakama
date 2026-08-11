@@ -73,7 +73,7 @@ export default async function DealBoardPage() {
                           <p className="mt-1 text-[10px] text-[var(--red)]">30日以上動きなし</p>
                         ) : null}
                         <div className="mt-2">
-                          <PhaseSelect dealId={deal.id} phase={deal.phase} />
+                          <PhaseSelect phase={deal.phase} />
                         </div>
                         {deal.threadId ? (
                           <Link href={`/messages/${deal.threadId}`} className="mt-2 inline-block text-[11px] text-[var(--green-d)] underline">

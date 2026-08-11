@@ -1,54 +1,32 @@
-"use client";
-
-// 商談の進捗ステッパー（案件ごとのやり取り画面の上部）。
-// 段階を押すとその場で進捗が変わる（押した瞬間に見た目を変え、失敗したら戻す）。
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { setDealPhase } from "../../deals/actions";
+// 取引の進み具合の表示（案件ごとのやり取り画面の上部）。
+//
+// **手では動かせない**。段階は「条件に同意した」「発送を記録した」「受け取りを記録した」
+// 「帳票を発行した」「入金を確認した」という実際の操作から自動で進む。
+// 手で変えられると、記録された事実と表示が食い違うため（2026-08-12 にクリック操作を廃止）。
 import { PHASES } from "@/lib/deal-constants";
 
-export function PhaseStepper({ dealId, phase }: { dealId: string; phase: number }) {
-  const [current, setCurrent] = useState(phase);
-  const [pending, startTransition] = useTransition();
-  const router = useRouter();
-
+export function PhaseStepper({ phase }: { phase: number }) {
   return (
-    <div className="flex flex-wrap gap-1">
+    <ol className="flex flex-wrap gap-1" aria-label="取引の進み具合">
       {PHASES.map((label, i) => {
-        const done = i < current;
-        const active = i === current;
+        const done = i < phase;
+        const active = i === phase;
         return (
-          <button
+          <li
             key={label}
-            type="button"
-            disabled={pending}
             aria-current={active ? "step" : undefined}
-            onClick={() => {
-              if (i === current) return;
-              const prev = current;
-              setCurrent(i);
-              startTransition(async () => {
-                try {
-                  await setDealPhase(dealId, i);
-                  router.refresh();
-                } catch {
-                  setCurrent(prev);
-                }
-              });
-            }}
-            // 現在＝橙で塗り、通過済み＝淡い黄、未達＝白。取引の進み具合が一目で分かるようにする
-            className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
               active
                 ? "bg-[var(--orange)] text-white shadow-sm"
                 : done
                   ? "border border-[var(--amber-line)] bg-[var(--amber-soft)] text-[var(--amber-ink)]"
-                  : "border border-[var(--line)] bg-white text-[var(--muted)] hover:border-[var(--orange)]"
+                  : "border border-[var(--line)] bg-white text-[var(--muted)]"
             }`}
           >
             {i + 1}. {label}
-          </button>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

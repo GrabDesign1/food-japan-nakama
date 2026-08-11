@@ -5,8 +5,15 @@
 // **両方そろって初めて完了**＝納品書・請求書を作成できるようになる。
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { proposeContract, respondToContract, markDelivery, type OfferState } from "./actions";
+import {
+  proposeContract,
+  respondToContract,
+  markDelivery,
+  markPaymentReceived,
+  type OfferState,
+} from "./actions";
 import { btn, h2Cls, h2FormCls, input } from "@/lib/ui";
+import { PHASE_PAID } from "@/lib/deal-constants";
 
 export type OfferRow = {
   id: string;
@@ -128,6 +135,7 @@ export function ContractPanel({
   offers,
   defaultTaxRate = "10",
   viewerRole,
+  dealPhase,
 }: {
   offeringId: string;
   threadId: string;
@@ -136,6 +144,8 @@ export function ContractPanel({
   defaultTaxRate?: "8" | "10";
   /** 見ている人の立場。売り手だけが発送、買い手だけが受け取りを記録できる */
   viewerRole: "seller" | "buyer";
+  /** 現在の段階（入金確認ボタンを出すかの判定に使う） */
+  dealPhase: number;
 }) {
   const [open, setOpen] = useState(false);
   const pending = offers.find((o) => o.status === "proposed") ?? null;
@@ -159,6 +169,10 @@ export function ContractPanel({
   );
   const [recvState, recvAction, receiving] = useActionState<OfferState, FormData>(
     markDelivery.bind(null, offeringId, threadId, agreed?.id ?? "", "received"),
+    {}
+  );
+  const [payState, payAction, paying] = useActionState<OfferState, FormData>(
+    markPaymentReceived.bind(null, offeringId, threadId),
     {}
   );
 
@@ -328,6 +342,44 @@ export function ContractPanel({
                   </ConfirmModal>
                 ))}
               </div>
+
+              {/* 入金の確認は売り手しか分からない（NAKAMAは代金を預からない） */}
+              {viewerRole === "seller" ? (
+                dealPhase >= PHASE_PAID ? (
+                  <p className="mt-3 text-[12px] font-bold text-[var(--green-d)]">
+                    ✓ 入金確認済み
+                  </p>
+                ) : (
+                  <div className="mt-3">
+                    <ConfirmModal
+                      title="入金を確認できましたか？"
+                      note="記録するとやり取りに残り、相手にも通知されます。NAKAMAは代金を預からないため、入金の確認はご自身で行ってください。"
+                      cancelLabel="まだ確認できていない"
+                      trigger={(openModal) => (
+                        <button
+                          type="button"
+                          onClick={openModal}
+                          disabled={paying}
+                          className={`${btn("secondary", "sm")} disabled:opacity-50`}
+                        >
+                          {paying ? "処理中…" : "入金を確認した"}
+                        </button>
+                      )}
+                    >
+                      {(close) => (
+                        <form action={payAction} onSubmit={() => close()}>
+                          <button disabled={paying} className={`${btn("action", "sm")} disabled:opacity-50`}>
+                            確認した
+                          </button>
+                        </form>
+                      )}
+                    </ConfirmModal>
+                    {payState.error ? (
+                      <p className="mt-2 text-[12px] text-[var(--red)]">{payState.error}</p>
+                    ) : null}
+                  </div>
+                )
+              ) : null}
             </>
           )}
         </div>

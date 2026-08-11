@@ -175,7 +175,7 @@ export default async function DealsPage({
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <PhaseSelect dealId={deal.id} phase={deal.phase} />
+                    <PhaseSelect phase={deal.phase} />
                     {stale ? (
                       <span className="text-[11px] text-[var(--red)]">30日以上動きなし</span>
                     ) : null}

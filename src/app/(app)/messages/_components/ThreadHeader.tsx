@@ -40,7 +40,7 @@ export function ThreadHeader({
         <p className="text-[12px] text-[var(--muted)]">
           案件に紐づかないお問い合わせです。案件について相談する場合は、案件ページの「提案する」「問い合わせる」からご連絡ください。
         </p>
-        {showPhase && dealId ? <PhaseStepper dealId={dealId} phase={phase} /> : null}
+        {showPhase && dealId ? <PhaseStepper phase={phase} /> : null}
       </div>
     );
   }
@@ -98,9 +98,9 @@ export function ThreadHeader({
 
       {showPhase && dealId ? (
         <div className="mt-3">
-          <PhaseStepper dealId={dealId} phase={phase} />
+          <PhaseStepper phase={phase} />
           <p className="mt-1 text-[10px] text-[var(--muted)]">
-            現在：{PHASES[phase] ?? PHASES[0]}（{PHASE_DESC[phase] ?? PHASE_DESC[0]}）／段階を押すと進捗を更新できます
+            現在：{PHASES[phase] ?? PHASES[0]}（{PHASE_DESC[phase] ?? PHASE_DESC[0]}）／段階は操作に応じて自動で進みます
           </p>
         </div>
       ) : null}
