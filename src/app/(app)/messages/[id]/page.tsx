@@ -36,6 +36,8 @@ export default async function ThreadPage({
     prisma.message.findMany({
       where: { threadId: thread.id },
       orderBy: { createdAt: "asc" },
+      // 添付は複数可（旧メッセージは attachmentUrl の1件だけを持つ）
+      include: { attachments: { orderBy: { sortOrder: "asc" } } },
     }),
     prisma.messageDraft.findUnique({
       where: { threadId_memberId: { threadId: thread.id, memberId: me.id } },
@@ -127,14 +129,32 @@ export default async function ThreadPage({
                       }`}
                     >
                       {msg.body}
-                      {msg.attachmentUrl ? (
-                        <div className="mt-2 rounded-[10px] border border-[var(--line)] bg-white p-3">
-                          {isImageName(msg.attachmentName) ? (
+                      {/* 添付は複数可。旧メッセージ（attachmentUrl の1件）も同じ形で出す */}
+                      {[
+                        ...(msg.attachmentUrl
+                          ? [
+                              {
+                                key: "legacy",
+                                query: "",
+                                name: msg.attachmentName,
+                                size: msg.attachmentSize,
+                              },
+                            ]
+                          : []),
+                        ...msg.attachments.map((a) => ({
+                          key: a.id,
+                          query: `?i=${a.id}`,
+                          name: a.name,
+                          size: a.size,
+                        })),
+                      ].map((a) => (
+                        <div key={a.key} className="mt-2 rounded-[10px] border border-[var(--line)] bg-white p-3">
+                          {isImageName(a.name) ? (
                             // 非公開バケットのため、配信口（参加者のみ）を経由して表示する
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/api/attachments/${msg.id}`}
-                              alt={msg.attachmentName ?? "添付画像"}
+                              src={`/api/attachments/${msg.id}${a.query}`}
+                              alt={a.name ?? "添付画像"}
                               className="mb-2 max-h-[220px] w-auto rounded object-contain"
                             />
                           ) : (
@@ -142,13 +162,13 @@ export default async function ThreadPage({
                           )}
                           <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             <span className="break-all text-[var(--ink)]">
-                              {msg.attachmentName ?? "添付ファイル"}
-                              {msg.attachmentSize ? (
-                                <span className="text-[var(--muted)]">（{formatBytes(msg.attachmentSize)}）</span>
+                              {a.name ?? "添付ファイル"}
+                              {a.size ? (
+                                <span className="text-[var(--muted)]">（{formatBytes(a.size)}）</span>
                               ) : null}
                             </span>
                             <a
-                              href={`/api/attachments/${msg.id}`}
+                              href={`/api/attachments/${msg.id}${a.query}`}
                               target="_blank"
                               rel="noreferrer"
                               className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
@@ -156,14 +176,14 @@ export default async function ThreadPage({
                               プレビュー
                             </a>
                             <a
-                              href={`/api/attachments/${msg.id}?download=1`}
+                              href={`/api/attachments/${msg.id}${a.query ? `${a.query}&` : "?"}download=1`}
                               className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
                             >
                               ダウンロード
                             </a>
                           </div>
                         </div>
-                      ) : null}
+                      ))}
                     </div>
                   </div>
                 );

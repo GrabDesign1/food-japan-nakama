@@ -10,6 +10,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
 import { notifyNewMessage } from "@/lib/email";
 import { safeAttachmentContentType } from "@/lib/upload";
+import { MAX_ATTACHMENTS } from "@/lib/attachments";
 import {
   trimTo,
   canSendToOthers,
@@ -201,17 +202,29 @@ export async function sendMessage(
   if (!canSendToOthers(me.status)) return;
 
   const body = trimTo(formData.get("message"), MESSAGE_MAX);
-  // 添付は非公開バケットの保存パス。自スレッド配下のパスだけを受け付ける
-  const attachmentPathRaw = String(formData.get("attachmentUrl") ?? "").trim();
-  const attachmentUrl =
-    attachmentPathRaw.startsWith(`${threadId}/`) && !attachmentPathRaw.includes("..")
-      ? attachmentPathRaw
-      : null;
-  const attachmentName = String(formData.get("attachmentName") ?? "").trim().slice(0, 200) || null;
-  const sizeRaw = Number(formData.get("attachmentSize") ?? 0);
-  const attachmentSize =
-    attachmentUrl && Number.isFinite(sizeRaw) && sizeRaw > 0 ? Math.floor(sizeRaw) : null;
-  if (!body && !attachmentUrl) return;
+  // 添付は非公開バケットの保存パス。自スレッド配下のパスだけを受け付ける（複数可）
+  const attachments: { path: string; name: string; size: number; sortOrder: number }[] = [];
+  for (const [i, raw] of formData.getAll("attachments").map(String).entries()) {
+    if (attachments.length >= MAX_ATTACHMENTS) break;
+    let parsed: { url?: string; name?: string; size?: number };
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    const path = String(parsed.url ?? "");
+    const size = Number(parsed.size ?? 0);
+    if (!path.startsWith(`${threadId}/`) || path.includes("..") || !Number.isFinite(size) || size <= 0) {
+      continue;
+    }
+    attachments.push({
+      path,
+      name: String(parsed.name ?? "file").slice(0, 200),
+      size: Math.floor(size),
+      sortOrder: i,
+    });
+  }
+  if (!body && !attachments.length) return;
 
   const unreadBefore = await prisma.message.count({
     where: { threadId, senderMemberId: me.id, readAt: null },
@@ -222,9 +235,7 @@ export async function sendMessage(
       threadId,
       senderMemberId: me.id,
       body: body || "（ファイルを送信しました）",
-      attachmentUrl,
-      attachmentName,
-      attachmentSize,
+      attachments: attachments.length ? { createMany: { data: attachments } } : undefined,
     },
   });
   await prisma.thread.update({

@@ -10,8 +10,11 @@ import {
   deleteTemplate,
 } from "../actions";
 import { btn, h2Cls } from "@/lib/ui";
+import { MAX_ATTACHMENTS } from "@/lib/attachments";
 
 type Template = { id: string; name: string; body: string };
+/** 添付1件（preview は画像のときだけ入るローカルURL） */
+type Attach = { url: string; name: string; size: number; preview: string | null };
 
 /** 3.50 KB のように読みやすく表示する。 */
 export function formatBytes(n: number): string {
@@ -84,14 +87,9 @@ export function Composer({
   const [modal, setModal] = useState<null | "template" | "schedule" | "file">(null);
   const [creating, setCreating] = useState(false);
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
-  const [attachment, setAttachment] = useState<{ url: string; name: string; size: number } | null>(null);
+  const [attachments, setAttachments] = useState<Attach[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  // 添付モーダル（アップロード完了後に開き、ここでメッセージを書いて送信する）
-  const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [fileBaseName, setFileBaseName] = useState("");
-  const [fileExt, setFileExt] = useState("");
-  const [fileMessage, setFileMessage] = useState("");
   const [pending, startTransition] = useTransition();
 
   // 面談日程
@@ -121,59 +119,48 @@ export function Composer({
     });
   }
 
-  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    // 画像はその場でプレビューできるようにローカルURLを作る（アップロード結果は非公開URLのため）
-    const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
-    const dot = file.name.lastIndexOf(".");
-    setFileBaseName(dot > 0 ? file.name.slice(0, dot) : file.name);
-    setFileExt(dot > 0 ? file.name.slice(dot) : "");
-    // アップロードには時間がかかるため、進行中であることを必ず画面に出す
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const room = MAX_ATTACHMENTS - attachments.length;
+    if (room <= 0) {
+      showToast(`添付できるファイルは${MAX_ATTACHMENTS}件までです`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    const picked = files.slice(0, room);
+    if (files.length > room) showToast(`添付は${MAX_ATTACHMENTS}件までのため、${room}件だけ追加します`);
+
     setUploading(true);
     startTransition(async () => {
-      const res = await uploadMessageAttachment(threadId, fd);
+      for (const file of picked) {
+        const fd = new FormData();
+        fd.append("file", file);
+        // 画像はその場でプレビューできるようにローカルURLを作る（アップロード結果は非公開URLのため）
+        const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+        const res = await uploadMessageAttachment(threadId, fd);
+        if (res.error || !res.url || !res.name) {
+          if (localPreview) URL.revokeObjectURL(localPreview);
+          showToast(res.error ?? "アップロードに失敗しました");
+          continue;
+        }
+        setAttachments((prev) =>
+          prev.length >= MAX_ATTACHMENTS
+            ? prev
+            : [...prev, { url: res.url!, name: res.name!, size: res.size ?? 0, preview: localPreview }]
+        );
+      }
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
-      if (res.error) {
-        if (localPreview) URL.revokeObjectURL(localPreview);
-        showToast(res.error);
-        return;
-      }
-      if (res.url && res.name) {
-        setAttachment({ url: res.url, name: res.name, size: res.size ?? 0 });
-        setFilePreview(localPreview);
-        setFileMessage("");
-        // 登録（アップロード）が終わってからモーダルを開く
-        setModal("file");
-      }
     });
   }
 
-  /** 添付モーダルを閉じる（送信せずに閉じた場合は添付を破棄する）。 */
-  function closeFileModal(keepAttachment: boolean) {
-    if (filePreview) URL.revokeObjectURL(filePreview);
-    setFilePreview(null);
-    setModal(null);
-    if (!keepAttachment) setAttachment(null);
-  }
-
-  /** モーダルからそのまま送信する。 */
-  function onSendFile() {
-    if (!attachment) return;
-    const name = `${fileBaseName.trim() || "file"}${fileExt}`;
-    const fd = new FormData();
-    fd.set("message", fileMessage.trim());
-    fd.set("attachmentUrl", attachment.url);
-    fd.set("attachmentName", name);
-    fd.set("attachmentSize", String(attachment.size));
-    startTransition(async () => {
-      await sendMessage(threadId, fd);
-      closeFileModal(false);
-      if (textareaRef.current) textareaRef.current.value = "";
-      showToast("ファイルを送信しました");
+  /** 添付を1件取り消す。 */
+  function removeAttachment(url: string) {
+    setAttachments((prev) => {
+      const target = prev.find((a) => a.url === url);
+      if (target?.preview) URL.revokeObjectURL(target.preview);
+      return prev.filter((a) => a.url !== url);
     });
   }
 
@@ -246,22 +233,44 @@ export function Composer({
           </div>
         ) : null}
 
-        {attachment ? (
-          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-[var(--green)] bg-[var(--green-soft)] px-3 py-2 text-[12px]">
-            <span className="font-semibold text-[var(--green-d)]">
-              📎 {attachment.name}
-            </span>
-            <span className="text-[11px] text-[var(--ink-2)]">を添付しました（送信すると相手に届きます）</span>
-            <button
-              type="button"
-              onClick={() => setAttachment(null)}
-              className="ml-auto text-[var(--red)] underline"
-            >
-              取り消す
-            </button>
-            <input type="hidden" name="attachmentUrl" value={attachment.url} />
-            <input type="hidden" name="attachmentName" value={attachment.name} />
-            <input type="hidden" name="attachmentSize" value={attachment.size} />
+        {attachments.length ? (
+          <div className="mt-2 flex flex-col gap-2">
+            {attachments.map((a) => (
+              <div key={a.url} className="rounded-[10px] border border-[var(--green)] bg-white p-3">
+                {a.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.preview}
+                    alt={a.name}
+                    className="mb-2 max-h-[220px] w-auto rounded object-contain"
+                  />
+                ) : (
+                  <div className="mb-2 text-[28px] leading-none">📄</div>
+                )}
+                <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                  <span className="break-all text-[var(--ink)]">
+                    {a.name}
+                    <span className="text-[var(--muted)]">（{formatBytes(a.size)}）</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(a.url)}
+                    className="shrink-0 text-[var(--red)] underline"
+                  >
+                    取り消す
+                  </button>
+                </div>
+                <input
+                  type="hidden"
+                  name="attachments"
+                  value={JSON.stringify({ url: a.url, name: a.name, size: a.size })}
+                />
+              </div>
+            ))}
+            <p className="text-[11px] text-[var(--muted)]">
+              送信すると相手に届きます（相手はプレビューとダウンロードができます）。
+              添付は{MAX_ATTACHMENTS}件まで・1件8MBまで。
+            </p>
           </div>
         ) : null}
 
@@ -279,92 +288,20 @@ export function Composer({
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              disabled={pending || uploading}
+              disabled={pending || uploading || attachments.length >= MAX_ATTACHMENTS}
               className={btnCls}
             >
-              📎 {uploading ? "アップロード中…" : attachment ? "添付を変更" : "ファイル添付"}
+              📎 {uploading
+                ? "アップロード中…"
+                : attachments.length
+                  ? `ファイル添付（${attachments.length}/${MAX_ATTACHMENTS}）`
+                  : "ファイル添付"}
             </button>
           </div>
           <SubmitButton />
         </div>
-        <input ref={fileRef} type="file" hidden onChange={onPickFile} />
+        <input ref={fileRef} type="file" multiple hidden onChange={onPickFiles} />
       </form>
-
-      {/* 添付ファイルの送信（アップロード完了後に開く） */}
-      {modal === "file" && attachment ? (
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => !pending && closeFileModal(false)} />
-          <div className="relative z-10 flex max-h-[86vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[12px] bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3.5">
-              <h2 className={h2Cls}>ファイルの送信</h2>
-              <button
-                type="button"
-                onClick={() => !pending && closeFileModal(false)}
-                className="text-[20px] leading-none text-[var(--muted)] hover:text-[var(--ink)]"
-                aria-label="閉じる"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <label className="flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-                ファイルに関するメッセージ（任意）
-                <textarea
-                  autoFocus
-                  rows={3}
-                  value={fileMessage}
-                  onChange={(e) => setFileMessage(e.target.value)}
-                  placeholder="例：規格書をお送りします。ご確認ください。"
-                  className="rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
-                />
-              </label>
-
-              <label className="mt-4 flex flex-col gap-1 text-[12px] text-[var(--ink-2)]">
-                ファイル名
-                <span className="flex items-center gap-2">
-                  <input
-                    value={fileBaseName}
-                    onChange={(e) => setFileBaseName(e.target.value)}
-                    className="min-w-0 flex-1 rounded-lg border border-[var(--line)] px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
-                  />
-                  <span className="shrink-0 text-[13px] text-[var(--muted)]">{fileExt}</span>
-                </span>
-              </label>
-
-              <div className="mt-4 grid place-items-center rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] p-4">
-                {filePreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={filePreview} alt="" className="max-h-[240px] w-auto object-contain" />
-                ) : (
-                  <div className="py-8 text-center text-[13px] text-[var(--muted)]">
-                    <div className="text-[28px]">📄</div>
-                    {fileBaseName}
-                    {fileExt}
-                  </div>
-                )}
-              </div>
-              <p className="mt-2 text-[11px] text-[var(--muted)]">
-                {formatBytes(attachment.size)}・このファイルはスレッドの相手だけが開けます。
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 border-t border-[var(--line)] px-5 py-3.5">
-              <button
-                type="button"
-                onClick={() => closeFileModal(false)}
-                disabled={pending}
-                className={btn("secondary")}
-              >
-                キャンセル
-              </button>
-              <button type="button" onClick={onSendFile} disabled={pending} className={btn("primary")}>
-                {pending ? "送信中…" : "送信"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {/* トースト */}
       {toast ? (

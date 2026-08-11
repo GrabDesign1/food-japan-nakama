@@ -13,6 +13,7 @@ import { pricingTierFor, creditCostFor } from "@/lib/billing-core";
 import { consumeCreditsTx } from "@/lib/contact-credits";
 import { createOneTimeCheckout } from "@/lib/billing";
 import { canSendToOthers, MESSAGE_MAX } from "@/lib/security";
+import { MAX_ATTACHMENTS } from "@/lib/attachments";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { safeAttachmentContentType } from "@/lib/upload";
 
@@ -101,15 +102,30 @@ export async function sendProposal(
 
   // 添付は uploadProposalAttachment が返したパスのみ受け付ける
   // （他人のファイルや任意のパスを紐づけられないよう、自分のフォルダ配下に限定する）
-  const rawUrl = String(formData.get("attachmentUrl") ?? "").trim();
-  const attachmentUrl = rawUrl.startsWith(`${PROPOSAL_PREFIX}/${me.id}/`) ? rawUrl : null;
-  const attachmentName = attachmentUrl ? String(formData.get("attachmentName") ?? "").slice(0, 200) : null;
-  const attachmentSizeRaw = Number(formData.get("attachmentSize") ?? 0);
-  const attachmentSize =
-    attachmentUrl && Number.isFinite(attachmentSizeRaw) && attachmentSizeRaw > 0
-      ? Math.floor(attachmentSizeRaw)
-      : null;
-  if (rawUrl && !attachmentUrl) return { error: "添付ファイルを認識できませんでした。もう一度添付してください。" };
+  const rawAttachments = formData.getAll("attachments").map(String);
+  if (rawAttachments.length > MAX_ATTACHMENTS) {
+    return { error: `添付できるファイルは${MAX_ATTACHMENTS}件までです。` };
+  }
+  const attachments: { path: string; name: string; size: number; sortOrder: number }[] = [];
+  for (const [i, raw] of rawAttachments.entries()) {
+    let parsed: { url?: string; name?: string; size?: number };
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return { error: "添付ファイルを認識できませんでした。もう一度添付してください。" };
+    }
+    const path = String(parsed.url ?? "");
+    const size = Number(parsed.size ?? 0);
+    if (!path.startsWith(`${PROPOSAL_PREFIX}/${me.id}/`) || !Number.isFinite(size) || size <= 0) {
+      return { error: "添付ファイルを認識できませんでした。もう一度添付してください。" };
+    }
+    attachments.push({
+      path,
+      name: String(parsed.name ?? "file").slice(0, 200),
+      size: Math.floor(size),
+      sortOrder: i,
+    });
+  }
 
   // ビジネス会員も提案クレジットを消費する（毎月50クレジット付与・繰越なし。2026-08-11確定）。
   // 会員特典は「毎月の付与」と「追加クレジット（単品購入）・掲載オプションの20%割引」に集約した。
@@ -191,9 +207,8 @@ export async function sendProposal(
           senderMemberId: me.id,
           body,
           offeringId: offering.id,
-          attachmentUrl,
-          attachmentName,
-          attachmentSize,
+          // 添付は複数可（旧列 attachmentUrl は既存メッセージの表示専用で、新規は使わない）
+          attachments: attachments.length ? { createMany: { data: attachments } } : undefined,
         },
       });
       await tx.thread.update({ where: { id: thread.id }, data: { lastMessageAt: new Date() } });

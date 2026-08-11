@@ -18,6 +18,8 @@ export async function GET(
   const { messageId } = await params;
   // ?download=1 のときは、ブラウザで開かずに保存させる（署名付きURLに Content-Disposition を付ける）
   const wantsDownload = req.nextUrl.searchParams.get("download") === "1";
+  // ?i=<attachmentId> で複数添付の1件を指定する。省略時は旧列（1件目）を返す
+  const attachmentId = req.nextUrl.searchParams.get("i");
 
   const su = await getSessionUser();
   if (!su) return new NextResponse("unauthorized", { status: 401 });
@@ -25,9 +27,26 @@ export async function GET(
 
   const message = await prisma.message.findUnique({
     where: { id: messageId },
-    select: { id: true, attachmentUrl: true, attachmentName: true, threadId: true },
+    select: {
+      id: true,
+      attachmentUrl: true,
+      attachmentName: true,
+      threadId: true,
+      // 指定された添付が「このメッセージのもの」であることを、ここで一緒に確かめる
+      attachments: attachmentId
+        ? { where: { id: attachmentId }, select: { path: true, name: true } }
+        : false,
+    },
   });
-  if (!message?.attachmentUrl) return new NextResponse("not found", { status: 404 });
+  if (!message) return new NextResponse("not found", { status: 404 });
+
+  const target = attachmentId
+    ? message.attachments?.[0] && {
+        path: message.attachments[0].path,
+        name: message.attachments[0].name,
+      }
+    : message.attachmentUrl && { path: message.attachmentUrl, name: message.attachmentName };
+  if (!target) return new NextResponse("not found", { status: 404 });
 
   const thread = await prisma.thread.findUnique({ where: { id: message.threadId } });
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
@@ -38,9 +57,9 @@ export async function GET(
   const { data, error } = await admin.storage
     .from(BUCKET)
     .createSignedUrl(
-      message.attachmentUrl,
+      target.path,
       SIGNED_URL_TTL_SEC,
-      wantsDownload ? { download: message.attachmentName || true } : undefined
+      wantsDownload ? { download: target.name || true } : undefined
     );
   if (error || !data?.signedUrl) {
     console.error("[attachments] 署名付きURLの発行に失敗:", error);

@@ -10,8 +10,11 @@ import { sendProposal, buyProposalProduct, uploadProposalAttachment, type Propos
 import { createTemplate, deleteTemplate } from "../../../messages/actions";
 import { DEFAULT_TEMPLATES, Modal, formatBytes } from "../../../messages/_components/Composer";
 import { btn } from "@/lib/ui";
+import { MAX_ATTACHMENTS } from "@/lib/attachments";
 
 type Template = { id: string; name: string; body: string };
+/** 添付1件（preview は画像のときだけ入るローカルURL） */
+type Attach = { url: string; name: string; size: number; preview: string | null };
 
 export function ProposeForm(props: {
   mode: "send" | "buy";
@@ -65,13 +68,11 @@ function SendForm({
   const [modal, setModal] = useState<null | "template" | "schedule">(null);
   const [creating, setCreating] = useState(false);
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
-  const [attachment, setAttachment] = useState<{ url: string; name: string; size: number } | null>(null);
+  const [attachments, setAttachments] = useState<Attach[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  // 添付のプレビュー（画像はローカルURLでその場に出す。モーダルは出さない＝2026-08-11 ユーザー指示）
-  const [filePreview, setFilePreview] = useState<string | null>(null);
 
   // 面談日程
   const [rows, setRows] = useState([{ date: "", start: "", end: "" }]);
@@ -120,38 +121,49 @@ function SendForm({
     }
   }
 
-  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    // 画像はその場でプレビューできるようにローカルURLを作る（アップロード結果は非公開URLのため）
-    const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const room = MAX_ATTACHMENTS - attachments.length;
+    if (room <= 0) {
+      showToast(`添付できるファイルは${MAX_ATTACHMENTS}件までです`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    const picked = files.slice(0, room);
+    if (files.length > room) showToast(`添付は${MAX_ATTACHMENTS}件までのため、${room}件だけ追加します`);
+
     setUploading(true);
     startTransition(async () => {
-      const res = await uploadProposalAttachment(offeringId, fd);
+      for (const file of picked) {
+        const fd = new FormData();
+        fd.append("file", file);
+        // 画像はその場でプレビューできるようにローカルURLを作る（アップロード結果は非公開URLのため）
+        const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+        const res = await uploadProposalAttachment(offeringId, fd);
+        if (res.error || !res.url || !res.name) {
+          if (localPreview) URL.revokeObjectURL(localPreview);
+          showToast(res.error ?? "アップロードに失敗しました");
+          continue;
+        }
+        setAttachments((prev) =>
+          prev.length >= MAX_ATTACHMENTS
+            ? prev
+            : [...prev, { url: res.url!, name: res.name!, size: res.size ?? 0, preview: localPreview }]
+        );
+      }
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
-      if (res.error) {
-        if (localPreview) URL.revokeObjectURL(localPreview);
-        showToast(res.error);
-        return;
-      }
-      if (res.url && res.name) {
-        // 前の添付のプレビューURLは破棄する（添付し直しでも増えないように）
-        if (filePreview) URL.revokeObjectURL(filePreview);
-        setAttachment({ url: res.url, name: res.name, size: res.size ?? 0 });
-        setFilePreview(localPreview);
-        showToast("提案に添付しました");
-      }
     });
   }
 
-  /** 添付を取り消す。 */
-  function clearAttachment() {
-    if (filePreview) URL.revokeObjectURL(filePreview);
-    setFilePreview(null);
-    setAttachment(null);
+  /** 添付を1件取り消す。 */
+  function removeAttachment(url: string) {
+    setAttachments((prev) => {
+      const target = prev.find((a) => a.url === url);
+      if (target?.preview) URL.revokeObjectURL(target.preview);
+      return prev.filter((a) => a.url !== url);
+    });
   }
 
   function onCreateTemplate() {
@@ -224,33 +236,44 @@ function SendForm({
         ) : null}
 
         {/* 添付は提案文のすぐ下に出す（画像はそのままプレビュー）。相手にも同じ形で届く */}
-        {attachment ? (
-          <div className="mt-2 rounded-[10px] border border-[var(--green)] bg-white p-3">
-            {filePreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={filePreview}
-                alt={attachment.name}
-                className="mb-2 max-h-[220px] w-auto rounded object-contain"
-              />
-            ) : (
-              <div className="mb-2 text-[28px] leading-none">📄</div>
-            )}
-            <div className="flex flex-wrap items-center gap-2 text-[12px]">
-              <span className="break-all text-[var(--ink)]">
-                {attachment.name}
-                <span className="text-[var(--muted)]">（{formatBytes(attachment.size)}）</span>
-              </span>
-              <button type="button" onClick={clearAttachment} className="shrink-0 text-[var(--red)] underline">
-                取り消す
-              </button>
-            </div>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">
+        {attachments.length ? (
+          <div className="mt-2 flex flex-col gap-2">
+            {attachments.map((a) => (
+              <div key={a.url} className="rounded-[10px] border border-[var(--green)] bg-white p-3">
+                {a.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.preview}
+                    alt={a.name}
+                    className="mb-2 max-h-[220px] w-auto rounded object-contain"
+                  />
+                ) : (
+                  <div className="mb-2 text-[28px] leading-none">📄</div>
+                )}
+                <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                  <span className="break-all text-[var(--ink)]">
+                    {a.name}
+                    <span className="text-[var(--muted)]">（{formatBytes(a.size)}）</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(a.url)}
+                    className="shrink-0 text-[var(--red)] underline"
+                  >
+                    取り消す
+                  </button>
+                </div>
+                <input
+                  type="hidden"
+                  name="attachments"
+                  value={JSON.stringify({ url: a.url, name: a.name, size: a.size })}
+                />
+              </div>
+            ))}
+            <p className="text-[11px] text-[var(--muted)]">
               提案を送信すると相手に届きます（相手はプレビューとダウンロードができます）。
+              添付は{MAX_ATTACHMENTS}件まで・1件8MBまで。
             </p>
-            <input type="hidden" name="attachmentUrl" value={attachment.url} />
-            <input type="hidden" name="attachmentName" value={attachment.name} />
-            <input type="hidden" name="attachmentSize" value={attachment.size} />
           </div>
         ) : null}
 
@@ -267,13 +290,17 @@ function SendForm({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            disabled={pending || uploading}
+            disabled={pending || uploading || attachments.length >= MAX_ATTACHMENTS}
             className={btnCls}
           >
-            📎 {uploading ? "アップロード中…" : attachment ? "添付を変更" : "ファイル添付"}
+            📎 {uploading
+              ? "アップロード中…"
+              : attachments.length
+                ? `ファイル添付（${attachments.length}/${MAX_ATTACHMENTS}）`
+                : "ファイル添付"}
           </button>
         </div>
-        <input ref={fileRef} type="file" hidden onChange={onPickFile} />
+        <input ref={fileRef} type="file" multiple hidden onChange={onPickFiles} />
 
         {state.error ? (
           <p className="mt-3 rounded-md bg-[var(--red-soft)] px-3 py-2 text-[12px] text-[var(--red)]">
