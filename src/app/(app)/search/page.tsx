@@ -431,6 +431,9 @@ async function searchProjects(f: {
   ]);
 }
 
+/** 登録事業者の一覧に出す最低記入率（%）。 */
+const MIN_PRODUCER_COMPLETION = 50;
+
 async function searchProducers(f: {
   tenantId: string;
   area: string;
@@ -441,6 +444,9 @@ async function searchProducers(f: {
   const where = {
     tenantId: f.tenantId,
     status: "APPROVED" as const,
+    // プロフィールがほとんど空の会員は一覧に出さない（「（未入力）」ばかりが並ぶため・2026-08-11 ユーザー指示）。
+    // しきい値は記入率50%。自分の会社も同じ基準（他社から見えている状態をそのまま見せる）。
+    completionRate: { gte: MIN_PRODUCER_COMPLETION },
     ...(f.category ? { categoryL1: f.category } : {}),
     ...(f.area ? { prefecture: { contains: f.area } } : {}),
     ...(f.q

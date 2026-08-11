@@ -426,9 +426,13 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className={h2Cls}>🌱 まずはプロフィールを入力しましょう</h2>
+              {/* 1文目は「表示されない」という不利益なので、太字・大きめで先に目に入るようにする */}
+              <p className="mt-1.5 text-[16px] font-bold leading-7 text-[var(--ink)]">
+                プロフィールの入力内容が50%未満の場合、相手の「案件を探す」の登録事業者に表示されません。
+              </p>
               <p className="mt-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
                 プロフィールが空のままだと、相手から見つけてもらえず、審査の申請もできません。
-                事業者名や事業内容など、まずは基本の項目からで大丈夫です。
+                事業者名や事業内容など、まずは基本の項目から入力ください。
               </p>
             </div>
             <Link href="/profile" className={`${btn("primary")} shrink-0`}>
