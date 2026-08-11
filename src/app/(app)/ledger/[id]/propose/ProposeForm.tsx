@@ -124,6 +124,7 @@ function SendForm({
   const [attachments, setAttachments] = useState<Attach[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [pending, startTransition] = useTransition();
 
 
@@ -171,13 +172,12 @@ function SendForm({
     }
   }
 
-  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+  /** 選択・貼り付け・ドロップの入口。まとめてアップロードして添付に積む。 */
+  function uploadFiles(files: File[]) {
     if (!files.length) return;
     const room = MAX_ATTACHMENTS - attachments.length;
     if (room <= 0) {
       showToast(`添付できるファイルは${MAX_ATTACHMENTS}件までです`);
-      if (fileRef.current) fileRef.current.value = "";
       return;
     }
     const picked = files.slice(0, room);
@@ -203,8 +203,29 @@ function SendForm({
         );
       }
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     });
+  }
+
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    uploadFiles(Array.from(e.target.files ?? []));
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  /** スクリーンショット等をそのまま貼り付けられるようにする（⌘V / Ctrl+V）。 */
+  function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.clipboardData?.files ?? []);
+    if (!files.length) return;
+    e.preventDefault(); // 画像のときだけ既定の貼り付けを止める（文字の貼り付けは通常どおり）
+    uploadFiles(files);
+  }
+
+  /** テキスト欄へのドラッグ&ドロップでも添付できるようにする。 */
+  function onDrop(e: React.DragEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    if (!files.length) return;
+    e.preventDefault();
+    setDragOver(false);
+    uploadFiles(files);
   }
 
   /** 添付を1件取り消す。 */
@@ -251,9 +272,23 @@ function SendForm({
           name="message"
           required
           rows={6}
-          placeholder="例：規格外トマトを年間○トン供給できます。糖度・サイズ・出荷時期は〜"
-          className="w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+          placeholder="例：規格外トマトを年間○トン供給できます。糖度・サイズ・出荷時期は〜（画像はここに貼り付け・ドロップできます）"
+          onPaste={onPaste}
+          onDrop={onDrop}
+          onDragOver={(e) => {
+            if (e.dataTransfer?.types?.includes("Files")) {
+              e.preventDefault();
+              setDragOver(true);
+            }
+          }}
+          onDragLeave={() => setDragOver(false)}
+          className={`w-full rounded-lg border bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)] ${
+            dragOver ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)]"
+          }`}
         />
+        <p className="mt-1 text-[11px] text-[var(--muted)]">
+          画像はテキスト欄に貼り付け（⌘V）・ドラッグ&ドロップでも添付できます。
+        </p>
 
         {uploading ? (
           <div className="mt-2 flex items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--canvas)] px-3 py-2 text-[12px] text-[var(--ink-2)]">

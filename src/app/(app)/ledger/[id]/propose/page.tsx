@@ -318,7 +318,7 @@ export default async function ProposePage({
           <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5">
             <h2 className={h2Cls}>提案内容</h2>
             <p className="mt-1 text-[12px] text-[var(--ink-2)]">
-              提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます（提案を送信 → 相手が確認 → 条件を相談）。
+              提案できる内容や対応できる条件を書いて送ると、募集企業と商談ができます。（提案を送信 → 相手が確認 → 条件を相談）。
             </p>
             <ProposeForm
               mode="send"

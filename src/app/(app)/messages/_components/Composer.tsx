@@ -91,6 +91,7 @@ export function Composer({
   const [attachments, setAttachments] = useState<Attach[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [pending, startTransition] = useTransition();
 
   // テンプレート作成
@@ -116,13 +117,12 @@ export function Composer({
     });
   }
 
-  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+  /** 選択・貼り付け・ドロップの入口。まとめてアップロードして添付に積む。 */
+  function uploadFiles(files: File[]) {
     if (!files.length) return;
     const room = MAX_ATTACHMENTS - attachments.length;
     if (room <= 0) {
       showToast(`添付できるファイルは${MAX_ATTACHMENTS}件までです`);
-      if (fileRef.current) fileRef.current.value = "";
       return;
     }
     const picked = files.slice(0, room);
@@ -148,8 +148,29 @@ export function Composer({
         );
       }
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     });
+  }
+
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    uploadFiles(Array.from(e.target.files ?? []));
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  /** スクリーンショット等をそのまま貼り付けられるようにする（⌘V / Ctrl+V）。 */
+  function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.clipboardData?.files ?? []);
+    if (!files.length) return;
+    e.preventDefault();
+    uploadFiles(files);
+  }
+
+  /** テキスト欄へのドラッグ&ドロップでも添付できるようにする。 */
+  function onDrop(e: React.DragEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    if (!files.length) return;
+    e.preventDefault();
+    setDragOver(false);
+    uploadFiles(files);
   }
 
   /** 添付を1件取り消す。 */
@@ -196,8 +217,19 @@ export function Composer({
           name="message"
           rows={3}
           defaultValue={initialDraft}
-          placeholder={`${otherName} へのメッセージ`}
-          className="w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)]"
+          placeholder={`${otherName} へのメッセージ（画像はここに貼り付け・ドロップできます）`}
+          onPaste={onPaste}
+          onDrop={onDrop}
+          onDragOver={(e) => {
+            if (e.dataTransfer?.types?.includes("Files")) {
+              e.preventDefault();
+              setDragOver(true);
+            }
+          }}
+          onDragLeave={() => setDragOver(false)}
+          className={`w-full rounded-lg border bg-white px-3 py-2 text-[14px] text-[var(--ink)] outline-none focus:border-[var(--green)] ${
+            dragOver ? "border-[var(--green)] bg-[var(--green-soft)]" : "border-[var(--line)]"
+          }`}
         />
 
         {uploading ? (
