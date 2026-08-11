@@ -154,7 +154,7 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
                       onClick={() => setOpenId(m.id)}
                       className="text-left font-medium text-[var(--green-d)] underline decoration-dotted underline-offset-2 hover:text-[var(--green)]"
                     >
-                      {m.name || "（未入力）"}
+                      {m.name || `（未入力）${m.contactEmail !== "—" ? ` ${m.contactEmail}` : ""}`}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-[var(--ink-2)]">{m.contactName}</td>
@@ -244,7 +244,7 @@ function DetailModal({
         <div className="mb-3 flex items-start justify-between gap-4">
           <div>
             <h2 className={h2Cls}>
-              {row.name || "（未入力）"}
+              {row.name || `（会員名 未入力）${row.contactEmail !== "—" ? ` ${row.contactEmail}` : ""}`}
             </h2>
             <p className="mt-1 text-[12px] text-[var(--muted)]">
               担当者：{row.contactName}（{row.contactEmail}）
