@@ -3,6 +3,13 @@
 import { prisma } from "@/lib/db";
 
 export { PHASES, PHASE_DESC, isStale } from "@/lib/deal-constants";
+import {
+  PHASE_CONTRACTED,
+  PHASE_SHIPPED,
+  PHASE_RECEIVED,
+  PHASE_DOCS,
+  PHASE_DONE,
+} from "@/lib/deal-constants";
 
 /** 2会員間の商談を取得。無ければ作成（phase 0）。 */
 export async function ensureDeal(params: {
@@ -90,5 +97,33 @@ export async function touchDealActivity(meId: string, otherId: string) {
       ],
     },
     data: { lastActivityAt: new Date() },
+  });
+}
+
+/**
+ * 記録された事実（合意・発送・受け取り・帳票の発行）から、あるべき段階を計算して
+ * 前に進める（戻さない）。段階は手で動かせないので、表示と事実がずれたら自動で直す。
+ * 旧仕様で completedAt だけ入った記録が取り残されていたため追加（2026-08-12）。
+ */
+export async function reconcileDealPhase(threadId: string): Promise<void> {
+  const [offer, docs] = await Promise.all([
+    prisma.contractOffer.findFirst({
+      where: { threadId, status: "accepted" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, shippedAt: true, receivedAt: true, completedAt: true },
+    }),
+    prisma.issuedDocument.findMany({ where: { threadId }, select: { kind: true } }),
+  ]);
+  if (!offer) return;
+
+  let should = PHASE_CONTRACTED;
+  if (offer.shippedAt) should = Math.max(should, PHASE_SHIPPED);
+  if (offer.receivedAt || offer.completedAt) should = Math.max(should, PHASE_RECEIVED);
+  if (docs.some((d) => d.kind === "invoice" || d.kind === "delivery")) should = Math.max(should, PHASE_DOCS);
+  if (docs.some((d) => d.kind === "receipt")) should = Math.max(should, PHASE_DONE);
+
+  await prisma.deal.updateMany({
+    where: { threadId, phase: { lt: should } },
+    data: { phase: should },
   });
 }

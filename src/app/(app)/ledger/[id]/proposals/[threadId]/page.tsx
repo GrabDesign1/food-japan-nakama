@@ -8,6 +8,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { markThreadRead } from "../../../../messages/actions";
+import { reconcileDealPhase } from "@/lib/deal";
 import { Composer } from "../../../../messages/_components/Composer";
 import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
@@ -36,6 +37,8 @@ export default async function OfferingThreadPage({
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
   // 既読化はサイドバーの未読バッジと競合しないよう先に完了させる
   await markThreadRead(thread.id);
+  // 段階は手で動かせないので、記録された事実とずれていたらここで直す
+  await reconcileDealPhase(thread.id);
 
   const [other, messages, draft, templates, offering, deal, contractOffers, nda] = await Promise.all([
     prisma.member.findUnique({
