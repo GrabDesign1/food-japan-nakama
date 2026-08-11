@@ -137,7 +137,7 @@ export default async function OfferingDetailPage({
   // ②探している（調達したい）案件で未提案なら、提案ページへ直接進む
   // ③売りたい案件は同じページ内の問い合わせフォームへ
   const ctaHref = existingThread
-    ? `/messages/${existingThread.id}`
+    ? `/ledger/${offering.id}/proposals/${existingThread.id}`
     : !isGiveDirection(offering.direction)
       ? `/ledger/${offering.id}/propose`
       : "#inquiry";
@@ -421,7 +421,7 @@ export default async function OfferingDetailPage({
               {memberDisplayName} とはすでにやり取りがあります。
             </span>
             <Link
-              href={`/messages/${existingThread.id}`}
+              href={`/ledger/${offering.id}/proposals/${existingThread.id}`}
               className={btn("primary", "sm")}
             >
               メッセージを見る →

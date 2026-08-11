@@ -257,7 +257,8 @@ export async function sendProposal(
     console.error("[propose] 通知失敗:", e);
   }
 
-  redirect(`/messages/${threadId}`);
+  // 案件とやり取りを1画面につなぐため、送信後は案件ごとのやり取り画面へ戻す（2026-08-11）
+  redirect(`/ledger/${offering.id}/proposals/${threadId}`);
 }
 
 /** 紹介料・クレジットパックの購入（Stripe Checkout）。決済後は提案ページへ戻る。 */

@@ -250,7 +250,7 @@ export default async function OfferingProposalsPage({
                 <span className="rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--green-d)]">
                   {PHASES[r.phase] ?? PHASES[0]}
                 </span>
-                <Link href={`/messages/${r.thread.id}`} className={`${btn("action", "sm")} w-full text-center`}>
+                <Link href={`/ledger/${offering.id}/proposals/${r.thread.id}`} className={`${btn("action", "sm")} w-full text-center`}>
                   やり取りを見る →
                 </Link>
               </div>

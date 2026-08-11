@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { markThreadRead } from "../actions";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
-import { ScrollToLatest } from "../_components/ScrollToLatest";
+import { MessageList } from "../_components/MessageList";
 import { ThreadHeader } from "../_components/ThreadHeader";
 import { h1Cls } from "@/lib/ui";
 
@@ -111,87 +111,8 @@ export default async function ThreadPage({
           {/* 対象案件と進捗（案件ごとのやり取り） */}
           <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} />
 
-          {/* メッセージ */}
-          <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5">
-            <div className="flex flex-col gap-4">
-              {messages.map((msg) => {
-                const mine = msg.senderMemberId === me.id;
-                return (
-                  <div key={msg.id} className={mine ? "text-right" : "text-left"}>
-                    <div className="mb-1 text-[11px] text-[var(--muted)]">
-                      {mine ? "自分" : other?.name} ・ {timeStr(msg.createdAt)}
-                    </div>
-                    <div
-                      className={`inline-block max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-left text-[14px] leading-7 ${
-                        mine
-                          ? "bg-[var(--green)] text-white"
-                          : "bg-[var(--canvas)] text-[var(--ink)]"
-                      }`}
-                    >
-                      {msg.body}
-                      {/* 添付は複数可。旧メッセージ（attachmentUrl の1件）も同じ形で出す */}
-                      {[
-                        ...(msg.attachmentUrl
-                          ? [
-                              {
-                                key: "legacy",
-                                query: "",
-                                name: msg.attachmentName,
-                                size: msg.attachmentSize,
-                              },
-                            ]
-                          : []),
-                        ...msg.attachments.map((a) => ({
-                          key: a.id,
-                          query: `?i=${a.id}`,
-                          name: a.name,
-                          size: a.size,
-                        })),
-                      ].map((a) => (
-                        <div key={a.key} className="mt-2 rounded-[10px] border border-[var(--line)] bg-white p-3">
-                          {isImageName(a.name) ? (
-                            // 非公開バケットのため、配信口（参加者のみ）を経由して表示する
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={`/api/attachments/${msg.id}${a.query}`}
-                              alt={a.name ?? "添付画像"}
-                              className="mb-2 max-h-[220px] w-auto rounded object-contain"
-                            />
-                          ) : (
-                            <div className="mb-2 text-[28px] leading-none">📄</div>
-                          )}
-                          <div className="flex flex-wrap items-center gap-2 text-[12px]">
-                            <span className="break-all text-[var(--ink)]">
-                              {a.name ?? "添付ファイル"}
-                              {a.size ? (
-                                <span className="text-[var(--muted)]">（{formatBytes(a.size)}）</span>
-                              ) : null}
-                            </span>
-                            <a
-                              href={`/api/attachments/${msg.id}${a.query}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
-                            >
-                              プレビュー
-                            </a>
-                            <a
-                              href={`/api/attachments/${msg.id}${a.query ? `${a.query}&` : "?"}download=1`}
-                              className="shrink-0 rounded border border-[var(--line)] px-2.5 py-1 text-[var(--green-d)] hover:bg-[var(--canvas)]"
-                            >
-                              ダウンロード
-                            </a>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {/* 最新メッセージまで自動スクロールする目印 */}
-            <ScrollToLatest latestId={lastMessageId} />
-          </div>
+          {/* メッセージ（案件ごとの提案画面と共用） */}
+          <MessageList messages={messages} meId={me.id} otherName={other?.name ?? "相手"} />
 
           {/* 入力欄（下書き・テンプレート・面談日程・添付） */}
           <Composer
@@ -209,24 +130,3 @@ export default async function ThreadPage({
   );
 }
 
-/** 拡張子から画像かどうかを判定する（サムネイル表示の可否）。 */
-function isImageName(name: string | null): boolean {
-  if (!name) return false;
-  return /\.(png|jpe?g|gif|webp|avif)$/i.test(name);
-}
-
-/** 3.50 KB のように読みやすく表示する。 */
-function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(2)} KB`;
-  return `${(n / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function timeStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${y}/${m}/${day} ${hh}:${mm}`;
-}
