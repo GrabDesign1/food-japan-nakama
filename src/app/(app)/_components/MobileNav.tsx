@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 type Item = { label: string; href: string; admin?: boolean; section?: string };
 
@@ -15,6 +16,8 @@ const BOTTOM_ITEMS = [
 
 export function MobileNav({ items, unread }: { items: Item[]; unread: number }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
 
   return (
     <>

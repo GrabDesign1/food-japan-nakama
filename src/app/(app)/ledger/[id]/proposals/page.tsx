@@ -104,15 +104,17 @@ export default async function OfferingProposalsPage({
       : Promise.resolve([]),
   ]);
 
-  // 未開封のリードは本文を返さない（一覧で読めてしまうと開封課金の意味がない）
-  const lockedThreadIds = await loadLockedLeadThreadIds(me.id, threads);
-
-  const notes = threadIds.length
-    ? await prisma.proposalNote.findMany({
-        where: { threadId: { in: threadIds }, memberId: me.id },
-        select: { threadId: true, rating: true, memo: true },
-      })
-    : [];
+  // 未開封のリードは本文を返さない（一覧で読めてしまうと開封課金の意味がない）。
+  // 非公開メモとは独立なので同時に引く。
+  const [lockedThreadIds, notes] = await Promise.all([
+    loadLockedLeadThreadIds(me.id, threads),
+    threadIds.length
+      ? prisma.proposalNote.findMany({
+          where: { threadId: { in: threadIds }, memberId: me.id },
+          select: { threadId: true, rating: true, memo: true },
+        })
+      : Promise.resolve([]),
+  ]);
   const noteByThread = new Map(notes.map((n) => [n.threadId, n]));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const dealMap = new Map(deals.map((d) => [d.threadId ?? "", d]));

@@ -68,8 +68,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     // minmax(0,1fr)：中身が広くても列を押し広げない＝ページ全体の横スクロールを防ぐ
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_minmax(0,1fr)]">
+      {/* キーボードでナビを飛ばして本文へ（普段は見えない） */}
+      <a href="#main" className="skip-link">
+        本文へスキップ
+      </a>
       {/* サイドバー（PCのみ。スマホはヘッダーのメニューから） */}
-      <aside className="sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex print:hidden">
+      <aside className="on-dark sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[var(--ink)] py-6 text-[#E7EBE4] md:flex print:hidden">
         <Link
           href="/"
           className="flex items-center gap-2.5 border-b border-white/12 px-5 pb-4 transition hover:opacity-80"
@@ -163,7 +167,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* スマホは下部固定ナビ分の余白を確保 */}
-        <main className="max-w-[1200px] px-4 py-6 pb-24 md:px-8 md:pb-6">{children}</main>
+        <main id="main" className="max-w-[1200px] px-4 py-6 pb-24 md:px-8 md:pb-6">{children}</main>
       </div>
     </div>
   );

@@ -108,10 +108,14 @@ export default async function OfferingDetailPage({
         })
       : Promise.resolve(null),
   ]);
-  // 24時間閲覧数は自分の閲覧を含めて数える（記録後にカウント＝従来と同じ値）
-  const views24h = await prisma.offeringView.count({
-    where: { offeringId: offering.id, createdAt: { gte: last24hStart() } },
-  });
+  // 24時間閲覧数（自分の閲覧を含めて数える＝記録後にカウント）と掲載者の返信率。
+  // 互いに独立なので同時に引く（直列にすると1往復ぶん待たせる）。
+  const [views24h, rateMap] = await Promise.all([
+    prisma.offeringView.count({
+      where: { offeringId: offering.id, createdAt: { gte: last24hStart() } },
+    }),
+    loadReplyRates([offering.memberId]),
+  ]);
 
   // 応募者限定公開：会社名・事業者情報は「掲載者が返信した相手（承認）」だけに開示する
   let applicantRestricted = false;
@@ -125,11 +129,9 @@ export default async function OfferingDetailPage({
   }
   const memberDisplayName = applicantRestricted ? "非公開（提案・承認後に開示）" : offering.member.name;
 
-  // 掲載者の返信率。問い合わせも提案も相手側に紹介料がかかるため、
-  // 「返ってくる相手か」を先に見せる（母数が足りないときは null＝出さない）。
-  const replyRate = applicantRestricted
-    ? null
-    : (await loadReplyRates([offering.memberId])).get(offering.memberId) ?? null;
+  // 返信率は「返ってくる相手か」の判断材料（母数が足りないときは null＝出さない）。
+  // 応募者限定公開のときは事業者を伏せるので出さない。
+  const replyRate = applicantRestricted ? null : rateMap.get(offering.memberId) ?? null;
 
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";

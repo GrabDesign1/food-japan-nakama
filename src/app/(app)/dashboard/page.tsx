@@ -466,7 +466,7 @@ export default async function DashboardPage() {
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className={h2Cls}>進行中の活動</h2>
-              <Link href="/deals" className="text-[13px] font-bold text-[var(--green-d)]">
+              <Link href="/deals" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
                 すべて見る →
               </Link>
             </div>
@@ -524,7 +524,7 @@ export default async function DashboardPage() {
             <section>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className={h2Cls}>自分が出した案件</h2>
-                <Link href="/ledger" className="text-[13px] font-bold text-[var(--green-d)]">
+                <Link href="/ledger" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
                   すべて見る →
                 </Link>
               </div>

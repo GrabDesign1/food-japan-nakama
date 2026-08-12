@@ -6,6 +6,7 @@
 // 生成する文面は従来と同じ（【面談候補日】…）。
 import { useState } from "react";
 import { btn, h2Cls, input } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 const DURATIONS = [30, 60, 90];
@@ -84,10 +85,15 @@ export function ScheduleModal({
   }
 
   const full = slots.length >= MAX_SLOTS;
+  // Escで閉じる（この部品は開いている間だけ描画される）
+  useCloseOnEscape(true, onClose);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="面談の候補日時を選ぶ"
         className="max-h-[86vh] w-full max-w-[640px] overflow-y-auto rounded-[12px] bg-white p-7 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >

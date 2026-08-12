@@ -4,6 +4,7 @@
 // 従来は案件ページへのリンクで、提案の途中で別ページへ移動してしまい入力が中断していた。
 import { useState } from "react";
 import { btn, h2FormCls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export type OfferingDetailData = {
   title: string;
@@ -26,6 +27,8 @@ const LEVEL_STYLE: Record<string, string> = {
 
 export function OfferingDetailModal({ data }: { data: OfferingDetailData }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
 
   return (
     <>

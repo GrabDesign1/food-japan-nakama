@@ -22,42 +22,39 @@ export async function ThreadList({
   const otherIds = Array.from(
     new Set(threads.map((t) => (t.fromMemberId === meId ? t.toMemberId : t.fromMemberId)))
   );
-  const members = await prisma.member.findMany({
-    where: { id: { in: otherIds } },
-    select: { id: true, name: true, avatarUrl: true },
-  });
-  const map = new Map(members.map((m) => [m.id, m]));
-
-  const unread = await prisma.message.groupBy({
-    by: ["threadId"],
-    where: {
-      threadId: { in: threads.map((t) => t.id) },
-      senderMemberId: { not: meId },
-      readAt: null,
-    },
-    _count: { _all: true },
-  });
-  const unreadMap = new Map(unread.map((g) => [g.threadId, g._count._all]));
-
   // スレッドは案件ごとに分かれるため、どの案件のやり取りかを一覧でも示す（2026-08-11）
   const offeringIds = Array.from(
     new Set(threads.map((t) => t.offeringId).filter((v): v is string => !!v))
   );
-  const offerings = offeringIds.length
-    ? await prisma.offering.findMany({
-        where: { id: { in: offeringIds } },
-        select: { id: true, title: true, direction: true },
-      })
-    : [];
-  const offeringMap = new Map(offerings.map((o) => [o.id, o]));
 
-  // 未開封のリードは、一覧のプレビューにも本文を出さない
-  const locked = await loadLockedLeadThreadIds(meId, threads);
-  // 未開封の行の下にビジネス会員の案内を出す（すでに会員の人には出さない）
-  const me = await prisma.member.findUnique({
-    where: { id: meId },
-    select: { paymentStatus: true },
-  });
+  // ここから先は互いに独立なので1往復にまとめる（直列だと一覧の表示が待たされる・2026-08-12）
+  const [members, unread, offerings, locked, me] = await Promise.all([
+    prisma.member.findMany({
+      where: { id: { in: otherIds } },
+      select: { id: true, name: true, avatarUrl: true },
+    }),
+    prisma.message.groupBy({
+      by: ["threadId"],
+      where: {
+        threadId: { in: threads.map((t) => t.id) },
+        senderMemberId: { not: meId },
+        readAt: null,
+      },
+      _count: { _all: true },
+    }),
+    offeringIds.length
+      ? prisma.offering.findMany({
+          where: { id: { in: offeringIds } },
+          select: { id: true, title: true, direction: true },
+        })
+      : Promise.resolve([]),
+    // 未開封のリードは、一覧のプレビューにも本文を出さない
+    loadLockedLeadThreadIds(meId, threads),
+    prisma.member.findUnique({ where: { id: meId }, select: { paymentStatus: true } }),
+  ]);
+  const map = new Map(members.map((m) => [m.id, m]));
+  const unreadMap = new Map(unread.map((g) => [g.threadId, g._count._all]));
+  const offeringMap = new Map(offerings.map((o) => [o.id, o]));
   const showUpsell = me?.paymentStatus !== "PAID";
   // 案内は未開封の**先頭の1件だけ**に出す（未開封が並ぶと同じ案内が何個も出て邪魔になる）
   const firstLockedId = threads.find((t) => locked.has(t.id))?.id ?? null;

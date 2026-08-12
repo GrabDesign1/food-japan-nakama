@@ -125,19 +125,22 @@ export default async function SearchPage({
   const hasFilter = Boolean(area || category || q);
   // スポンサー枠（有料掲載）。自然表示の順位には混ぜず、広告表記つきで分離表示する。
   const sponsorDirection = direction === "GIVE" || direction === "WANT" ? direction : "WANT";
-  const [viewMap, topPr, sponsored, effectsMap] = await Promise.all([
+  // 掲載者の返信率（問い合わせ・提案には紹介料がかかるため、返ってくる相手かを先に示す）。
+  // 一覧の分は他のクエリと同時に投げる（後から直列で足すと1往復ぶん待たせる）。
+  const [viewMap, topPr, sponsored, effectsMap, listRates] = await Promise.all([
     views24hMap(offerings.map((o) => o.id)),
     target === "offerings" && page === 1 ? getTopPrOffering(sponsorDirection) : Promise.resolve(null),
     target === "offerings" && page === 1 ? getSponsoredOfferings(sponsorDirection, 4) : Promise.resolve([]),
     getActiveEffectsFor(offerings.map((o) => o.id)),
+    loadReplyRates(offerings.map((o) => o.memberId)),
   ]);
-
-  // 掲載者の返信率（問い合わせ・提案には紹介料がかかるため、返ってくる相手かを先に示す）
-  const replyRates = await loadReplyRates([
-    ...offerings.map((o) => o.memberId),
-    ...sponsored.map((o) => o.memberId),
-    ...(topPr ? [topPr.memberId] : []),
-  ]);
+  // スポンサー枠の掲載者は一覧に含まれないことがあるので、足りない分だけ追加で引く
+  const extraIds = [...sponsored.map((o) => o.memberId), ...(topPr ? [topPr.memberId] : [])].filter(
+    (id) => !listRates.has(id)
+  );
+  const replyRates = extraIds.length
+    ? new Map([...listRates, ...(await loadReplyRates(extraIds))])
+    : listRates;
   const replyRateOf = (memberId: string) => replyRates.get(memberId)?.percent ?? null;
 
   // 共創プロジェクトの掲載者名
@@ -240,8 +243,10 @@ export default async function SearchPage({
           </label>
 
           <input
+            type="search"
             name="q"
             defaultValue={q}
+            aria-label="フリーワードで探す"
             placeholder="フリーワードで探す"
             className={`${inputCls} min-w-[180px] flex-1`}
           />

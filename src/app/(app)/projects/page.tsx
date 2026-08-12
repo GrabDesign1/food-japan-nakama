@@ -120,6 +120,7 @@ export default async function ProjectsPage({
           type="search"
           name="q"
           defaultValue={q}
+          aria-label="キーワードで探す"
           placeholder="キーワード（例：規格外、麦芽粕）"
           className={`${selectCls} w-[220px] max-w-full`}
         />

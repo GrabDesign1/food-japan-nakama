@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useActionState } from "react";
 import { buyListingOption, type OptionState } from "./actions";
 import { btn, h2FormCls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export function BuyOptionButton({
   offeringId,
@@ -34,6 +35,8 @@ export function BuyOptionButton({
   effectType: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
   const [state, action, pending] = useActionState<OptionState, FormData>(
     buyListingOption.bind(null, offeringId, code),
     {}

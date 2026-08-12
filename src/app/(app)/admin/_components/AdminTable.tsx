@@ -13,6 +13,7 @@ import {
 import type { ReviewDecision } from "@/lib/member";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { btn, h2Cls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export type AdminRow = {
   id: string;
@@ -233,12 +234,17 @@ function DetailModal({
 }) {
   const isSuspended = row.status === "SUSPENDED";
   const isPaid = row.paymentStatus === "PAID";
+  // Escで閉じる（この部品は開いている間だけ描画される）
+  useCloseOnEscape(true, onClose);
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="会員の詳細"
         className="max-h-[86vh] w-full max-w-[640px] overflow-y-auto rounded-[12px] bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
