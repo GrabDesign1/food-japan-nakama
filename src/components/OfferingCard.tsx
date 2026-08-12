@@ -79,12 +79,6 @@ export function OfferingCard({
     priceUnit: o.priceUnit ?? null,
   });
   const deadlineText = deadlineLabel(o.applicationDeadline);
-  // 写真の代わりに出す要点（探している案件用。値があるものだけ）
-  const summary = [
-    price ? `希望価格：${price}` : null,
-    amount ? `数量：${amount}` : null,
-    o.minOrderText ? `最小：${o.minOrderText}` : null,
-  ].filter((v): v is string => !!v);
   // 取引条件の要点（値があるものだけ・最大3つ）
   const conditions = [
     o.minOrderText ? `最小 ${o.minOrderText}` : null,
@@ -106,23 +100,20 @@ export function OfferingCard({
         }`}
       >
         {!thumb && !isGive ? (
-          // 探している（調達したい）は写真が無いのが普通。プレースホルダーで面積を使わず、
-          // 概要と条件をここに出す（2026-08-11 ユーザー指定）。
-          <div className="flex h-full w-full flex-col gap-1 p-3 text-left">
-            {o.description ? (
-              <p className="line-clamp-4 text-[11px] leading-4 text-[var(--ink-2)]">{o.description}</p>
-            ) : (
-              <p className="text-[11px] leading-4 text-[var(--muted)]">（詳しい説明は詳細ページに掲載）</p>
-            )}
-            {summary.length ? (
-              <div className="mt-auto flex flex-col gap-0.5">
-                {summary.map((s) => (
-                  <div key={s} className="truncate text-[11px] font-medium text-[var(--ink)]">
-                    {s}
-                  </div>
-                ))}
-              </div>
-            ) : null}
+          // 探している（調達したい）は写真が無いのが普通。
+          // 説明文を敷いていたが、一覧が文字だらけになるためロゴ面にした（2026-08-12 ユーザー指定）。
+          // 画像を1枚増やさず、既存のロゴマーク＋文字で同じ見た目を組む（どの幅でも綺麗に出る）。
+          // 写真と同じ扱い＝黒地のロゴ面を敷き、バッジはその上に重なる（写真のときと同じ見え方）。
+          // バッジが下に何行も並ぶことがあるので、ロゴは中央より少し上に置く。
+          <div className="absolute inset-0 flex items-center justify-center bg-[var(--ink)] px-3 pb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-mark.png"
+              alt=""
+              className="h-[42%] max-h-[76px] min-h-[34px] w-auto object-contain"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
         ) : thumb ? (
           // next/image: 表示サイズに合わせて縮小・WebP変換した画像を配信（fill=親のaspect枠いっぱい）
