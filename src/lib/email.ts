@@ -199,6 +199,35 @@ export async function notifyUnreadRefund(params: {
   await send({ to, subject: "【FOOD JAPAN NAKAMA】紹介クレジットの返還のお知らせ", html });
 }
 
+/**
+ * 送った問い合わせが一定期間ひらかれていないことを、買い手へ知らせる（2026-08-12）。
+ * 売り手側の開封が有料になったので、待たされている側に状況を見せる（透明化）。
+ */
+export async function notifyLeadUnopened(params: {
+  to: string[];
+  offeringTitle: string;
+  days: number;
+  threadId: string;
+}): Promise<void> {
+  const { to, offeringTitle, days, threadId } = params;
+  if (to.length === 0) return;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">お送りした問い合わせは、まだ開封されていません</h2>
+    <p style="font-size:14px;color:#3C4A62">案件「<b>${esc(offeringTitle)}</b>」へお送りした問い合わせが、${days}日間ひらかれていません。相手先の状況により、確認までお時間がかかる場合があります。</p>
+    <p style="font-size:13px;color:#3C4A62">ほかの掲載者にも問い合わせることができます。お探しのものが見つからない場合は、事務局へご相談ください（無料）。</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/messages/${threadId}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">やり取りを確認する</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">このメールはFOOD JAPAN NAKAMAから自動送信されています。</p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】「${offeringTitle}」への問い合わせは未開封です`,
+    html,
+  });
+}
+
 /** 案内メール一斉送信（案内メール同意者のみに送る広告メール。広告表記つき）。 */
 export async function sendMatchedNoticeEmail(params: {
   to: string;

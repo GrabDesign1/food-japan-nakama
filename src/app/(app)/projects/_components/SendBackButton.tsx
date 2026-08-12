@@ -5,6 +5,7 @@
 import { useActionState, useState } from "react";
 import { adminSendBackProject, type ProjectState } from "../actions";
 import { btn, input, h2FormCls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export function SendBackButton({
   projectId,
@@ -14,6 +15,8 @@ export function SendBackButton({
   projectTitle: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
   const action = adminSendBackProject.bind(null, projectId);
   const [state, formAction, pending] = useActionState<ProjectState, FormData>(action, {});
 

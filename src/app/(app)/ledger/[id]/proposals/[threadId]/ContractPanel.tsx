@@ -14,6 +14,7 @@ import {
 } from "./actions";
 import { btn, h2Cls, h2FormCls, input } from "@/lib/ui";
 import { PHASE_PAID } from "@/lib/deal-constants";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export type OfferRow = {
   id: string;
@@ -60,6 +61,8 @@ function ConfirmModal({
   children: (close: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
   return (
     <>
       {trigger(() => setOpen(true))}

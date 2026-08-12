@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import {
   sendMessage,
@@ -419,9 +419,29 @@ export function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  // Escで閉じる＋開いたら中へフォーカスを移す（キーボードだけで開閉できるように・2026-08-12）。
+  // 支援技術に「ここが今の対象で、背後は読まなくてよい」と伝えるため role/aria-modal も付ける。
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    panelRef.current?.focus();
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
-      <div className="max-h-[86vh] w-full max-w-[640px] overflow-y-auto rounded-[12px] bg-white p-7 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        tabIndex={-1}
+        className="max-h-[86vh] w-full max-w-[640px] overflow-y-auto rounded-[12px] bg-white p-7 shadow-xl outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-5 flex items-center justify-between">
           <h2 className={`${h2Cls} flex items-center gap-2`}>
             <span className="inline-block h-5 w-1.5 rounded bg-[var(--green)]" />

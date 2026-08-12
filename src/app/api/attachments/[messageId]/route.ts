@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { loadLockedLeadThreadIds } from "@/lib/lead-unlock";
 
 const BUCKET = "message-attachments";
 const SIGNED_URL_TTL_SEC = 60;
@@ -52,6 +53,10 @@ export async function GET(
   if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
     return new NextResponse("not found", { status: 404 });
   }
+
+  // 未開封のリードは添付も渡さない（本文を伏せても、添付の資料が読めては同じこと）
+  const locked = await loadLockedLeadThreadIds(me.id, [thread]);
+  if (locked.has(thread.id)) return new NextResponse("payment required", { status: 402 });
 
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.storage

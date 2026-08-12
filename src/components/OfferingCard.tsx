@@ -17,6 +17,8 @@ export type OfferingCardData = {
   description?: string | null;
   memberName?: string | null;
   memberLogoUrl?: string | null;
+  /** 掲載者の返信率（0〜100）。母数が少ないときは渡さない＝表示しない（src/lib/reply-rate.ts） */
+  replyRatePercent?: number | null;
   createdAt?: string | Date | null;
   tags?: string[];
   views24h?: number | null;
@@ -29,8 +31,7 @@ export type OfferingCardData = {
   itemCondition?: string | null;
   supplyFrequency?: string | null;
   applicationDeadline?: string | Date | null;
-  // 掲載タイプ・一言特徴（第2次改善）
-  listingPurpose?: string | null;
+  // 一言特徴（第2次改善）
   tagline?: string | null;
   // 探している（WANT）の募集タイプ
   seekingType?: string | null;
@@ -190,9 +191,6 @@ export function OfferingCard({
       <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--muted)]">
         <span>{meta?.icon}</span>
         <span>{o.category}</span>
-        {o.listingPurpose === "challenge" ? (
-          <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--amber)]">課題解決</span>
-        ) : null}
         {deadlineText ? (
           <span className={`ml-auto ${deadlineText === "募集終了" ? "text-[var(--red)]" : ""}`}>
             {deadlineText}
@@ -228,6 +226,12 @@ export function OfferingCard({
             />
           ) : null}
           <span className="truncate">{o.memberName}</span>
+          {/* 返信率＝届いた問い合わせに返している割合（母数が足りるときだけ渡ってくる） */}
+          {o.replyRatePercent != null ? (
+            <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-[var(--green-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--green-d)]">
+              返信率 {o.replyRatePercent}%
+            </span>
+          ) : null}
         </div>
       ) : null}
 

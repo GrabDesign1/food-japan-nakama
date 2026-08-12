@@ -26,7 +26,6 @@ import {
   SUPPLY_FREQUENCIES,
   DELIVERY_METHODS,
   SHIPPING_BEARERS,
-  LISTING_PURPOSES,
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
   seekingTypesFor,
@@ -74,16 +73,10 @@ export type OfferingData = {
   shippingCostBearer: string | null;
   applicationDeadline: string | null; // YYYY-MM-DD
   desiredPartner: string | null;
-  listingPurpose: string | null;
   tagline: string | null;
   featureDiff: string | null;
   backgroundStory: string | null;
   usageIdeas: string | null;
-  challengeCurrent: string | null;
-  challengeScale: string | null;
-  challengeTried: string | null;
-  challengeAsk: string | null;
-  challengeValue: string | null;
   sampleAvailability: string | null;
   priceTaxType: string | null;
   // 探している（WANT）
@@ -130,7 +123,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const isGive = offering.direction === "GIVE";
 
   // プレビューに使う項目は制御コンポーネントにする
-  const [listingPurpose, setListingPurpose] = useState(offering.listingPurpose ?? "trade");
   const [category, setCategory] = useState(offering.category);
   const [title, setTitle] = useState(offering.title);
   const [tagline, setTagline] = useState(offering.tagline ?? "");
@@ -141,9 +133,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const [backgroundStory, setBackgroundStory] = useState(offering.backgroundStory ?? "");
   const [usageIdeas, setUsageIdeas] = useState(offering.usageIdeas ?? "");
   const [desiredPartner, setDesiredPartner] = useState(offering.desiredPartner ?? "");
-  const [challengeCurrent, setChallengeCurrent] = useState(offering.challengeCurrent ?? "");
-  const [challengeAsk, setChallengeAsk] = useState(offering.challengeAsk ?? "");
-  const [challengeValue, setChallengeValue] = useState(offering.challengeValue ?? "");
   const [area, setArea] = useState(offering.area ?? "");
   const [priceType, setPriceType] = useState(offering.priceType ?? "");
   const [priceAmount, setPriceAmount] = useState(
@@ -262,40 +251,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                     </span>
                   </span>
                   <span className="pl-6 text-[11px] leading-4 text-[var(--muted)]">{desc}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* ── 掲載タイプ（売りたい（提供したい）のみ） ── */}
-        {isGive ? (
-          <div>
-            <h2 className={h2FormCls}>今回、何をしたいですか？</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {LISTING_PURPOSES.map(([value, label, desc]) => (
-                <label
-                  key={value}
-                  className={`flex cursor-pointer flex-col gap-1 rounded-[10px] border p-4 transition ${
-                    listingPurpose === value
-                      ? "border-[var(--green)] bg-[var(--green-soft)]"
-                      : "border-[var(--line)] bg-white hover:border-[var(--green)]"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="listingPurpose"
-                      value={value}
-                      checked={listingPurpose === value}
-                      onChange={() => setListingPurpose(value)}
-                      className="accent-[var(--green)]"
-                    />
-                    <span className={`text-[14px] font-bold ${listingPurpose === value ? "text-[var(--green-d)]" : "text-[var(--ink)]"}`}>
-                      {label}
-                    </span>
-                  </span>
-                  <span className="text-[12px] leading-5 text-[var(--muted)]">{desc}</span>
                 </label>
               ))}
             </div>
@@ -545,69 +500,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
               />
             </div>
 
-            {listingPurpose === "challenge" ? (
-              <div className="flex flex-col gap-4 rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
-                <div>
-                  <div className="text-[13px] font-bold text-[var(--amber-ink)]">課題について教えてください</div>
-                  <p className="mt-0.5 text-[11px] text-[var(--muted)]">
-                    背景が伝わると、協力したい相手が動きやすくなります。
-                  </p>
-                </div>
-                <div className={labelCls}>
-                  <span>いま、どのような課題が起きていますか？<Req /></span>
-                  <textarea
-                    name="challengeCurrent"
-                    value={challengeCurrent}
-                    onChange={(e) => setChallengeCurrent(e.target.value)}
-                    rows={3}
-                    placeholder="例：ビール製造のたびに麦芽粕が週200kg発生し、大半を有償で廃棄しています。"
-                    className={inputCls}
-                  />
-                </div>
-                <div className={labelCls}>
-                  <span>課題の規模や期限はどのくらいですか？<Opt /></span>
-                  <textarea
-                    name="challengeScale"
-                    defaultValue={offering.challengeScale ?? ""}
-                    rows={2}
-                    placeholder="例：年間約10t。廃棄費用は年間約50万円。通年で発生します。"
-                    className={inputCls}
-                  />
-                </div>
-                <div className={labelCls}>
-                  <span>これまでに試したことはありますか？<Opt /></span>
-                  <textarea
-                    name="challengeTried"
-                    defaultValue={offering.challengeTried ?? ""}
-                    rows={2}
-                    placeholder="例：近隣の畜産農家へ飼料として少量提供。ただし水分が多く運搬がネックでした。"
-                    className={inputCls}
-                  />
-                </div>
-                <div className={labelCls}>
-                  <span>どのような協力・提案を求めていますか？<Req /></span>
-                  <textarea
-                    name="challengeAsk"
-                    value={challengeAsk}
-                    onChange={(e) => setChallengeAsk(e.target.value)}
-                    rows={3}
-                    placeholder="例：菓子・パン・発酵食品などへの加工パートナー。小規模な試作からの相談も歓迎です。"
-                    className={inputCls}
-                  />
-                </div>
-                <div className={labelCls}>
-                  <span>解決できると、誰にどのような価値が生まれますか？<Req /></span>
-                  <textarea
-                    name="challengeValue"
-                    value={challengeValue}
-                    onChange={(e) => setChallengeValue(e.target.value)}
-                    rows={3}
-                    placeholder="例：廃棄コストの削減に加え、地域の食品ロス削減と新商品づくりにつながります。"
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-            ) : null}
           </>
         ) : null}
 
@@ -993,9 +885,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           >
             {isGive ? "売りたい（提供したい）" : "探している（調達したい）"}
           </span>
-          {isGive && listingPurpose === "challenge" ? (
-            <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 font-bold text-[var(--amber)]">課題解決</span>
-          ) : null}
           {!isGive && seekingType ? (
             <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 font-bold text-[var(--amber)]">
               {SEEKING_TYPE_SHORT[seekingType] ?? seekingType}
@@ -1072,30 +961,6 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
           <>
             <PreviewBlock label="特徴・こだわり" text={featureDiff} />
             <PreviewBlock label="生まれた背景・販売したい理由" text={backgroundStory} />
-            {listingPurpose === "challenge" &&
-            (challengeCurrent.trim() || challengeAsk.trim() || challengeValue.trim()) ? (
-              <div className="mt-3 rounded-[8px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-2.5">
-                <div className="text-[11px] font-bold text-[var(--amber-ink)]">いま起きている課題と、求めている協力</div>
-                <div className="mt-1 flex flex-col gap-2">
-                  {(
-                    [
-                      ["課題", challengeCurrent],
-                      ["求める協力", challengeAsk],
-                      ["解決後の価値", challengeValue],
-                    ] as [string, string][]
-                  )
-                    .filter(([, v]) => v.trim())
-                    .map(([k, v]) => (
-                      <div key={k}>
-                        <div className="text-[10px] font-bold text-[var(--amber-ink)]">{k}</div>
-                        <p className="line-clamp-3 whitespace-pre-wrap text-[12px] leading-5 text-[var(--ink-2)]">
-                          {v.trim()}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ) : null}
             <PreviewBlock label="おすすめの使い方・売り場" text={usageIdeas} />
           </>
         ) : null}

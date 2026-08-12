@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { markThreadRead } from "../actions";
+import { loadLockedLeadThreadIds } from "@/lib/lead-unlock";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
 import { MessageList } from "../_components/MessageList";
@@ -25,6 +26,14 @@ export default async function ThreadPage({
     notFound();
   }
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
+
+  // 未開封のリードはこの画面では読めない（本文を返さず、開封できる案件ごとの画面へ送る）。
+  // ここを塞がないと、案件ごとの画面のゲートを迂回して全文が読めてしまう。
+  const locked = await loadLockedLeadThreadIds(me.id, [thread]);
+  if (locked.has(thread.id) && thread.offeringId) {
+    redirect(`/ledger/${thread.offeringId}/proposals/${thread.id}`);
+  }
+
   // 既読化はサイドバーの未読バッジ表示と競合しないよう先に完了させる
   await markThreadRead(thread.id);
   // 取得系の独立クエリはまとめて並列実行（直列4往復→1往復）

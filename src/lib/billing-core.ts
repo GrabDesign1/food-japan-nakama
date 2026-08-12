@@ -41,6 +41,15 @@ export const MEMBER_OPTION_DISCOUNT_PERCENT = 20;
 /** ビジネス会員に毎月付与する紹介クレジット数（繰越なし＝翌月の付与時に期限切れ）。 */
 export const MEMBER_MONTHLY_CREDITS = 50;
 
+/** 紹介クレジット1件の単価（税込）。都度購入・パックとも同額。 */
+export const CREDIT_UNIT_PRICE = 1100;
+/** ビジネス会員の月額（税込）。案内の文言で「1件あたり」を出すために使う。 */
+export const MEMBER_MONTHLY_FEE = 22000;
+/** 会員が月次分を使い切ったときの1件あたり（440円）。 */
+export const MEMBER_UNIT_PRICE = Math.round(MEMBER_MONTHLY_FEE / MEMBER_MONTHLY_CREDITS);
+/** 月次分を使い切ったときの相当額（55,000円）。 */
+export const MEMBER_MONTHLY_WORTH = MEMBER_MONTHLY_CREDITS * CREDIT_UNIT_PRICE;
+
 export type PricingTier = "standard" | "verified_lead";
 export type CreditType = "standard" | "verified";
 

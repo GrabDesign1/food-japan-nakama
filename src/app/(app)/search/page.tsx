@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CATEGORY_L1, PREFECTURES } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
+import { loadReplyRates } from "@/lib/reply-rate";
 import { getSponsoredOfferings, getTopPrOffering, getActiveEffectsFor } from "@/lib/billing";
 import { ProducerCard } from "@/components/ProducerCard";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -124,12 +125,23 @@ export default async function SearchPage({
   const hasFilter = Boolean(area || category || q);
   // スポンサー枠（有料掲載）。自然表示の順位には混ぜず、広告表記つきで分離表示する。
   const sponsorDirection = direction === "GIVE" || direction === "WANT" ? direction : "WANT";
-  const [viewMap, topPr, sponsored, effectsMap] = await Promise.all([
+  // 掲載者の返信率（問い合わせ・提案には紹介料がかかるため、返ってくる相手かを先に示す）。
+  // 一覧の分は他のクエリと同時に投げる（後から直列で足すと1往復ぶん待たせる）。
+  const [viewMap, topPr, sponsored, effectsMap, listRates] = await Promise.all([
     views24hMap(offerings.map((o) => o.id)),
     target === "offerings" && page === 1 ? getTopPrOffering(sponsorDirection) : Promise.resolve(null),
     target === "offerings" && page === 1 ? getSponsoredOfferings(sponsorDirection, 4) : Promise.resolve([]),
     getActiveEffectsFor(offerings.map((o) => o.id)),
+    loadReplyRates(offerings.map((o) => o.memberId)),
   ]);
+  // スポンサー枠の掲載者は一覧に含まれないことがあるので、足りない分だけ追加で引く
+  const extraIds = [...sponsored.map((o) => o.memberId), ...(topPr ? [topPr.memberId] : [])].filter(
+    (id) => !listRates.has(id)
+  );
+  const replyRates = extraIds.length
+    ? new Map([...listRates, ...(await loadReplyRates(extraIds))])
+    : listRates;
+  const replyRateOf = (memberId: string) => replyRates.get(memberId)?.percent ?? null;
 
   // 共創プロジェクトの掲載者名
   const projMemberIds = Array.from(new Set(coprojects.map((p) => p.memberId)));
@@ -231,8 +243,10 @@ export default async function SearchPage({
           </label>
 
           <input
+            type="search"
             name="q"
             defaultValue={q}
+            aria-label="フリーワードで探す"
             placeholder="フリーワードで探す"
             className={`${inputCls} min-w-[180px] flex-1`}
           />
@@ -280,7 +294,12 @@ export default async function SearchPage({
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 <OfferingCard
-                  o={{ ...topPr, memberName: topPr.member.name, memberLogoUrl: topPr.member.companyLogoUrl }}
+                  o={{
+                    ...topPr,
+                    memberName: topPr.member.name,
+                    memberLogoUrl: topPr.member.companyLogoUrl,
+                    replyRatePercent: replyRateOf(topPr.memberId),
+                  }}
                   isOwn={topPr.memberId === ownMemberId}
                 />
               </div>
@@ -297,7 +316,12 @@ export default async function SearchPage({
                 {sponsored.map((o) => (
                   <OfferingCard
                     key={`sp-${o.id}`}
-                    o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl }}
+                    o={{
+                      ...o,
+                      memberName: o.member.name,
+                      memberLogoUrl: o.member.companyLogoUrl,
+                      replyRatePercent: replyRateOf(o.memberId),
+                    }}
                     isOwn={o.memberId === ownMemberId}
                     featured
                   />
@@ -309,7 +333,13 @@ export default async function SearchPage({
             {offerings.map((o) => (
               <OfferingCard
                 key={o.id}
-                o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl, views24h: viewMap.get(o.id) ?? 0 }}
+                o={{
+                  ...o,
+                  memberName: o.member.name,
+                  memberLogoUrl: o.member.companyLogoUrl,
+                  views24h: viewMap.get(o.id) ?? 0,
+                  replyRatePercent: replyRateOf(o.memberId),
+                }}
                 isOwn={o.memberId === ownMemberId}
                 urgent={effectsMap.get(o.id)?.has("urgent") ?? false}
               />

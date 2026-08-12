@@ -17,6 +17,12 @@ import {
   amountLabel,
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
+import { loadReplyRates } from "@/lib/reply-rate";
+import {
+  isLeadChargingActive,
+  LEAD_UNLOCK_START_LABEL,
+  LEAD_UNOPENED_NOTICE_DAYS,
+} from "@/lib/lead-unlock";
 import { sendInterest } from "../../messages/actions";
 import { PendingButton } from "@/components/PendingButton";
 import { duplicateOffering } from "../actions";
@@ -102,10 +108,14 @@ export default async function OfferingDetailPage({
         })
       : Promise.resolve(null),
   ]);
-  // 24時間閲覧数は自分の閲覧を含めて数える（記録後にカウント＝従来と同じ値）
-  const views24h = await prisma.offeringView.count({
-    where: { offeringId: offering.id, createdAt: { gte: last24hStart() } },
-  });
+  // 24時間閲覧数（自分の閲覧を含めて数える＝記録後にカウント）と掲載者の返信率。
+  // 互いに独立なので同時に引く（直列にすると1往復ぶん待たせる）。
+  const [views24h, rateMap] = await Promise.all([
+    prisma.offeringView.count({
+      where: { offeringId: offering.id, createdAt: { gte: last24hStart() } },
+    }),
+    loadReplyRates([offering.memberId]),
+  ]);
 
   // 応募者限定公開：会社名・事業者情報は「掲載者が返信した相手（承認）」だけに開示する
   let applicantRestricted = false;
@@ -118,6 +128,10 @@ export default async function OfferingDetailPage({
     applicantRestricted = ownerReplied === 0;
   }
   const memberDisplayName = applicantRestricted ? "非公開（提案・承認後に開示）" : offering.member.name;
+
+  // 返信率は「返ってくる相手か」の判断材料（母数が足りないときは null＝出さない）。
+  // 応募者限定公開のときは事業者を伏せるので出さない。
+  const replyRate = applicantRestricted ? null : rateMap.get(offering.memberId) ?? null;
 
   const meta = categoryMeta(offering.category);
   const isGive = offering.direction === "GIVE";
@@ -153,6 +167,14 @@ export default async function OfferingDetailPage({
 
   const infoRows: [string, string | null][] = [
     ["事業者", memberDisplayName || "—"],
+    ...(replyRate
+      ? ([
+          [
+            "返信率",
+            `${replyRate.percent}%（届いた${replyRate.received}件のうち${replyRate.replied}件に返信）`,
+          ],
+        ] as [string, string | null][])
+      : []),
     // 応募者限定公開では会員由来の所在地を出さない（都道府県＋市区町村＋業種で会員が特定できてしまう）
     [
       "地域",
@@ -227,11 +249,6 @@ export default async function OfferingDetailPage({
           <span className="rounded bg-[var(--green-soft)] px-2.5 py-1 text-[12px] text-[var(--green-d)]">
             {meta?.icon} {offering.category}
           </span>
-          {offering.listingPurpose === "challenge" ? (
-            <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
-              課題を一緒に解決したい
-            </span>
-          ) : null}
           {!isGive && offering.seekingType ? (
             <span className="rounded bg-[var(--amber-soft)] px-2.5 py-1 text-[12px] font-bold text-[var(--amber)]">
               {SEEKING_TYPE_LABEL[offering.seekingType] ?? offering.seekingType}
@@ -441,7 +458,7 @@ export default async function OfferingDetailPage({
             </div>
             <p className="mb-3 mt-0.5 text-[12px] text-[var(--ink-2)]">
               提案できる商品・原料や対応できる条件を書いて送ると、募集企業と相談できます。
-              初回の提案には紹介料がかかります（消費するのは通常案件で1クレジット、NAKAMA確認済み案件で3クレジット）。継続メッセージと、受けた問い合わせへの返信は無料です。
+              初回の提案には紹介料がかかります（消費するのは通常案件で1クレジット、NAKAMA確認済み案件で3クレジット）。提案が届いたあとの継続メッセージは、何往復でも無料です。
             </p>
             <Link href={`/ledger/${offering.id}/propose`} className={btn("primary")}>
               提案へ進む（料金の確認）→
@@ -456,7 +473,16 @@ export default async function OfferingDetailPage({
               この案件について問い合わせる
             </div>
             <p className="mb-2 mt-0.5 text-[12px] text-[var(--ink-2)]">
-              価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。問い合わせは無料です。
+              価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。
+              <b>問い合わせの送信は無料です。</b>
+            </p>
+            {/* 予告：開封が有料になることと、待たされたときに何が起きるかを先に伝える（2026-08-12） */}
+            <p className="mb-2 rounded-[8px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-3 py-2 text-[11px] leading-5 text-[var(--ink-2)]">
+              {isLeadChargingActive()
+                ? "お送りした内容は、売り手が開封してから読まれます（売り手は開封に紹介料1クレジットを使います）。"
+                : `${LEAD_UNLOCK_START_LABEL}以降にお送りいただく問い合わせは、売り手が開封してから読まれます（売り手は開封に紹介料1クレジットを使います）。`}
+              {LEAD_UNOPENED_NOTICE_DAYS}日たっても開封されない場合は、メールでお知らせします。
+              具体的に書いていただくほど開いてもらいやすくなります（必要な数量・時期・用途・お届け先）。
             </p>
             <textarea
               name="message"
@@ -511,31 +537,6 @@ export default async function OfferingDetailPage({
         <div>
           <h2 className={`${h2Cls} mb-2`}>生まれた背景・販売したい理由</h2>
           <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{offering.backgroundStory}</p>
-        </div>
-      ) : null}
-
-      {/* 課題（課題解決型のみ・入力がある項目だけ表示） */}
-      {offering.challengeCurrent || offering.challengeAsk || offering.challengeValue ? (
-        <div className="rounded-[12px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-5">
-          <h2 className={`${h2Cls} mb-3`}>いま起きている課題と、求めている協力</h2>
-          <div className="flex flex-col gap-4">
-            {(
-              [
-                ["いま起きている課題", offering.challengeCurrent],
-                ["課題の規模・期限", offering.challengeScale],
-                ["これまで試したこと", offering.challengeTried],
-                ["求めている協力・提案", offering.challengeAsk],
-                ["解決後に生まれる価値", offering.challengeValue],
-              ] as [string, string | null][]
-            )
-              .filter(([, v]) => !!v)
-              .map(([k, v]) => (
-                <div key={k}>
-                  <h3 className="text-[13px] font-bold text-[var(--amber-ink)]">{k}</h3>
-                  <p className="mt-1 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">{v}</p>
-                </div>
-              ))}
-          </div>
         </div>
       ) : null}
 

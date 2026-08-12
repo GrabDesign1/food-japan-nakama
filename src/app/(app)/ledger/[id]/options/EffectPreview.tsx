@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { OfferingCard, type OfferingCardData } from "@/components/OfferingCard";
 import { btn, h2FormCls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 type Props = {
   effectType: string;
@@ -275,6 +276,8 @@ function PreviewBody({ effectType, sample }: Props) {
 
 export function EffectPreview({ effectType, sample, productName }: ButtonProps) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
   // 表示例を持たない効果（セット等）ではボタン自体を出さない
   if (!PreviewBody({ effectType, sample })) return null;
 

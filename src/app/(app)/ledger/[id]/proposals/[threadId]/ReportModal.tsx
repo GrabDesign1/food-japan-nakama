@@ -9,9 +9,12 @@ import { useActionState, useState } from "react";
 import { submitViolationReport, type ReportState } from "../../../../report/actions";
 import { VIOLATION_KINDS } from "@/lib/violation";
 import { btn, h2FormCls, input } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export function ReportModal({ threadId, otherName }: { threadId: string; otherName: string }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => setOpen(false));
   const [state, formAction, pending] = useActionState<ReportState, FormData>(
     submitViolationReport,
     {}

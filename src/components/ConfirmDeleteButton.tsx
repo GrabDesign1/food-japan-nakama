@@ -3,6 +3,7 @@
 // 削除の確認モーダル。「今はしない」「削除する」で確認してから server action を実行する。
 import { useState, useTransition } from "react";
 import { btn, h2FormCls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export function ConfirmDeleteButton({
   action,
@@ -18,6 +19,8 @@ export function ConfirmDeleteButton({
   description?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => !pending && setOpen(false));
   const [pending, startTransition] = useTransition();
 
   return (

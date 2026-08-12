@@ -18,7 +18,6 @@ import {
   SUPPLY_FREQUENCIES,
   DELIVERY_METHODS,
   SHIPPING_BEARERS,
-  LISTING_PURPOSES,
   SAMPLE_AVAILABILITY,
   PRICE_TAX_TYPES,
   ALL_SEEKING_TYPE_KEYS,
@@ -209,16 +208,10 @@ type ParsedOffering = {
   shippingCostBearer: string | null;
   applicationDeadline: Date | null;
   desiredPartner: string | null;
-  listingPurpose: string | null;
   tagline: string | null;
   featureDiff: string | null;
   backgroundStory: string | null;
   usageIdeas: string | null;
-  challengeCurrent: string | null;
-  challengeScale: string | null;
-  challengeTried: string | null;
-  challengeAsk: string | null;
-  challengeValue: string | null;
   sampleAvailability: string | null;
   priceTaxType: string | null;
   seekingType: string | null;
@@ -352,18 +345,10 @@ function parseOfferingForm(
       applicationDeadline,
       desiredPartner: g("desiredPartner", 4000) || null,
       // 掲載タイプと物語（質問形式）
-      listingPurpose: LISTING_PURPOSES.some(([v]) => v === g("listingPurpose"))
-        ? g("listingPurpose")
-        : null,
       tagline: g("tagline", 120) || null,
       featureDiff: g("featureDiff", 4000) || null,
       backgroundStory: g("backgroundStory", 4000) || null,
       usageIdeas: g("usageIdeas", 4000) || null,
-      challengeCurrent: g("challengeCurrent", 4000) || null,
-      challengeScale: g("challengeScale", 2000) || null,
-      challengeTried: g("challengeTried", 4000) || null,
-      challengeAsk: g("challengeAsk", 4000) || null,
-      challengeValue: g("challengeValue", 4000) || null,
       sampleAvailability: pick("sampleAvailability", SAMPLE_AVAILABILITY),
       priceTaxType: pick("priceTaxType", PRICE_TAX_TYPES),
       // 探している（WANT）
@@ -469,16 +454,10 @@ export async function duplicateOffering(offeringId: string): Promise<void> {
       shippingCostBearer: offering.shippingCostBearer,
       desiredPartner: offering.desiredPartner,
       sampleAvailability: offering.sampleAvailability,
-      listingPurpose: offering.listingPurpose,
       tagline: offering.tagline,
       featureDiff: offering.featureDiff,
       backgroundStory: offering.backgroundStory,
       usageIdeas: offering.usageIdeas,
-      challengeCurrent: offering.challengeCurrent,
-      challengeScale: offering.challengeScale,
-      challengeTried: offering.challengeTried,
-      challengeAsk: offering.challengeAsk,
-      challengeValue: offering.challengeValue,
       seekingType: offering.seekingType,
       usageContext: offering.usageContext,
       // 出荷分ごとに変わるもの・引き継がないもの

@@ -3,6 +3,7 @@
 // 汎用の確認モーダルつきボタン（公開・申請など）。確認してから server action を実行する。
 import { useState, useTransition } from "react";
 import { btn, h2FormCls } from "@/lib/ui";
+import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export function ConfirmActionButton({
   action,
@@ -22,6 +23,8 @@ export function ConfirmActionButton({
   cancelLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Escで閉じる（キーボードだけでも閉じられるように）
+  useCloseOnEscape(open, () => !pending && setOpen(false));
   const [pending, startTransition] = useTransition();
 
   return (

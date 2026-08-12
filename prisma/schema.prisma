@@ -461,6 +461,9 @@ model Thread {
   closedAt     DateTime? @map("closed_at")
   closedBy     String?   @map("closed_by")
   closedReason String?   @map("closed_reason")
+  /// 「まだ開封されていません」を買い手へ知らせた日時（日次バッチ・一度だけ）。
+  /// 送信済みの印なので、再送しないためにここに残す。
+  leadUnopenedNoticeAt DateTime? @map("lead_unopened_notice_at")
   createdAt     DateTime @default(now()) @map("created_at")
 
   messages Message[]
@@ -982,4 +985,27 @@ model IssuedDocument {
   @@unique([offerId, kind])
   @@index([threadId])
   @@map("issued_documents")
+}
+
+/// 「売りたい」に届いたリード（買い手からの問い合わせ）の開封記録（2026-08-12）。
+/// 一覧では社名・地域・業種と概要までは無料で見え、**本文と連絡先を初めて開くときに1クレジット**。
+/// 開封後の往復は無料。提案側の紹介料（ContactUnlock）と表裏で、
+/// 「初回の接点に紹介料」という一本のルールにするための仕組み。
+model LeadUnlock {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  /// 開封した側＝案件の掲載者（売り手）
+  memberId   String   @map("member_id")
+  /// 問い合わせた側（買い手）
+  buyerMemberId String @map("buyer_member_id")
+  threadId   String   @unique @map("thread_id")
+  offeringId String?  @map("offering_id")
+  /// 消費したクレジットの記録（台帳のエントリ）
+  creditLedgerEntryId String? @map("credit_ledger_entry_id")
+  openedAt   DateTime @default(now()) @map("opened_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([memberId])
+  @@index([buyerMemberId])
+  @@map("lead_unlocks")
 }

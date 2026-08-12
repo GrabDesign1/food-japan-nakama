@@ -25,7 +25,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <JsonLd data={ORG_WEBSITE_JSONLD} />
-      <main className="flex-1">{children}</main>
+      {/* キーボードでヘッダーを飛ばして本文へ（普段は見えない） */}
+      <a href="#main" className="skip-link">
+        本文へスキップ
+      </a>
+      <main id="main" className="flex-1">{children}</main>
 
       {/* フッター */}
       <footer className="mt-16 border-t border-[var(--line)] bg-[var(--green-soft)]">

@@ -56,7 +56,6 @@ export default async function ListingOptionsPage({
       itemCondition: true,
       supplyFrequency: true,
       applicationDeadline: true,
-      listingPurpose: true,
       tagline: true,
       seekingType: true,
       createdAt: true,
@@ -112,7 +111,6 @@ export default async function ListingOptionsPage({
     itemCondition: offering.itemCondition,
     supplyFrequency: offering.supplyFrequency,
     applicationDeadline: offering.applicationDeadline,
-    listingPurpose: offering.listingPurpose,
     tagline: offering.tagline,
     seekingType: offering.seekingType,
   };

@@ -9,6 +9,9 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { markThreadRead } from "../../../../messages/actions";
 import { reconcileDealPhase } from "@/lib/deal";
+import { isChargeableLead, isLeadUnlocked, LEAD_PREVIEW_CHARS } from "@/lib/lead-unlock";
+import { getCreditBalance } from "@/lib/contact-credits";
+import { LeadGate } from "./LeadGate";
 import { Composer } from "../../../../messages/_components/Composer";
 import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
@@ -35,8 +38,6 @@ export default async function OfferingThreadPage({
   if (thread.fromMemberId !== me.id && thread.toMemberId !== me.id) notFound();
 
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
-  // 既読化はサイドバーの未読バッジと競合しないよう先に完了させる
-  await markThreadRead(thread.id);
   // 段階は手で動かせないので、記録された事実とずれていたらここで直す
   await reconcileDealPhase(thread.id);
 
@@ -99,6 +100,22 @@ export default async function OfferingThreadPage({
   ]);
   if (!offering) notFound();
 
+  // 「売りたい」に届いたリードは、初回だけ1クレジットで開封する（開封後の往復は無料）。
+  // 未開封のときは**本文をサーバーから返さない**（画面で隠すだけでは読めてしまう）。
+  const firstInbound = messages.find((m) => m.senderMemberId !== me.id) ?? null;
+  const chargeable = isChargeableLead({
+    direction: offering.direction,
+    offeringMemberId: offering.memberId,
+    viewerMemberId: me.id,
+    threadFromMemberId: thread.fromMemberId,
+    firstInboundAt: firstInbound?.createdAt ?? null,
+  });
+  const gated = chargeable && !(await isLeadUnlocked(me.id, thread.id));
+  // 未開封のうちは既読にしない（読んでいないのに「未返信」が消えると対応漏れになる）
+  if (!gated) await markThreadRead(thread.id);
+  const balance = gated ? await getCreditBalance(me.id) : 0;
+  const firstMessage = firstInbound ?? messages[0];
+
   const isOwner = offering.memberId === me.id;
   const lastMessageId = messages[messages.length - 1]?.id ?? "none";
   const otherPlace = [other?.prefecture, other?.city].filter(Boolean).join(" ");
@@ -158,6 +175,22 @@ export default async function OfferingThreadPage({
         {/* 対象案件の要点と進捗（メッセージ画面と同じ表示） */}
         <ThreadHeader offering={offering} dealId={deal?.id ?? null} phase={deal?.phase ?? 0} />
 
+        {gated ? (
+          <LeadGate
+            offeringId={offering.id}
+            threadId={thread.id}
+            buyerName={other?.name ?? "お相手"}
+            preview={(firstMessage?.body ?? "").slice(0, LEAD_PREVIEW_CHARS)}
+            receivedAt={
+              firstMessage
+                ? `${firstMessage.createdAt.getFullYear()}/${firstMessage.createdAt.getMonth() + 1}/${firstMessage.createdAt.getDate()}`
+                : "―"
+            }
+            balance={balance}
+            showMemberPromo={me.paymentStatus !== "PAID"}
+          />
+        ) : (
+          <>
         {/* 取引の条件（提示と合意の記録。お金は動かさない） */}
         <ContractPanel
           offeringId={offering.id}
@@ -295,7 +328,8 @@ export default async function OfferingThreadPage({
               : null
           }
         />
-
+          </>
+        )}
       </div>
     </div>
   );

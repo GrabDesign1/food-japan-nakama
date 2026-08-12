@@ -56,6 +56,40 @@ body {
   font-family: var(--font-sans);
 }
 
+/* ── キーボード操作の現在地（2026-08-12）──────────────────────────
+   Tailwind の初期化で outline が消えており、Tab で移動しても
+   いまどこにいるのか分からない状態だった（WCAG 2.4.7）。
+   マウスやタップでは出さず、キーボードのときだけ（:focus-visible）輪を出す。 */
+:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* 濃い地の上（サイドバー・フッター・ヒーロー）では緑が沈むので白にする */
+.on-dark :focus-visible,
+.fjn-hero :focus-visible {
+  outline-color: #fff;
+}
+
+/* ── 本文へスキップ（キーボードで最初に当たるリンク）──────────────
+   ナビを何十回もTabしないと本文に入れないため。普段は見えない。 */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+.skip-link:focus {
+  left: 8px;
+  top: 8px;
+  padding: 8px 14px;
+  background: var(--green);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 /* タイトル・見出し（font-serif で統一）は太字に。
    個別に font-semibold 等を指定した箇所はそちらを優先（:where で優先度0）。 */
 :where(.font-serif) {

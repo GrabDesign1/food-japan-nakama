@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { PHASES, PHASE_CONTRACTED, PHASE_DONE } from "@/lib/deal-constants";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { EmptyState } from "@/components/EmptyState";
+import { loadLockedLeadThreadIds, leadPreview } from "@/lib/lead-unlock";
 import { ProposalRows } from "./ProposalRows";
 import { btn, eyebrowCls, h1Cls, input } from "@/lib/ui";
 
@@ -103,12 +104,17 @@ export default async function OfferingProposalsPage({
       : Promise.resolve([]),
   ]);
 
-  const notes = threadIds.length
-    ? await prisma.proposalNote.findMany({
-        where: { threadId: { in: threadIds }, memberId: me.id },
-        select: { threadId: true, rating: true, memo: true },
-      })
-    : [];
+  // 未開封のリードは本文を返さない（一覧で読めてしまうと開封課金の意味がない）。
+  // 非公開メモとは独立なので同時に引く。
+  const [lockedThreadIds, notes] = await Promise.all([
+    loadLockedLeadThreadIds(me.id, threads),
+    threadIds.length
+      ? prisma.proposalNote.findMany({
+          where: { threadId: { in: threadIds }, memberId: me.id },
+          select: { threadId: true, rating: true, memo: true },
+        })
+      : Promise.resolve([]),
+  ]);
   const noteByThread = new Map(notes.map((n) => [n.threadId, n]));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const dealMap = new Map(deals.map((d) => [d.threadId ?? "", d]));
@@ -279,6 +285,7 @@ export default async function OfferingProposalsPage({
           <ProposalRows
             offeringId={offering.id}
             isGive={isGive}
+            showMemberPromo={me.paymentStatus !== "PAID"}
             rows={rows.map((r) => ({
               threadId: r.thread.id,
               offeringId: offering.id,
@@ -288,7 +295,10 @@ export default async function OfferingProposalsPage({
               otherLogoUrl: r.other?.companyLogoUrl ?? null,
               otherPlace: [r.other?.prefecture, r.other?.city].filter(Boolean).join(" "),
               otherIndustry: r.other?.categoryL1 ?? "",
-              firstBody: r.first.body,
+              locked: lockedThreadIds.has(r.thread.id),
+              firstBody: lockedThreadIds.has(r.thread.id)
+                ? leadPreview(r.first.body)
+                : r.first.body,
               firstAt: fmtDateTime(r.first.createdAt),
               lastAt: r.last ? fmtDateTime(r.last.createdAt) : "—",
               lastFromMe: r.last?.senderMemberId === me.id,

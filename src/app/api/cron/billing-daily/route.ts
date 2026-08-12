@@ -16,7 +16,12 @@ import {
 } from "@/lib/contact-credits";
 import { isUnreadRefundDue } from "@/lib/billing-core";
 import { getMemberUserEmails } from "@/lib/member";
-import { notifyPromotionEnding, notifyUnreadRefund } from "@/lib/email";
+import {
+  notifyPromotionEnding,
+  notifyUnreadRefund,
+  notifyLeadUnopened,
+} from "@/lib/email";
+import { findUnopenedLeadsForNotice, LEAD_UNOPENED_NOTICE_DAYS } from "@/lib/lead-unlock";
 
 const EFFECT_LABEL: Record<string, string> = {
   featured: "注目表示",
@@ -243,6 +248,28 @@ export async function GET(req: NextRequest) {
     deletedMessages = res.count;
   }
   summary.deletedOldMessages = deletedMessages;
+
+  // 8) 未開封の問い合わせを買い手へ知らせる（2026-08-12・開封課金の透明化）。
+  //    売り手が開くまで本文は読まれないので、待たされている側に状況を見せる。
+  //    通知は Thread.leadUnopenedNoticeAt で一度だけ（先に印を付けてから送る）。
+  const unopenedCutoff = new Date(now.getTime() - LEAD_UNOPENED_NOTICE_DAYS * 24 * 60 * 60 * 1000);
+  const unopened = await findUnopenedLeadsForNotice({ olderThan: unopenedCutoff, limit: 100 });
+  let unopenedNotices = 0;
+  for (const lead of unopened) {
+    await prisma.thread.update({
+      where: { id: lead.threadId },
+      data: { leadUnopenedNoticeAt: now },
+    });
+    const to = await getMemberUserEmails(lead.buyerMemberId);
+    await notifyLeadUnopened({
+      to,
+      offeringTitle: lead.offeringTitle,
+      days: LEAD_UNOPENED_NOTICE_DAYS,
+      threadId: lead.threadId,
+    }).catch((e) => console.error("[cron] 未開封通知の送信に失敗:", e));
+    unopenedNotices++;
+  }
+  summary.unopenedLeadNotices = unopenedNotices;
 
   return Response.json({ ok: true, at: now.toISOString(), ...summary });
 }
