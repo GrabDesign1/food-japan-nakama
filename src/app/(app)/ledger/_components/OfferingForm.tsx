@@ -10,6 +10,7 @@ import { saveOffering, createOffering, type OfferingState } from "../actions";
 import { OfferingImageUploader } from "./OfferingImageUploader";
 import { TempImageUploader } from "./TempImageUploader";
 import { OfferingSlotImage } from "./OfferingSlotImage";
+import { AiDraftBox } from "./AiDraftBox";
 import {
   CATEGORY_KEYS,
   isStructured,
@@ -118,7 +119,14 @@ function SectionHead({ title, desc }: { title: string; desc?: string }) {
   );
 }
 
-export function OfferingForm({ offering }: { offering: OfferingData }) {
+export function OfferingForm({
+  offering,
+  aiEnabled = false,
+}: {
+  offering: OfferingData;
+  /** 掲載文の下書き支援を出すか（ANTHROPIC_API_KEY があるときだけ true） */
+  aiEnabled?: boolean;
+}) {
   const isCreate = offering.id === null;
   const isGive = offering.direction === "GIVE";
 
@@ -218,6 +226,25 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {/* WANT: 条件リストはJSONで送る（サーバー側で検証） */}
         {!isGive ? (
           <input type="hidden" name="requirementsJson" value={JSON.stringify(requirements)} />
+        ) : null}
+
+        {/* ── 掲載文の下書き支援（売りたい・APIキーがある環境のみ／2026-08-14） ── */}
+        {isGive && aiEnabled ? (
+          <AiDraftBox
+            category={category}
+            title={title}
+            area={area}
+            current={{ tagline, description, featureDiff, backgroundStory, usageIdeas, desiredPartner }}
+            onApply={(d) => {
+              // 空文字（メモに材料が無かった項目）は今の入力を消さない
+              if (d.tagline) setTagline(d.tagline);
+              if (d.description) setDescription(d.description);
+              if (d.featureDiff) setFeatureDiff(d.featureDiff);
+              if (d.backgroundStory) setBackgroundStory(d.backgroundStory);
+              if (d.usageIdeas) setUsageIdeas(d.usageIdeas);
+              if (d.desiredPartner) setDesiredPartner(d.desiredPartner);
+            }}
+          />
         ) : null}
 
         {/* ── 募集タイプ（探している（調達したい）のみ） ── */}

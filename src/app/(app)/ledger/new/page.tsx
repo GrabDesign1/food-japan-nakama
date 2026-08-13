@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { OfferingForm, type OfferingData } from "../_components/OfferingForm";
 import { btn, h1Cls } from "@/lib/ui";
+import { AI_ENABLED } from "@/lib/ai";
 
 export default async function NewOfferingPage({
   searchParams,
@@ -74,7 +75,7 @@ export default async function NewOfferingPage({
       </div>
 
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
-        <OfferingForm offering={empty} />
+        <OfferingForm offering={empty} aiEnabled={AI_ENABLED} />
       </div>
     </div>
   );
