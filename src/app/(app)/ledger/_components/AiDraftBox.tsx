@@ -119,9 +119,12 @@ function PromptDialog({ open, onClose }: { open: boolean; onClose: () => void })
             <h2 id="ai-prompt-title" className={h2FormCls}>
               ほかのAIに渡す文面（プロンプト）
             </h2>
-            <p className="mt-2 text-[12px] leading-6 text-[var(--ink-2)]">
+            {/* ここが一番伝えたい手順なので、本文より大きく太く出す（2026-08-14 ユーザー指定） */}
+            <p className="mt-2 text-[14px] font-bold leading-6 text-[var(--ink)]">
               下の文面をコピーして、普段お使いのAI（ChatGPT・Gemini・Claude など）に貼り付けてください。
-              このフォームと同じ項目立てで返ってくるので、<b>各入力欄にそのまま貼り付けられます</b>。
+            </p>
+            <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+              このフォームと同じ項目立てで返ってくるので、各入力欄にそのまま貼り付けられます。
             </p>
             <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
               まとめて整えたいときは、返ってきた文章をこの画面のメモ欄に貼って「下書きを作る」を押してください。
