@@ -10,6 +10,7 @@ import { saveOffering, createOffering, type OfferingState } from "../actions";
 import { OfferingImageUploader } from "./OfferingImageUploader";
 import { TempImageUploader } from "./TempImageUploader";
 import { OfferingSlotImage } from "./OfferingSlotImage";
+import { AiDraftBox } from "./AiDraftBox";
 import {
   CATEGORY_KEYS,
   isStructured,
@@ -118,7 +119,14 @@ function SectionHead({ title, desc }: { title: string; desc?: string }) {
   );
 }
 
-export function OfferingForm({ offering }: { offering: OfferingData }) {
+export function OfferingForm({
+  offering,
+  aiEnabled = false,
+}: {
+  offering: OfferingData;
+  /** 掲載文の下書き支援を出すか（OPENAI_API_KEY があるときだけ true） */
+  aiEnabled?: boolean;
+}) {
   const isCreate = offering.id === null;
   const isGive = offering.direction === "GIVE";
 
@@ -147,6 +155,9 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
   const [amountText, setAmountText] = useState(offering.amountText ?? "");
   const [minOrderText, setMinOrderText] = useState(offering.minOrderText ?? "");
   const [itemCondition, setItemCondition] = useState(offering.itemCondition ?? "");
+  // 品質・規格と賞味期限は下書き支援から入れるため制御コンポーネントにしている
+  const [specification, setSpecification] = useState(offering.specification ?? "");
+  const [shelfLifeText, setShelfLifeText] = useState(offering.shelfLifeText ?? "");
   const [storageType, setStorageType] = useState(offering.storageType ?? "");
   const [deadline, setDeadline] = useState(offering.applicationDeadline ?? "");
   // 探している（WANT）：募集タイプ・使用目的・条件リスト
@@ -218,6 +229,44 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
         {/* WANT: 条件リストはJSONで送る（サーバー側で検証） */}
         {!isGive ? (
           <input type="hidden" name="requirementsJson" value={JSON.stringify(requirements)} />
+        ) : null}
+
+        {/* ── 掲載文の下書き支援（売りたい・APIキーがある環境のみ／2026-08-14） ── */}
+        {isGive && aiEnabled ? (
+          <AiDraftBox
+            category={category}
+            title={title}
+            area={area}
+            food={food}
+            current={{
+              title,
+              tagline,
+              description,
+              specification,
+              shelfLifeText,
+              featureDiff,
+              backgroundStory,
+              usageIdeas,
+              desiredPartner,
+              points,
+              tags,
+            }}
+            onApply={(d) => {
+              // 空文字（メモに材料が無かった項目）は今の入力を消さない
+              if (d.title) setTitle(d.title);
+              if (d.tagline) setTagline(d.tagline);
+              if (d.description) setDescription(d.description);
+              if (d.featureDiff) setFeatureDiff(d.featureDiff);
+              if (d.backgroundStory) setBackgroundStory(d.backgroundStory);
+              if (d.usageIdeas) setUsageIdeas(d.usageIdeas);
+              if (d.desiredPartner) setDesiredPartner(d.desiredPartner);
+              if (d.points) setPoints(d.points);
+              if (d.tags) setTags(d.tags);
+              // 食品カテゴリのときしか入力欄が無い項目
+              if (food && d.specification) setSpecification(d.specification);
+              if (food && d.shelfLifeText) setShelfLifeText(d.shelfLifeText);
+            }}
+          />
         ) : null}
 
         {/* ── 募集タイプ（探している（調達したい）のみ） ── */}
@@ -730,7 +779,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
             <span>品質・規格<Req /></span>
             <textarea
               name="specification"
-              defaultValue={offering.specification ?? ""}
+              value={specification}
+              onChange={(e) => setSpecification(e.target.value)}
               rows={3}
               placeholder="例：ビール醸造後24時間以内。水分を含むため、受け取り後は冷蔵または速やかな加工が必要です。"
               className={inputCls}
@@ -795,7 +845,8 @@ export function OfferingForm({ offering }: { offering: OfferingData }) {
                   <span>賞味・取扱期限<Req /></span>
                   <input
                     name="shelfLifeText"
-                    defaultValue={offering.shelfLifeText ?? ""}
+                    value={shelfLifeText}
+                    onChange={(e) => setShelfLifeText(e.target.value)}
                     placeholder="例：製造後3日以内 / 醸造後24時間以内の引取を希望"
                     className={inputCls}
                   />

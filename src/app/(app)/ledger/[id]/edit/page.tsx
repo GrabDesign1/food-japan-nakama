@@ -9,6 +9,7 @@ import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { ConfirmActionButton } from "@/components/ConfirmActionButton";
 import { missingForPublish, recommendedMissingForWant } from "@/lib/offering-publish";
 import { btn, h1Cls } from "@/lib/ui";
+import { AI_ENABLED } from "@/lib/ai";
 
 function toDateInput(d: Date | null): string | null {
   if (!d) return null;
@@ -197,7 +198,7 @@ export default async function OfferingEditPage({
 
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
         {/* updatedAt を key にして、保存後に最新値で再表示する */}
-        <OfferingForm key={offering.updatedAt.getTime()} offering={data} />
+        <OfferingForm key={offering.updatedAt.getTime()} offering={data} aiEnabled={AI_ENABLED} />
       </div>
 
       <div className="flex items-center justify-between">
