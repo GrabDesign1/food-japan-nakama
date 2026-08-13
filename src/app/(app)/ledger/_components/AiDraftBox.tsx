@@ -26,7 +26,7 @@ const PLACEHOLDER = `例：
 // 文面の狙い:
 //   ・この画面のメモ欄に貼るだけで下書きが作れるよう、**必要な項目を名指しで並べる**
 //   ・相手のAIが話を盛る／作るのが一番こわいので、「分からないものは不明と書く」を最初に置く
-//   ・メモ欄の上限（1,200文字）に収まるよう800字以内に抑える
+//   ・メモ欄の上限（1,200文字）に収まるよう1000字以内に抑える
 //   ・最後に質問を返させて、足りない情報を本人が埋められるようにする
 const HANDOFF_PROMPT = `あなたは、プロの出版社のライターです。私の事業と、私が売りたいものを取材してまとめてください。
 
@@ -36,16 +36,20 @@ const HANDOFF_PROMPT = `あなたは、プロの出版社のライターです�
 ・これまでの会話や、私が渡した資料から分かることだけを書く。
 ・分からない項目は、想像で埋めずに「不明」と書く。
 ・「日本一」「最高級」などの誇張や、健康効果をうたう表現は使わない。
-・全体で800字以内。項目ごとの箇条書きで。
+・全体で1000字以内。項目ごとの箇条書きで。
 
 【まとめてほしい項目】
 1. 会社概要（社名・所在地・事業内容・創業年）
-2. 売りたいもの（商品名や原料名・規格や容量・作り方や品質の特徴）
-3. ほかの商品との違い（買い手が比べたときの決め手）
-4. 生まれた背景（なぜ作ったか、なぜ売りたいか）
-5. 想定する使い方・売り場（どんな店・料理・場面に合うか）
-6. 取引したい相手（業種・規模・地域）
-7. 分かっている取引条件（希望価格・最小ロット・供給できる量と時期・発送元）
+2. 売りたいもの（商品名や原料名・作り方や品質の特徴）
+3. 品質・規格（容量・入数・等級・産地・認証・保存条件など、分かっている事実だけ）
+4. 賞味期限・取扱期限（日数や条件が決まっていれば。決まっていなければ「不明」）
+5. ほかの商品との違い（買い手が比べたときの決め手）
+6. 生まれた背景（なぜ作ったか、なぜ売りたいか）
+7. 想定する使い方・売り場（どんな店・料理・場面に合うか）
+8. 取引したい相手（業種・規模・地域）
+9. 買い手に効くおすすめポイント（1行に1つ、3つまで）
+10. 検索に使いそうな短い語（産地・原料・カテゴリ・用途など、8個まで）
+11. 分かっている取引条件（希望価格・最小ロット・供給できる量と時期・発送元）
 
 最後に、「不明」と書いた項目について私に質問してください。`;
 
@@ -130,12 +134,15 @@ export function AiDraftBox({
   category,
   title,
   area,
+  food,
   current,
   onApply,
 }: {
   category: string;
   title: string;
   area: string;
+  /** 食品カテゴリか（品質・規格／賞味期限の入力欄があるかどうか） */
+  food: boolean;
   /** いまフォームに入っている値（上書きになるかの判定に使う） */
   current: OfferingDraft;
   onApply: (draft: OfferingDraft) => void;
@@ -146,9 +153,11 @@ export function AiDraftBox({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // このカテゴリでフォームに入力欄がある項目だけを扱う
+  const fields = AI_DRAFT_FIELDS.filter((f) => !f.foodOnly || food);
   // 下書きが入る項目のうち、すでに書かれているもの＝上書きになる項目
   const willOverwrite = draft
-    ? AI_DRAFT_FIELDS.filter((f) => draft[f.key] && current[f.key].trim()).map((f) => f.label)
+    ? fields.filter((f) => draft[f.key] && current[f.key].trim()).map((f) => f.label)
     : [];
 
   function run() {
@@ -176,7 +185,7 @@ export function AiDraftBox({
           メモから下書きを作る（任意）
         </div>
         <p className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
-          商品の要点を3〜4行書くだけで、説明文・特徴・使い方・希望する相手の下書きを作ります。
+          商品の要点を3〜4行書くだけで、タイトル・説明文・特徴・使い方・おすすめポイント・タグまで下書きを作ります。
           作った下書きはそのまま保存されません。内容を確かめて直してからご登録ください。
         </p>
         <button type="button" onClick={() => setOpen(true)} className={`${btn("secondary", "sm")} mt-2`}>
@@ -240,7 +249,7 @@ export function AiDraftBox({
             AIが作った下書きです。事実と違うところ・書きすぎているところは必ず直してから保存してください。
           </p>
           <dl className="mt-2 flex flex-col gap-2">
-            {AI_DRAFT_FIELDS.map((f) =>
+            {fields.map((f) =>
               draft[f.key] ? (
                 <div key={f.key}>
                   <dt className="text-[11px] font-bold text-[var(--muted)]">{f.label}</dt>

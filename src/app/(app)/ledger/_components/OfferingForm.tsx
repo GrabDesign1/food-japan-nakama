@@ -155,6 +155,9 @@ export function OfferingForm({
   const [amountText, setAmountText] = useState(offering.amountText ?? "");
   const [minOrderText, setMinOrderText] = useState(offering.minOrderText ?? "");
   const [itemCondition, setItemCondition] = useState(offering.itemCondition ?? "");
+  // 品質・規格と賞味期限は下書き支援から入れるため制御コンポーネントにしている
+  const [specification, setSpecification] = useState(offering.specification ?? "");
+  const [shelfLifeText, setShelfLifeText] = useState(offering.shelfLifeText ?? "");
   const [storageType, setStorageType] = useState(offering.storageType ?? "");
   const [deadline, setDeadline] = useState(offering.applicationDeadline ?? "");
   // 探している（WANT）：募集タイプ・使用目的・条件リスト
@@ -234,15 +237,34 @@ export function OfferingForm({
             category={category}
             title={title}
             area={area}
-            current={{ tagline, description, featureDiff, backgroundStory, usageIdeas, desiredPartner }}
+            food={food}
+            current={{
+              title,
+              tagline,
+              description,
+              specification,
+              shelfLifeText,
+              featureDiff,
+              backgroundStory,
+              usageIdeas,
+              desiredPartner,
+              points,
+              tags,
+            }}
             onApply={(d) => {
               // 空文字（メモに材料が無かった項目）は今の入力を消さない
+              if (d.title) setTitle(d.title);
               if (d.tagline) setTagline(d.tagline);
               if (d.description) setDescription(d.description);
               if (d.featureDiff) setFeatureDiff(d.featureDiff);
               if (d.backgroundStory) setBackgroundStory(d.backgroundStory);
               if (d.usageIdeas) setUsageIdeas(d.usageIdeas);
               if (d.desiredPartner) setDesiredPartner(d.desiredPartner);
+              if (d.points) setPoints(d.points);
+              if (d.tags) setTags(d.tags);
+              // 食品カテゴリのときしか入力欄が無い項目
+              if (food && d.specification) setSpecification(d.specification);
+              if (food && d.shelfLifeText) setShelfLifeText(d.shelfLifeText);
             }}
           />
         ) : null}
@@ -757,7 +779,8 @@ export function OfferingForm({
             <span>品質・規格<Req /></span>
             <textarea
               name="specification"
-              defaultValue={offering.specification ?? ""}
+              value={specification}
+              onChange={(e) => setSpecification(e.target.value)}
               rows={3}
               placeholder="例：ビール醸造後24時間以内。水分を含むため、受け取り後は冷蔵または速やかな加工が必要です。"
               className={inputCls}
@@ -822,7 +845,8 @@ export function OfferingForm({
                   <span>賞味・取扱期限<Req /></span>
                   <input
                     name="shelfLifeText"
-                    defaultValue={offering.shelfLifeText ?? ""}
+                    value={shelfLifeText}
+                    onChange={(e) => setShelfLifeText(e.target.value)}
                     placeholder="例：製造後3日以内 / 醸造後24時間以内の引取を希望"
                     className={inputCls}
                   />

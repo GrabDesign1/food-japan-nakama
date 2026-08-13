@@ -17,7 +17,7 @@
 // 未設定時の扱い: OPENAI_API_KEY が無ければ AI_ENABLED=false。
 // Stripe と同じで、鍵が無い環境では機能ごと出さない（画面にボタンを出さない）。
 import OpenAI, { RateLimitError } from "openai";
-import { AI_DRAFT_MEMO_MAX, type OfferingDraft } from "@/lib/ai-draft-core";
+import { AI_DRAFT_MEMO_MAX, AI_DRAFT_TAG_MAX, type OfferingDraft } from "@/lib/ai-draft-core";
 
 // 型と定数は ai-draft-core.ts（クライアントからも読み込める）。従来どおりここからも使えるように再輸出する。
 export * from "@/lib/ai-draft-core";
@@ -47,6 +47,11 @@ const MODEL = "gpt-5.6-terra";
 const DRAFT_SCHEMA = {
   type: "object",
   properties: {
+    title: {
+      type: "string",
+      description:
+        "掲載タイトル。何を売っているかが一目で分かる30文字以内。すでにタイトルが入力されている場合は、それをそのまま返す。",
+    },
     tagline: {
       type: "string",
       description: "一言で伝わる特徴。40文字以内の1文。材料が足りなければ空文字。",
@@ -55,6 +60,16 @@ const DRAFT_SCHEMA = {
       type: "string",
       description:
         "商品・原料そのものの説明。何であるか・どんな品質かが分かる150〜300文字。材料が足りなければ空文字。",
+    },
+    specification: {
+      type: "string",
+      description:
+        "品質・規格。容量・入数・等級・産地・認証・保存条件など、**メモに書かれている事実だけ**を並べる。80文字以内。書かれていなければ必ず空文字。推測は禁止。",
+    },
+    shelfLifeText: {
+      type: "string",
+      description:
+        "賞味期限・取扱期限。**メモに日数や期限が書かれている場合だけ**その表記を使う。40文字以内。書かれていなければ必ず空文字。推測は禁止。",
     },
     featureDiff: {
       type: "string",
@@ -76,15 +91,30 @@ const DRAFT_SCHEMA = {
       description:
         "どんな相手と取引したいか。60〜150文字。メモに希望が無ければ、商品の性質から自然に考えられる業種を挙げる。",
     },
+    points: {
+      type: "string",
+      description:
+        "買い手に効くおすすめポイント。**1行に1つ**、改行区切りで2〜4行。1行は30文字以内。記号や番号は付けない。ほかの項目に書いた内容の繰り返しにしない。",
+    },
+    tags: {
+      type: "string",
+      description:
+        "検索に使う短い語を、半角カンマ区切りで最大8個。1語は10文字以内。#は付けない。産地・原料・商品カテゴリ・用途など、メモから確実に言えるものだけ。",
+    },
   },
   // strict: true では全プロパティを required にし、additionalProperties を false にする必要がある
   required: [
+    "title",
     "tagline",
     "description",
+    "specification",
+    "shelfLifeText",
     "featureDiff",
     "backgroundStory",
     "usageIdeas",
     "desiredPartner",
+    "points",
+    "tags",
   ],
   additionalProperties: false,
 } as const;
@@ -95,6 +125,7 @@ const SYSTEM = `あなたは日本の食品・飲料業界のBtoB取引に詳し
 必ず守ること:
 - メモに書かれていない事実を作らない。産地・原材料・製法・受賞歴・認証・数量・価格・取引実績・企業名は、メモに無ければ書かない。
 - 材料が足りない項目は、埋めようとせず空文字("")を返す。空欄のほうが、間違いを載せるよりよい。
+- とくに「品質・規格」と「賞味・取扱期限」は食品衛生と取引条件に直結する。メモに書かれていなければ**必ず空文字**にし、一般論や推測で埋めない。
 - 「日本一」「最高級」「業界初」など、根拠なく優良だと誤解させる表現を使わない。
 - 健康効果・効能・医薬品のような効き目をうたわない（健康増進法・景品表示法）。
 - 感嘆符や絵文字は使わない。事実と用途が分かる、落ち着いた「です・ます」調で書く。
@@ -159,19 +190,40 @@ ${memo}`,
     const parsed = JSON.parse(text) as Record<string, unknown>;
     const pick = (k: keyof OfferingDraft) =>
       typeof parsed[k] === "string" ? (parsed[k] as string).trim() : "";
+    // タグは数を数えるのはこちらの仕事（指示だけに任せると多すぎることがある）
+    const tags = pick("tags")
+      .split(/[,、]/)
+      .map((t) => t.trim().replace(/^#/, ""))
+      .filter(Boolean)
+      .slice(0, AI_DRAFT_TAG_MAX)
+      .join(", ");
     return {
       draft: {
+        title: pick("title"),
         tagline: pick("tagline"),
         description: pick("description"),
+        specification: pick("specification"),
+        shelfLifeText: pick("shelfLifeText"),
         featureDiff: pick("featureDiff"),
         backgroundStory: pick("backgroundStory"),
         usageIdeas: pick("usageIdeas"),
         desiredPartner: pick("desiredPartner"),
+        points: pick("points"),
+        tags,
       },
     };
   } catch (e) {
     console.error("[ai] 下書きの生成に失敗:", e);
     if (e instanceof RateLimitError) {
+      // 429 には2種類ある。残高切れは会員が待っても直らない（こちらが入金するしかない）ので、
+      // 「少し時間をおいて」とは言わない。運用者が気づけるようにログも分ける。
+      const code = (e as { code?: string }).code;
+      if (code === "insufficient_quota" || code === "credit_balance_exhausted") {
+        console.error(
+          "[ai] ⚠️ APIの残高切れです。OpenAIのBillingでクレジットを追加するまで下書きは作れません。"
+        );
+        return { error: "ただいま下書きの作成はご利用いただけません。恐れ入りますが手入力でお願いします。" };
+      }
       return { error: "混み合っています。少し時間をおいてお試しください。" };
     }
     return { error: "下書きを作れませんでした。時間をおいてお試しください。" };
