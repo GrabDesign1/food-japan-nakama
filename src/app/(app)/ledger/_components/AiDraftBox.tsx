@@ -62,13 +62,17 @@ const HANDOFF_PROMPT = `あなたは、プロの出版社のライターです�
 
 最後に、「不明」と書いた項目について私に質問してください。`;
 
-/** 「プロンプトはこちら」。他のAIに渡す文面を見せて、そのままコピーできるようにする。 */
-function PromptModal() {
-  const [open, setOpen] = useState(false);
+/**
+ * 他のAIに渡す文面を見せて、そのままコピーできるようにするダイアログ。
+ *
+ * 開閉の状態は**親が持つ**。ボタンを押すと下書きフォームも開く（＝たたんだ側のJSXが
+ * 差し替わる）ため、ここが自前で状態を持つと、開いた直後に自分ごと消えてしまう。
+ */
+function PromptDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   // "idle" | "copied" | "failed"。クリップボードが使えない環境（権限を切っている等）もあるため状態を分ける
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const promptRef = useRef<HTMLTextAreaElement>(null);
-  useCloseOnEscape(open, () => setOpen(false));
+  useCloseOnEscape(open, onClose);
 
   async function copy() {
     // navigator.clipboard は環境によって拒否される（権限を切っている、埋め込みブラウザ等）。
@@ -99,19 +103,13 @@ function PromptModal() {
     }
   }
 
+  if (!open) return null;
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-[12px] font-bold text-[var(--green-d)] underline"
-      >
-        プロンプトはこちら
-      </button>
-
       {open ? (
         <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <div
             role="dialog"
             aria-modal="true"
@@ -152,13 +150,13 @@ function PromptModal() {
               onFocus={(e) => e.currentTarget.select()}
               // field-sizing: 対応ブラウザでは中身の行数に合わせて伸びる（未対応でも rows 分は見える）。
               // ただし文面が長いので、画面の4割までで止めて中をスクロールさせる（ボタンが画面外に出ないように）
-              className={`${input()} mt-1 max-h-[40vh] overflow-y-auto bg-[#FAFBF9] [field-sizing:content]`}
+              className={`${input()} mt-1 max-h-[40vh] w-full overflow-y-auto bg-[#FAFBF9] [field-sizing:content]`}
             />
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <button type="button" onClick={copy} className={btn("primary", "sm")}>
                 コピーする
               </button>
-              <button type="button" onClick={() => setOpen(false)} className={btn("secondary", "sm")}>
+              <button type="button" onClick={onClose} className={btn("secondary", "sm")}>
                 閉じる
               </button>
             </div>
@@ -215,6 +213,9 @@ export function AiDraftBox({
   const [pending, startTransition] = useTransition();
   // フォームに入れた直後の確認。入れて終わりではなく、必ず読み直してもらうために出す
   const [applied, setApplied] = useState(false);
+  // 文面ダイアログの開閉。押すと下書きフォームも開くため、状態はここで持つ
+  const [promptOpen, setPromptOpen] = useState(false);
+  const closePrompt = useCallback(() => setPromptOpen(false), []);
   // 確認を閉じたら、この枠もたたむ（用は済んだので入力欄の邪魔をしない）
   const closeApplied = useCallback(() => {
     setApplied(false);
@@ -250,8 +251,8 @@ export function AiDraftBox({
   if (!open) {
     return (
       <div className="rounded-[10px] border border-dashed border-[var(--green)] bg-[var(--green-soft)] p-4">
-        <div className="text-[13px] font-bold text-[var(--green-d)]">
-          メモから下書きを作る（任意）
+        <div className="text-[16px] font-bold text-[var(--green-d)]">
+          AIで下書きをつくる（任意）
         </div>
         <p className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
           商品の要点を3〜4行書くだけで、タイトル・説明文・特徴・使い方・おすすめポイント・タグまで下書きを作ります。
@@ -259,12 +260,27 @@ export function AiDraftBox({
         </p>
         {/* たたんだ状態からでも文面を取りに行けるようにする（ほかのAIで書く人は、
             この枠を開かずに各入力欄へ直接貼るため）。モーダルは <p> の外に置く。 */}
-        <div className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
-          お使いのChatGPT・Gemini・Claudeなどに書いてもらうこともできます。 <PromptModal />
+        <p className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
+          お使いのChatGPT・Gemini・Claudeなどに書いてもらうこともできます。
+        </p>
+        {/* モーダル（div）を <p> の中に入れるとHTMLとして不正になるので、説明文とは分けて置く */}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              // 文面を取りに来た人は、戻ってきて貼り付ける先がすぐ要る（2026-08-14 ユーザー指定）
+              setPromptOpen(true);
+              setOpen(true);
+            }}
+            className={btn("primary", "sm")}
+          >
+            プロンプトはこちら
+          </button>
+          <button type="button" onClick={() => setOpen(true)} className={btn("secondary", "sm")}>
+            下書きを作ってみる
+          </button>
         </div>
-        <button type="button" onClick={() => setOpen(true)} className={`${btn("secondary", "sm")} mt-2`}>
-          下書きを作ってみる
-        </button>
+        <PromptDialog open={promptOpen} onClose={closePrompt} />
       </div>
     );
   }
@@ -273,14 +289,22 @@ export function AiDraftBox({
     <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[13px] font-bold text-[var(--green-d)]">メモから下書きを作る（任意）</div>
+          <div className="text-[16px] font-bold text-[var(--green-d)]">AIで下書きをつくる（任意）</div>
           <p className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
             箇条書きで構いません。書かれていないことは補いませんので、分かる範囲でどうぞ。
           </p>
           {/* モーダル（div）を <p> の中に入れるとHTMLとして不正になるので、説明文とは分けて置く */}
-          <div className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
-            お使いのChatGPT・Gemini・Claudeなどで、ご自身の事業と売りたいものの要約を作って貼り付けるのもおすすめです。{" "}
-            <PromptModal />
+          <p className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
+            お使いのChatGPT・Gemini・Claudeなどで、ご自身の事業と売りたいものの要約を作って貼り付けるのもおすすめです。
+          </p>
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setPromptOpen(true)}
+              className={btn("primary", "sm")}
+            >
+              プロンプトはこちら
+            </button>
           </div>
         </div>
         <button
@@ -298,7 +322,7 @@ export function AiDraftBox({
         rows={6}
         maxLength={AI_DRAFT_MEMO_MAX}
         placeholder={PLACEHOLDER}
-        className={`${input()} mt-2 bg-white`}
+        className={`${input()} mt-2 w-full bg-white`}
       />
       <div className="mt-1 flex flex-wrap items-center gap-3">
         <button
@@ -355,6 +379,8 @@ export function AiDraftBox({
           </button>
         </div>
       ) : null}
+
+      <PromptDialog open={promptOpen} onClose={closePrompt} />
 
       {/* 入れた直後の確認。押しただけで完了した気にならないよう、
           「読み直すこと」と「まだ必須が残っていること」をここで伝える。 */}
