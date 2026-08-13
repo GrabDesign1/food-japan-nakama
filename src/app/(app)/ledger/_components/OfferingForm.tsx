@@ -124,7 +124,7 @@ export function OfferingForm({
   aiEnabled = false,
 }: {
   offering: OfferingData;
-  /** 掲載文の下書き支援を出すか（ANTHROPIC_API_KEY があるときだけ true） */
+  /** 掲載文の下書き支援を出すか（OPENAI_API_KEY があるときだけ true） */
   aiEnabled?: boolean;
 }) {
   const isCreate = offering.id === null;

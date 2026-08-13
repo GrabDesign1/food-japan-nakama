@@ -5,7 +5,12 @@
 // 勝手に保存はしない。生成しただけでは何も変わらない。
 import { useRef, useState, useTransition } from "react";
 import { draftOfferingCopy } from "../actions";
-import { AI_DRAFT_FIELDS, AI_DRAFT_MEMO_MAX, type OfferingDraft } from "@/lib/ai-draft-core";
+import {
+  AI_DRAFT_FIELDS,
+  AI_DRAFT_MEMO_MAX,
+  AI_PROVIDER_NAME,
+  type OfferingDraft,
+} from "@/lib/ai-draft-core";
 import { btn, h2FormCls, input } from "@/lib/ui";
 import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
@@ -269,7 +274,7 @@ export function AiDraftBox({
       ) : null}
 
       <p className="mt-3 text-[11px] leading-4 text-[var(--muted)]">
-        入力したメモは下書きを作るためだけに外部のAIサービス（Anthropic）へ送信します。
+        入力したメモは下書きを作るためだけに外部のAIサービス（{AI_PROVIDER_NAME}）へ送信します。
         会員どうしのメッセージがAIに渡ることはありません。
       </p>
     </div>

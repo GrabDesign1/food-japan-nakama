@@ -4,27 +4,31 @@
 // 「何をどう書けばいいか分からない」ところで手が止まること。
 // 3〜4行のメモから各項目の**下書き**を出し、本人が直して保存する形にする。
 //
+// なぜ OpenAI か: すでに請求とダッシュボードがあるため（2026-08-14 ユーザー判断）。
+// 取引先を増やさない判断であって、性能で選んだわけではない。
+// 事業者を替えるときは**このファイルだけ**を書き換えればよい（画面と Server Action は provider を知らない）。
+//
 // 使わない場所（重要）:
 //   会員間の非公開メッセージには一切使わない。規約第17条で
 //   「当社は、会員間の非公開メッセージを、AI等の学習、分析または営業目的に利用しません」と
 //   約束しており、電気通信事業（通信の秘密）の観点でも触れてはいけない。
 //   ここで外部へ送るのは、**掲載する前提で本人が書いたメモと、掲載項目の値だけ**。
 //
-// 未設定時の扱い: ANTHROPIC_API_KEY が無ければ AI_ENABLED=false。
+// 未設定時の扱い: OPENAI_API_KEY が無ければ AI_ENABLED=false。
 // Stripe と同じで、鍵が無い環境では機能ごと出さない（画面にボタンを出さない）。
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI, { RateLimitError } from "openai";
 import { AI_DRAFT_MEMO_MAX, type OfferingDraft } from "@/lib/ai-draft-core";
 
 // 型と定数は ai-draft-core.ts（クライアントからも読み込める）。従来どおりここからも使えるように再輸出する。
 export * from "@/lib/ai-draft-core";
 
-const apiKey = process.env.ANTHROPIC_API_KEY;
+const apiKey = process.env.OPENAI_API_KEY;
 
 /** APIキーが設定されているか。false のときは画面にボタンを出さない。 */
 export const AI_ENABLED = !!apiKey;
 
 const client = apiKey
-  ? new Anthropic({
+  ? new OpenAI({
       apiKey,
       // 下書きは対話中の待ち時間になるので、長く待たせずに諦めて再試行を促す
       timeout: 90_000,
@@ -35,9 +39,10 @@ const client = apiKey
 /** 会員あたり24時間の生成回数。書き直しを何度か試せて、暴走はしない程度。 */
 export const AI_DRAFT_DAILY_LIMIT = 20;
 
-// 1回あたりの目安: 入力1,500 / 出力800トークン前後 ≒ 4円。
-// 迷ったら effort を上げるより、まずプロンプトの指示を足すほうが安い。
-const MODEL = "claude-opus-5";
+// 1回あたりの目安: 入力1,500 / 出力800トークン ≒ 2円（gpt-5.6-terra: $2/$12 per 1M）。
+// もっと安くするなら gpt-5.6-luna（$0.20/$1.20 ≒ 0.2円）。ただし下書きの質が落ちると
+// 会員が書き直す手間に跳ね返るので、実物を見てから下げること。
+const MODEL = "gpt-5.6-terra";
 
 const DRAFT_SCHEMA = {
   type: "object",
@@ -72,6 +77,7 @@ const DRAFT_SCHEMA = {
         "どんな相手と取引したいか。60〜150文字。メモに希望が無ければ、商品の性質から自然に考えられる業種を挙げる。",
     },
   },
+  // strict: true では全プロパティを required にし、additionalProperties を false にする必要がある
   required: [
     "tagline",
     "description",
@@ -122,13 +128,13 @@ export async function draftOfferingCopy(params: {
     .join("\n");
 
   try {
-    const res = await client.messages.create({
+    const res = await client.responses.create({
       model: MODEL,
-      max_tokens: 4000,
-      system: SYSTEM,
-      // 対話中に待たせる処理なので、まずは低めの effort から。品質が足りなければ上げる。
-      output_config: { effort: "low", format: { type: "json_schema", schema: DRAFT_SCHEMA } },
-      messages: [
+      max_output_tokens: 4000,
+      // JSONスキーマで形を固定する（項目の抜けや余計なキーが混ざらない）
+      text: { format: { type: "json_schema", name: "offering_draft", schema: DRAFT_SCHEMA, strict: true } },
+      input: [
+        { role: "system", content: SYSTEM },
         {
           role: "user",
           content: `次のメモから、掲載ページの各項目の下書きを作ってください。
@@ -142,10 +148,12 @@ ${memo}`,
       ],
     });
 
-    if (res.stop_reason === "refusal") {
+    // 安全上の理由で断られたときは refusal が返る（本文は入っていない）
+    const message = res.output.find((o) => o.type === "message");
+    if (message?.content?.some((c) => c.type === "refusal")) {
       return { error: "この内容では下書きを作れませんでした。表現を変えてお試しください。" };
     }
-    const text = res.content.find((b) => b.type === "text")?.text ?? "";
+    const text = res.output_text;
     if (!text) return { error: "下書きを作れませんでした。時間をおいてお試しください。" };
 
     const parsed = JSON.parse(text) as Record<string, unknown>;
@@ -163,7 +171,7 @@ ${memo}`,
     };
   } catch (e) {
     console.error("[ai] 下書きの生成に失敗:", e);
-    if (e instanceof Anthropic.RateLimitError) {
+    if (e instanceof RateLimitError) {
       return { error: "混み合っています。少し時間をおいてお試しください。" };
     }
     return { error: "下書きを作れませんでした。時間をおいてお試しください。" };
