@@ -38,8 +38,12 @@ export const AI_DRAFT_FIELDS: { key: keyof OfferingDraft; label: string; foodOnl
   { key: "tags", label: "タグ" },
 ];
 
-/** メモの上限（これ以上は切り詰める）。長文を貼られてもコストが跳ねないように。 */
-export const AI_DRAFT_MEMO_MAX = 1200;
+/**
+ * メモの上限（これ以上は切り詰める）。長文を貼られてもコストが跳ねないように。
+ * ほかのAIが返した全項目（説明300字＋各項目…で1,500字前後）を丸ごと貼れる幅を見ている。
+ * 2,000字でも入力は0.4円程度なので、途中で切れて末尾のタグが落ちるほうが困る。
+ */
+export const AI_DRAFT_MEMO_MAX = 2000;
 
 /** タグの上限（フォームの「最大8」に合わせる）。 */
 export const AI_DRAFT_TAG_MAX = 8;

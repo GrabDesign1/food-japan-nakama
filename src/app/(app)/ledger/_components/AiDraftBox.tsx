@@ -20,36 +20,45 @@ const PLACEHOLDER = `例：
 ・苦味が控えめで柑橘の香りが強い
 ・330ml瓶／月500本まで／飲食店や土産物店に置いてほしい`;
 
-// 普段お使いのAI（ChatGPT・Gemini など）に投げて、その答えをメモ欄に貼ってもらうための文面。
-// ゼロから書き出すより、すでに自分の事業を知っているAIにまとめさせるほうが早い（2026-08-14 ユーザー指定）。
+// 普段お使いのAI（ChatGPT・Gemini など）に投げるための文面。
+// 会員はすでにどこかのAIを契約している。ゼロから書き出すより、
+// 自分の事業を知っているAIに書かせるほうが早い（2026-08-14 ユーザー指定）。
+//
+// **返ってくる形をフォームの項目そのものにしてある**のが肝（2026-08-14 ユーザー指定）。
+//   ・会員は各欄にそのまま貼れる ＝ うちのAPIを1回も呼ばずに済む（当社の課金がゼロ）
+//   ・まとめて整えたい人だけ、メモ欄に貼って「下書きを作る」を押す
+//   ・つまり、うちの生成は主役ではなく任意の手段。残高が無くても掲載は完成する
 //
 // 文面の狙い:
-//   ・この画面のメモ欄に貼るだけで下書きが作れるよう、**必要な項目を名指しで並べる**
-//   ・相手のAIが話を盛る／作るのが一番こわいので、「分からないものは不明と書く」を最初に置く
-//   ・メモ欄の上限（1,200文字）に収まるよう1000字以内に抑える
+//   ・見出しと文字数を、こちらのフォームおよび DRAFT_SCHEMA と一致させる
+//   ・相手のAIが話を盛る／作るのが一番こわいので、「分からないものは不明と書く」を先に置く
+//   ・品質・規格と賞味期限は事故に直結するので、推測禁止を名指しで書く
 //   ・最後に質問を返させて、足りない情報を本人が埋められるようにする
-const HANDOFF_PROMPT = `あなたは、プロの出版社のライターです。私の事業と、私が売りたいものを取材してまとめてください。
+const HANDOFF_PROMPT = `あなたは、プロの出版社のライターです。私の事業と、私が売りたいものを取材し、掲載ページの文章を書いてください。
 
-これは、食品業界の事業者どうしをつなぐサイト「FOOD JAPAN NAKAMA」に掲載する文章の材料です。読むのは飲食店・小売・卸・ホテルなどの仕入れ担当者です。
+これは、食品業界の事業者どうしをつなぐサイト「FOOD JAPAN NAKAMA」の掲載文です。読むのは飲食店・小売・卸・ホテルなどの仕入れ担当者です。
 
 【守ってほしいこと】
 ・これまでの会話や、私が渡した資料から分かることだけを書く。
-・分からない項目は、想像で埋めずに「不明」と書く。
+・分からない項目は、想像で埋めずに「不明」とだけ書く。空欄のほうが、間違いを載せるよりよい。
+・「品質・規格」と「賞味・取扱期限」は食品衛生と取引条件に直結する。分からなければ必ず「不明」。一般論で埋めない。
 ・「日本一」「最高級」などの誇張や、健康効果をうたう表現は使わない。
-・全体で1000字以内。項目ごとの箇条書きで。
+・感嘆符や絵文字は使わない。落ち着いた「です・ます」調で書く。
 
-【まとめてほしい項目】
-1. 会社概要（社名・所在地・事業内容・創業年）
-2. 売りたいもの（商品名や原料名・作り方や品質の特徴）
-3. 品質・規格（容量・入数・等級・産地・認証・保存条件など、分かっている事実だけ）
-4. 賞味期限・取扱期限（日数や条件が決まっていれば。決まっていなければ「不明」）
-5. ほかの商品との違い（買い手が比べたときの決め手）
-6. 生まれた背景（なぜ作ったか、なぜ売りたいか）
-7. 想定する使い方・売り場（どんな店・料理・場面に合うか）
-8. 取引したい相手（業種・規模・地域）
-9. 買い手に効くおすすめポイント（1行に1つ、3つまで）
-10. 検索に使いそうな短い語（産地・原料・カテゴリ・用途など、8個まで）
-11. 分かっている取引条件（希望価格・最小ロット・供給できる量と時期・発送元）
+【出力の形】
+下の見出しをそのまま使い、1項目ずつ書いてください。私はこれを各入力欄にそのまま貼り付けます。前置きや感想は不要です。
+
+タイトル（30文字以内）
+一言で伝わる特徴（40文字以内）
+商品・原料の説明（150〜300文字）
+品質・規格（容量・入数・等級・産地・認証・保存条件など、分かっている事実だけ。80文字以内）
+賞味・取扱期限（40文字以内）
+他の商品との違い（80〜200文字）
+生まれた背景・販売したい理由（80〜200文字）
+おすすめの使い方・売り場（80〜200文字）
+希望する相手（業種・規模・地域。60〜150文字）
+おすすめポイント（1行に1つ、3行まで。各30文字以内）
+タグ（カンマ区切りで8個まで。各10文字以内。#は付けない）
 
 最後に、「不明」と書いた項目について私に質問してください。`;
 
@@ -62,12 +71,29 @@ function PromptModal() {
   useCloseOnEscape(open, () => setOpen(false));
 
   async function copy() {
+    // navigator.clipboard は環境によって拒否される（権限を切っている、埋め込みブラウザ等）。
+    // 落ちたら、欄を選択して execCommand で写す昔ながらの手を試す。
+    let ok = false;
     try {
       await navigator.clipboard.writeText(HANDOFF_PROMPT);
-      setCopyState("copied");
-      window.setTimeout(() => setCopyState("idle"), 2000);
+      ok = true;
     } catch {
-      // 自動コピーできないときは、手で選択してコピーできるように選択状態にする
+      try {
+        const el = promptRef.current;
+        if (el) {
+          el.focus();
+          el.select();
+          ok = document.execCommand("copy");
+        }
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopyState("copied");
+      window.setTimeout(() => setCopyState("idle"), 2500);
+    } else {
+      // どちらも駄目なときは、手で選択してコピーできるように選択状態にしておく
       setCopyState("failed");
       promptRef.current?.select();
     }
@@ -97,9 +123,27 @@ function PromptModal() {
             </h2>
             <p className="mt-2 text-[12px] leading-6 text-[var(--ink-2)]">
               下の文面をコピーして、普段お使いのAI（ChatGPT・Gemini・Claude など）に貼り付けてください。
-              この画面のメモ欄に貼り付けると下書きが作れます。
-              返ってきた要約から、今回「売りたい」で必要な文章だけを抜いてコピーしてください。
+              このフォームと同じ項目立てで返ってくるので、<b>各入力欄にそのまま貼り付けられます</b>。
             </p>
+            <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+              まとめて整えたいときは、返ってきた文章をこの画面のメモ欄に貼って「下書きを作る」を押してください。
+            </p>
+            {/* 文面が長くスクロールするので、下のボタンまで行かなくても押せるよう欄の上にも置く */}
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={copy}
+                aria-label="文面をコピーする"
+                title="文面をコピーする"
+                className="flex items-center gap-1 rounded-[8px] border border-[var(--line)] bg-white px-2 py-1 text-[11px] text-[var(--ink-2)] transition hover:border-[var(--green)] hover:text-[var(--green-d)]"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden="true">
+                  <rect x="9" y="9" width="11" height="11" rx="2" />
+                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                </svg>
+                コピー
+              </button>
+            </div>
             <textarea
               ref={promptRef}
               readOnly
@@ -108,11 +152,11 @@ function PromptModal() {
               onFocus={(e) => e.currentTarget.select()}
               // field-sizing: 対応ブラウザでは中身の行数に合わせて伸びる（未対応でも rows 分は見える）。
               // ただし文面が長いので、画面の4割までで止めて中をスクロールさせる（ボタンが画面外に出ないように）
-              className={`${input()} mt-3 max-h-[40vh] overflow-y-auto bg-[#FAFBF9] [field-sizing:content]`}
+              className={`${input()} mt-1 max-h-[40vh] overflow-y-auto bg-[#FAFBF9] [field-sizing:content]`}
             />
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <button type="button" onClick={copy} className={btn("primary", "sm")}>
-                {copyState === "copied" ? "コピーしました" : "コピーする"}
+                コピーする
               </button>
               <button type="button" onClick={() => setOpen(false)} className={btn("secondary", "sm")}>
                 閉じる
@@ -124,6 +168,23 @@ function PromptModal() {
               </p>
             ) : null}
           </div>
+
+          {/* コピーできたことをはっきり伝える（押しても何も起きないように見えるのを防ぐ）。
+              2秒で自動的に消える。読み上げにも伝わるよう role="status" を付ける。 */}
+          {copyState === "copied" ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="pointer-events-none absolute inset-0 z-10 grid place-items-center"
+            >
+              <div className="flex items-center gap-2 rounded-[12px] bg-[var(--ink)] px-6 py-4 text-[15px] font-bold text-white shadow-xl">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                コピーしました
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </>
