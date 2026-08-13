@@ -3,7 +3,7 @@
 // 掲載文の下書き支援（2026-08-14・「売りたい」で試験導入）。
 // 3〜4行のメモから各項目の下書きを作り、**本人が確認してからフォームに入れる**。
 // 勝手に保存はしない。生成しただけでは何も変わらない。
-import { useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import { draftOfferingCopy } from "../actions";
 import {
   AI_DRAFT_FIELDS,
@@ -213,6 +213,14 @@ export function AiDraftBox({
   const [draft, setDraft] = useState<OfferingDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // フォームに入れた直後の確認。入れて終わりではなく、必ず読み直してもらうために出す
+  const [applied, setApplied] = useState(false);
+  // 確認を閉じたら、この枠もたたむ（用は済んだので入力欄の邪魔をしない）
+  const closeApplied = useCallback(() => {
+    setApplied(false);
+    setOpen(false);
+  }, []);
+  useCloseOnEscape(applied, closeApplied);
 
   // このカテゴリでフォームに入力欄がある項目だけを扱う
   const fields = AI_DRAFT_FIELDS.filter((f) => !f.foodOnly || food);
@@ -249,6 +257,11 @@ export function AiDraftBox({
           商品の要点を3〜4行書くだけで、タイトル・説明文・特徴・使い方・おすすめポイント・タグまで下書きを作ります。
           作った下書きはそのまま保存されません。内容を確かめて直してからご登録ください。
         </p>
+        {/* たたんだ状態からでも文面を取りに行けるようにする（ほかのAIで書く人は、
+            この枠を開かずに各入力欄へ直接貼るため）。モーダルは <p> の外に置く。 */}
+        <div className="mt-1 text-[12px] leading-5 text-[var(--ink-2)]">
+          お使いのChatGPT・Gemini・Claudeなどに書いてもらうこともできます。 <PromptModal />
+        </div>
         <button type="button" onClick={() => setOpen(true)} className={`${btn("secondary", "sm")} mt-2`}>
           下書きを作ってみる
         </button>
@@ -334,12 +347,46 @@ export function AiDraftBox({
             type="button"
             onClick={() => {
               onApply(draft);
-              setOpen(false);
+              setApplied(true);
             }}
             className={`${btn("primary", "sm")} mt-2`}
           >
             {willOverwrite.length ? "上書きしてフォームに入れる" : "フォームに入れる"}
           </button>
+        </div>
+      ) : null}
+
+      {/* 入れた直後の確認。押しただけで完了した気にならないよう、
+          「読み直すこと」と「まだ必須が残っていること」をここで伝える。 */}
+      {applied ? (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={closeApplied} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-applied-title"
+            className="relative w-full max-w-[440px] rounded-[14px] border border-[var(--line)] bg-white p-6 shadow-xl"
+          >
+            <h2 id="ai-applied-title" className={h2FormCls}>
+              フォームに入れました
+            </h2>
+            <p className="mt-2 text-[13px] leading-6 text-[var(--ink-2)]">
+              入力内容および、まだ必須入力、画像登録がありますのでご確認ください。
+            </p>
+            {/* 下書きは事実を作らない作りにしてあるが、それでも最後に見るのは本人。
+                品質・規格や期限の書き間違いは事故に直結するので、ここで強く言う。 */}
+            <p className="mt-2 text-[13px] font-bold leading-6 text-[var(--red)]">
+              書き間違えると食品事故と取引トラブルに直結しますのでよくご確認ください。
+            </p>
+            <button
+              type="button"
+              onClick={closeApplied}
+              autoFocus
+              className={`${btn("primary", "sm")} mt-4`}
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       ) : null}
 
