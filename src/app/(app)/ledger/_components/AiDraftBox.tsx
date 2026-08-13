@@ -124,10 +124,7 @@ function PromptDialog({ open, onClose }: { open: boolean; onClose: () => void })
               下の文面をコピーして、普段お使いのAI（ChatGPT・Gemini・Claude など）に貼り付けてください。
             </p>
             <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
-              このフォームと同じ項目立てで返ってくるので、各入力欄にそのまま貼り付けられます。
-            </p>
-            <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
-              まとめて整えたいときは、返ってきた文章をこの画面のメモ欄に貼って「下書きを作る」を押してください。
+              このフォームと同じ項目立てで返ってくるので、フォームにそのまま貼り付けられます。
             </p>
             {/* 文面が長くスクロールするので、下のボタンまで行かなくても押せるよう欄の上にも置く */}
             <div className="mt-3 flex justify-end">
