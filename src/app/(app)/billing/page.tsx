@@ -153,19 +153,6 @@ export default async function BillingPage({
         </div>
       ) : null}
 
-      {/* 無料で使えることの明示（有料を必須に見せない）。会員には不要なので出さない（2026-08-11 ユーザー指示） */}
-      {isMember ? (
-        <ServiceMenuSection />
-      ) : (
-        <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
-          <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
-          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
-            プロフィール登録、案件（売りたい（提供したい）／探している（調達したい）／共創パートナー募集）の掲載、閲覧・検索、応募、問い合わせの送信は無料です。
-            有料になるのは、①初回の接点にかかる紹介料＝「探している（調達したい）」案件への初回提案と、自社の「売りたい（提供したい）」案件に届いた問い合わせの初回開封（2026年8月26日から。それ以前に届いた分の開封は無料です）②掲載オプション（露出・通知）③事務局への依頼、の3つです。提案・開封のあとの継続メッセージは、何往復でも無料です。
-          </p>
-        </div>
-      )}
-
       {/* 紹介クレジット残高 */}
       <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
         <h2 className={h2Cls}>紹介クレジット残高</h2>
@@ -234,6 +221,19 @@ export default async function BillingPage({
           </div>
         ) : null}
       </div>
+
+      {/* 無料で使えることの明示（有料を必須に見せない）。会員には不要なので出さない（2026-08-11 ユーザー指示） */}
+      {isMember ? (
+        <ServiceMenuSection />
+      ) : (
+        <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+          <p className="text-[13px] font-semibold text-[var(--ink)]">基本利用は無料です</p>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            プロフィール登録、案件（売りたい（提供したい）／探している（調達したい）／共創パートナー募集）の掲載、閲覧・検索、応募、問い合わせの送信は無料です。
+            有料になるのは、①初回の接点にかかる紹介料＝「探している（調達したい）」案件への初回提案と、自社の「売りたい（提供したい）」案件に届いた問い合わせの初回開封（2026年8月26日から。それ以前に届いた分の開封は無料です）②掲載オプション（露出・通知）③事務局への依頼、の3つです。提案・開封のあとの継続メッセージは、何往復でも無料です。
+          </p>
+        </div>
+      )}
 
       {/* 事務局へ依頼する（正式サービス。相談→見積→個別契約）。会員のときは上部へ移動している */}
       {isMember ? null : <ServiceMenuSection />}
