@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
   reviewAction,
   suspendMember,
@@ -138,12 +139,13 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
               <th className="px-4 py-3 font-medium">記入率</th>
               <th className="px-4 py-3 font-medium">審査</th>
               <th className="px-4 py-3 font-medium">課金状態</th>
+              <th className="px-4 py-3 font-medium">顧客カルテ</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-[var(--muted)]">
+                <td colSpan={8} className="px-4 py-8 text-center text-[var(--muted)]">
                   審査対象の会員はまだありません。
                 </td>
               </tr>
@@ -173,6 +175,15 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
                   </td>
                   <td className="px-4 py-3">
                     <Badge map={PAYMENT} value={m.paymentStatus} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {/* 事務局CRM（Phase 11）＝対応履歴・担当・次にやること */}
+                    <Link
+                      href={`/admin/crm/${m.id}`}
+                      className="whitespace-nowrap text-[12px] text-[var(--green-d)] underline"
+                    >
+                      カルテ →
+                    </Link>
                   </td>
                 </tr>
               ))

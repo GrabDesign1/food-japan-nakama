@@ -15,6 +15,11 @@ import { deleteArticle, toggleArticle } from "./article-actions";
 import { ArticleManager } from "./_components/ArticleManager";
 import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 
+// レンダー内で new Date() を直接呼ばないためのヘルパー（react-hooks/purity 対応。/admin/inquiries と同じ）
+function nowDate(): Date {
+  return new Date();
+}
+
 export default async function AdminPage() {
   const su = await getSessionUser();
   if (!su) redirect("/login");
@@ -35,6 +40,7 @@ export default async function AdminPage() {
     pendingPromoCount,
     pendingNoticeCount,
     newConsultCount,
+    overdueMembers,
     announcements,
     banners,
     curatedArticles,
@@ -57,6 +63,19 @@ export default async function AdminPage() {
     prisma.listingPromotion.count({ where: { tenantId, status: "pending_review" } }),
     prisma.matchedNotice.count({ where: { tenantId, status: "pending_review" } }),
     prisma.consultation.count({ where: { tenantId, status: "new" } }),
+    // 事務局CRM（Phase 11）：次にやることの期限が過ぎている会員
+    prisma.member.findMany({
+      where: { tenantId, crmNextActionDue: { lt: nowDate() } },
+      orderBy: { crmNextActionDue: "asc" },
+      take: 20,
+      select: {
+        id: true,
+        name: true,
+        crmNextAction: true,
+        crmNextActionDue: true,
+        crmOwnerUserId: true,
+      },
+    }),
     prisma.announcement.findMany({
       where: { tenantId },
       orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
@@ -99,6 +118,7 @@ export default async function AdminPage() {
     { k: "PJ承認待ち", v: pendingProjects.length, alert: true, href: "#pj-review" },
     { k: "課金の審査待ち", v: billingPending, alert: true, href: "/admin/billing" },
     { k: "新規の個別相談", v: newConsultCount, alert: true, href: "/admin/consultations" },
+    { k: "対応期限ぎれ", v: overdueMembers.length, alert: true, href: "#crm-overdue" },
     { k: "承認済み会員", v: memberApproved },
     { k: "公開中の台帳", v: offeringCount },
     { k: "掲載中プロジェクト", v: projectPublished },
@@ -164,6 +184,28 @@ export default async function AdminPage() {
           );
         })}
       </div>
+
+      {/* 顧客対応の期限ぎれ（事務局CRM・Phase 11） */}
+      {overdueMembers.length > 0 ? (
+        <div id="crm-overdue" className="scroll-mt-6 rounded-[10px] border-2 border-[var(--red)] bg-[var(--red-soft)] p-4">
+          <h2 className="text-[14px] font-bold text-[var(--red)]">
+            対応期限が過ぎています（{overdueMembers.length}件）
+          </h2>
+          <ul className="mt-2 flex flex-col gap-1 text-[12px] text-[var(--ink)]">
+            {overdueMembers.map((m) => (
+              <li key={m.id}>
+                <Link href={`/admin/crm/${m.id}`} className="font-bold underline">
+                  {m.name || "（名称未設定）"}
+                </Link>
+                <span className="ml-2 text-[var(--muted)]">
+                  期限 {m.crmNextActionDue?.toLocaleDateString("ja-JP")}
+                </span>
+                {m.crmNextAction ? <span className="ml-2 text-[var(--ink-2)]">{m.crmNextAction}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {/* お知らせ投稿 */}
       <div>

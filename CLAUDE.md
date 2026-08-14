@@ -382,6 +382,16 @@ Phase 7 では下記から着手する。**着手前にこの節と「やるこ�
   テスト会員名は `【テスト】…(削除予定)`、メールは `phase6-*@example.com` を使った。
   削除時は messages / threads / offerings / credit台帳 / Storage(message-attachments) / Supabase Auth まで消す。
 
+- **Phase 11＝事務局CRM（顧客カルテ）第1弾（2026-08-15）**: 事務局側に「誰にいつ何をして、次は何をするか」を残す場所が無かったので作った（既存の審査・監視画面は触っていない）。
+  - DB＝migration `admin_crm`（追加のみ）＋`admin_crm_rls`。`Member` に `crmStage`／`crmOwnerUserId`（事務局ユーザーのid・リレーションは張らない）／`crmNextAction`／`crmNextActionDue`／`crmTags[]` を追加（全て任意）。新モデル **`MemberNote`**（対応履歴＝種別・本文・対応日時・記録者名を保存。記録者名は退職後も履歴が読めるように文字列で持つ）。**新テーブルなので RLS 有効化＋anon/authenticated から REVOKE を別マイグレーションで実施済み**。
+  - 画面＝**`/admin/crm/[memberId]`（顧客カルテ）**。左＝担当・状況・次にやること・期限・タグの保存フォーム／対応履歴の追加と一覧／この会員の案件一覧。右＝反応の数字（公開中案件・閲覧・届いた問い合わせ・送った提案・商談・合意した商談・共創PJ・クレジット残高）／連絡先／個別相談（**メールアドレス一致で拾う参考表示**。`Consultation` に会員IDの列は無い）／購入履歴／この会員に対する操作の監査ログ。
+  - **メッセージ本文は一切出さない（規約17条）**。件数と日時だけ＝`/admin/inquiries` と同じ扱い。`src/lib/crm.ts` の先頭とカルテのファイル冒頭にも明記した。
+  - 導線＝`/admin/members` の表に「顧客カルテ」列（`カルテ →`）。`/admin` の指標に**「対応期限ぎれ」（1件以上で赤・要対応）**＋期限を過ぎた会員の一覧（`#crm-overdue`）。
+  - 定数＝`src/lib/crm.ts`（種別6・状況6・文字数上限・タグの分解・期限の状態判定）。アクション＝`admin/crm-actions.ts`（`saveMemberCrm`／`addMemberNote`／`deleteMemberNote`）。**担当者は同一テナントの事務局ユーザーのみ許可**、対応履歴の削除は**書いた本人か上位管理者のみ**（記録の改ざん防止）、操作は全て監査ログ（`member.crm_update`／`crm_note_add`／`crm_note_delete`）。日時は既存に合わせ `+09:00` 固定で解釈。
+  - 検証＝tsc／eslint（変更ファイル）／next build 合格。本番DBに対して記録の追加→表示→`/admin` の赤アラート→削除→CRM欄のクリアまで実機確認し、**テストデータは全削除済み**（`member_notes` 0件・CRM列が入った会員 0件）。375／1280／1520px で横スクロールなし。
+  - **未実装（次の段）**: 顧客一覧 `/admin/crm`（検索・絞り込み・担当別）、`Consultation.memberId` での正式な紐付け、期限リマインドのメール通知。
+  - **⚠️開発の落とし穴**: schema変更後は dev サーバーを再起動しないと `prisma.memberNote` が undefined になり「Cannot read properties of undefined (reading 'findMany')」で500になる。別セッションの dev サーバーが動いていると2つ目は起動できない（同一ディレクトリでロック）ので、確認は `npx next start -p 3100` で本番ビルドを別ポートに立てるのが早い。
+
 ## やることリスト（対外募集開始前）
 000. **【追加】2026-08-12 開封課金（リードの初回開封に1クレジット）の周知**:
    ①**施行日 2026年8月26日までに会員へ周知する**（/admin のお知らせ＋案内メール同意者へのメール。無料範囲を狭める不利益変更のため、規約は「改定8/12・施行8/26」で先に反映済み）。

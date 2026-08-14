@@ -164,18 +164,48 @@ model Member {
   withdrawalRequestedAt DateTime? @map("withdrawal_requested_at")
   withdrawalReason      String?   @map("withdrawal_reason")
 
+  // 事務局CRM（Phase 11）＝事務局だけが見る営業・伴走の管理項目。会員側の画面には一切出さない
+  crmStage         String?   @map("crm_stage")           // 状況（CRM_STAGES）
+  crmOwnerUserId   String?   @map("crm_owner_user_id")   // 担当する事務局ユーザー（User.id。リレーションは張らず参照のみ）
+  crmNextAction    String?   @map("crm_next_action")     // 次にやること
+  crmNextActionDue DateTime? @map("crm_next_action_due") // その期限
+  crmTags          String[]  @default([]) @map("crm_tags")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   users     User[]
   offerings Offering[]
   favorites Favorite[]
+  crmNotes  MemberNote[]
 
   @@index([tenantId])
   @@index([status])
   @@index([stripeCustomerId])
+  @@index([tenantId, crmNextActionDue])
   @@map("members")
+}
+
+/// 事務局の対応履歴（架電・メール・訪問など。Phase 11＝事務局CRM）。
+/// 事務局だけが読み書きする内部記録で、会員には見せない。
+/// 規約17条（通信の秘密）により、**会員間メッセージの本文をここに転記しないこと**。
+model MemberNote {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  memberId     String   @map("member_id")
+  kind         String // 種別（NOTE_KINDS: call/email/visit/meeting/other）
+  body         String
+  occurredAt   DateTime @map("occurred_at") // 対応した日時（既定＝記録した日時）
+  authorUserId String   @map("author_user_id")
+  authorName   String   @map("author_name") // 記録時の氏名（後で担当が退職しても履歴が読めるように保存する）
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, occurredAt])
+  @@index([tenantId, occurredAt])
+  @@map("member_notes")
 }
 
 /// Stripe Webhookの冪等化（同じイベントIDを二度処理しない）
