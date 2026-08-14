@@ -14,6 +14,14 @@ import {
 import { notifyAdminMemberRegistered, notifyWithdrawalRequest } from "@/lib/email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
+import {
+  AI_ENABLED,
+  AI_PROFILE_MEMO_MAX,
+  draftMemberProfile as generateProfileDraft,
+  type ProfileDraftResult,
+} from "@/lib/ai";
+import { AI_ACTION_PROFILE, aiDraftLimitReached, recordAiDraftUse } from "@/lib/ai-usage";
+import { canSendToOthers } from "@/lib/security";
 
 export type ProfileState = { ok?: boolean; error?: string; message?: string };
 
@@ -332,4 +340,35 @@ export async function requestWithdrawal(
 
   revalidatePath("/profile");
   return { ok: true, message: "退会のお申し出を受け付けました。事務局よりご連絡いたします。" };
+}
+
+/**
+ * メモから事業者プロフィールの下書きを作る（2026-08-14）。
+ * 作るだけで保存はしない。会員がフォーム上で直してから保存する。
+ * 回数の上限は台帳（売りたい）の下書きと共有（合わせて1日20回）。
+ */
+export async function draftProfile(formData: FormData): Promise<ProfileDraftResult> {
+  if (!AI_ENABLED) return { error: "この機能は現在ご利用いただけません。" };
+
+  const su = await getSessionUser();
+  if (!su) return { error: "ログインが必要です。" };
+  const member = await getOrCreateMemberForUser(su);
+  if (!canSendToOthers(member.status)) {
+    return { error: "現在のご登録状態ではご利用いただけません。" };
+  }
+
+  const limited = await aiDraftLimitReached(su);
+  if (limited) return { error: limited };
+
+  const result = await generateProfileDraft({
+    memberName: trimTo(formData.get("memberName"), PROFILE_SHORT_MAX),
+    category: trimTo(formData.get("category"), PROFILE_SHORT_MAX),
+    area: trimTo(formData.get("area"), PROFILE_SHORT_MAX),
+    memo: trimTo(formData.get("memo"), AI_PROFILE_MEMO_MAX),
+  });
+
+  if ("draft" in result) {
+    await recordAiDraftUse(su, AI_ACTION_PROFILE, `プロフィールの下書きを生成 member=${member.id}`);
+  }
+  return result;
 }

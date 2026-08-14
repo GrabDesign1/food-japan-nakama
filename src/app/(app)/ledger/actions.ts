@@ -28,17 +28,14 @@ import { validateImageFile, storagePathFromUrl } from "@/lib/upload";
 import { missingForPublish } from "@/lib/offering-publish";
 import {
   AI_ENABLED,
-  AI_DRAFT_DAILY_LIMIT,
   AI_DRAFT_MEMO_MAX,
   draftOfferingCopy as generateOfferingDraft,
   type DraftResult,
 } from "@/lib/ai";
+import { AI_ACTION_OFFERING, aiDraftLimitReached, recordAiDraftUse } from "@/lib/ai-usage";
 import { canSendToOthers, trimTo, PROFILE_SHORT_MAX } from "@/lib/security";
 
 const BUCKET = "member-images";
-
-/** 下書き支援の記録に使う監査ログのアクション名（利用回数の上限判定にも使う）。 */
-const AI_DRAFT_ACTION = "ai.draft_offering";
 
 /**
  * メモから「売りたい」の掲載文の下書きを作る（2026-08-14）。
@@ -54,19 +51,8 @@ export async function draftOfferingCopy(formData: FormData): Promise<DraftResult
     return { error: "現在のご登録状態ではご利用いただけません。" };
   }
 
-  // 使いすぎの抑止。監査ログの件数をそのまま回数として数える（専用テーブルは作らない）
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const used = await prisma.auditLog.count({
-    where: {
-      tenantId: su.app.tenantId,
-      actorUserId: su.app.id,
-      action: AI_DRAFT_ACTION,
-      createdAt: { gte: since },
-    },
-  });
-  if (used >= AI_DRAFT_DAILY_LIMIT) {
-    return { error: `下書きの作成は1日${AI_DRAFT_DAILY_LIMIT}回までです。明日またお試しください。` };
-  }
+  const limited = await aiDraftLimitReached(su);
+  if (limited) return { error: limited };
 
   const result = await generateOfferingDraft({
     category: trimTo(formData.get("category"), PROFILE_SHORT_MAX),
@@ -75,13 +61,8 @@ export async function draftOfferingCopy(formData: FormData): Promise<DraftResult
     memo: trimTo(formData.get("memo"), AI_DRAFT_MEMO_MAX),
   });
 
-  // 成功したときだけ回数に数える（エラーで枠を消費させない）
   if ("draft" in result) {
-    await writeAudit(su, AI_DRAFT_ACTION, {
-      targetType: "member",
-      targetId: member.id,
-      detail: `掲載文の下書きを生成（${used + 1}/${AI_DRAFT_DAILY_LIMIT}回）`,
-    });
+    await recordAiDraftUse(su, AI_ACTION_OFFERING, `掲載文の下書きを生成 member=${member.id}`);
   }
   return result;
 }

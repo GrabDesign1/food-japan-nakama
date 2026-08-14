@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { saveProfile, type ProfileState } from "../actions";
 import { ImageUploader } from "./ImageUploader";
 import { AvatarUploader } from "./AvatarUploader";
@@ -183,12 +183,24 @@ function SelectField({
   );
 }
 
-export function ProfileForm({ member }: { member: MemberData }) {
+import { AiProfileDraftBox } from "./AiProfileDraftBox";
+import { AI_PROFILE_FIELDS, type ProfileDraft } from "@/lib/ai-profile-core";
+
+export function ProfileForm({
+  member,
+  aiEnabled = false,
+}: {
+  member: MemberData;
+  /** 下書き支援を出すか（OPENAI_API_KEY があるときだけ true） */
+  aiEnabled?: boolean;
+}) {
   const [tab, setTab] = useState(0);
   const [l1, setL1] = useState(member.categoryL1 ?? "");
   // 細分類は大分類に依存するため制御コンポーネントにし、大分類変更時に整合を取る
   const [l2, setL2] = useState(member.categoryL2 ?? "");
   const [hasLicense, setHasLicense] = useState(member.hasLicense);
+  // 下書きの反映先。各入力欄は非制御（defaultValue）なので、name で引いて値を書き込む
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<ProfileState, FormData>(
     saveProfile,
     {}
@@ -209,8 +221,55 @@ export function ProfileForm({ member }: { member: MemberData }) {
         : isEmpty(member[f.key] as string | null)
   );
 
+  /**
+   * 下書きをフォームの各欄へ書き込む。空文字の項目は今の入力を消さない。
+   * 入力欄は非制御（defaultValue）なので name で引いて直接書く。
+   * ただし会員種別だけは制御コンポーネントなので state を更新する。
+   */
+  function applyDraft(draft: ProfileDraft) {
+    const form = formRef.current;
+    const applied: string[] = [];
+    const overwritten: string[] = [];
+    if (!form) return { applied, overwritten };
+
+    // 会員種別は大分類→細分類の順で、選択肢に無い値は入れない
+    if (draft.categoryL1 && CATEGORY_L1.includes(draft.categoryL1)) {
+      if (l1) overwritten.push("会員種別（大分類）");
+      setL1(draft.categoryL1);
+      applied.push("会員種別（大分類）");
+      const opts = l2Options(draft.categoryL1);
+      if (draft.categoryL2 && opts.includes(draft.categoryL2)) {
+        if (l2) overwritten.push("会員種別（細分類）");
+        setL2(draft.categoryL2);
+        applied.push("会員種別（細分類）");
+      } else if (!opts.includes(l2)) {
+        setL2("");
+      }
+    }
+
+    for (const f of AI_PROFILE_FIELDS) {
+      if (f.key === "categoryL1" || f.key === "categoryL2") continue; // 上で処理済み
+      const value = draft[f.key];
+      if (!value) continue;
+      const el = form.elements.namedItem(f.key);
+      if (el instanceof HTMLSelectElement) {
+        // 選択肢に無い値は入れない（AIが作った値でフォームを壊さない）
+        if (![...el.options].some((o) => o.value === value)) continue;
+        if (el.value) overwritten.push(f.label);
+        el.value = value;
+        applied.push(f.label);
+        continue;
+      }
+      if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) continue;
+      if (el.value.trim()) overwritten.push(f.label);
+      el.value = value;
+      applied.push(f.label);
+    }
+    return { applied, overwritten };
+  }
+
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
       {/* 記入アドバイス */}
       {missing.length > 0 ? (
         <div className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4">
@@ -238,6 +297,17 @@ export function ProfileForm({ member }: { member: MemberData }) {
           ✓ プロフィールはすべて入力済みです。ありがとうございます！
         </div>
       )}
+
+      {/* 下書き支援（APIキーがある環境のみ／2026-08-14）。
+          「事業内容」「組みたい相手」の両方の項目を埋めるので、タブの外側に置く。 */}
+      {aiEnabled ? (
+        <AiProfileDraftBox
+          memberName={member.name ?? ""}
+          category={[l1, l2].filter(Boolean).join(" / ")}
+          area={[member.prefecture, member.city].filter(Boolean).join("")}
+          onApply={applyDraft}
+        />
+      ) : null}
 
       {/* タブ */}
       <div className="flex gap-1 border-b border-[var(--line)]">

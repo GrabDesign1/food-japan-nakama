@@ -18,9 +18,18 @@
 // Stripe と同じで、鍵が無い環境では機能ごと出さない（画面にボタンを出さない）。
 import OpenAI, { RateLimitError } from "openai";
 import { AI_DRAFT_MEMO_MAX, AI_DRAFT_TAG_MAX, type OfferingDraft } from "@/lib/ai-draft-core";
+import { AI_PROFILE_MEMO_MAX, type ProfileDraft } from "@/lib/ai-profile-core";
+import {
+  CATEGORY_L1,
+  MEMBER_CATEGORIES,
+  PREFECTURES,
+  SIZES,
+  START_TIMINGS,
+} from "@/lib/member-taxonomy";
 
 // 型と定数は ai-draft-core.ts（クライアントからも読み込める）。従来どおりここからも使えるように再輸出する。
 export * from "@/lib/ai-draft-core";
+export * from "@/lib/ai-profile-core";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -223,6 +232,247 @@ ${memo}`,
         console.error(
           "[ai] ⚠️ APIの残高切れです。OpenAIのBillingでクレジットを追加するまで下書きは作れません。"
         );
+        return { error: "ただいま下書きの作成はご利用いただけません。恐れ入りますが手入力でお願いします。" };
+      }
+      return { error: "混み合っています。少し時間をおいてお試しください。" };
+    }
+    return { error: "下書きを作れませんでした。時間をおいてお試しください。" };
+  }
+}
+
+// ── プロフィールの下書き（2026-08-14） ─────────────────────────
+// 台帳（売りたい）と同じ考え方。項目が「会社の紹介」に変わるだけ。
+// 会員自身のことなので、掲載文よりさらに事実確認が効きにくい。作らせないことを最優先にする。
+
+// 全ての細分類（大分類ごとの入れ子を平らにしたもの）
+const ALL_L2 = MEMBER_CATEGORIES.flatMap((c) => c.l2);
+
+const PROFILE_SCHEMA = {
+  type: "object",
+  properties: {
+    // ── 基本情報。会社の素性なので、メモに書かれていなければ必ず空文字 ──
+    name: {
+      type: "string",
+      description: "事業者名（会社名・屋号）。メモに書かれていなければ空文字。省略形にせず書かれたまま。",
+    },
+    contactName: {
+      type: "string",
+      description: "担当者の氏名。メモに書かれていなければ空文字。読みがなは推測しない（この項目には書かない）。",
+    },
+    categoryL1: {
+      type: "string",
+      enum: [...CATEGORY_L1, ""],
+      description: "会員種別の大分類。メモの事業内容から明らかに判断できるときだけ選ぶ。迷えば空文字。",
+    },
+    categoryL2: {
+      type: "string",
+      enum: [...ALL_L2, ""],
+      description: "会員種別の細分類。必ず大分類に属するものを選ぶ。迷えば空文字。",
+    },
+    prefecture: {
+      type: "string",
+      enum: [...PREFECTURES, ""],
+      description: "都道府県。メモに地名が書かれている場合だけ。書かれていなければ空文字。",
+    },
+    city: {
+      type: "string",
+      description: "市区町村。メモに書かれていなければ空文字。20文字以内。",
+    },
+    postalCode: {
+      type: "string",
+      description: "郵便番号（例：8890111）。メモに書かれていなければ空文字。推測は禁止。",
+    },
+    address: {
+      type: "string",
+      description: "番地・建物名。メモに書かれていなければ空文字。推測は禁止。40文字以内。",
+    },
+    website: {
+      type: "string",
+      description: "ウェブサイトのURL。メモに書かれているものをそのまま。無ければ空文字。URLを作らない。",
+    },
+    founded: {
+      type: "string",
+      description: "設立・創業（例：1995年）。メモから確実に分かる場合だけ。「30年前」など曖昧なら空文字。",
+    },
+    size: {
+      type: "string",
+      enum: [...SIZES, ""],
+      description: "従業員規模。メモに人数が書かれている場合だけ、当てはまる区分を選ぶ。無ければ空文字。",
+    },
+    startTiming: {
+      type: "string",
+      enum: [...START_TIMINGS, ""],
+      description: "共創を始めたい時期。メモに時期が書かれている場合だけ選ぶ。無ければ空文字。",
+    },
+    description: {
+      type: "string",
+      description: "事業紹介。何をしている事業者かが分かる150〜300文字。材料が足りなければ空文字。",
+    },
+    featureText: {
+      type: "string",
+      description: "強み・特徴。他社と比べたときに選ばれる理由。80〜200文字。メモに無ければ空文字。",
+    },
+    productItems: {
+      type: "string",
+      description: "生産・取扱品目の名前だけを読点区切りで並べる。40文字以内。メモに無ければ空文字。",
+    },
+    productVolume: {
+      type: "string",
+      description: "生産量・供給量。**メモに数字が書かれている場合だけ**その表記を使う。40文字以内。推測は禁止。",
+    },
+    equipmentText: {
+      type: "string",
+      description: "設備・加工能力。保有する設備や対応できる加工。80〜200文字。メモに無ければ空文字。",
+    },
+    salesAreaText: {
+      type: "string",
+      description: "現在の販路・売り場。80〜200文字。メモに無ければ空文字。取引先の企業名はメモにあっても書かない。",
+    },
+    logisticsText: {
+      type: "string",
+      description: "いま困っていること。80〜200文字。メモに無ければ空文字。",
+    },
+    foodlossText: {
+      type: "string",
+      description: "余っている食材や規格外品。80〜200文字。メモに無ければ空文字。",
+    },
+    collabStyle: {
+      type: "string",
+      description: "組みたい相手・共創のイメージ。どんな相手と何をしたいか。80〜200文字。",
+    },
+    challengeText: {
+      type: "string",
+      description: "解決したい課題。80〜200文字。「困りごと」と同じ内容を繰り返さず、事業として越えたい壁を書く。",
+    },
+  },
+  required: [
+    "name",
+    "contactName",
+    "categoryL1",
+    "categoryL2",
+    "prefecture",
+    "city",
+    "postalCode",
+    "address",
+    "website",
+    "founded",
+    "size",
+    "startTiming",
+    "description",
+    "featureText",
+    "productItems",
+    "productVolume",
+    "equipmentText",
+    "salesAreaText",
+    "logisticsText",
+    "foodlossText",
+    "collabStyle",
+    "challengeText",
+  ],
+  additionalProperties: false,
+} as const;
+
+const PROFILE_SYSTEM = `あなたは日本の食品・飲料業界に詳しい編集者です。
+生産者や食品事業者が書いたメモをもとに、業務用マーケットプレイス「FOOD JAPAN NAKAMA」の**事業者プロフィールの下書き**を作ります。読むのは、一緒に組む相手を探している他の事業者です。
+
+必ず守ること:
+- メモに書かれていない事実を作らない。所在地・沿革・取引先・認証・受賞歴・規模・数量・売上は、メモに無ければ書かない。
+- 材料が足りない項目は、埋めようとせず空文字("")を返す。空欄のほうが、間違いを載せるよりよい。
+- 取引先や仕入先の**企業名は書かない**（相手の同意が要る情報のため）。
+- 会社名・所在地・郵便番号・URL・設立年・人数は、**メモに書かれているものをそのまま写す**。似た値を作らない。曖昧な書き方（「30年前から」等）は空文字にする。
+- 「日本一」「最高級」「業界初」など、根拠なく優良だと誤解させる表現を使わない。
+- 健康効果・効能をうたわない（健康増進法・景品表示法）。
+- 感嘆符や絵文字は使わない。落ち着いた「です・ます」調で書く。
+- 各項目には、その項目で聞かれていることだけを書く。**他の項目に書いた内容を繰り返さない**。書くことが残っていない項目は空文字にする。`;
+
+export type ProfileDraftResult = { draft: ProfileDraft } | { error: string };
+
+/** メモから事業者プロフィールの下書きを作る（保存はしない）。 */
+export async function draftMemberProfile(params: {
+  memberName: string;
+  category: string;
+  area: string;
+  memo: string;
+}): Promise<ProfileDraftResult> {
+  if (!client) return { error: "この機能は現在ご利用いただけません。" };
+
+  const memo = params.memo.trim().slice(0, AI_PROFILE_MEMO_MAX);
+  if (memo.length < 10) {
+    return { error: "メモをもう少し詳しく書いてください（10文字以上）。" };
+  }
+
+  const known = [
+    params.memberName ? `事業者名: ${params.memberName}` : null,
+    params.category ? `分類: ${params.category}` : null,
+    params.area ? `所在地: ${params.area}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const res = await client.responses.create({
+      model: MODEL,
+      max_output_tokens: 4000,
+      text: {
+        format: { type: "json_schema", name: "member_profile_draft", schema: PROFILE_SCHEMA, strict: true },
+      },
+      input: [
+        { role: "system", content: PROFILE_SYSTEM },
+        {
+          role: "user",
+          content: `次のメモから、事業者プロフィールの各項目の下書きを作ってください。
+
+【すでに入力されている情報】
+${known || "（なし）"}
+
+【本人のメモ】
+${memo}`,
+        },
+      ],
+    });
+
+    const message = res.output.find((o) => o.type === "message");
+    if (message?.content?.some((c) => c.type === "refusal")) {
+      return { error: "この内容では下書きを作れませんでした。表現を変えてお試しください。" };
+    }
+    const text = res.output_text;
+    if (!text) return { error: "下書きを作れませんでした。時間をおいてお試しください。" };
+
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    const pick = (k: keyof ProfileDraft) =>
+      typeof parsed[k] === "string" ? (parsed[k] as string).trim() : "";
+    return {
+      draft: {
+        name: pick("name"),
+        contactName: pick("contactName"),
+        categoryL1: pick("categoryL1"),
+        categoryL2: pick("categoryL2"),
+        prefecture: pick("prefecture"),
+        city: pick("city"),
+        postalCode: pick("postalCode"),
+        address: pick("address"),
+        website: pick("website"),
+        founded: pick("founded"),
+        size: pick("size"),
+        startTiming: pick("startTiming"),
+        description: pick("description"),
+        featureText: pick("featureText"),
+        productItems: pick("productItems"),
+        productVolume: pick("productVolume"),
+        equipmentText: pick("equipmentText"),
+        salesAreaText: pick("salesAreaText"),
+        logisticsText: pick("logisticsText"),
+        foodlossText: pick("foodlossText"),
+        collabStyle: pick("collabStyle"),
+        challengeText: pick("challengeText"),
+      },
+    };
+  } catch (e) {
+    console.error("[ai] プロフィール下書きの生成に失敗:", e);
+    if (e instanceof RateLimitError) {
+      const code = (e as { code?: string }).code;
+      if (code === "insufficient_quota" || code === "credit_balance_exhausted") {
+        console.error("[ai] ⚠️ APIの残高切れです。OpenAIのBillingでクレジットを追加してください。");
         return { error: "ただいま下書きの作成はご利用いただけません。恐れ入りますが手入力でお願いします。" };
       }
       return { error: "混み合っています。少し時間をおいてお試しください。" };
