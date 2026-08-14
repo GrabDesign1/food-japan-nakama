@@ -100,6 +100,61 @@ function ServiceMenuSection() {
   );
 }
 
+/**
+ * NAKAMAビジネス会員プラン（ゴールド基調）。
+ * 未加入は申し込み導線なので上部、契約中は管理用なので最下部に置く（2026-08-15 ユーザー指示）。
+ */
+function PlanCard({ isMember }: { isMember: boolean }) {
+  const plan = PLANS[0];
+  return (
+    <div className="max-w-[760px] rounded-[12px] border-2 border-[var(--gold)] bg-[#FDF9EF] p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="text-[15px] font-semibold text-[var(--ink)]">{plan.name}</div>
+        {isMember ? (
+          <span className="rounded-full bg-[#F7EED9] px-2.5 py-1 text-[10px] font-bold text-[var(--gold-d)]">
+            ご契約中
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-1 text-[11px] text-[var(--muted)]">{plan.tagline}</div>
+      <div className="mt-2 font-serif text-[26px] text-[var(--ink)]">
+        ¥{plan.amount!.toLocaleString()}
+        <span className="text-[12px] text-[var(--muted)]">/月（税込）</span>
+      </div>
+      <ul className="mt-3 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
+        {plan.features.map((f) => (
+          <li key={f} className="flex gap-1.5">
+            <span className="font-bold text-[var(--gold)]">✓</span>
+            {f}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-5">
+        {isMember ? (
+          <div>
+            <p className="mb-2 text-[12px] text-[var(--muted)]">
+              解約・領収書のダウンロード・お支払い方法の変更は、こちらから行えます。
+            </p>
+            <PortalButton />
+          </div>
+        ) : (
+          <PlanButton planCode={plan.code} label={`月額¥${plan.amount!.toLocaleString()}（税込）で申し込む`} />
+        )}
+      </div>
+      {!isMember ? (
+        <div className="mt-4 rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] px-4 py-3">
+          <p className="text-[11px] leading-5 text-[var(--muted)]">
+            ・自動更新契約です。初回は申込日に決済し、以後は1か月ごと（毎月、申込日と同じ日）に自動決済されます。
+            解約は次回更新日の前日23:59（日本時間）までにこのページから手続きできます。日割り返金はありません。
+            <br />
+            ・会員でなくても、基本利用は無料のままご利用いただけます。
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -111,7 +166,6 @@ export default async function BillingPage({
   const { success, paid } = await searchParams;
 
   const isMember = me.paymentStatus === "PAID";
-  const plan = PLANS[0];
 
   const [balance, orders, invoices] = await Promise.all([
     getCreditBalance(me.id),
@@ -175,52 +229,8 @@ export default async function BillingPage({
         </p>
       </div>
 
-      {/* NAKAMAビジネス会員プラン（ゴールド基調） */}
-      <div className="max-w-[760px] rounded-[12px] border-2 border-[var(--gold)] bg-[#FDF9EF] p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="text-[15px] font-semibold text-[var(--ink)]">{plan.name}</div>
-          {isMember ? (
-            <span className="rounded-full bg-[#F7EED9] px-2.5 py-1 text-[10px] font-bold text-[var(--gold-d)]">
-              ご契約中
-            </span>
-          ) : null}
-        </div>
-        <div className="mt-1 text-[11px] text-[var(--muted)]">{plan.tagline}</div>
-        <div className="mt-2 font-serif text-[26px] text-[var(--ink)]">
-          ¥{plan.amount!.toLocaleString()}
-          <span className="text-[12px] text-[var(--muted)]">/月（税込）</span>
-        </div>
-        <ul className="mt-3 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
-          {plan.features.map((f) => (
-            <li key={f} className="flex gap-1.5">
-              <span className="font-bold text-[var(--gold)]">✓</span>
-              {f}
-            </li>
-          ))}
-        </ul>
-        <div className="mt-5">
-          {isMember ? (
-            <div>
-              <p className="mb-2 text-[12px] text-[var(--muted)]">
-                解約・領収書のダウンロード・お支払い方法の変更は、こちらから行えます。
-              </p>
-              <PortalButton />
-            </div>
-          ) : (
-            <PlanButton planCode={plan.code} label={`月額¥${plan.amount!.toLocaleString()}（税込）で申し込む`} />
-          )}
-        </div>
-        {!isMember ? (
-          <div className="mt-4 rounded-[10px] border border-[var(--line)] bg-[var(--canvas)] px-4 py-3">
-            <p className="text-[11px] leading-5 text-[var(--muted)]">
-              ・自動更新契約です。初回は申込日に決済し、以後は1か月ごと（毎月、申込日と同じ日）に自動決済されます。
-              解約は次回更新日の前日23:59（日本時間）までにこのページから手続きできます。日割り返金はありません。
-              <br />
-              ・会員でなくても、基本利用は無料のままご利用いただけます。
-            </p>
-          </div>
-        ) : null}
-      </div>
+      {/* NAKAMAビジネス会員プラン（未加入のみ上部。契約中は最下部へ） */}
+      {isMember ? null : <PlanCard isMember={isMember} />}
 
       {/* 無料で使えることの明示（有料を必須に見せない）。会員には不要なので出さない（2026-08-11 ユーザー指示） */}
       {isMember ? (
@@ -269,6 +279,9 @@ export default async function BillingPage({
           </div>
         )}
       </div>
+
+      {/* 契約中のプランカードは最下部（申し込み導線ではなく管理用のため・2026-08-15 ユーザー指示） */}
+      {isMember ? <PlanCard isMember={isMember} /> : null}
 
       <p className="max-w-[760px] text-[11px] leading-5 text-[var(--muted)]">
         ※ 有料オプションは表示機会を増やすサービスであり、閲覧数、問い合わせ、取引成立、売上を保証するものではありません。
