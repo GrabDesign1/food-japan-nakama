@@ -150,6 +150,21 @@ export default async function AdminPage() {
           <Link href="/admin/billing" className={btn("secondary", "sm")}>課金管理 →</Link>
           <Link href="/admin/reports" className={btn("secondary", "sm")}>違反報告 →</Link>
           <Link href="/admin/audit" className={btn("secondary", "sm")}>監査ログ →</Link>
+          {/* ここから下はこのページ内の各セクションへ（スクロールしなくても行けるように） */}
+          {pendingProjects.length > 0 ? (
+            <Link href="#pj-review" className={btn("secondary", "sm")}>
+              プロジェクト承認（{pendingProjects.length}） ↓
+            </Link>
+          ) : null}
+          {sentBackProjects.length > 0 ? (
+            <Link href="#pj-sentback" className={btn("secondary", "sm")}>
+              差し戻し中（{sentBackProjects.length}） ↓
+            </Link>
+          ) : null}
+          <Link href="#announcements" className={btn("secondary", "sm")}>お知らせ ↓</Link>
+          <Link href="#banners" className={btn("secondary", "sm")}>バナー ↓</Link>
+          <Link href="#articles" className={btn("secondary", "sm")}>記事キュレーション ↓</Link>
+          <Link href="#admin-accounts" className={btn("secondary", "sm")}>管理者アカウント ↓</Link>
         </div>
       </div>
 
@@ -209,7 +224,7 @@ export default async function AdminPage() {
 
       {/* お知らせ投稿 */}
       <div>
-        <h2 className={`${h2Cls} mb-2`}>お知らせを投稿（会員のトップに表示）</h2>
+        <h2 id="announcements" className={`${h2Cls} mb-2 scroll-mt-6`}>お知らせを投稿（会員のトップに表示）</h2>
         <form action={createAnnouncement} className="flex flex-col gap-2 rounded-[10px] border border-[var(--line)] bg-white p-4">
           <input name="title" required placeholder="タイトル（例：宮崎カンファレンスの参加受付を開始しました）" className={input()} />
           <textarea name="body" rows={4} placeholder="本文（ブログのように自由に書けます）" className={`${input()} leading-6`} />
@@ -249,7 +264,7 @@ export default async function AdminPage() {
 
       {/* バナー管理 */}
       <div>
-        <h2 className={`${h2Cls} mb-1`}>バナー管理（会員トップに表示）</h2>
+        <h2 id="banners" className={`${h2Cls} mb-1 scroll-mt-6`}>バナー管理（会員トップに表示）</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">
           バナー画像とリンク先URLを登録すると、マイページトップのお知らせの下に表示されます。
         </p>
@@ -302,7 +317,7 @@ export default async function AdminPage() {
 
       {/* 記事キュレーション（公開トップに表示） */}
       <div>
-        <h2 className={`${h2Cls} mb-1`}>記事キュレーション（公開トップに表示）</h2>
+        <h2 id="articles" className={`${h2Cls} mb-1 scroll-mt-6`}>記事キュレーション（公開トップに表示）</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">
           PR TIMES・note・新聞などの食の記事を登録すると、ログイン不要の公開トップに「食の注目記事」として表示されます。
         </p>
@@ -393,7 +408,7 @@ export default async function AdminPage() {
       {/* 差し戻し中（再申請待ち）。掲載者が修正して再申請すると上の承認リストに戻る */}
       {sentBackProjects.length > 0 ? (
         <div>
-          <h2 className={`${h2Cls} mb-2`}>差し戻し中のプロジェクト（{sentBackProjects.length}）</h2>
+          <h2 id="pj-sentback" className={`${h2Cls} mb-2 scroll-mt-6`}>差し戻し中のプロジェクト（{sentBackProjects.length}）</h2>
           <p className="mb-2 text-[12px] text-[var(--muted)]">
             掲載者が修正して再申請すると「プロジェクト掲載の承認」に戻ります。長く動きがない場合は事務局からご連絡ください。
           </p>
@@ -423,7 +438,7 @@ export default async function AdminPage() {
 
       {/* 管理者アカウント */}
       <div>
-        <h2 className={`${h2Cls} mb-1`}>管理者アカウント</h2>
+        <h2 id="admin-accounts" className={`${h2Cls} mb-1 scroll-mt-6`}>管理者アカウント</h2>
         <p className="mb-3 text-[12px] text-[var(--muted)]">
           事務局スタッフのログインアカウントをここで発行できます。作成すると、すぐに設定したメール・パスワードでログインできます。
         </p>
