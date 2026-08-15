@@ -1,8 +1,8 @@
 // 事務局：監査ログ（重要操作の記録）。追記専用・削除UIなし。
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { AdminNav } from "../_components/AdminNav";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 
 const ACTION_LABEL: Record<string, string> = {
@@ -43,11 +43,11 @@ export default async function AdminAuditPage() {
       <div>
         <p className={eyebrowCls}>ADMIN</p>
         <h1 className={h1Cls}>監査ログ</h1>
-        <Link href="/admin" className="mt-1 inline-block text-[12px] text-[var(--green-d)] underline">← 事務局管理へ</Link>
         <p className="mt-2 text-[13px] text-[var(--ink-2)]">
           事務局の重要操作（審査・停止・削除・課金・権限変更・掲載の承認/非公開化）の記録です。直近200件を表示します。
         </p>
       </div>
+      <AdminNav current="audit" />
 
       {logs.length === 0 ? (
         <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">

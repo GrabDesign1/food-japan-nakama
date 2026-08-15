@@ -1,10 +1,10 @@
 // 事務局：会員管理（/adminから分離。審査・停止・削除・手動でのビジネス会員化）。
-import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { listReviewMembers } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { AdminTable, type AdminRow } from "../_components/AdminTable";
-import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
+import { AdminNav } from "../_components/AdminNav";
+import { eyebrowCls, h1Cls } from "@/lib/ui";
 
 export default async function AdminMembersPage() {
   const su = await requireAdmin();
@@ -57,8 +57,8 @@ export default async function AdminMembersPage() {
             承認すると、その会員に紹介クレジット3件が自動付与されます（組織単位で一度だけ）。
           </p>
         </div>
-        <Link href="/admin" className={btn("secondary", "sm")}>← 事務局管理へ戻る</Link>
       </div>
+      <AdminNav current="members" />
       {withdrawals.length > 0 ? (
         <section className="rounded-[10px] border-2 border-[var(--red)] bg-[var(--red-soft)] p-4">
           <h2 className="text-[14px] font-bold text-[var(--red)]">

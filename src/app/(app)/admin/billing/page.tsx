@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { requireAdmin, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { AdminNav } from "../_components/AdminNav";
 import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 import {
   adminSeedProducts,
@@ -109,6 +110,7 @@ export default async function AdminBillingPage() {
           商品の価格変更は過去の注文金額に影響しません（注文時スナップショット保存）。返金は Stripe ダッシュボードで実行すると注文へ自動同期されます。
         </p>
       </div>
+      <AdminNav current="billing" />
 
       {/* 審査待ち（掲載オプション） */}
       <section>

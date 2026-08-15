@@ -4,6 +4,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { updateViolationReport } from "../../report/actions";
 import { VIOLATION_KIND_LABEL, VIOLATION_STATUS_LABEL } from "@/lib/violation";
+import { AdminNav } from "../_components/AdminNav";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -43,8 +44,8 @@ export default async function AdminReportsPage() {
             報告者への個別回答は行わない運用です（報告フォームにもその旨を明記しています）。
           </p>
         </div>
-        <Link href="/admin" className={btn("secondary", "sm")}>← 事務局管理へ戻る</Link>
       </div>
+      <AdminNav current="reports" />
 
       {reports.length === 0 ? (
         <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-8 text-center text-[13px] text-[var(--muted)]">

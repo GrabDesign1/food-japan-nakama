@@ -17,6 +17,7 @@ import {
   NOTE_KIND_LABEL,
   dueState,
 } from "@/lib/crm";
+import { AdminNav } from "../../_components/AdminNav";
 import { btn, eyebrowCls, h1Cls, h2FormCls, input } from "@/lib/ui";
 import { addMemberNote, deleteMemberNote, saveMemberCrm } from "../../crm-actions";
 
@@ -211,6 +212,7 @@ export default async function AdminCrmMemberPage({
           </Link>
         </div>
       </div>
+      <AdminNav current="crm" />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* 左：対応の管理 */}

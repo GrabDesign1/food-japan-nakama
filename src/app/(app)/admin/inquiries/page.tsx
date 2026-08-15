@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { AdminNav } from "../_components/AdminNav";
 import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
 const APPLICATION_STATUS: Record<string, string> = {
@@ -85,8 +86,8 @@ export default async function AdminInquiriesPage() {
       <div>
         <p className={eyebrowCls}>ADMIN</p>
         <h1 className={h1Cls}>問い合わせ・応募の状況</h1>
-        <Link href="/admin" className="mt-1 inline-block text-[12px] text-[var(--green-d)] underline">← 事務局管理へ</Link>
       </div>
+      <AdminNav current="inquiries" />
 
       <div className="grid grid-cols-3 gap-3">
         {metrics.map((m) => (

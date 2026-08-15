@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { AdminNav } from "../_components/AdminNav";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { updateConsultationStatus } from "../consultation-actions";
 
@@ -40,8 +40,8 @@ export default async function AdminConsultationsPage() {
       <div>
         <p className={eyebrowCls}>ADMIN</p>
         <h1 className={h1Cls}>個別相談の管理</h1>
-        <Link href="/admin" className="mt-1 inline-block text-[12px] text-[var(--green-d)] underline">← 事務局管理へ</Link>
       </div>
+      <AdminNav current="consultations" />
 
       {rows.length === 0 ? (
         <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">

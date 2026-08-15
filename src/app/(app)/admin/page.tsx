@@ -9,6 +9,7 @@ import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { createAnnouncement, deleteAnnouncement } from "./announcement-actions";
 import { revokeAdmin } from "./admin-account-actions";
 import { AdminAccountForm } from "./_components/AdminAccountForm";
+import { AdminNav } from "./_components/AdminNav";
 import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
 import { deleteArticle, toggleArticle } from "./article-actions";
@@ -135,37 +136,7 @@ export default async function AdminPage() {
           <p className={eyebrowCls}>ADMIN ・ 事務局ダッシュボード</p>
           <h1 className={h1Cls}>事務局管理</h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin/members" className={`${btn("secondary", "sm")} relative`}>
-            会員管理 →
-            {pendingCount > 0 ? (
-              <span className="absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
-                {pendingCount}
-              </span>
-            ) : null}
-          </Link>
-          <Link href="/admin/listings" className={btn("secondary", "sm")}>掲載の監視 →</Link>
-          <Link href="/admin/inquiries" className={btn("secondary", "sm")}>問い合わせ・応募の状況 →</Link>
-          <Link href="/admin/consultations" className={btn("secondary", "sm")}>個別相談の管理 →</Link>
-          <Link href="/admin/billing" className={btn("secondary", "sm")}>課金管理 →</Link>
-          <Link href="/admin/reports" className={btn("secondary", "sm")}>違反報告 →</Link>
-          <Link href="/admin/audit" className={btn("secondary", "sm")}>監査ログ →</Link>
-          {/* ここから下はこのページ内の各セクションへ（スクロールしなくても行けるように） */}
-          {pendingProjects.length > 0 ? (
-            <Link href="#pj-review" className={btn("secondary", "sm")}>
-              プロジェクト承認（{pendingProjects.length}） ↓
-            </Link>
-          ) : null}
-          {sentBackProjects.length > 0 ? (
-            <Link href="#pj-sentback" className={btn("secondary", "sm")}>
-              差し戻し中（{sentBackProjects.length}） ↓
-            </Link>
-          ) : null}
-          <Link href="#announcements" className={btn("secondary", "sm")}>お知らせ ↓</Link>
-          <Link href="#banners" className={btn("secondary", "sm")}>バナー ↓</Link>
-          <Link href="#articles" className={btn("secondary", "sm")}>記事キュレーション ↓</Link>
-          <Link href="#admin-accounts" className={btn("secondary", "sm")}>管理者アカウント ↓</Link>
-        </div>
+        <AdminNav current="top" />
       </div>
 
       {/* 指標サマリ（要対応の指標は1件以上で赤くアラート） */}

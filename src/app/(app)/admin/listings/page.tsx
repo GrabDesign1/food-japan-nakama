@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, isAdminRole, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { AdminNav } from "../_components/AdminNav";
 import { eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
 import { adminUnpublishOffering, adminUnpublishProject } from "../listing-actions";
 import { ProxyListingForm } from "../_components/ProxyListingForm";
@@ -53,11 +54,11 @@ export default async function AdminListingsPage() {
       <div>
         <p className={eyebrowCls}>ADMIN</p>
         <h1 className={h1Cls}>掲載の監視（事後チェック）</h1>
-        <Link href="/admin" className="mt-1 inline-block text-[12px] text-[var(--green-d)] underline">← 事務局管理へ</Link>
         <p className="mt-2 text-[13px] text-[var(--ink-2)]">
           掲載は即時公開です。問題のある掲載は、ここから理由を添えて非公開にできます（掲載者へ自動でメール通知されます）。
         </p>
       </div>
+      <AdminNav current="listings" />
 
       {/* 掲載代行（電話ヒアリング→事務局が代筆→本人確認→公開） */}
       {isSuper ? (
