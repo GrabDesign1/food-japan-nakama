@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "../_components/AdminNav";
-import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { aEyebrow, aH1, aH2 } from "../_components/adminUi";
 
 const APPLICATION_STATUS: Record<string, string> = {
   applied: "応募中",
@@ -84,8 +84,8 @@ export default async function AdminInquiriesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className={eyebrowCls}>ADMIN</p>
-        <h1 className={h1Cls}>問い合わせ・応募の状況</h1>
+        <p className={aEyebrow}>ADMIN</p>
+        <h1 className={aH1}>問い合わせ・応募の状況</h1>
       </div>
       <AdminNav current="inquiries" />
 
@@ -104,7 +104,7 @@ export default async function AdminInquiriesPage() {
 
       {/* 問い合わせ（スレッド） */}
       <div>
-        <h2 className={`${h2Cls} mb-3`}>最近の問い合わせ（メッセージのやり取り）</h2>
+        <h2 className={`${aH2} mb-3`}>最近の問い合わせ（メッセージのやり取り）</h2>
         {threads.length === 0 ? (
           <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
             まだ問い合わせはありません。
@@ -133,7 +133,7 @@ export default async function AdminInquiriesPage() {
 
       {/* プロジェクト応募 */}
       <div>
-        <h2 className={`${h2Cls} mb-3`}>共創プロジェクトへの応募</h2>
+        <h2 className={`${aH2} mb-3`}>共創プロジェクトへの応募</h2>
         {apps.length === 0 ? (
           <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
             まだ応募はありません。

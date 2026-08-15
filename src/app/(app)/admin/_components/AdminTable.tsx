@@ -14,6 +14,7 @@ import {
 import type { ReviewDecision } from "@/lib/member";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { btn, h2Cls } from "@/lib/ui";
+import { aLink, aTable, aTd, aTh, aTr } from "./adminUi";
 import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 export type AdminRow = {
@@ -66,8 +67,9 @@ const PAYMENT: Record<string, { label: string; cls: string }> = {
 
 function Badge({ map, value }: { map: typeof STATUS; value: string }) {
   const s = map[value] ?? { label: value, cls: "bg-[var(--line)] text-[var(--ink-2)]" };
+  // 管理画面のバッジは小さく角丸4px（表の行の高さを増やさないため）
   return (
-    <span className={`inline-block rounded-full px-2.5 py-1 text-[11px] ${s.cls}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium ${s.cls}`}>
       {s.label}
     </span>
   );
@@ -128,31 +130,31 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-[10px] border border-[var(--line)] bg-white">
-        <table className="w-full min-w-[820px] text-[13px]">
+      <div className="overflow-x-auto rounded-[6px] border border-[#E3E6E8] bg-white">
+        <table className={`${aTable} min-w-[820px]`}>
           <thead>
-            <tr className="border-b border-[var(--line)] bg-[var(--canvas)] text-left text-[11px] text-[var(--muted)]">
-              <th className="px-4 py-3 font-medium">会社名・団体名</th>
-              <th className="px-4 py-3 font-medium">担当者</th>
-              <th className="px-4 py-3 font-medium">会員種別</th>
-              <th className="px-4 py-3 font-medium">所在地</th>
-              <th className="px-4 py-3 font-medium">記入率</th>
-              <th className="px-4 py-3 font-medium">審査</th>
-              <th className="px-4 py-3 font-medium">課金状態</th>
-              <th className="px-4 py-3 font-medium">顧客カルテ</th>
+            <tr>
+              <th className={aTh}>会社名・団体名</th>
+              <th className={aTh}>担当者</th>
+              <th className={aTh}>会員種別</th>
+              <th className={aTh}>所在地</th>
+              <th className={aTh}>記入率</th>
+              <th className={aTh}>審査</th>
+              <th className={aTh}>課金状態</th>
+              <th className={aTh}>顧客カルテ</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-[var(--muted)]">
+                <td colSpan={8} className="px-3 py-8 text-center text-[var(--muted)]">
                   審査対象の会員はまだありません。
                 </td>
               </tr>
             ) : (
               rows.map((m) => (
-                <tr key={m.id} className="border-b border-[var(--line-soft)]">
-                  <td className="px-4 py-3">
+                <tr key={m.id} className={aTr}>
+                  <td className={aTd}>
                     <button
                       type="button"
                       onClick={() => setOpenId(m.id)}
@@ -161,28 +163,25 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
                       {m.name || `（未入力）${m.contactEmail !== "—" ? ` ${m.contactEmail}` : ""}`}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-[var(--ink-2)]">{m.contactName}</td>
-                  <td className="px-4 py-3 text-[var(--ink-2)]">
+                  <td className={`${aTd} text-[var(--ink-2)]`}>{m.contactName}</td>
+                  <td className={`${aTd} text-[var(--ink-2)]`}>
                     {m.categoryL1}
                     {m.categoryL2 ? ` / ${m.categoryL2}` : ""}
                   </td>
-                  <td className="px-4 py-3 text-[var(--ink-2)]">
+                  <td className={`${aTd} text-[var(--ink-2)]`}>
                     {[m.prefecture, m.city].filter(Boolean).join(" ") || "—"}
                   </td>
-                  <td className="px-4 py-3 text-[var(--ink-2)]">{m.completionRate}%</td>
-                  <td className="px-4 py-3">
+                  <td className={`${aTd} text-[var(--ink-2)]`}>{m.completionRate}%</td>
+                  <td className={aTd}>
                     <Badge map={STATUS} value={m.status} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className={aTd}>
                     <Badge map={PAYMENT} value={m.paymentStatus} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className={aTd}>
                     {/* 事務局CRM（Phase 11）＝対応履歴・担当・次にやること */}
-                    <Link
-                      href={`/admin/crm/${m.id}`}
-                      className="whitespace-nowrap text-[12px] text-[var(--green-d)] underline"
-                    >
-                      カルテ →
+                    <Link href={`/admin/crm/${m.id}`} className={`${aLink} whitespace-nowrap text-[12px]`}>
+                      カルテ
                     </Link>
                   </td>
                 </tr>

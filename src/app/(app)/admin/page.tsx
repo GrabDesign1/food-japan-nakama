@@ -14,7 +14,8 @@ import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
 import { deleteArticle, toggleArticle } from "./article-actions";
 import { ArticleManager } from "./_components/ArticleManager";
-import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
+import { aBadge, aCard, aCardBody, aCardHead, aEyebrow, aH1, aH2, aLink, aNote } from "./_components/adminUi";
 
 // レンダー内で new Date() を直接呼ばないためのヘルパー（react-hooks/purity 対応。/admin/inquiries と同じ）
 function nowDate(): Date {
@@ -129,92 +130,118 @@ export default async function AdminPage() {
     { k: "プロジェクト応募", v: applicationCount },
   ];
 
+  const todoMetrics = metrics.filter((m) => m.alert);
+  const statMetrics = metrics.filter((m) => !m.alert);
+  const todoTotal = todoMetrics.reduce((n, m) => n + m.v, 0);
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className={eyebrowCls}>ADMIN ・ 事務局ダッシュボード</p>
-          <h1 className={h1Cls}>事務局管理</h1>
-        </div>
-        <AdminNav current="top" />
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className={aEyebrow}>ADMIN ・ 事務局ダッシュボード</p>
+        <h1 className={`${aH1} mt-0.5`}>事務局管理</h1>
       </div>
 
-      {/* 指標サマリ（要対応の指標は1件以上で赤くアラート） */}
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {metrics.map((m) => {
-          const alerting = !!m.alert && m.v > 0;
-          const inner = (
-            <>
-              <div className={`flex items-center gap-1.5 text-[10px] ${alerting ? "font-bold text-[var(--red)]" : "text-[var(--muted)]"}`}>
-                {m.k}
-                {alerting ? (
-                  <span className="rounded bg-[var(--red)] px-1 py-0.5 text-[9px] font-bold text-white">要対応</span>
-                ) : null}
+      <AdminNav current="top" />
+
+      {/* 対応が必要なもの（この画面で最初に見る場所） */}
+      <section className={aCard}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>対応が必要なもの</h2>
+          <span className={todoTotal > 0 ? aBadge("red") : aBadge("neutral")}>
+            {todoTotal > 0 ? `${todoTotal}件` : "なし"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          {todoMetrics.map((m) => {
+            const alerting = m.v > 0;
+            const inner = (
+              <>
+                <div className={`text-[11px] ${alerting ? "font-bold text-[var(--red)]" : "text-[var(--muted)]"}`}>
+                  {m.k}
+                </div>
+                <div className={`mt-0.5 text-[20px] font-bold ${alerting ? "text-[var(--red)]" : "text-[#C3CAD1]"}`}>
+                  {m.v}
+                </div>
+              </>
+            );
+            const cls =
+              "border-b border-r border-[#EDF0F2] px-4 py-3 last:border-r-0 sm:[&:nth-child(3n)]:border-r-0 lg:[&:nth-child(3n)]:border-r lg:[&:nth-child(5n)]:border-r-0";
+            return m.href && alerting ? (
+              <Link key={m.k} href={m.href} className={`${cls} transition hover:bg-[#FFF6F4]`}>
+                {inner}
+              </Link>
+            ) : (
+              <div key={m.k} className={cls}>
+                {inner}
               </div>
-              <div className={`mt-1 font-serif text-[22px] ${alerting ? "font-bold text-[var(--red)]" : "text-[var(--ink)]"}`}>
-                {m.v}
-              </div>
-            </>
-          );
-          const cls = `rounded-[10px] border bg-white p-4 ${
-            alerting ? "border-2 border-[var(--red)] bg-[var(--red-soft)]" : "border-[var(--line)]"
-          }`;
-          return m.href && alerting ? (
-            <Link key={m.k} href={m.href} className={`${cls} transition hover:-translate-y-0.5 hover:shadow-sm`}>
-              {inner}
-            </Link>
-          ) : (
-            <div key={m.k} className={cls}>
-              {inner}
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 現在の数字（見るだけ。対応が必要なものと大きさで差をつける） */}
+      <section className={aCard}>
+        <div className="flex flex-wrap">
+          {statMetrics.map((m) => (
+            <div key={m.k} className="min-w-[104px] flex-1 border-r border-[#EDF0F2] px-4 py-2.5 last:border-r-0">
+              <div className="text-[10px] text-[var(--muted)]">{m.k}</div>
+              <div className="text-[15px] font-bold text-[var(--ink)]">{m.v}</div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </section>
 
       {/* 顧客対応の期限ぎれ（事務局CRM・Phase 11） */}
       {overdueMembers.length > 0 ? (
-        <div id="crm-overdue" className="scroll-mt-6 rounded-[10px] border-2 border-[var(--red)] bg-[var(--red-soft)] p-4">
-          <h2 className="text-[14px] font-bold text-[var(--red)]">
-            対応期限が過ぎています（{overdueMembers.length}件）
-          </h2>
-          <ul className="mt-2 flex flex-col gap-1 text-[12px] text-[var(--ink)]">
+        <section id="crm-overdue" className={`${aCard} scroll-mt-6 border-l-[3px] border-l-[var(--red)]`}>
+          <div className={aCardHead}>
+            <h2 className={aH2}>対応期限が過ぎています</h2>
+            <span className={aBadge("red")}>{overdueMembers.length}件</span>
+          </div>
+          <div>
             {overdueMembers.map((m) => (
-              <li key={m.id}>
-                <Link href={`/admin/crm/${m.id}`} className="font-bold underline">
+              <div
+                key={m.id}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#EDF0F2] px-4 py-2.5 text-[12px] last:border-0"
+              >
+                <Link href={`/admin/crm/${m.id}`} className={`${aLink} font-bold`}>
                   {m.name || "（名称未設定）"}
                 </Link>
-                <span className="ml-2 text-[var(--muted)]">
+                <span className={aBadge("red")}>
                   期限 {m.crmNextActionDue?.toLocaleDateString("ja-JP")}
                 </span>
-                {m.crmNextAction ? <span className="ml-2 text-[var(--ink-2)]">{m.crmNextAction}</span> : null}
-              </li>
+                {m.crmNextAction ? <span className="text-[var(--ink-2)]">{m.crmNextAction}</span> : null}
+              </div>
             ))}
-          </ul>
-        </div>
+          </div>
+        </section>
       ) : null}
 
       {/* お知らせ投稿 */}
-      <div>
-        <h2 id="announcements" className={`${h2Cls} mb-2 scroll-mt-6`}>お知らせを投稿（会員のトップに表示）</h2>
-        <form action={createAnnouncement} className="flex flex-col gap-2 rounded-[10px] border border-[var(--line)] bg-white p-4">
+      <section id="announcements" className={`${aCard} scroll-mt-6`}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>お知らせ</h2>
+          <span className={aNote}>会員のマイページトップに表示されます</span>
+        </div>
+        <form action={createAnnouncement} className={`${aCardBody} flex flex-col gap-2`}>
           <input name="title" required placeholder="タイトル（例：宮崎カンファレンスの参加受付を開始しました）" className={input()} />
           <textarea name="body" rows={4} placeholder="本文（ブログのように自由に書けます）" className={`${input()} leading-6`} />
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-1.5 text-[12px] text-[var(--ink-2)]">
               <input type="checkbox" name="pinned" /> 上部に固定（重要）
             </label>
-            <button className={`${btn("primary")} ml-auto`}>投稿する</button>
+            <button className={`${btn("primary", "sm")} ml-auto`}>投稿する</button>
           </div>
         </form>
 
         {announcements.length > 0 ? (
-          <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+          <div className="border-t border-[#E3E6E8]">
             {announcements.map((a) => (
-              <div key={a.id} className="flex items-start gap-3 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
+              <div key={a.id} className="flex items-center gap-3 border-b border-[#EDF0F2] px-4 py-2.5 last:border-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    {a.pinned ? <span className="rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] text-[var(--amber)]">固定</span> : null}
-                    <span className="truncate text-[14px] font-medium text-[var(--ink)]">{a.title}</span>
+                    {a.pinned ? <span className={aBadge("amber")}>固定</span> : null}
+                    <span className="truncate text-[13px] font-medium text-[var(--ink)]">{a.title}</span>
                   </div>
                   <div className="text-[11px] text-[var(--muted)]">
                     {a.createdAt.getFullYear()}/{String(a.createdAt.getMonth() + 1).padStart(2, "0")}/{String(a.createdAt.getDate()).padStart(2, "0")}
@@ -231,23 +258,24 @@ export default async function AdminPage() {
             ))}
           </div>
         ) : null}
-      </div>
+      </section>
 
       {/* バナー管理 */}
-      <div>
-        <h2 id="banners" className={`${h2Cls} mb-1 scroll-mt-6`}>バナー管理（会員トップに表示）</h2>
-        <p className="mb-3 text-[12px] text-[var(--muted)]">
-          バナー画像とリンク先URLを登録すると、マイページトップのお知らせの下に表示されます。
-        </p>
-
-        <BannerManager />
+      <section id="banners" className={`${aCard} scroll-mt-6`}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>バナー</h2>
+          <span className={aNote}>マイページトップのお知らせの下に表示されます</span>
+        </div>
+        <div className={aCardBody}>
+          <BannerManager />
+        </div>
 
         {banners.length > 0 ? (
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="flex flex-col border-t border-[#E3E6E8]">
             {banners.map((b) => (
               <div
                 key={b.id}
-                className="flex items-center gap-3 rounded-[10px] border border-[var(--line)] bg-white p-3"
+                className="flex items-center gap-3 border-b border-[#EDF0F2] px-4 py-2.5 last:border-0"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -284,23 +312,24 @@ export default async function AdminPage() {
             ))}
           </div>
         ) : null}
-      </div>
+      </section>
 
       {/* 記事キュレーション（公開トップに表示） */}
-      <div>
-        <h2 id="articles" className={`${h2Cls} mb-1 scroll-mt-6`}>記事キュレーション（公開トップに表示）</h2>
-        <p className="mb-3 text-[12px] text-[var(--muted)]">
-          PR TIMES・note・新聞などの食の記事を登録すると、ログイン不要の公開トップに「食の注目記事」として表示されます。
-        </p>
-
-        <ArticleManager />
+      <section id="articles" className={`${aCard} scroll-mt-6`}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>記事キュレーション</h2>
+          <span className={aNote}>公開トップの「食の注目記事」に表示されます</span>
+        </div>
+        <div className={aCardBody}>
+          <ArticleManager />
+        </div>
 
         {curatedArticles.length > 0 ? (
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="flex flex-col border-t border-[#E3E6E8]">
             {curatedArticles.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center gap-3 rounded-[10px] border border-[var(--line)] bg-white p-3"
+                className="flex items-center gap-3 border-b border-[#EDF0F2] px-4 py-2.5 last:border-0"
               >
                 {a.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -353,15 +382,18 @@ export default async function AdminPage() {
             ))}
           </div>
         ) : null}
-      </div>
+      </section>
 
       {/* 掲載承認 */}
       {pendingProjects.length > 0 ? (
-        <div>
-          <h2 id="pj-review" className={`${h2Cls} mb-2 scroll-mt-6`}>プロジェクト掲載の承認（{pendingProjects.length}）</h2>
-          <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+        <section id="pj-review" className={`${aCard} scroll-mt-6`}>
+          <div className={aCardHead}>
+            <h2 className={aH2}>プロジェクト掲載の承認</h2>
+            <span className={aBadge("red")}>{pendingProjects.length}件</span>
+          </div>
+          <div>
             {pendingProjects.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
+              <div key={p.id} className="flex items-center gap-3 border-b border-[#EDF0F2] px-4 py-2.5 last:border-0">
                 <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate text-[14px] text-[var(--ink)] hover:underline">
                   {p.title || "（無題）"}
                 </Link>
@@ -373,21 +405,22 @@ export default async function AdminPage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       ) : null}
 
       {/* 差し戻し中（再申請待ち）。掲載者が修正して再申請すると上の承認リストに戻る */}
       {sentBackProjects.length > 0 ? (
-        <div>
-          <h2 id="pj-sentback" className={`${h2Cls} mb-2 scroll-mt-6`}>差し戻し中のプロジェクト（{sentBackProjects.length}）</h2>
-          <p className="mb-2 text-[12px] text-[var(--muted)]">
-            掲載者が修正して再申請すると「プロジェクト掲載の承認」に戻ります。長く動きがない場合は事務局からご連絡ください。
-          </p>
-          <div className="overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+        <section id="pj-sentback" className={`${aCard} scroll-mt-6`}>
+          <div className={aCardHead}>
+            <h2 className={aH2}>差し戻し中のプロジェクト</h2>
+            <span className={aBadge("amber")}>{sentBackProjects.length}件</span>
+            <span className={aNote}>再申請されると「プロジェクト掲載の承認」に戻ります</span>
+          </div>
+          <div>
             {sentBackProjects.map((p) => (
-              <div key={p.id} className="flex flex-col gap-1 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
+              <div key={p.id} className="flex flex-col gap-1 border-b border-[#EDF0F2] px-4 py-2.5 last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="shrink-0 rounded-full bg-[var(--amber-soft)] px-2.5 py-1 text-[11px] text-[var(--amber)]">再申請待ち</span>
+                  <span className={`${aBadge("amber")} shrink-0`}>再申請待ち</span>
                   <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 truncate text-[14px] text-[var(--ink)] hover:underline">
                     {p.title || "（無題）"}
                   </Link>
@@ -404,26 +437,27 @@ export default async function AdminPage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       ) : null}
 
       {/* 管理者アカウント */}
-      <div>
-        <h2 id="admin-accounts" className={`${h2Cls} mb-1 scroll-mt-6`}>管理者アカウント</h2>
-        <p className="mb-3 text-[12px] text-[var(--muted)]">
-          事務局スタッフのログインアカウントをここで発行できます。作成すると、すぐに設定したメール・パスワードでログインできます。
-        </p>
+      <section id="admin-accounts" className={`${aCard} scroll-mt-6`}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>管理者アカウント</h2>
+          <span className={aNote}>作成すると、そのメール・パスワードですぐログインできます</span>
+        </div>
+        <div className={aCardBody}>
+          <AdminAccountForm />
+        </div>
 
-        <AdminAccountForm />
-
-        <div className="mt-3 overflow-hidden rounded-[10px] border border-[var(--line)] bg-white">
+        <div className="border-t border-[#E3E6E8]">
           {adminUsers.map((u) => (
-            <div key={u.id} className="flex items-center gap-3 border-b border-[var(--line-soft)] px-4 py-3 last:border-0">
+            <div key={u.id} className="flex items-center gap-3 border-b border-[#EDF0F2] px-4 py-2.5 last:border-0">
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-medium text-[var(--ink)]">{u.name}</div>
+                <div className="truncate text-[13px] font-medium text-[var(--ink)]">{u.name}</div>
                 <div className="truncate text-[12px] text-[var(--muted)]">{u.email}</div>
               </div>
-              <span className="rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[11px] text-[var(--green-d)]">
+              <span className={aBadge("green")}>
                 {ROLE_LABEL[u.role] ?? u.role}
               </span>
               {u.id === myUserId || u.role === "TENANT_ADMIN" ? (
@@ -438,7 +472,7 @@ export default async function AdminPage() {
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

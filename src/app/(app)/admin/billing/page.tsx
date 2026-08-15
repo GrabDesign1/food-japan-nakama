@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requireAdmin, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "../_components/AdminNav";
-import { btn, eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
+import { aEyebrow, aH1, aH2 } from "../_components/adminUi";
 import {
   adminSeedProducts,
   adminUpdateProduct,
@@ -104,8 +105,8 @@ export default async function AdminBillingPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <p className={eyebrowCls}>ADMIN / BILLING</p>
-        <h1 className={h1Cls}>課金管理</h1>
+        <p className={aEyebrow}>ADMIN / BILLING</p>
+        <h1 className={aH1}>課金管理</h1>
         <p className="mt-1 text-[12px] text-[var(--muted)]">
           商品の価格変更は過去の注文金額に影響しません（注文時スナップショット保存）。返金は Stripe ダッシュボードで実行すると注文へ自動同期されます。
         </p>
@@ -114,7 +115,7 @@ export default async function AdminBillingPage() {
 
       {/* 審査待ち（掲載オプション） */}
       <section>
-        <h2 className={h2Cls}>審査待ちの掲載オプション（{pendingPromos.length}件）</h2>
+        <h2 className={aH2}>審査待ちの掲載オプション（{pendingPromos.length}件）</h2>
         {pendingPromos.length === 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">審査待ちはありません。</p>
         ) : (
@@ -154,7 +155,7 @@ export default async function AdminBillingPage() {
 
       {/* 案内メール一斉送信 */}
       <section>
-        <h2 className={h2Cls}>案内メール一斉送信（審査待ち {notices.length}件）</h2>
+        <h2 className={aH2}>案内メール一斉送信（審査待ち {notices.length}件）</h2>
         {notices.length === 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">審査待ちはありません。</p>
         ) : (
@@ -197,7 +198,7 @@ export default async function AdminBillingPage() {
 
       {/* 優良案件の確認 */}
       <section>
-        <h2 className={h2Cls}>NAKAMA確認済み優良案件</h2>
+        <h2 className={aH2}>NAKAMA確認済み優良案件</h2>
         <p className="mt-1 text-[12px] text-[var(--muted)]">
           確認から30日で自動的に通常案件へ戻ります（再確認が必要）。確認の根拠（法人確認・数量・予算・期限・提案確認の意思など）を必ず記録してください。
         </p>
@@ -253,7 +254,7 @@ export default async function AdminBillingPage() {
 
       {/* 適用中の掲載オプション */}
       <section>
-        <h2 className={h2Cls}>適用中・予定の掲載オプション（{activePromos.length}件）</h2>
+        <h2 className={aH2}>適用中・予定の掲載オプション（{activePromos.length}件）</h2>
         {activePromos.length === 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">適用中のオプションはありません。</p>
         ) : (
@@ -276,7 +277,7 @@ export default async function AdminBillingPage() {
 
       {/* 注文一覧 */}
       <section>
-        <h2 className={h2Cls}>注文（直近30件）</h2>
+        <h2 className={aH2}>注文（直近30件）</h2>
         {orders.length === 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">注文はまだありません。</p>
         ) : (
@@ -296,7 +297,7 @@ export default async function AdminBillingPage() {
 
       {/* クレジット台帳 */}
       <section>
-        <h2 className={h2Cls}>紹介クレジット台帳（直近30件）</h2>
+        <h2 className={aH2}>紹介クレジット台帳（直近30件）</h2>
         {ledger.length === 0 ? (
           <p className="mt-2 text-[12px] text-[var(--muted)]">記録はまだありません。</p>
         ) : (
@@ -319,7 +320,7 @@ export default async function AdminBillingPage() {
 
       {/* 商品マスター */}
       <section>
-        <h2 className={h2Cls}>商品マスター（{products.length}件）</h2>
+        <h2 className={aH2}>商品マスター（{products.length}件）</h2>
         {!isSuper ? (
           <p className="mt-1 text-[12px] text-[var(--muted)]">価格・公開状態の変更は上位管理者のみ行えます。</p>
         ) : null}

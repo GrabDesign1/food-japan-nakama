@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "../_components/AdminNav";
-import { eyebrowCls, h1Cls } from "@/lib/ui";
+import { aEyebrow, aH1 } from "../_components/adminUi";
 
 const ACTION_LABEL: Record<string, string> = {
   "member.review.approve": "会員審査：承認",
@@ -41,8 +41,8 @@ export default async function AdminAuditPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className={eyebrowCls}>ADMIN</p>
-        <h1 className={h1Cls}>監査ログ</h1>
+        <p className={aEyebrow}>ADMIN</p>
+        <h1 className={aH1}>監査ログ</h1>
         <p className="mt-2 text-[13px] text-[var(--ink-2)]">
           事務局の重要操作（審査・停止・削除・課金・権限変更・掲載の承認/非公開化）の記録です。直近200件を表示します。
         </p>

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "../_components/AdminNav";
-import { eyebrowCls, h1Cls } from "@/lib/ui";
+import { aEyebrow, aH1 } from "../_components/adminUi";
 import { updateConsultationStatus } from "../consultation-actions";
 
 const SERVICE_LABEL: Record<string, string> = {
@@ -38,8 +38,8 @@ export default async function AdminConsultationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className={eyebrowCls}>ADMIN</p>
-        <h1 className={h1Cls}>個別相談の管理</h1>
+        <p className={aEyebrow}>ADMIN</p>
+        <h1 className={aH1}>個別相談の管理</h1>
       </div>
       <AdminNav current="consultations" />
 

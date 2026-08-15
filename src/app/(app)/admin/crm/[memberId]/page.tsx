@@ -18,7 +18,8 @@ import {
   dueState,
 } from "@/lib/crm";
 import { AdminNav } from "../../_components/AdminNav";
-import { btn, eyebrowCls, h1Cls, h2FormCls, input } from "@/lib/ui";
+import { btn, input } from "@/lib/ui";
+import { aCard, aEyebrow, aH1, aH2 } from "../../_components/adminUi";
 import { addMemberNote, deleteMemberNote, saveMemberCrm } from "../../crm-actions";
 
 // 表示だけの対応表（会員管理のバッジと同じ文言。AdminTable は触らずここに持つ）
@@ -185,8 +186,8 @@ export default async function AdminCrmMemberPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className={eyebrowCls}>ADMIN ・ 顧客カルテ</p>
-          <h1 className={h1Cls}>{member.name || "（名称未設定）"}</h1>
+          <p className={aEyebrow}>ADMIN ・ 顧客カルテ</p>
+          <h1 className={aH1}>{member.name || "（名称未設定）"}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
             <span className="rounded bg-[var(--green-soft)] px-2 py-0.5 font-bold text-[var(--green-d)]">
               {STATUS_LABEL[member.status] ?? member.status}
@@ -218,8 +219,8 @@ export default async function AdminCrmMemberPage({
         {/* 左：対応の管理 */}
         <div className="flex min-w-0 flex-col gap-5">
           {/* 担当・状況・次にやること */}
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-5">
-            <h2 className={h2FormCls}>担当と次にやること</h2>
+          <section className={`${aCard} p-5`}>
+            <h2 className={aH2}>担当と次にやること</h2>
             <form action={saveCrm} className="mt-3 flex flex-col gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="flex flex-col gap-1">
@@ -295,8 +296,8 @@ export default async function AdminCrmMemberPage({
           </section>
 
           {/* 対応履歴 */}
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-5">
-            <h2 className={h2FormCls}>対応履歴（{notes.length}件）</h2>
+          <section className={`${aCard} p-5`}>
+            <h2 className={aH2}>対応履歴（{notes.length}件）</h2>
             <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
               電話・メール・訪問の記録を残します。事務局だけが見る記録です。
               会員どうしのメッセージの中身は、通信の秘密（規約17条）により書き写さないでください。
@@ -355,8 +356,8 @@ export default async function AdminCrmMemberPage({
           </section>
 
           {/* 掲載中の案件 */}
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-5">
-            <h2 className={h2FormCls}>この会員の案件（{offerings.length}件・新しい順）</h2>
+          <section className={`${aCard} p-5`}>
+            <h2 className={aH2}>この会員の案件（{offerings.length}件・新しい順）</h2>
             {offerings.length === 0 ? (
               <p className="mt-2 text-[12px] text-[var(--muted)]">
                 案件がまだありません。掲載代行は
@@ -391,8 +392,8 @@ export default async function AdminCrmMemberPage({
 
         {/* 右：この会員の状況（読み取り専用） */}
         <div className="flex min-w-0 flex-col gap-5">
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-4">
-            <h2 className={h2FormCls}>反応の数字</h2>
+          <section className={`${aCard} p-4`}>
+            <h2 className={aH2}>反応の数字</h2>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Stat label="公開中の案件" value={offeringPublic} />
               <Stat label="案件の閲覧" value={viewCount} />
@@ -412,8 +413,8 @@ export default async function AdminCrmMemberPage({
             </p>
           </section>
 
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-4">
-            <h2 className={h2FormCls}>連絡先・基本情報</h2>
+          <section className={`${aCard} p-4`}>
+            <h2 className={aH2}>連絡先・基本情報</h2>
             <div className="mt-2">
               {member.users.map((u) => (
                 <Row
@@ -436,8 +437,8 @@ export default async function AdminCrmMemberPage({
           </section>
 
           {consultations.length > 0 ? (
-            <section className="rounded-[10px] border border-[var(--line)] bg-white p-4">
-              <h2 className={h2FormCls}>個別相談（メール一致）</h2>
+            <section className={`${aCard} p-4`}>
+              <h2 className={aH2}>個別相談（メール一致）</h2>
               <ul className="mt-2 flex flex-col text-[12px]">
                 {consultations.map((c) => (
                   <li key={c.id} className="border-t border-[var(--line-soft)] py-1.5 first:border-t-0">
@@ -455,8 +456,8 @@ export default async function AdminCrmMemberPage({
             </section>
           ) : null}
 
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-4">
-            <h2 className={h2FormCls}>購入履歴</h2>
+          <section className={`${aCard} p-4`}>
+            <h2 className={aH2}>購入履歴</h2>
             {orders.length === 0 ? (
               <p className="mt-2 text-[12px] text-[var(--muted)]">購入はありません。</p>
             ) : (
@@ -472,8 +473,8 @@ export default async function AdminCrmMemberPage({
             )}
           </section>
 
-          <section className="rounded-[10px] border border-[var(--line)] bg-white p-4">
-            <h2 className={h2FormCls}>この会員に対する操作の記録</h2>
+          <section className={`${aCard} p-4`}>
+            <h2 className={aH2}>この会員に対する操作の記録</h2>
             {audits.length === 0 ? (
               <p className="mt-2 text-[12px] text-[var(--muted)]">記録はありません。</p>
             ) : (

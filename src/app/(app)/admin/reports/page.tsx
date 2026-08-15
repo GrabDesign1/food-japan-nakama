@@ -5,7 +5,8 @@ import { prisma } from "@/lib/db";
 import { updateViolationReport } from "../../report/actions";
 import { VIOLATION_KIND_LABEL, VIOLATION_STATUS_LABEL } from "@/lib/violation";
 import { AdminNav } from "../_components/AdminNav";
-import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
+import { btn } from "@/lib/ui";
+import { aEyebrow, aH1 } from "../_components/adminUi";
 
 const TYPE_LABEL: Record<string, string> = {
   member: "事業者",
@@ -37,8 +38,8 @@ export default async function AdminReportsPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className={eyebrowCls}>ADMIN ・ REPORTS</p>
-          <h1 className={h1Cls}>違反報告（新規 {newCount} 件）</h1>
+          <p className={aEyebrow}>ADMIN ・ REPORTS</p>
+          <h1 className={aH1}>違反報告（新規 {newCount} 件）</h1>
           <p className="mt-1 text-[12px] leading-6 text-[var(--muted)]">
             会員から届いた報告です。内容を確認し、必要に応じて掲載の非公開化・会員の停止などを行ってください。
             報告者への個別回答は行わない運用です（報告フォームにもその旨を明記しています）。

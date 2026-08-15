@@ -4,7 +4,8 @@ import Link from "next/link";
 import { getSessionUser, isAdminRole, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminNav } from "../_components/AdminNav";
-import { eyebrowCls, h1Cls, h2Cls, input } from "@/lib/ui";
+import { input } from "@/lib/ui";
+import { aEyebrow, aH1, aH2 } from "../_components/adminUi";
 import { adminUnpublishOffering, adminUnpublishProject } from "../listing-actions";
 import { ProxyListingForm } from "../_components/ProxyListingForm";
 
@@ -52,8 +53,8 @@ export default async function AdminListingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className={eyebrowCls}>ADMIN</p>
-        <h1 className={h1Cls}>掲載の監視（事後チェック）</h1>
+        <p className={aEyebrow}>ADMIN</p>
+        <h1 className={aH1}>掲載の監視（事後チェック）</h1>
         <p className="mt-2 text-[13px] text-[var(--ink-2)]">
           掲載は即時公開です。問題のある掲載は、ここから理由を添えて非公開にできます（掲載者へ自動でメール通知されます）。
         </p>
@@ -63,7 +64,7 @@ export default async function AdminListingsPage() {
       {/* 掲載代行（電話ヒアリング→事務局が代筆→本人確認→公開） */}
       {isSuper ? (
         <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] p-5">
-          <h2 className={h2Cls}>会員に代わって案件を作る（掲載代行）</h2>
+          <h2 className={aH2}>会員に代わって案件を作る（掲載代行）</h2>
           <p className="mt-1 mb-3 text-[12px] leading-6 text-[var(--ink-2)]">
             買い手にフォームを書いてもらう代わりに、事務局が聞き取った内容を代筆するための機能です。
             作成した案件は<b>下書き（非公開）</b>で始まり、続けて編集画面が開きます。
@@ -76,7 +77,7 @@ export default async function AdminListingsPage() {
 
       {/* 台帳 */}
       <div>
-        <h2 className={`${h2Cls} mb-3`}>公開中の台帳（売りたい・探している）（{offerings.length}）</h2>
+        <h2 className={`${aH2} mb-3`}>公開中の台帳（売りたい・探している）（{offerings.length}）</h2>
         {offerings.length === 0 ? (
           <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
             公開中の台帳はありません。
@@ -107,7 +108,7 @@ export default async function AdminListingsPage() {
 
       {/* プロジェクト */}
       <div>
-        <h2 className={`${h2Cls} mb-3`}>掲載中の共創プロジェクト（{projects.length}）</h2>
+        <h2 className={`${aH2} mb-3`}>掲載中の共創プロジェクト（{projects.length}）</h2>
         {projects.length === 0 ? (
           <p className="rounded-[10px] border border-dashed border-[var(--line)] bg-white p-6 text-[13px] text-[var(--muted)]">
             掲載中のプロジェクトはありません。

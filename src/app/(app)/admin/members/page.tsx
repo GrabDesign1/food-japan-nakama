@@ -4,7 +4,7 @@ import { listReviewMembers } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { AdminTable, type AdminRow } from "../_components/AdminTable";
 import { AdminNav } from "../_components/AdminNav";
-import { eyebrowCls, h1Cls } from "@/lib/ui";
+import { aEyebrow, aH1 } from "../_components/adminUi";
 
 export default async function AdminMembersPage() {
   const su = await requireAdmin();
@@ -50,8 +50,8 @@ export default async function AdminMembersPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className={eyebrowCls}>ADMIN ・ MEMBERS</p>
-          <h1 className={h1Cls}>会員管理（審査中 {pendingCount} 件）</h1>
+          <p className={aEyebrow}>ADMIN ・ MEMBERS</p>
+          <h1 className={aH1}>会員管理（審査中 {pendingCount} 件）</h1>
           <p className="mt-1 text-[12px] text-[var(--muted)]">
             会社名をクリックすると、詳細の確認・審査（承認/非承認）・アカウントの停止や削除ができます。
             承認すると、その会員に紹介クレジット3件が自動付与されます（組織単位で一度だけ）。

@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { btn } from "@/lib/ui";
+import { aTab, aTabBar, aTabCurrent } from "./adminUi";
 
 /** 画面のキー。current に渡すと、その項目は押せない表示になる */
 export type AdminNavKey =
@@ -36,9 +36,6 @@ const SECTIONS: { hash: string; label: string }[] = [
   { hash: "#admin-accounts", label: "管理者アカウント" },
 ];
 
-const currentCls =
-  "cursor-default rounded-lg border border-[var(--line)] bg-[var(--canvas)] px-3 py-1.5 text-[12px] font-medium text-[var(--muted)]";
-
 export async function AdminNav({ current }: { current: AdminNavKey }) {
   const su = await getSessionUser();
   const tenantId = su?.app.tenantId ?? "";
@@ -54,44 +51,45 @@ export async function AdminNav({ current }: { current: AdminNavKey }) {
   const sectionHref = (hash: string) => (current === "top" ? hash : `/admin${hash}`);
 
   return (
-    <nav className="flex flex-wrap gap-2">
-      {PAGES.map((p) =>
-        p.key === current ? (
-          <span key={p.key} className={currentCls} aria-current="page">
-            {p.label}
-          </span>
-        ) : (
-          <Link
-            key={p.key}
-            href={p.href}
-            className={`${btn("secondary", "sm")} ${p.key === "members" ? "relative" : ""}`}
-          >
-            {p.label} →
-            {p.key === "members" && pendingMembers > 0 ? (
-              <span className="absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
-                {pendingMembers}
-              </span>
-            ) : null}
-          </Link>
-        )
-      )}
+    <div className="flex flex-col gap-2">
+      {/* 画面の移動＝タブ。今いる場所が1つだけ白く浮く */}
+      <nav className={aTabBar}>
+        {PAGES.map((p) =>
+          p.key === current ? (
+            <span key={p.key} className={aTabCurrent} aria-current="page">
+              {p.label}
+            </span>
+          ) : (
+            <Link key={p.key} href={p.href} className={aTab}>
+              {p.label}
+              {p.key === "members" && pendingMembers > 0 ? (
+                <span className="ml-1.5 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
+                  {pendingMembers}
+                </span>
+              ) : null}
+            </Link>
+          )
+        )}
+      </nav>
 
-      {/* ここから下は事務局管理トップの中のセクション。該当が0件の承認まわりは出さない */}
-      {pendingProjects > 0 ? (
-        <Link href={sectionHref("#pj-review")} className={btn("secondary", "sm")}>
-          プロジェクト承認（{pendingProjects}） ↓
-        </Link>
-      ) : null}
-      {sentBackProjects > 0 ? (
-        <Link href={sectionHref("#pj-sentback")} className={btn("secondary", "sm")}>
-          差し戻し中（{sentBackProjects}） ↓
-        </Link>
-      ) : null}
-      {SECTIONS.map((s) => (
-        <Link key={s.hash} href={sectionHref(s.hash)} className={btn("secondary", "sm")}>
-          {s.label} ↓
-        </Link>
-      ))}
-    </nav>
+      {/* 事務局管理トップの中のセクションへ（該当が0件の承認まわりは出さない） */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted)]">
+        {pendingProjects > 0 ? (
+          <Link href={sectionHref("#pj-review")} className="text-[var(--red)] underline">
+            プロジェクト承認 {pendingProjects}
+          </Link>
+        ) : null}
+        {sentBackProjects > 0 ? (
+          <Link href={sectionHref("#pj-sentback")} className="text-[var(--red)] underline">
+            差し戻し中 {sentBackProjects}
+          </Link>
+        ) : null}
+        {SECTIONS.map((s) => (
+          <Link key={s.hash} href={sectionHref(s.hash)} className="underline hover:text-[var(--green-d)]">
+            {s.label}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
