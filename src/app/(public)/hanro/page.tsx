@@ -5,6 +5,7 @@
 // **契約条件・業務範囲・成果物の詳細な文面は削除せず、各サービスの折りたたみへ移した**（指示書5）。
 // 価格・準委任である旨・成果を保証しない旨は、ユーザー確定の文面をそのまま使う（2026-08-11 確定分）。
 import Link from "next/link";
+import Image from "next/image";
 import { PublicTopBar } from "../_components/PublicTopBar";
 import { JsonLd, HANRO_JSONLD, breadcrumbJsonLd, faqJsonLd } from "../_components/JsonLd";
 import { consultationHref } from "@/lib/services";
@@ -14,7 +15,6 @@ import {
   pContainer,
   pContainerWide,
   pEyebrow,
-  pH1,
   pH2,
   pH3,
   pNote,
@@ -269,12 +269,26 @@ export default function HanroPage() {
         </div>
       </div>
 
-      {/* 4-2 ヒーロー */}
-      <section className="bg-[#182019]">
-        <div className={`${pContainerWide} py-[72px] lg:py-[104px]`}>
-          <div>
+      {/* 4-2 ヒーロー：商談の写真＝右、文字＝左（写真は左側に余白がある構図） */}
+      <section className="relative flex min-h-[620px] items-center overflow-hidden bg-[#182019] lg:min-h-[680px]">
+        <Image
+          src="/hanro/hanro-hero.jpg"
+          alt="生産者と担当者が商品を前に販路について話している様子"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[62%_center]"
+        />
+        {/* 文字側（左）を濃く、人物側（右）は残す */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,32,25,0.74)_0%,rgba(24,32,25,0.94)_72%)] lg:bg-[linear-gradient(90deg,rgba(24,32,25,0.95)_0%,rgba(24,32,25,0.86)_42%,rgba(24,32,25,0.45)_68%,rgba(24,32,25,0.15)_100%)]"
+        />
+        <div className={`${pContainerWide} relative py-[72px] lg:py-[104px]`}>
+          <div className="lg:max-w-[900px]">
             <Eyebrow tone="lime">SALES CHANNEL DEVELOPMENT</Eyebrow>
-            <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
+            {/* このヒーローだけ上限を64pxにしている＝写真の人物を文字で隠さないため（他ページは pH1 の74px） */}
+            <h1 className="mt-5 text-[38px] font-bold leading-[1.15] tracking-[0.01em] text-[#F4F0E6] sm:text-[clamp(40px,4.4vw,64px)]">
               まだ出会えていない相手へ、
               <br />
               <span className="text-[#DCE969]">商品の価値を届ける。</span>
