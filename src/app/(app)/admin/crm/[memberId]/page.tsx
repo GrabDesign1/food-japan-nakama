@@ -18,6 +18,7 @@ import {
   dueState,
 } from "@/lib/crm";
 import { AdminNav } from "../../_components/AdminNav";
+import { MemberMailButton } from "../../_components/MemberMailButton";
 import { btn, input } from "@/lib/ui";
 import { aCard, aEyebrow, aH1, aH2 } from "../../_components/adminUi";
 import { addMemberNote, deleteMemberNote, saveMemberCrm } from "../../crm-actions";
@@ -205,6 +206,16 @@ export default async function AdminCrmMemberPage({
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
+          <MemberMailButton
+            memberId={member.id}
+            memberName={member.name || "（名称未設定）"}
+            targets={member.users.map((u) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              optIn: !!u.marketingOptInAt,
+            }))}
+          />
           <Link href={`/producers/${member.id}`} className={btn("secondary", "sm")}>
             会員ページを見る
           </Link>

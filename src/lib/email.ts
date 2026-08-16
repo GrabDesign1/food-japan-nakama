@@ -524,3 +524,45 @@ export async function sendConsultationEmails(c: {
     html: `<div style="font-family:sans-serif;font-size:14px;line-height:1.8"><p>${esc(c.name)} 様</p><p>この度は「${label}」についてお問い合わせいただき、ありがとうございます。<br>以下の内容で受け付けいたしました（受付番号：<b>${c.refNo}</b>）。</p><p>内容を確認のうえ、担当者よりご連絡いたします。<br>※ このメールは送信専用です。ご返信いただいても対応できない場合があります。</p><table style="border-collapse:collapse;font-size:13px">${table}</table><p>FOOD JAPAN NAKAMA（株式会社グラブデザイン）</p></div>`,
   });
 }
+
+/**
+ * 事務局から会員へ個別に送るメール（2026-08-16・顧客カルテから送信）。
+ *
+ * kind="notice"（利用案内）＝本サービスの提供に必要な手続的な連絡。規約第27条の2第1項。
+ * kind="ad"（広告・宣伝を含む案内）＝特定電子メール法の対象。**同意者にのみ送る**（呼び出し側で検証）。
+ * 広告のときは、送信者の名称・住所・受信拒否の通知先を必ず本文に表示する（同法の表示義務）。
+ */
+export async function sendAdminMessageEmail(params: {
+  to: string;
+  subject: string;
+  body: string;
+  kind: "notice" | "ad";
+  senderName: string;
+}): Promise<void> {
+  const isAd = params.kind === "ad";
+  const bodyHtml = esc(params.body).replace(/\n/g, "<br>");
+  const html = `
+    <div style="font-family:sans-serif;line-height:1.9;color:#141414">
+      ${isAd ? '<p style="font-size:12px;color:#7c8899;margin:0 0 12px">＜広告＞</p>' : ""}
+      <div style="font-size:14px">${bodyHtml}</div>
+      <hr style="border:none;border-top:1px solid #dbe1d9;margin:24px 0">
+      <div style="font-size:12px;color:#7c8899">
+        FOOD JAPAN NAKAMA 事務局　${esc(params.senderName)}<br>
+        株式会社グラブデザイン<br>
+        〒102-0073 東京都千代田区九段北1-2-1<br>
+        <a href="mailto:info@grab-design.com">info@grab-design.com</a>／03-6825-3901<br>
+        <a href="${APP_URL}">${APP_URL}</a>
+      </div>
+      ${
+        isAd
+          ? `<p style="font-size:12px;color:#7c8899;margin-top:12px">
+               このメールは、ご登録時に案内メールの受信に同意いただいた方へお送りしています。<br>
+               配信の停止は、<a href="${APP_URL}/profile">プロフィール画面</a>またはこのメールへの返信（<a href="mailto:info@grab-design.com">info@grab-design.com</a>）で承ります。
+             </p>`
+          : `<p style="font-size:12px;color:#7c8899;margin-top:12px">
+               このメールは、FOOD JAPAN NAKAMA のご利用に関する事務連絡としてお送りしています。
+             </p>`
+      }
+    </div>`;
+  await send({ to: [params.to], subject: params.subject, html });
+}

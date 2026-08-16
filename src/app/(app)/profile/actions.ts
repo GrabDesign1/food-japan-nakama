@@ -372,3 +372,22 @@ export async function draftProfile(formData: FormData): Promise<ProfileDraftResu
   }
   return result;
 }
+
+/**
+ * 案内メール（広告・宣伝を含む）の受け取り設定を切り替える（2026-08-16）。
+ * 規約第27条の2で「いつでも配信停止できる」と約束しているため、会員が自分で止められるようにする。
+ * 手続的な連絡（審査結果・掲載の確認依頼など）は本設定に関わらず送る。
+ */
+export async function setMarketingOptIn(optIn: boolean): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  await prisma.user.update({
+    where: { id: su.app.id },
+    data: { marketingOptInAt: optIn ? new Date() : null },
+  });
+  await writeAudit(su, optIn ? "user.marketing_opt_in" : "user.marketing_opt_out", {
+    targetType: "user",
+    targetId: su.app.id,
+  });
+  revalidatePath("/profile");
+}

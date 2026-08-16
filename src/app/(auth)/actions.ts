@@ -62,9 +62,11 @@ export async function signUp(
     return { error: "事業目的での申込みであることをご確認ください。", email };
   }
 
-  // 案内メール同意（任意。特電法の同意記録として user_metadata に日時つきで保存し、
-  // 初回ログイン時に users.marketing_opt_in_at へ引き継ぐ）
-  const marketingOptIn = !!formData.get("marketingOptIn");
+  // 案内メールの同意（2026-08-16〜）。
+  // 規約第27条の2に案内メール（広告・宣伝を含む）の定めを置き、**登録時の規約同意チェックをもって同意**とする。
+  // 特電法の同意記録として user_metadata に日時つきで保存し、初回ログイン時に users.marketing_opt_in_at へ引き継ぐ。
+  // ※既存会員の同意状態は変更しない（この変更前に同意しなかった人は未同意のまま）。
+  const marketingOptIn = !!formData.get("businessPurpose");
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({

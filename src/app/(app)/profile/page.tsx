@@ -4,6 +4,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { ProfileForm, type MemberData } from "./_components/ProfileForm";
 import { ReviewStatus } from "./_components/ReviewStatus";
 import { WithdrawalSection } from "./_components/WithdrawalSection";
+import { MailPreference } from "./_components/MailPreference";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { AI_ENABLED } from "@/lib/ai";
 
@@ -72,6 +73,8 @@ export default async function ProfilePage() {
       <div className="rounded-[10px] border border-[var(--line)] bg-white p-6">
         <ProfileForm aiEnabled={AI_ENABLED} member={data} />
       </div>
+
+      <MailPreference optIn={!!su.app.marketingOptInAt} />
 
       <WithdrawalSection requestedAt={member.withdrawalRequestedAt} />
     </div>
