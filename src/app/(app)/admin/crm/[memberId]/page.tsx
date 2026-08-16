@@ -277,6 +277,35 @@ export default async function AdminCrmMemberPage({
                   />
                 </label>
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] text-[var(--muted)]">電話（名刺・ヒアリングで分かったもの）</span>
+                  <input
+                    name="crmPhone"
+                    defaultValue={member.crmPhone ?? ""}
+                    placeholder="例：0985-32-5918"
+                    className={`${input()} w-full`}
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] text-[var(--muted)]">部署・役職</span>
+                  <input
+                    name="crmDepartment"
+                    defaultValue={member.crmDepartment ?? ""}
+                    placeholder="例：営業推進部 部長"
+                    className={`${input()} w-full`}
+                  />
+                </label>
+              </div>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] text-[var(--muted)]">備考（会員一覧にも表示されます）</span>
+                <input
+                  name="crmMemo"
+                  defaultValue={member.crmMemo ?? ""}
+                  placeholder="例：宮崎カンファレンスで名刺交換。9月に再訪予定"
+                  className={`${input()} w-full`}
+                />
+              </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] text-[var(--muted)]">タグ（カンマ区切り・最大10個）</span>
                 <input

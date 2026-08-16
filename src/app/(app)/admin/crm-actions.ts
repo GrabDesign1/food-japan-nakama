@@ -65,6 +65,10 @@ export async function saveMemberCrm(memberId: string, formData: FormData): Promi
       crmNextAction: g("crmNextAction", CRM_NEXT_ACTION_MAX) || null,
       crmNextActionDue,
       crmTags: parseTags(g("crmTags", 300)),
+      // 名刺・ヒアリングで分かった連絡先（事務局が控える欄。会員のプロフィールとは別物）
+      crmPhone: g("crmPhone", 40) || null,
+      crmDepartment: g("crmDepartment", 120) || null,
+      crmMemo: g("crmMemo", 500) || null,
     },
   });
 
@@ -199,4 +203,93 @@ export async function sendMemberEmail(
 
   revalidatePath(`/admin/crm/${member.id}`);
   return { ok: true, message: `${users.length}件に送信し、対応履歴に記録しました。` };
+}
+
+/**
+ * 会員一覧から、選んだ会員へまとめてメールを送る（2026-08-16）。
+ *
+ * 個別送信（sendMemberEmail）との違い＝**広告のときは未同意の宛先を「スキップ」して送る**。
+ * 一括では未同意が混ざるのが普通なので、全体を止めるより、送れる人にだけ送って結果を返す方が実務に合う。
+ * 誰に送ったかは各会員の対応履歴に残るため、あとから追える。
+ */
+export async function sendBulkEmail(
+  _prev: { ok?: boolean; error?: string; message?: string } | null,
+  formData: FormData
+): Promise<{ ok?: boolean; error?: string; message?: string }> {
+  const su = await requireAdmin();
+
+  const kind = String(formData.get("kind") ?? "") === "ad" ? "ad" : "notice";
+  const subject = String(formData.get("subject") ?? "").trim().slice(0, 120);
+  const body = String(formData.get("body") ?? "").trim().slice(0, CRM_NOTE_MAX);
+  const memberIds = formData.getAll("memberIds").map((v) => String(v));
+
+  if (!subject) return { error: "件名を入力してください。" };
+  if (!body) return { error: "本文を入力してください。" };
+  if (memberIds.length === 0) return { error: "送信先の会員を選んでください。" };
+
+  const members = await prisma.member.findMany({
+    where: { id: { in: memberIds }, tenantId: su.app.tenantId },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      users: {
+        where: { status: "ACTIVE" },
+        select: { id: true, email: true, marketingOptInAt: true },
+      },
+    },
+  });
+
+  const senderName = su.app.name || "担当者";
+  let sent = 0;
+  let skipped = 0;
+  const sentMemberIds: string[] = [];
+
+  for (const m of members) {
+    // 停止中の会員には送らない
+    if (m.status === "SUSPENDED") {
+      skipped += m.users.length;
+      continue;
+    }
+    const targets = kind === "ad" ? m.users.filter((u) => u.marketingOptInAt) : m.users;
+    skipped += m.users.length - targets.length;
+    if (targets.length === 0) continue;
+
+    for (const u of targets) {
+      await sendAdminMessageEmail({ to: u.email, subject, body, kind, senderName });
+      sent++;
+    }
+    sentMemberIds.push(m.id);
+
+    await prisma.memberNote.create({
+      data: {
+        tenantId: su.app.tenantId,
+        memberId: m.id,
+        kind: "email",
+        body: `【一斉送信：${kind === "ad" ? "案内メール（広告あり）" : "利用案内メール"}】\n宛先：${targets
+          .map((u) => u.email)
+          .join("、")}\n件名：${subject}\n\n${body}`,
+        occurredAt: new Date(),
+        authorUserId: su.app.id,
+        authorName: senderName,
+      },
+    });
+  }
+
+  await writeAudit(su, "member.bulk_email_send", {
+    targetType: "member",
+    detail: `${kind === "ad" ? "広告あり" : "利用案内"} / 送信${sent}件 / 対象外${skipped}件 / 会員${sentMemberIds.length}社 / 件名=${subject.slice(0, 60)}`,
+  });
+
+  revalidatePath("/admin/members");
+  return {
+    ok: true,
+    message:
+      `${sent}件に送信しました（${sentMemberIds.length}社）。` +
+      (skipped > 0
+        ? kind === "ad"
+          ? `${skipped}件は案内メール未同意または停止中のため送っていません。`
+          : `${skipped}件は停止中のため送っていません。`
+        : ""),
+  };
 }

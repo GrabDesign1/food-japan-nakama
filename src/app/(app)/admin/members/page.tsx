@@ -44,6 +44,13 @@ export default async function AdminMembersPage() {
     startTiming: m.startTiming, completionRate: m.completionRate, status: m.status,
     paymentStatus: m.paymentStatus,
     users: m.users,
+    // 一覧の列（事務局CRMの項目。2026-08-16）
+    crmDepartment: m.crmDepartment,
+    crmPhone: m.crmPhone,
+    crmTags: m.crmTags,
+    crmMemo: m.crmMemo,
+    createdAt: m.createdAt.toLocaleDateString("ja-JP"),
+    optIn: m.users.some((u) => u.marketingOptInAt),
   }));
 
   return (

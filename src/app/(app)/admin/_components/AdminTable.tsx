@@ -14,8 +14,9 @@ import {
 import type { ReviewDecision } from "@/lib/member";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 import { btn, h2Cls } from "@/lib/ui";
-import { aLink, aTable, aTd, aTh, aTr } from "./adminUi";
+import { aBadge, aLink, aTable, aTd, aTh, aTr } from "./adminUi";
 import { useCloseOnEscape } from "@/components/useCloseOnEscape";
+import { BulkMailButton } from "./BulkMailButton";
 
 export type AdminRow = {
   id: string;
@@ -48,6 +49,13 @@ export type AdminRow = {
   status: string;
   paymentStatus: string;
   users: { id: string; name: string; email: string }[];
+  // 一覧の列（Eight のような名刺台帳の見え方に合わせる。2026-08-16）
+  crmDepartment: string | null;
+  crmPhone: string | null;
+  crmTags: string[];
+  crmMemo: string | null;
+  createdAt: string; // 登録日（表示用に整形済み）
+  optIn: boolean; // 案内メールの同意（1人でも同意していれば true）
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -77,6 +85,7 @@ function Badge({ map, value }: { map: typeof STATUS; value: string }) {
 
 export function AdminTable({ rows }: { rows: AdminRow[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
   const current = rows.find((r) => r.id === openId) ?? null;
 
@@ -128,17 +137,57 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
     setOpenId(null);
   }
 
+  const allIds = rows.map((r) => r.id);
+  const allChecked = selected.length > 0 && selected.length === allIds.length;
+  const selectedRows = rows.filter((r) => selected.includes(r.id));
+
   return (
     <>
+      {/* 一括操作（選んだ会員へメール／CSV書き出し） */}
+      <div className="flex flex-wrap items-center gap-3 rounded-[6px] border border-[#E3E6E8] bg-white px-4 py-3">
+        <span className="text-[13px] font-bold text-[var(--ink)]">
+          会員 {rows.length} 社
+          {selected.length > 0 ? (
+            <span className="ml-2 text-[var(--green-d)]">{selected.length} 社を選択中</span>
+          ) : null}
+        </span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <BulkMailButton
+            targets={selectedRows.map((r) => ({
+              id: r.id,
+              name: r.name || r.contactEmail,
+              optIn: r.optIn,
+              suspended: r.status === "SUSPENDED",
+            }))}
+          />
+          <a
+            href={`/api/admin/members/export${selected.length ? `?ids=${selected.join(",")}` : ""}`}
+            className={btn("secondary", "sm")}
+          >
+            ダウンロード（CSV）
+          </a>
+        </div>
+      </div>
+
       <div className="overflow-x-auto rounded-[6px] border border-[#E3E6E8] bg-white">
-        <table className={`${aTable} min-w-[820px]`}>
+        <table className={`${aTable} min-w-[1100px]`}>
           <thead>
             <tr>
-              <th className={aTh}>会社名・団体名</th>
-              <th className={aTh}>担当者</th>
-              <th className={aTh}>会員種別</th>
-              <th className={aTh}>所在地</th>
-              <th className={aTh}>記入率</th>
+              <th className={`${aTh} w-[40px]`}>
+                <input
+                  type="checkbox"
+                  aria-label="すべて選択"
+                  checked={allChecked}
+                  onChange={(e) => setSelected(e.target.checked ? allIds : [])}
+                  className="accent-[var(--green)]"
+                />
+              </th>
+              <th className={aTh}>氏名／会社名</th>
+              <th className={aTh}>部署・役職</th>
+              <th className={aTh}>電話／メール</th>
+              <th className={aTh}>登録日</th>
+              <th className={aTh}>タグ</th>
+              <th className={aTh}>備考</th>
               <th className={aTh}>審査</th>
               <th className={aTh}>課金状態</th>
               <th className={aTh}>顧客カルテ</th>
@@ -147,7 +196,7 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-[var(--muted)]">
+                <td colSpan={10} className="px-3 py-8 text-center text-[var(--muted)]">
                   審査対象の会員はまだありません。
                 </td>
               </tr>
@@ -155,23 +204,65 @@ export function AdminTable({ rows }: { rows: AdminRow[] }) {
               rows.map((m) => (
                 <tr key={m.id} className={aTr}>
                   <td className={aTd}>
+                    <input
+                      type="checkbox"
+                      aria-label={`${m.name || m.contactEmail} を選択`}
+                      checked={selected.includes(m.id)}
+                      onChange={(e) =>
+                        setSelected((prev) =>
+                          e.target.checked ? [...prev, m.id] : prev.filter((x) => x !== m.id)
+                        )
+                      }
+                      className="accent-[var(--green)]"
+                    />
+                  </td>
+                  <td className={aTd}>
                     <button
                       type="button"
                       onClick={() => setOpenId(m.id)}
                       className="text-left font-medium text-[var(--green-d)] underline decoration-dotted underline-offset-2 hover:text-[var(--green)]"
                     >
-                      {m.name || `（未入力）${m.contactEmail !== "—" ? ` ${m.contactEmail}` : ""}`}
+                      {m.contactName && m.contactName !== "—" ? m.contactName : "（担当者未入力）"}
                     </button>
+                    <div className="text-[12px] text-[var(--ink-2)]">
+                      {m.name || `（未入力）${m.contactEmail !== "—" ? ` ${m.contactEmail}` : ""}`}
+                    </div>
+                    <div className="text-[11px] text-[var(--muted)]">
+                      {m.categoryL1}
+                      {m.categoryL2 ? ` / ${m.categoryL2}` : ""}
+                      {[m.prefecture, m.city].filter(Boolean).length
+                        ? `・${[m.prefecture, m.city].filter(Boolean).join(" ")}`
+                        : ""}
+                    </div>
                   </td>
-                  <td className={`${aTd} text-[var(--ink-2)]`}>{m.contactName}</td>
-                  <td className={`${aTd} text-[var(--ink-2)]`}>
-                    {m.categoryL1}
-                    {m.categoryL2 ? ` / ${m.categoryL2}` : ""}
+                  <td className={`${aTd} text-[var(--ink-2)]`}>{m.crmDepartment || "—"}</td>
+                  <td className={aTd}>
+                    {m.crmPhone ? <div className="text-[var(--ink-2)]">{m.crmPhone}</div> : null}
+                    <div className="break-all text-[12px] text-[var(--green-d)]">{m.contactEmail}</div>
+                    {!m.optIn ? (
+                      <span className="text-[10px] text-[var(--muted)]">案内メール未同意</span>
+                    ) : null}
                   </td>
-                  <td className={`${aTd} text-[var(--ink-2)]`}>
-                    {[m.prefecture, m.city].filter(Boolean).join(" ") || "—"}
+                  <td className={`${aTd} whitespace-nowrap text-[var(--ink-2)]`}>{m.createdAt}</td>
+                  <td className={aTd}>
+                    {m.crmTags.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {m.crmTags.slice(0, 3).map((t) => (
+                          <span key={t} className={aBadge("neutral")}>
+                            {t}
+                          </span>
+                        ))}
+                        {m.crmTags.length > 3 ? (
+                          <span className="text-[11px] text-[var(--muted)]">+{m.crmTags.length - 3}</span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-[var(--muted)]">0</span>
+                    )}
                   </td>
-                  <td className={`${aTd} text-[var(--ink-2)]`}>{m.completionRate}%</td>
+                  <td className={`${aTd} max-w-[220px] text-[12px] text-[var(--ink-2)]`}>
+                    <span className="line-clamp-2">{m.crmMemo || "—"}</span>
+                  </td>
                   <td className={aTd}>
                     <Badge map={STATUS} value={m.status} />
                   </td>

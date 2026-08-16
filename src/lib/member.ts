@@ -188,7 +188,8 @@ export async function listReviewMembers(tenantId: string) {
     orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
     include: {
       users: {
-        select: { id: true, name: true, email: true },
+        // marketingOptInAt＝会員管理の一覧で「案内メール同意」を出し、一括送信の対象判定に使う
+        select: { id: true, name: true, email: true, marketingOptInAt: true },
         orderBy: { createdAt: "asc" },
       },
     },
