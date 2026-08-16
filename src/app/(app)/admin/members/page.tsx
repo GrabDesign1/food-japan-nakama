@@ -8,7 +8,7 @@ import { aEyebrow, aH1 } from "../_components/adminUi";
 
 export default async function AdminMembersPage() {
   const su = await requireAdmin();
-  const [members, withdrawals] = await Promise.all([
+  const [members, withdrawals, jobs] = await Promise.all([
     listReviewMembers(su.app.tenantId),
     prisma.member.findMany({
       where: { tenantId: su.app.tenantId, withdrawalRequestedAt: { not: null } },
@@ -20,6 +20,24 @@ export default async function AdminMembersPage() {
         paymentStatus: true,
       },
       orderBy: { withdrawalRequestedAt: "asc" },
+    }),
+    // 直近の一括送信（送信は応答後に進むため、状況を画面で見えるようにする）
+    prisma.emailJob.findMany({
+      where: { tenantId: su.app.tenantId },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        subject: true,
+        kind: true,
+        status: true,
+        sentCount: true,
+        failedCount: true,
+        skippedCount: true,
+        targets: true,
+        createdAt: true,
+        createdByName: true,
+      },
     }),
   ]);
   const pendingCount = members.filter((m) => m.status === "PENDING").length;
@@ -93,6 +111,47 @@ export default async function AdminMembersPage() {
               </li>
             ))}
           </ul>
+        </section>
+      ) : null}
+
+      {jobs.length > 0 ? (
+        <section className="rounded-[6px] border border-[#E3E6E8] bg-white">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#E3E6E8] px-4 py-2.5">
+            <h2 className="text-[14px] font-bold text-[var(--ink)]">直近の一括送信</h2>
+            <span className="text-[12px] leading-6 text-[var(--muted)]">
+              送信は画面を閉じても進みます。件数は自動では更新されないので、確認するときは再読み込みしてください。
+            </span>
+          </div>
+          <div>
+            {jobs.map((j) => {
+              const total = Array.isArray(j.targets) ? j.targets.length : 0;
+              return (
+                <div
+                  key={j.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[#EDF0F2] px-4 py-2.5 text-[12px] last:border-0"
+                >
+                  <span className="text-[var(--muted)]">{j.createdAt.toLocaleString("ja-JP")}</span>
+                  <span className="min-w-0 flex-1 truncate font-medium text-[var(--ink)]">{j.subject}</span>
+                  <span className="text-[var(--ink-2)]">{j.kind === "ad" ? "広告あり" : "利用案内"}</span>
+                  <span className="text-[var(--ink-2)]">
+                    {j.sentCount}/{total}件
+                    {j.failedCount > 0 ? `（失敗${j.failedCount}）` : ""}
+                    {j.skippedCount > 0 ? `（対象外${j.skippedCount}）` : ""}
+                  </span>
+                  <span
+                    className={
+                      j.status === "done"
+                        ? "rounded bg-[var(--green-soft)] px-1.5 py-0.5 font-bold text-[var(--green-d)]"
+                        : "rounded bg-[var(--amber-soft)] px-1.5 py-0.5 font-bold text-[var(--amber-ink)]"
+                    }
+                  >
+                    {j.status === "done" ? "完了" : "送信中"}
+                  </span>
+                  <span className="text-[var(--muted)]">{j.createdByName}</span>
+                </div>
+              );
+            })}
+          </div>
         </section>
       ) : null}
 

@@ -212,6 +212,33 @@ model MemberNote {
   @@map("member_notes")
 }
 
+/// 事務局からの一括メール送信ジョブ（2026-08-16）。
+/// 画面は投入したらすぐ返し、実際の送信は応答後（after）に進める。
+/// 途中で処理が止まっても、日次バッチが `status = "running"` の続きから再開できるように
+/// 宛先の一覧と「何件目まで送ったか」を保存する（sentCount＝送信済みの件数＝再開位置）。
+model EmailJob {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  createdByUserId String    @map("created_by_user_id")
+  createdByName   String    @map("created_by_name")
+  kind            String // notice=利用案内 / ad=広告・宣伝を含む案内
+  subject         String
+  body            String
+  /// 宛先の配列 [{ memberId, memberName, email }]。順番どおりに送る
+  targets         Json
+  sentCount       Int       @default(0) @map("sent_count")
+  failedCount     Int       @default(0) @map("failed_count")
+  skippedCount    Int       @default(0) @map("skipped_count") // 未同意・停止中で最初から外した件数
+  status          String    @default("running") // running / done
+  startedAt       DateTime  @default(now()) @map("started_at")
+  finishedAt      DateTime? @map("finished_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@index([status])
+  @@map("email_jobs")
+}
+
 /// Stripe Webhookの冪等化（同じイベントIDを二度処理しない）
 model StripeEvent {
   id        String   @id // Stripeのevent.id（evt_...）

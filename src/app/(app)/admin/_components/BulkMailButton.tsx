@@ -17,7 +17,7 @@ function SubmitButton({ count }: { count: number }) {
   const { pending } = useFormStatus();
   return (
     <button className={btn("primary", "sm")} disabled={pending || count === 0}>
-      {pending ? "送信中…" : `${count}社に送信する`}
+      {pending ? "送信を開始しています…" : `${count}社に送信する`}
     </button>
   );
 }
@@ -48,7 +48,7 @@ export function BulkMailButton({ targets }: { targets: BulkTarget[] }) {
           <div className="max-h-[90vh] w-full max-w-[640px] overflow-y-auto rounded-[8px] bg-white p-6">
             <h2 className={aH2}>選んだ会員にメールを送る</h2>
             <p className={`${aNote} mt-1`}>
-              送った内容は、会員ごとの対応履歴に自動で記録されます。会員間のメッセージには入りません。
+              送信はバックグラウンドで進みます（画面を閉じても続きます）。送り終えると、会員ごとの対応履歴に自動で記録されます。会員間のメッセージには入りません。
             </p>
 
             <form action={action} className="mt-4 flex flex-col gap-4">

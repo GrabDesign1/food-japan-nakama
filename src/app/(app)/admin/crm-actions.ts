@@ -5,10 +5,13 @@
 // 注意：ここで扱うのは事務局の内部記録のみ。会員間メッセージの本文は保存しない（規約17条）。
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireAdmin, isSuperAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { sendAdminMessageEmail } from "@/lib/email";
+import { runEmailJob, type JobTarget } from "@/lib/email-job";
+import type { Prisma } from "@/generated/prisma/client";
 import {
   CRM_NEXT_ACTION_MAX,
   CRM_NOTE_MAX,
@@ -208,9 +211,13 @@ export async function sendMemberEmail(
 /**
  * 会員一覧から、選んだ会員へまとめてメールを送る（2026-08-16）。
  *
- * 個別送信（sendMemberEmail）との違い＝**広告のときは未同意の宛先を「スキップ」して送る**。
- * 一括では未同意が混ざるのが普通なので、全体を止めるより、送れる人にだけ送って結果を返す方が実務に合う。
- * 誰に送ったかは各会員の対応履歴に残るため、あとから追える。
+ * **送信はバックグラウンドで行う**＝ここでは宛先を確定してジョブを作るだけで、すぐ画面に返す。
+ * 実際の送信は `after()` で応答後に進み、途中で止まっても日次バッチが続きを送る（src/lib/email-job.ts）。
+ *
+ * 種別の扱い（規約第27条の2・特定電子メール法）：
+ *  - notice＝利用案内。同意の有無に関わらず送れる。
+ *  - ad＝広告・宣伝を含む案内。**未同意の宛先は最初から外す**（個別送信と違い、一括は送れる相手にだけ送る）。
+ *  - 停止中（SUSPENDED）の会員はどちらの種別でも送らない。
  */
 export async function sendBulkEmail(
   _prev: { ok?: boolean; error?: string; message?: string } | null,
@@ -235,61 +242,68 @@ export async function sendBulkEmail(
       status: true,
       users: {
         where: { status: "ACTIVE" },
-        select: { id: true, email: true, marketingOptInAt: true },
+        select: { email: true, marketingOptInAt: true },
+        orderBy: { createdAt: "asc" },
       },
     },
   });
 
-  const senderName = su.app.name || "担当者";
-  let sent = 0;
+  const targets: JobTarget[] = [];
   let skipped = 0;
-  const sentMemberIds: string[] = [];
-
   for (const m of members) {
-    // 停止中の会員には送らない
     if (m.status === "SUSPENDED") {
       skipped += m.users.length;
       continue;
     }
-    const targets = kind === "ad" ? m.users.filter((u) => u.marketingOptInAt) : m.users;
-    skipped += m.users.length - targets.length;
-    if (targets.length === 0) continue;
-
-    for (const u of targets) {
-      await sendAdminMessageEmail({ to: u.email, subject, body, kind, senderName });
-      sent++;
+    const ok = kind === "ad" ? m.users.filter((u) => u.marketingOptInAt) : m.users;
+    skipped += m.users.length - ok.length;
+    for (const u of ok) {
+      targets.push({ memberId: m.id, memberName: m.name || "（名称未設定）", email: u.email });
     }
-    sentMemberIds.push(m.id);
-
-    await prisma.memberNote.create({
-      data: {
-        tenantId: su.app.tenantId,
-        memberId: m.id,
-        kind: "email",
-        body: `【一斉送信：${kind === "ad" ? "案内メール（広告あり）" : "利用案内メール"}】\n宛先：${targets
-          .map((u) => u.email)
-          .join("、")}\n件名：${subject}\n\n${body}`,
-        occurredAt: new Date(),
-        authorUserId: su.app.id,
-        authorName: senderName,
-      },
-    });
   }
+
+  if (targets.length === 0) {
+    return {
+      error:
+        kind === "ad"
+          ? "選んだ会員に、案内メールへ同意した宛先がありません。手続きの連絡として送るか、宛先を選び直してください。"
+          : "送信できる宛先がありません。",
+    };
+  }
+
+  const senderName = su.app.name || "担当者";
+  const job = await prisma.emailJob.create({
+    data: {
+      tenantId: su.app.tenantId,
+      createdByUserId: su.app.id,
+      createdByName: senderName,
+      kind,
+      subject,
+      body,
+      targets: targets as unknown as Prisma.InputJsonValue,
+      skippedCount: skipped,
+    },
+    select: { id: true },
+  });
 
   await writeAudit(su, "member.bulk_email_send", {
     targetType: "member",
-    detail: `${kind === "ad" ? "広告あり" : "利用案内"} / 送信${sent}件 / 対象外${skipped}件 / 会員${sentMemberIds.length}社 / 件名=${subject.slice(0, 60)}`,
+    detail: `${kind === "ad" ? "広告あり" : "利用案内"} / 宛先${targets.length}件 / 対象外${skipped}件 / 件名=${subject.slice(0, 60)}`,
   });
+
+  // 応答を返したあとに送信を進める（画面は待たせない）
+  after(() => runEmailJob(job.id).catch((e) => console.error("[bulk email] 送信に失敗:", e)));
 
   revalidatePath("/admin/members");
   return {
     ok: true,
     message:
-      `${sent}件に送信しました（${sentMemberIds.length}社）。` +
+      `${targets.length}件へ送信を開始しました。` +
       (skipped > 0
         ? kind === "ad"
-          ? `${skipped}件は案内メール未同意または停止中のため送っていません。`
-          : `${skipped}件は停止中のため送っていません。`
-        : ""),
+          ? `（${skipped}件は案内メール未同意または停止中のため送りません）`
+          : `（${skipped}件は停止中のため送りません）`
+        : "") +
+      "送信が終わると、各会員の対応履歴に記録されます。",
   };
 }

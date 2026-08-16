@@ -15,6 +15,7 @@ import {
   grantMonthlyMemberCredits,
 } from "@/lib/contact-credits";
 import { isUnreadRefundDue } from "@/lib/billing-core";
+import { resumeStaleEmailJobs } from "@/lib/email-job";
 import { getMemberUserEmails } from "@/lib/member";
 import {
   notifyPromotionEnding,
@@ -270,6 +271,9 @@ export async function GET(req: NextRequest) {
     unopenedNotices++;
   }
   summary.unopenedLeadNotices = unopenedNotices;
+
+  // 一括メールの送りかけ（応答後の処理が途中で止まったもの）を引き取って続きを送る
+  summary.resumedEmailJobs = await resumeStaleEmailJobs();
 
   return Response.json({ ok: true, at: now.toISOString(), ...summary });
 }
