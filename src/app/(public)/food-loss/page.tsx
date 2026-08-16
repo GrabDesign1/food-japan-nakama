@@ -186,7 +186,7 @@ export default function FoodLossPage() {
         />
         {/* ヒーローだけは横幅を広く取る（右の文字組みを保ったまま、左にトマトを残すため） */}
         <div className={`${pContainerWide} relative py-[72px] lg:py-[96px]`}>
-          <div className="lg:ml-auto lg:max-w-[880px] xl:max-w-[1040px]">
+          <div className="lg:ml-auto lg:max-w-[900px] xl:max-w-[1100px]">
             <Eyebrow tone="lime">FOOD CIRCULATION PRODUCE</Eyebrow>
             {/* 見出しの2行は指示書で固定。PCは幅に合わせて字を伸縮させ、折り返しが増えないようにする */}
             <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
@@ -352,7 +352,9 @@ export default function FoodLossPage() {
         <div className={pContainer}>
           <Eyebrow tone="lime">FEE</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
-            調査だけでも、事業化まででも依頼できます。
+            調査だけでも、
+            <br />
+            事業化まででも依頼できます。
           </h2>
           <p className={`${pNote} mt-6 max-w-[820px] text-[#AEBBAC]`}>
             NAKAMAの月額会員とは別の、個別支援サービスです。発生している量や状態、必要な調査や実証の範囲によって費用が変わるため、

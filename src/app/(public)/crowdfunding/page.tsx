@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PublicTopBar } from "../_components/PublicTopBar";
-import { pBtn, pContainer, pContainerNarrow, pEyebrow, pH1, pH2, pSection } from "../_components/publicUi";
+import { pBtn, pContainer, pEyebrow, pH1, pH2, pSection } from "../_components/publicUi";
 import { JsonLd, CROWDFUNDING_JSONLD } from "../_components/JsonLd";
 
 export const metadata = {
@@ -152,7 +152,7 @@ export default function CrowdfundingPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414d9] via-[#14141480] to-[#14141433] sm:bg-gradient-to-r sm:from-[#141414cc] sm:via-[#14141466] sm:to-transparent" />
         <div className={`${pContainer} relative`}>
-          <div className="max-w-[640px]">
+          <div>
             <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">CROWDFUNDING MARKETING</p>
             <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
               売る前に、
@@ -176,7 +176,9 @@ export default function CrowdfundingPage() {
         <div className={`${pContainer} text-center`}>
           <Eyebrow>WHY CROWDFUNDING?</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#182019]`}>
-            クラファンは、「売れるか」を確かめるマーケティングです。
+            クラファンは、「売れるか」を
+            <br />
+            確かめるマーケティングです。
           </h2>
           <p className="mx-auto mt-4 max-w-[780px] text-[15px] leading-8 text-[var(--ink-2)]">
             商品を発売前から市場へ問いかけ、需要や価格を検証する。同時に、最初の顧客とファンをつくる。実際の購入行動を、本格販売の確かな一歩につなげます。商品を小さく市場へ出し、需要・価格・顧客の反応を検証します。実際の購入データを、本格販売や商品開発に生かします。
@@ -373,10 +375,12 @@ export default function CrowdfundingPage() {
 
       {/* FAQ */}
       <section className="px-5 pb-16 sm:pb-[88px]">
-        <div className={pContainerNarrow}>
+        <div className={pContainer}>
           <Eyebrow>FAQ</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#182019]`}>
-            クラウドファンディング支援に関するよくある質問
+            クラウドファンディング支援に関する
+            <br />
+            よくある質問
           </h2>
           <div className="mt-6">
             {FAQS.map((f) => (
@@ -403,10 +407,12 @@ export default function CrowdfundingPage() {
 
       {/* 相談CTA */}
       <section className={`bg-[#49634F] ${pSection}`}>
-        <div className="mx-auto max-w-[760px]">
+        <div>
           <Eyebrow light>START A PROJECT</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
-            商品を売る前に、共創の価値と市場の答えを聞く。
+            商品を売る前に、
+            <br />
+            共創の価値と市場の答えを聞く。
           </h2>
           <p className="mt-3 text-[14px] leading-7 text-[#dce8e2]">
             商品企画の段階でも、共創相手を探す段階でもご相談いただけます。

@@ -18,20 +18,24 @@ export const pBgWhite = "bg-white";
 
 // ── レイアウト（設計書 §4 余白と文字）───────────────
 /** 最大1200px・左右余白はPCで画面幅の5%以上、モバイル22px以上 */
-export const pContainer = "mx-auto w-full max-w-[1200px] px-[22px] sm:px-8 lg:px-[5vw]";
+export const pContainer = "mx-auto w-full max-w-[1200px] px-[22px] sm:px-8 lg:px-10";
 /** 読み物のように1カラムで読ませる場所（文章・FAQ・チェックリスト） */
-export const pContainerNarrow = "mx-auto w-full max-w-[900px] px-[22px] sm:px-8 lg:px-[5vw]";
+export const pContainerNarrow = "mx-auto w-full max-w-[900px] px-[22px] sm:px-8 lg:px-10";
 /** ヒーローだけ広く使う場合（文字組みを保ったまま写真を見せる） */
 export const pContainerWide = "mx-auto w-full max-w-[1440px] px-[22px] sm:px-8 lg:px-[5vw]";
 /** セクション上下余白：モバイル64〜80px／PC96〜120px */
 export const pSection = "py-[64px] sm:py-[80px] lg:py-[112px]";
 
 // ── 文字（設計書 §4）───────────────────────────
-/** h1：PC64〜88px・モバイル42〜52px。幅に応じて伸縮させ、意図した改行位置を保つ */
+/**
+ * h1：幅に合わせて伸縮させ、**指定した改行位置（<br>）以外で折れないようにする**のが最優先。
+ * 上限74pxは「器の内寸1120px ÷ 想定14文字」から決めた値。上げると長い見出しが途中で折れる。
+ * ⚠️見出しの文字を増やしたり上限を上げたときは、必ず 640/768/1024/1440px で行数を確認すること。
+ */
 export const pH1 =
-  "text-[42px] font-bold leading-[1.15] tracking-[0.01em] sm:text-[52px] lg:text-[clamp(56px,4.4vw,84px)]";
-/** h2：PC44〜60px・モバイル32〜40px */
-export const pH2 = "text-[32px] font-bold leading-[1.3] sm:text-[40px] lg:text-[clamp(44px,3.4vw,60px)]";
+  "text-[42px] font-bold leading-[1.15] tracking-[0.01em] sm:text-[clamp(40px,5.2vw,74px)]";
+/** h2：同上。上限54pxは「1120px ÷ 想定17〜18文字」から。 */
+export const pH2 = "text-[32px] font-bold leading-[1.3] sm:text-[clamp(30px,3.6vw,54px)]";
 /** h3：カード・項目の見出し */
 export const pH3 = "text-[17px] font-bold leading-[1.6] sm:text-[18px]";
 /** 英字ラベル：10〜11px・太字・広い字間 */

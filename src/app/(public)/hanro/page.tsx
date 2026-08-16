@@ -272,7 +272,7 @@ export default function HanroPage() {
       {/* 4-2 ヒーロー */}
       <section className="bg-[#182019]">
         <div className={`${pContainerWide} py-[72px] lg:py-[104px]`}>
-          <div className="max-w-[1040px]">
+          <div>
             <Eyebrow tone="lime">SALES CHANNEL DEVELOPMENT</Eyebrow>
             <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
               まだ出会えていない相手へ、

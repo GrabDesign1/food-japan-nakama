@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PublicTopBar } from "../_components/PublicTopBar";
-import { pBtn, pContainer, pContainerNarrow, pEyebrow, pH1, pH2, pSection } from "../_components/publicUi";
+import { pBtn, pContainer, pEyebrow, pH1, pH2, pSection } from "../_components/publicUi";
 import { JsonLd, PRODUCE_JSONLD, faqJsonLd } from "../_components/JsonLd";
 
 export const metadata = {
@@ -214,7 +214,7 @@ export default function ProducePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414d9] via-[#14141480] to-[#14141433] sm:bg-gradient-to-r sm:from-[#141414cc] sm:via-[#14141466] sm:to-transparent" />
         <div className={`${pContainer} relative`}>
-          <div className="max-w-[640px]">
+          <div>
             <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">FOOD BUSINESS PRODUCE｜食の共創プロデュース</p>
             <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
               食の商品づくりを、
@@ -250,7 +250,7 @@ export default function ProducePage() {
 
       {/* こんなところで、止まっていませんか？ */}
       <section className={pSection}>
-        <div className={pContainerNarrow}>
+        <div className={pContainer}>
           <Eyebrow>ARE YOU STUCK?</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#182019]`}>
             こんな課題で、止まっていませんか？
@@ -301,7 +301,7 @@ export default function ProducePage() {
 
       {/* ご相談後に、まず整理すること */}
       <section className={pSection}>
-        <div className={pContainerNarrow}>
+        <div className={pContainer}>
           <Eyebrow>FIRST CONSULTATION</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#182019]`}>
             ご相談後に、まず整理すること
@@ -432,7 +432,7 @@ export default function ProducePage() {
 
       {/* よくある質問 */}
       <section className={`bg-[#F4F0E6] ${pSection}`}>
-        <div className={pContainerNarrow}>
+        <div className={pContainer}>
           <Eyebrow>FAQ</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#182019]`}>
             よくある質問
@@ -450,7 +450,7 @@ export default function ProducePage() {
 
       {/* 最終CTA */}
       <section className={`bg-[#49634F] ${pSection}`}>
-        <div className="mx-auto max-w-[760px]">
+        <div>
           <Eyebrow light>START A PROJECT</Eyebrow>
           <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             地域の可能性を、
