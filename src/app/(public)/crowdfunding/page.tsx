@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PublicTopBar } from "../_components/PublicTopBar";
+import { pBtn, pContainer, pContainerNarrow, pEyebrow, pH1, pH2, pSection } from "../_components/publicUi";
 import { JsonLd, CROWDFUNDING_JSONLD } from "../_components/JsonLd";
-import { btn } from "@/lib/ui";
 
 export const metadata = {
   title: "クラウドファンディング支援｜FOOD JAPAN NAKAMA",
@@ -128,7 +128,7 @@ const CTA_HREF = "/consultation?type=crowdfunding";
 
 function Eyebrow({ children, light }: { children: React.ReactNode; light?: boolean }) {
   return (
-    <p className={`text-[11px] font-medium tracking-[0.2em] ${light ? "text-[#bcd8ca]" : "text-[var(--green-d)]"}`}>
+    <p className={`${pEyebrow} ${light ? "text-[#F4F0E6]" : "text-[#49634F]"}`}>
       {children}
     </p>
   );
@@ -151,10 +151,10 @@ export default function CrowdfundingPage() {
           className="object-cover object-[35%_center] sm:object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414d9] via-[#14141480] to-[#14141433] sm:bg-gradient-to-r sm:from-[#141414cc] sm:via-[#14141466] sm:to-transparent" />
-        <div className="relative mx-auto w-full max-w-[1080px]">
+        <div className={`${pContainer} relative`}>
           <div className="max-w-[640px]">
             <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">CROWDFUNDING MARKETING</p>
-            <h1 className="mt-4 font-serif text-[32px] leading-[1.4] tracking-[0.02em] text-white sm:text-[44px]">
+            <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
               売る前に、
               <br />
               <em className="not-italic text-[var(--orange)]">売れる理由</em>をつくる。
@@ -163,7 +163,7 @@ export default function CrowdfundingPage() {
               クラウドファンディングを、資金集めだけで終わらせない。商品を世に出す前に、需要・価格・顧客を確かめ、最初のファンと販売実績をつくるマーケティング支援です。
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-4">
-              <Link href={CTA_HREF} className={btn("primary", "lg")}>クラファン活用を相談する</Link>
+              <Link href={CTA_HREF} className={pBtn("ink")}>クラファン活用を相談する</Link>
               <span className="text-[12px] text-white/70">初回相談無料</span>
             </div>
             <p className="mt-4 text-[10px] text-white/50">※画像内の金額・数値はイメージです。</p>
@@ -172,10 +172,10 @@ export default function CrowdfundingPage() {
       </section>
 
       {/* クラファンマーケティングの4つの価値 */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px] text-center">
+      <section className={pSection}>
+        <div className={`${pContainer} text-center`}>
           <Eyebrow>WHY CROWDFUNDING?</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             クラファンは、「売れるか」を確かめるマーケティングです。
           </h2>
           <p className="mx-auto mt-4 max-w-[780px] text-[15px] leading-8 text-[var(--ink-2)]">
@@ -194,10 +194,10 @@ export default function CrowdfundingPage() {
       </section>
 
       {/* 3フェーズ */}
-      <section className="bg-[var(--green-d)] px-5 py-16 text-white sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={`bg-[#49634F] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow light>THREE PHASES</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             公開前から、終了後の販売まで。
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-3">
@@ -242,13 +242,13 @@ export default function CrowdfundingPage() {
               宮崎・青島のサーフカルチャーから生まれたクラフトビールを、Makuakeでの応援購入企画として展開。目標を上回る支援を集め、地域発ブランドの最初のファンづくりと販売実績につながりました。
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2 text-[12px]">
-              <span className="border border-[var(--line)] bg-white px-3 py-2">商品・テーマ</span>
+              <span className="border border-[#CFD1C8] bg-white px-3 py-2">商品・テーマ</span>
               <i className="not-italic text-[var(--orange)]">×</i>
-              <span className="border border-[var(--line)] bg-white px-3 py-2">共創企業</span>
+              <span className="border border-[#CFD1C8] bg-white px-3 py-2">共創企業</span>
               <i className="not-italic text-[var(--orange)]">×</i>
-              <span className="border border-[var(--line)] bg-white px-3 py-2">応援購入</span>
+              <span className="border border-[#CFD1C8] bg-white px-3 py-2">応援購入</span>
               <i className="not-italic text-[var(--orange)]">→</i>
-              <span className="border border-[var(--line)] bg-white px-3 py-2">新しい市場</span>
+              <span className="border border-[#CFD1C8] bg-white px-3 py-2">新しい市場</span>
             </div>
             <p className="mt-4 text-[11px] leading-6 text-[var(--muted)]">
               ※数値はMakuake掲載プロジェクト（終了済み）の公開情報です。
@@ -258,15 +258,15 @@ export default function CrowdfundingPage() {
       </section>
 
       {/* 支援範囲 */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={pSection}>
+        <div className={pContainer}>
           <Eyebrow>OUR SUPPORT</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             企画から販売後まで、一緒に動きます。
           </h2>
           <div className="mt-9 grid grid-cols-2 gap-3.5 lg:grid-cols-5">
             {SUPPORTS.map((s) => (
-              <div key={s.t} className="border-t-[3px] border-[var(--green)] bg-[#f6f3ec] px-4 py-5">
+              <div key={s.t} className="border-t-[3px] border-[var(--green)] bg-[#F4F0E6] px-4 py-5">
                 <b className="text-[14px] text-[var(--ink)]">{s.t}</b>
                 <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">{s.d}</p>
               </div>
@@ -276,11 +276,11 @@ export default function CrowdfundingPage() {
       </section>
 
       {/* 料金 */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
+      <section className={`bg-[#F4F0E6] ${pSection}`}>
         <div className="mx-auto grid max-w-[1080px] items-start gap-8 sm:grid-cols-[.9fr_1.1fr] sm:gap-11">
           <div>
             <Eyebrow>FEE</Eyebrow>
-            <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+            <h2 className={`${pH2} mt-5 text-[#182019]`}>
               費用は、応援購入総額の35％。
             </h2>
             <p className="mt-4 text-[15px] leading-8 text-[var(--ink-2)]">
@@ -292,7 +292,7 @@ export default function CrowdfundingPage() {
               当社手数料に含む範囲は、プロジェクトごとの実施内容を確認したうえで契約時に確定します。
               上記の他、着手金10万円がかかります。
             </p>
-          <div className="mt-5 border border-[var(--line)] bg-white p-5">
+          <div className="mt-5 border border-[#CFD1C8] bg-white p-5">
             <p className="text-[13px] font-bold text-[var(--ink)]">契約形態について（準委任契約）</p>
             <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
               本サービスは、法律上「準委任契約」にあたります。安心してご依頼いただくために、契約の性質をあらかじめご案内いたします。
@@ -305,7 +305,7 @@ export default function CrowdfundingPage() {
           </div>
 
           </div>
-          <div className="border border-[var(--line)] bg-white p-6 sm:p-8">
+          <div className="border border-[#CFD1C8] bg-white p-6 sm:p-8">
             <p className="text-[15px] font-bold text-[var(--ink)]">出品時のお見積り</p>
             <div className="flex items-end justify-between border-b border-[var(--line)] py-4">
               <span className="text-[14px] text-[var(--ink-2)]">Makuake手数料</span>
@@ -341,10 +341,10 @@ export default function CrowdfundingPage() {
       </section>
 
       {/* 役割分担 */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={pSection}>
+        <div className={pContainer}>
           <Eyebrow>RESPONSIBILITY</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             クラファンの役割分担
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -373,9 +373,9 @@ export default function CrowdfundingPage() {
 
       {/* FAQ */}
       <section className="px-5 pb-16 sm:pb-[88px]">
-        <div className="mx-auto max-w-[820px]">
+        <div className={pContainerNarrow}>
           <Eyebrow>FAQ</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             クラウドファンディング支援に関するよくある質問
           </h2>
           <div className="mt-6">
@@ -402,10 +402,10 @@ export default function CrowdfundingPage() {
       </section>
 
       {/* 相談CTA */}
-      <section className="bg-[var(--green-d)] px-5 py-16 text-center text-white sm:py-[88px]">
+      <section className={`bg-[#49634F] ${pSection}`}>
         <div className="mx-auto max-w-[760px]">
           <Eyebrow light>START A PROJECT</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             商品を売る前に、共創の価値と市場の答えを聞く。
           </h2>
           <p className="mt-3 text-[14px] leading-7 text-[#dce8e2]">

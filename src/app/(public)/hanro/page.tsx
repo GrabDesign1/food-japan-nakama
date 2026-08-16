@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { InfoPage } from "../_components/InfoPage";
 import { btn } from "@/lib/ui";
+import { pBtn } from "../_components/publicUi";
 import { SERVICE_MENU, consultationHref } from "@/lib/services";
 
 export const metadata = {
@@ -176,7 +177,7 @@ export default function SalesChannelPage() {
           商品や販売条件が整った後は、「販路開拓トライアル」へ進むことができます。
         </p>
         <div className="mt-4">
-          <Link href={consultationHref("strategy_session")} className={btn("primary", "lg")}>
+          <Link href={consultationHref("strategy_session")} className={pBtn("ink")}>
             商品と販路について相談する
           </Link>
         </div>
@@ -228,7 +229,7 @@ export default function SalesChannelPage() {
         </Block>
 
         <div className="mt-4">
-          <Link href={consultationHref("channel_trial")} className={btn("primary", "lg")}>
+          <Link href={consultationHref("channel_trial")} className={pBtn("ink")}>
             自分の商品が対象になるか相談する
           </Link>
         </div>

@@ -8,6 +8,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { PublicTopBar } from "../_components/PublicTopBar";
 import { JsonLd, FOODLOSS_JSONLD, faqJsonLd } from "../_components/JsonLd";
+import {
+  pBody,
+  pBtn,
+  pContainer,
+  pContainerWide,
+  pEyebrow,
+  pH1,
+  pH2,
+  pH3,
+  pNote,
+  pSection,
+} from "../_components/publicUi";
 
 export const metadata = {
   title: "食品ロス・副産物を次の価値へ｜FOOD JAPAN NAKAMA",
@@ -109,25 +121,15 @@ const ASK_ITEMS = [
   "想定予算",
 ];
 
-const container = "mx-auto w-full max-w-[1200px] px-[22px] sm:px-8 lg:px-12";
-const sectionPad = "py-[64px] sm:py-[88px] lg:py-[112px]";
-
 function Eyebrow({ children, tone = "dark" }: { children: React.ReactNode; tone?: "dark" | "light" | "lime" }) {
   const color = tone === "light" ? "text-[#F4F0E6]" : tone === "lime" ? "text-[#DCE969]" : "text-[#49634F]";
-  return <p className={`text-[10px] font-bold tracking-[0.24em] sm:text-[11px] ${color}`}>{children}</p>;
+  return <p className={`${pEyebrow} ${color}`}>{children}</p>;
 }
 
 /** 主CTA（四角に近い塗りボタン。黄緑＝濃色の上、深緑＝明るい地の上） */
-function Cta({ tone = "lime", children }: { tone?: "lime" | "green"; children: React.ReactNode }) {
-  const cls =
-    tone === "lime"
-      ? "bg-[#DCE969] text-[#182019] hover:bg-[#E7F08D]"
-      : "bg-[#182019] text-[#F4F0E6] hover:bg-[#49634F]";
+function Cta({ tone = "lime", children }: { tone?: "lime" | "ink"; children: React.ReactNode }) {
   return (
-    <Link
-      href={CTA_HREF}
-      className={`inline-flex items-center gap-2 rounded-[2px] px-7 py-4 text-[15px] font-bold sm:px-9 sm:text-[16px] ${cls}`}
-    >
+    <Link href={CTA_HREF} className={pBtn(tone === "lime" ? "lime" : "ink")}>
       {children}
       <span aria-hidden>→</span>
     </Link>
@@ -143,7 +145,7 @@ export default function FoodLossPage() {
 
       {/* ページ内ナビ（指示書 4） */}
       <div className="sticky top-0 z-30 border-b border-[#2b352c] bg-[#182019]">
-        <div className={`${container} flex items-center justify-between gap-4 py-3`}>
+        <div className={`${pContainer} flex items-center justify-between gap-4 py-3`}>
           <span className="text-[12px] font-bold tracking-[0.08em] text-[#F4F0E6] sm:text-[13px]">
             食品循環プロデュース
           </span>
@@ -183,16 +185,16 @@ export default function FoodLossPage() {
           className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,32,25,0.55)_0%,rgba(24,32,25,0.92)_72%)] lg:bg-[linear-gradient(90deg,rgba(24,32,25,0.25)_0%,rgba(24,32,25,0.80)_38%,rgba(24,32,25,0.95)_62%)]"
         />
         {/* ヒーローだけは横幅を広く取る（右の文字組みを保ったまま、左にトマトを残すため） */}
-        <div className="relative mx-auto w-full max-w-[1440px] px-[22px] py-[72px] sm:px-8 lg:px-[5vw] lg:py-[96px]">
+        <div className={`${pContainerWide} relative py-[72px] lg:py-[96px]`}>
           <div className="lg:ml-auto lg:max-w-[880px] xl:max-w-[1040px]">
             <Eyebrow tone="lime">FOOD CIRCULATION PRODUCE</Eyebrow>
             {/* 見出しの2行は指示書で固定。PCは幅に合わせて字を伸縮させ、折り返しが増えないようにする */}
-            <h1 className="mt-5 text-[44px] font-bold leading-[1.15] tracking-[0.01em] text-[#F4F0E6] sm:text-[52px] lg:text-[clamp(52px,4.3vw,84px)]">
+            <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
               捨てるしかなかったものを、
               <br />
               <span className="text-[#DCE969]">次の価値に変える。</span>
             </h1>
-            <p className="mt-7 max-w-[620px] text-[15px] leading-[1.9] text-[#DCE3D8] sm:text-[16px] lg:text-[17px]">
+            <p className={`${pBody} mt-7 max-w-[620px] text-[#DCE3D8]`}>
               規格外の農産物、売れ残った食品、製造時に出る端材、ビール粕やコーヒーかす。活用方法も相手も分からない食品や副産物を、商品、原料、飼料、肥料などの新しい用途につなげます。
             </p>
             <div className="mt-9">
@@ -206,19 +208,19 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-2 価値の説明 */}
-      <section className={`bg-white ${sectionPad}`}>
-        <div className={container}>
+      <section className={`bg-white ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>OUR APPROACH</Eyebrow>
-          <h2 className="mt-5 max-w-[900px] text-[34px] font-bold leading-[1.3] text-[#182019] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             「もったいない」で終わらせず、
             <br />
             続く仕組みをつくる。
           </h2>
           <div className="mt-9 max-w-[820px]">
-            <p className="text-[15px] leading-[2] text-[#3B463C] sm:text-[16px] lg:text-[17px]">
+            <p className={`${pBody} text-[#3B463C]`}>
               FOOD JAPAN NAKAMAは、排出する事業者と、技術、製造、販売、物流を担う相手を集め、調査、用途開発、実証、事業化まで実務に入って進めます。
             </p>
-            <p className="mt-5 text-[15px] leading-[2] text-[#3B463C] sm:text-[16px] lg:text-[17px]">
+            <p className={`${pBody} mt-5 text-[#3B463C]`}>
               一社だけでは動かせない課題に、必要なNAKAMAを集めます。
             </p>
           </div>
@@ -226,10 +228,10 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-3 課題カード（生成り・上罫線＋番号＋テキスト） */}
-      <section className={`bg-[#F4F0E6] ${sectionPad}`}>
-        <div className={container}>
+      <section className={`bg-[#F4F0E6] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>YOUR PROBLEM</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#182019] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             こんな食品や副産物を、
             <br />
             捨てていませんか。
@@ -244,17 +246,17 @@ export default function FoodLossPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-10 max-w-[820px] text-[13px] leading-[2] text-[#5C6459] sm:text-[14px]">
+          <p className={`${pNote} mt-10 max-w-[820px] text-[#5C6459]`}>
             すべてが商品化できるわけではありません。まず「何が、いつ、どれだけ、どの状態で発生するのか」を確認し、実現性と採算性のある活用方法を探します。
           </p>
         </div>
       </section>
 
       {/* 5-4 解決領域（濃色・横罫線の3列） */}
-      <section className={`bg-[#182019] ${sectionPad}`}>
-        <div className={container}>
+      <section className={`bg-[#182019] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow tone="lime">WHAT WE SOLVE</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#F4F0E6] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             「もったいない」で終わらせず、
             <br />
             続く仕組みをつくります。
@@ -266,7 +268,7 @@ export default function FoodLossPage() {
                 className="grid gap-2 border-b border-[#3A453B] py-7 sm:grid-cols-[64px_minmax(0,1fr)] sm:gap-6 lg:grid-cols-[80px_320px_minmax(0,1fr)] lg:items-baseline"
               >
                 <span className="text-[13px] font-bold tracking-[0.14em] text-[#DCE969]">{s.no}</span>
-                <h3 className="text-[18px] font-bold leading-[1.6] text-[#F4F0E6] sm:text-[20px]">{s.t}</h3>
+                <h3 className={`${pH3} text-[#F4F0E6]`}>{s.t}</h3>
                 <p className="text-[14px] leading-[2] text-[#AEBBAC] sm:text-[15px] lg:col-start-3 lg:row-start-1">
                   {s.d}
                 </p>
@@ -277,16 +279,16 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-5 NAKAMAの役割 */}
-      <section className={`bg-white ${sectionPad}`}>
-        <div className={container}>
+      <section className={`bg-white ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>FOOD JAPAN NAKAMA MODEL</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#182019] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             食品循環の共創チームをつくる。
           </h2>
           <div className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-3">
             {TEAM.map((t) => (
               <div key={t.t} className="border-t-2 border-[#182019] pt-5">
-                <h3 className="text-[17px] font-bold text-[#182019] sm:text-[18px]">{t.t}</h3>
+                <h3 className={`${pH3} text-[#182019]`}>{t.t}</h3>
                 <p className="mt-3 text-[14px] leading-[2] text-[#5C6459] sm:text-[15px]">{t.d}</p>
               </div>
             ))}
@@ -303,41 +305,41 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-6 プロジェクト例（生成り・3カラム） */}
-      <section id="ideas" className={`scroll-mt-16 bg-[#F4F0E6] ${sectionPad}`}>
-        <div className={container}>
+      <section id="ideas" className={`scroll-mt-16 bg-[#F4F0E6] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>PROJECT IDEAS</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#182019] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             例えば、こんな循環をつくります。
           </h2>
           <div className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
             {IDEAS.map((c) => (
               <div key={c.t} className="flex flex-col border-t border-[#C9C3AF] pt-5">
                 <span className="text-[11px] font-bold tracking-[0.14em] text-[#49634F]">{c.tag}</span>
-                <h3 className="mt-3 min-h-[3.4em] text-[17px] font-bold leading-[1.7] text-[#182019] sm:text-[18px]">
+                <h3 className={`${pH3} mt-3 min-h-[3.4em] text-[#182019]`}>
                   {c.t}
                 </h3>
                 <p className="mt-2 text-[14px] leading-[2] text-[#5C6459]">{c.d}</p>
               </div>
             ))}
           </div>
-          <p className="mt-10 max-w-[900px] text-[13px] leading-[2] text-[#5C6459] sm:text-[14px]">
+          <p className={`${pNote} mt-10 max-w-[900px] text-[#5C6459]`}>
             これらはプロジェクト例です。実施可能性は、原料の状態、成分、発生量、地域、費用、安全性、法規制等を調査したうえで判断します。
           </p>
         </div>
       </section>
 
       {/* 5-7 進め方（PC 横5カラム） */}
-      <section id="flow" className={`scroll-mt-16 bg-white ${sectionPad}`}>
-        <div className={container}>
+      <section id="flow" className={`scroll-mt-16 bg-white ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>PROJECT FLOW</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#182019] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             相談から、循環が動き出すまで。
           </h2>
           <div className="mt-12 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
             {FLOW.map((f) => (
               <div key={f.no} className="border-t-2 border-[#182019] pt-5">
                 <span className="text-[13px] font-bold tracking-[0.14em] text-[#49634F]">{f.no}</span>
-                <h3 className="mt-3 text-[16px] font-bold leading-[1.6] text-[#182019] sm:text-[17px]">{f.t}</h3>
+                <h3 className={`${pH3} mt-3 text-[#182019]`}>{f.t}</h3>
                 <p className="mt-3 text-[13px] leading-[2] text-[#5C6459] sm:text-[14px]">{f.d}</p>
               </div>
             ))}
@@ -346,20 +348,20 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-8 依頼できる範囲と費用（濃色・4カラム。金額は出さない＝ユーザー指示 2026-08-16） */}
-      <section id="price" className={`scroll-mt-16 bg-[#182019] ${sectionPad}`}>
-        <div className={container}>
+      <section id="price" className={`scroll-mt-16 bg-[#182019] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow tone="lime">FEE</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#F4F0E6] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             調査だけでも、事業化まででも依頼できます。
           </h2>
-          <p className="mt-6 max-w-[820px] text-[14px] leading-[2] text-[#AEBBAC] sm:text-[15px]">
+          <p className={`${pNote} mt-6 max-w-[820px] text-[#AEBBAC]`}>
             NAKAMAの月額会員とは別の、個別支援サービスです。発生している量や状態、必要な調査や実証の範囲によって費用が変わるため、
             まずご相談のうえで内容を定め、個別にお見積り・ご契約します（このページから自動で決済されることはありません）。
           </p>
           <div className="mt-12 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
             {MENU.map((p) => (
               <div key={p.plan} className="border-t border-[#3A453B] pt-5">
-                <h3 className="text-[17px] font-bold leading-[1.6] text-[#F4F0E6] sm:text-[18px]">{p.plan}</h3>
+                <h3 className={`${pH3} text-[#F4F0E6]`}>{p.plan}</h3>
                 <p className="mt-4 text-[15px] font-bold text-[#DCE969]">個別見積</p>
                 <p className="mt-3 text-[13px] leading-[1.9] text-[#AEBBAC]">{p.note}</p>
               </div>
@@ -372,10 +374,10 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-9 FAQ */}
-      <section className={`bg-white ${sectionPad}`}>
-        <div className={container}>
+      <section className={`bg-white ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>FAQ</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#182019] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             よくある質問
           </h2>
           <div className="mt-12 max-w-[900px] border-t border-[#D8D3C4]">
@@ -392,15 +394,15 @@ export default function FoodLossPage() {
       </section>
 
       {/* 5-10 最終CTA（グリーン） */}
-      <section className={`bg-[#49634F] ${sectionPad}`}>
-        <div className={container}>
+      <section className={`bg-[#49634F] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow tone="light">START A PROJECT</Eyebrow>
-          <h2 className="mt-5 text-[34px] font-bold leading-[1.3] text-[#F4F0E6] sm:text-[44px] lg:text-[52px]">
+          <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             捨てる費用を、
             <br />
             次の事業への入口に。
           </h2>
-          <p className="mt-7 max-w-[720px] text-[15px] leading-[2] text-[#E4EADF] sm:text-[16px] lg:text-[17px]">
+          <p className={`${pBody} mt-7 max-w-[720px] text-[#E4EADF]`}>
             活用したい気持ちはあるが、自社だけでは用途も相手も見つからない。
             <br className="hidden sm:block" />
             その状況を、まずお聞かせください。

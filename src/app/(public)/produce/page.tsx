@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PublicTopBar } from "../_components/PublicTopBar";
+import { pBtn, pContainer, pContainerNarrow, pEyebrow, pH1, pH2, pSection } from "../_components/publicUi";
 import { JsonLd, PRODUCE_JSONLD, faqJsonLd } from "../_components/JsonLd";
-import { btn } from "@/lib/ui";
 
 export const metadata = {
   title: "食の商品開発・事業化を伴走支援｜FOOD JAPAN NAKAMA",
@@ -189,7 +189,7 @@ const QA: [string, string][] = [
 
 function Eyebrow({ children, light }: { children: React.ReactNode; light?: boolean }) {
   return (
-    <p className={`text-[11px] font-medium tracking-[0.2em] ${light ? "text-[#bcd8ca]" : "text-[var(--green-d)]"}`}>
+    <p className={`${pEyebrow} ${light ? "text-[#F4F0E6]" : "text-[#49634F]"}`}>
       {children}
     </p>
   );
@@ -213,10 +213,10 @@ export default function ProducePage() {
           className="object-cover object-[30%_center] sm:object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#141414d9] via-[#14141480] to-[#14141433] sm:bg-gradient-to-r sm:from-[#141414cc] sm:via-[#14141466] sm:to-transparent" />
-        <div className="relative mx-auto w-full max-w-[1080px]">
+        <div className={`${pContainer} relative`}>
           <div className="max-w-[640px]">
             <p className="text-[11px] font-medium tracking-[0.2em] text-white/70">FOOD BUSINESS PRODUCE｜食の共創プロデュース</p>
-            <h1 className="mt-4 font-serif text-[30px] leading-[1.45] tracking-[0.02em] text-white sm:text-[40px]">
+            <h1 className={`${pH1} mt-5 text-[#F4F0E6]`}>
               食の商品づくりを、
               <br />
               企画から販売まで支援します。
@@ -238,7 +238,7 @@ export default function ProducePage() {
               アイデアで終わらせず、実際に売れる商品と、継続できる事業をつくります。
             </p>
             <div className="mt-7">
-              <Link href={CTA_HREF} className={btn("primary", "lg")}>今の課題を相談する</Link>
+              <Link href={CTA_HREF} className={pBtn("ink")}>今の課題を相談する</Link>
             </div>
             <p className="mt-4 text-[12px] leading-6 text-white/80">
               まだ計画が固まっていなくても構いません。初回相談で、現状と次に進めるべきことを整理します。
@@ -249,15 +249,15 @@ export default function ProducePage() {
       </section>
 
       {/* こんなところで、止まっていませんか？ */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[820px]">
+      <section className={pSection}>
+        <div className={pContainerNarrow}>
           <Eyebrow>ARE YOU STUCK?</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             こんな課題で、止まっていませんか？
           </h2>
           <ul className="mt-7 flex flex-col gap-2.5">
             {STUCK_POINTS.map((s) => (
-              <li key={s} className="flex items-start gap-2.5 border border-[var(--line)] bg-white px-4 py-3 text-[14px] font-bold leading-7 text-[var(--ink)]">
+              <li key={s} className="flex items-start gap-2.5 border border-[#CFD1C8] bg-white px-4 py-3 text-[14px] font-bold leading-7 text-[var(--ink)]">
                 <span aria-hidden className="mt-0.5 font-bold text-[var(--green)]">✓</span>
                 {s}
               </li>
@@ -267,16 +267,16 @@ export default function ProducePage() {
             一つでも当てはまるなら、ご相談ください。すべてを決めてから依頼する必要はありません。今どこで止まっているのかを整理し、必要な支援だけを組み立てます。
           </p>
           <div className="mt-6">
-            <Link href={CTA_HREF} className={btn("primary")}>この状態から相談する</Link>
+            <Link href={CTA_HREF} className={pBtn("ink")}>この状態から相談する</Link>
           </div>
         </div>
       </section>
 
       {/* 私たちは、助言だけで終わりません。 */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={`bg-[#F4F0E6] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>HANDS-ON SUPPORT</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             私たちは、助言だけで終わりません。
           </h2>
           <p className="mt-4 max-w-[780px] text-[14px] leading-8 text-[var(--ink-2)]">
@@ -300,10 +300,10 @@ export default function ProducePage() {
       </section>
 
       {/* ご相談後に、まず整理すること */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[820px]">
+      <section className={pSection}>
+        <div className={pContainerNarrow}>
           <Eyebrow>FIRST CONSULTATION</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             ご相談後に、まず整理すること
           </h2>
           <p className="mt-4 text-[14px] leading-8 text-[var(--ink-2)]">
@@ -311,7 +311,7 @@ export default function ProducePage() {
           </p>
           <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
             {FIRST_STEPS.map((s) => (
-              <li key={s} className="flex items-start gap-2.5 border border-[var(--line)] bg-white px-4 py-3 text-[13px] leading-6 text-[var(--ink-2)]">
+              <li key={s} className="flex items-start gap-2.5 border border-[#CFD1C8] bg-white px-4 py-3 text-[13px] leading-6 text-[var(--ink-2)]">
                 <span aria-hidden className="mt-0.5 font-bold text-[var(--green)]">・</span>
                 {s}
               </li>
@@ -324,15 +324,15 @@ export default function ProducePage() {
       </section>
 
       {/* 必要なところから支援します */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={`bg-[#F4F0E6] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>SERVICES</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             必要なところから支援します
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {SUPPORTS.map((s) => (
-              <div key={s.no} className="border border-[var(--line)] bg-white p-6">
+              <div key={s.no} className="border border-[#CFD1C8] bg-white p-6">
                 <span className="font-serif text-[12px] text-[var(--orange)]">{s.no}</span>
                 <h3 className="mt-1.5 text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
                 <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{s.d}</p>
@@ -346,15 +346,15 @@ export default function ProducePage() {
       </section>
 
       {/* たとえば、こんなご相談です */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={pSection}>
+        <div className={pContainer}>
           <Eyebrow>EXAMPLES</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             たとえば、こんなご相談です
           </h2>
           <div className="mt-9 grid gap-4 sm:grid-cols-2">
             {CASES.map((c) => (
-              <div key={c.t} className="border border-[var(--line)] bg-white p-6">
+              <div key={c.t} className="border border-[#CFD1C8] bg-white p-6">
                 <h3 className="text-[15px] font-bold text-[var(--green-d)]">{c.t}</h3>
                 <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">{c.d}</p>
               </div>
@@ -364,10 +364,10 @@ export default function ProducePage() {
       </section>
 
       {/* FOOD JAPAN NAKAMAができる理由 */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={`bg-[#F4F0E6] ${pSection}`}>
+        <div className={pContainer}>
           <Eyebrow>WHY US</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             FOOD JAPAN NAKAMAができる理由
           </h2>
           <div className="mt-9 grid gap-x-10 gap-y-7 sm:grid-cols-2">
@@ -382,15 +382,15 @@ export default function ProducePage() {
       </section>
 
       {/* 料金 */}
-      <section className="px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[1080px]">
+      <section className={pSection}>
+        <div className={pContainer}>
           <Eyebrow>FEE</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             料金
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PRICING.map((p) => (
-              <div key={p.plan} className="flex flex-col border border-[var(--line)] bg-white p-6">
+              <div key={p.plan} className="flex flex-col border border-[#CFD1C8] bg-white p-6">
                 <p className="text-[12px] font-semibold text-[var(--green-d)]">{p.want}</p>
                 <h3 className="mt-2 text-[15px] font-bold text-[var(--ink)]">{p.plan}</h3>
                 <p className="mt-2 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">{p.d}</p>
@@ -412,7 +412,7 @@ export default function ProducePage() {
             <br />
             ※売上、利益、販売額、契約成立、資金調達などを保証するものではありません。
           </p>
-          <div className="mt-6 border border-[var(--line)] bg-white p-5">
+          <div className="mt-6 border border-[#CFD1C8] bg-white p-5">
             <p className="text-[13px] font-bold text-[var(--ink)]">契約形態について（準委任契約）</p>
             <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
               本サービスは、法律上「準委任契約」にあたります。安心してご依頼いただくために、契約の性質をあらかじめご案内いたします。
@@ -425,16 +425,16 @@ export default function ProducePage() {
           </div>
 
           <div className="mt-7">
-            <Link href={CTA_HREF} className={btn("primary", "lg")}>費用も含めて相談する</Link>
+            <Link href={CTA_HREF} className={pBtn("ink")}>費用も含めて相談する</Link>
           </div>
         </div>
       </section>
 
       {/* よくある質問 */}
-      <section className="bg-[#f6f3ec] px-5 py-16 sm:py-[88px]">
-        <div className="mx-auto max-w-[820px]">
+      <section className={`bg-[#F4F0E6] ${pSection}`}>
+        <div className={pContainerNarrow}>
           <Eyebrow>FAQ</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.5] text-[var(--ink)] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#182019]`}>
             よくある質問
           </h2>
           <div className="mt-6">
@@ -449,10 +449,10 @@ export default function ProducePage() {
       </section>
 
       {/* 最終CTA */}
-      <section className="bg-[var(--green-d)] px-5 py-16 text-center text-white sm:py-[88px]">
+      <section className={`bg-[#49634F] ${pSection}`}>
         <div className="mx-auto max-w-[760px]">
           <Eyebrow light>START A PROJECT</Eyebrow>
-          <h2 className="mt-3 font-serif text-[24px] leading-[1.55] sm:text-[30px]">
+          <h2 className={`${pH2} mt-5 text-[#F4F0E6]`}>
             地域の可能性を、
             <br />
             動くプロジェクトにしませんか。
