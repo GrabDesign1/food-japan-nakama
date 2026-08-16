@@ -100,6 +100,33 @@ export const FOODLOSS_JSONLD = {
   url: `${APP_URL}/food-loss`,
 };
 
+export const HANRO_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": `${APP_URL}/hanro#service`,
+  name: "販路開拓支援",
+  serviceType: "食品の販路開拓支援（商品・販売条件の整理、候補企業の調査・打診、商談準備）",
+  description:
+    "食品メーカー、生産者、地域事業者の販路開拓を支援。商品・販売条件の整理から、候補企業の調査・打診、商談準備までを個別に伴走する準委任型のサービス。売上・商談成立は保証しない。",
+  provider: { "@id": `${APP_URL}/#org` },
+  areaServed: "JP",
+  url: `${APP_URL}/hanro`,
+};
+
+/** パンくず（表示しているリンクと同じ内容だけを入れる） */
+export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: `${APP_URL}${it.path}`,
+    })),
+  };
+}
+
 /** FAQページ用: Q&A配列から FAQPage を生成（回答は文字列のみ対象） */
 export function faqJsonLd(qa: [string, React.ReactNode][]) {
   return {
