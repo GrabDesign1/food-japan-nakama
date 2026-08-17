@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitSponsorApplication, type SponsorState } from "./actions";
 import { btn, input } from "@/lib/ui";
 import {
@@ -31,6 +31,16 @@ export function SponsorForm() {
   const course = findCourse(courseCode) ?? COURSES[0];
   const plans = plansFor(course, isLocal);
 
+  // ⚠️ 読み込み直後は必ず未選択から始める。
+  //    ブラウザ（Chrome等）は再読み込み・戻る操作でチェック状態を復元することがあり、
+  //    autoComplete="off" だけでは防ぎきれない。復元されると**表示は特別割なのに
+  //    Reactのstateは未選択**という食い違いが起き、県外の企業に特別割が先に出てしまう。
+  //    ここはDOMを書き戻すだけで setState はしないので、react-hooks のルールにも触れない。
+  const localRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (localRef.current) localRef.current.checked = false;
+  }, []);
+
   if (state.ok) {
     return (
       <div className="rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] p-8">
@@ -55,6 +65,7 @@ export function SponsorForm() {
           {/* ⚠️ autoComplete="off" は必須。無いとブラウザが再読み込み時にチェック状態を
               復元し、React の state と表示がずれる（実際に踏んだ）。 */}
           <input
+            ref={localRef}
             type="checkbox"
             name="isLocalCorp"
             autoComplete="off"

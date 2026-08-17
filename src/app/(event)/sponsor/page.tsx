@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SUMMIT_TITLE, VENUES, HOST, COMMON_BENEFITS } from "@/lib/sponsor";
+import { SUMMIT_TITLE, VENUES, HOST, COMMON_BENEFITS, PLAN_SUMMARY, PLAN_HIGHLIGHTS } from "@/lib/sponsor";
 import { btn } from "@/lib/ui";
 
 // Food Japan Summit 協賛の案内ページ。ここから2つに分岐させる。
@@ -66,6 +66,80 @@ export default function SponsorLandingPage() {
           <b className="text-[var(--ink)]">協賛プランが決まっていない場合も、事務局が目的に合わせてご相談を承ります。</b>
         </p>
       </div>
+
+      {/* 「露出だけではない」＝申込の後押し。共créの説明の直後、ボタンの前に置く（ユーザー指示 2026-08-17） */}
+      <section className="mt-9 rounded-[12px] border border-[var(--line)] bg-[var(--cream,#FAFAF7)] p-6">
+        <h2 className="text-[16px] font-bold leading-8 text-[var(--ink)]">
+          協賛で得られるのは、露出だけではありません。
+        </h2>
+        <div className="mt-2.5 flex flex-col gap-3 text-[14px] leading-8 text-[var(--ink-2)]">
+          <p>
+            貴社の事業テーマに応じて、生産者、食品メーカー、小売・流通、飲食、行政などとの接点を設計します。
+          </p>
+          <p>
+            商品開発、販路開拓、地域連携、食品ロス、人材、物流など、解決したいテーマが明確でなくても構いません。
+            まずは「何を実現したいか」をお聞かせください。
+          </p>
+          <p>
+            <b className="text-[var(--ink)]">協賛プランは15万円から。</b>
+            宮崎開催、名古屋開催、両開催からお選びいただけます。プランや金額が未確定の場合も、事務局がご相談を承ります。
+          </p>
+        </div>
+      </section>
+
+      {/* 申込へ進む前に押さえておきたい3点 */}
+      <ul className="mt-6 flex flex-col gap-2">
+        {PLAN_HIGHLIGHTS.map((h) => (
+          <li key={h} className="flex items-start gap-2 text-[14px] leading-7 text-[var(--ink)]">
+            <span className="mt-1 text-[12px] text-[var(--green-d)]">●</span>
+            {h}
+          </li>
+        ))}
+      </ul>
+
+      {/* プラン早見表。中身は sponsor.ts のプラン定義から導出しているので手で直さない */}
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[620px] border-collapse text-[13px]">
+          <thead>
+            <tr>
+              {["プラン", "単独開催", "両開催", "登壇", "展示・試食", "商談の紹介", "NAKAMA掲載"].map((h) => (
+                <th
+                  key={h}
+                  className="border border-[var(--line)] bg-[var(--green-soft)] px-2.5 py-2 text-left text-[12px] font-bold text-[var(--ink)]"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {PLAN_SUMMARY.map((r) => (
+              <tr key={r.name}>
+                <th className="border border-[var(--line)] px-2.5 py-2 text-left font-bold tracking-[0.03em] text-[var(--ink)]">
+                  {r.name}
+                </th>
+                <td className="border border-[var(--line)] px-2.5 py-2 text-[var(--ink-2)]">{r.single}</td>
+                <td className="border border-[var(--line)] px-2.5 py-2 text-[var(--ink-2)]">{r.both}</td>
+                <td className="border border-[var(--line)] px-2.5 py-2 text-[var(--ink-2)]">
+                  {r.presentation ?? "—"}
+                </td>
+                <td className="border border-[var(--line)] px-2.5 py-2 text-center text-[var(--ink-2)]">
+                  {r.exhibit ? "○" : "—"}
+                </td>
+                <td className="border border-[var(--line)] px-2.5 py-2 text-center text-[var(--ink-2)]">
+                  {r.matching ? "○" : "—"}
+                </td>
+                <td className="border border-[var(--line)] px-2.5 py-2 text-center text-[var(--ink-2)]">
+                  {r.nakama ? "○" : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
+        金額はすべて税別です。宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割価格（PRESENTER 40万円／STRATEGIC 70万円／DIAMOND PARTNER 200万円）でお申し込みいただけます。各プランの詳しい特典は申込フォームでご確認いただけます。
+      </p>
 
       {/* 2つの入口 */}
       <div className="mt-9 flex flex-col items-stretch gap-3 rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] p-6 sm:flex-row sm:justify-center">

@@ -57,7 +57,9 @@ const NAKAMA_THEME = "FOOD JAPAN NAKAMAでの事業者・共創テーマ掲載";
 const NAKAMA_FEATURE = "FOOD JAPAN NAKAMAでの共創プロジェクト特集掲載";
 const COWORK = "コワーキングルーム使用";
 const HANDOUT = "試食・チラシ・ノベルティの配布";
-const ATTENDEE_LIST = "参加後の参加者リストのご提供"; // ※PDF p.9〜11 の PRESENTER 以上にあり。ユーザー文面では抜けていたので補った
+// ⚠️「参加後の参加者リストのご提供」は**入れない**（2026-08-17 ユーザー指示で削除）。
+//    共通価値の「参加者の同意を得た範囲で紹介・面談調整を行う」と矛盾し、
+//    参加者名簿の第三者提供は個人データの提供にあたるため。PDF p.9〜11 には記載があるが採用しない。
 const MATCHING = "商談候補者の優先紹介・面談調整";
 const SELF_STAY = "宿泊はご自身でご手配ください。";
 
@@ -108,7 +110,6 @@ function singleVenuePlans(withStay: boolean): SponsorPlan[] {
         LOGO, // ※ユーザー文面では抜けていたが PDF p.9 にあるので補った
         COWORK, // ※同上
         HANDOUT,
-        ATTENDEE_LIST,
         NAKAMA_THEME,
       ],
       note: withStay ? undefined : SELF_STAY,
@@ -126,7 +127,6 @@ function singleVenuePlans(withStay: boolean): SponsorPlan[] {
         LOGO, // ※同上
         COWORK, // ※同上
         HANDOUT,
-        ATTENDEE_LIST,
         NAKAMA_THEME,
       ],
       note: withStay ? undefined : SELF_STAY,
@@ -223,7 +223,6 @@ export const COURSES: Course[] = [
           LOGO,
           COWORK,
           HANDOUT,
-          ATTENDEE_LIST,
           NAKAMA_THEME,
         ],
       },
@@ -241,7 +240,6 @@ export const COURSES: Course[] = [
           LOGO,
           COWORK,
           HANDOUT,
-          ATTENDEE_LIST,
           NAKAMA_THEME,
         ],
       },
@@ -369,8 +367,67 @@ export const CONSENTS = [
 
 export const COMMON_BENEFITS = [
   "Food Japan Summitの協賛企業として、会場および関連媒体に社名またはロゴを掲載します。",
-  "FOOD JAPAN NAKAMAに協賛企業情報を掲載します。",
+  // ⚠️ NAKAMAは「協賛企業としての紹介情報の掲載」までが協賛の範囲。
+  //    案件掲載・メッセージ・マッチング相談の継続利用は**年間会員の特典**（切り分けを崩さないこと）。
+  "FOOD JAPAN NAKAMAに、協賛企業としての紹介情報を掲載します。",
+  "案件掲載、メッセージ、マッチング相談などの継続利用は、年間会員特典として提供します。",
   "生産者、食品メーカー、小売・流通、飲食、行政などとの共創・商談につながる機会を提供します。",
-  "紹介および面談調整は、相手方の同意を得たうえで行います。",
-  "登壇、展示、試食・試飲、商談設定の内容・時間帯は、会場運営上の都合により事務局と個別に調整します。",
+  // ⚠️ 参加者名簿を渡すのではなく「同意を得た範囲での紹介」であることを明示する。
+  "参加者の同意を得た範囲で、商談候補者の紹介・面談調整を行います。",
+  // ⚠️ 旧文は「内容・時間帯を個別に調整」だけで、LIGHTでも登壇できると読めた。
+  //    プランに応じて提供される旨を先に書く。
+  "登壇、展示、試食・試飲、商談設定は、各協賛プランに応じて提供します。実施内容と時間帯は、会場運営上の都合により個別に調整します。",
+];
+
+// ── 案内ページ（/sponsor）用のプラン早見表 ─────────────────────
+// ⚠️ 表の中身は**プラン定義から導出する**（手で別表を書くと必ず食い違う）。
+//    判定に使う文字列は上の定数（MATCHING / HANDOUT / NAKAMA*）と同じものなので、
+//    特典を書き換えても表が自動で追随する。
+
+export type PlanSummaryRow = {
+  name: string;
+  /** 単独開催（宮崎のみ／名古屋のみ）の価格 */
+  single: string;
+  /** 両開催の価格 */
+  both: string;
+  /** 登壇（プレゼン枠）。無ければ null */
+  presentation: string | null;
+  exhibit: boolean;
+  matching: boolean;
+  nakama: boolean;
+};
+
+function hasPresentation(features: string[]): string | null {
+  const f = features.find((x) => x.includes("協賛プレゼンテーション枠"));
+  if (!f) return null;
+  if (features.some((x) => x.includes("テーマセッション主催"))) return "60分＋セッション主催";
+  return f.startsWith("30分") ? "30分" : "60分";
+}
+
+export const PLAN_SUMMARY: PlanSummaryRow[] = (() => {
+  const single = findCourse("miyazaki");
+  const both = findCourse("both");
+  if (!single || !both) return [];
+  return single.plans.map((p) => {
+    const b = both.plans.find((x) => x.code === p.code);
+    // ⚠️ DIAMOND PARTNER の特典は個別に列挙されておらず「全プランの特典」で表される。
+    //    これを見落とすと、最上位プランだけ「展示・試食 —」「商談の紹介 —」と誤って出る（実際に踏んだ）。
+    const inheritsAll = p.features.includes("全プランの特典");
+    return {
+      name: p.name,
+      single: yen(p.price),
+      both: b ? yen(b.price) : "—",
+      presentation: hasPresentation(p.features),
+      exhibit: inheritsAll || p.features.some((f) => f === HANDOUT || f.includes("試食会・スナック交流")),
+      matching: inheritsAll || p.features.includes(MATCHING),
+      nakama: inheritsAll || p.features.some((f) => f.startsWith("FOOD JAPAN NAKAMA")),
+    };
+  });
+})();
+
+/** 案内ページで先に見せる3点。 */
+export const PLAN_HIGHLIGHTS = [
+  "協賛プランは15万円（税別）から",
+  "宮崎開催・名古屋開催・両開催から選べます",
+  "登壇、展示・試食、商談の紹介、NAKAMA掲載の範囲はプランごとに異なります",
 ];
