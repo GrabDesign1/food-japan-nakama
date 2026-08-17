@@ -624,8 +624,25 @@ export function SponsorForm() {
                     {ANNUAL_MEMBER.badge}
                   </span>
                 </span>
-                <span className="mt-2 block text-[16px] font-bold leading-7 text-[var(--amber-ink)]">
-                  {ANNUAL_MEMBER.headline}
+                {/* ⚠️ カード全体が label なので、リンクを押したときにチェックが入らないよう
+                    stopPropagation する。⚠️ 別タブで開くこと（このフォームは下書き保存を
+                    持たないので、同じタブで移動すると入力中の内容が全部消える）。 */}
+                <span className="mt-2 block">
+                  <a
+                    href={ANNUAL_MEMBER.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-baseline gap-1.5 text-[16px] font-bold leading-7 text-[var(--amber-ink)] underline decoration-[var(--amber)] underline-offset-4 hover:text-[var(--amber-d)]"
+                  >
+                    {ANNUAL_MEMBER.headline}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 self-center" aria-hidden>
+                      <path d="M14 4h6v6" /><path d="M20 4l-9 9" /><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5" />
+                    </svg>
+                  </a>
+                  <span className="mt-1 block text-[12px] leading-5 text-[var(--muted)]">
+                    FOOD JAPAN NAKAMA でできることは別タブで開きます（入力中の内容は消えません）。
+                  </span>
                 </span>
                 <span className="mt-2 flex flex-wrap items-baseline gap-x-3">
                   <span className="text-[18px] font-bold text-[var(--ink)]">{ANNUAL_MEMBER.price}</span>
