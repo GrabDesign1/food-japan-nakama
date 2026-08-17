@@ -177,11 +177,19 @@ export function SponsorForm() {
       {/* 年間会員（協賛プランと併用できるので、開催の選択とは独立させる） */}
       <Section>
         <h2 className={qCls}>2-2｜年間会員{opt}</h2>
-        <label className="flex cursor-pointer items-start gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3">
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-4">
           <input type="checkbox" name="annualMember" autoComplete="off" className="mt-1 h-4 w-4 shrink-0 accent-[var(--green)]" />
           <span>
             <span className="text-[14px] font-bold text-[var(--ink)]">{ANNUAL_MEMBER.label}</span>
-            <span className="mt-1 block text-[12px] leading-6 text-[var(--ink-2)]">{ANNUAL_MEMBER.detail}</span>
+            {/* 訴求の1行目だけ大きく出す（年間会員の価値が一読で伝わるように） */}
+            <span className="mt-2 block text-[15px] font-bold leading-7 text-[var(--green-d)]">
+              {ANNUAL_MEMBER.headline}
+            </span>
+            <span className="mt-1.5 block text-[12px] leading-7 text-[var(--ink-2)]">
+              {ANNUAL_MEMBER.lines.map((l) => (
+                <span key={l} className="block">{l}</span>
+              ))}
+            </span>
           </span>
         </label>
       </Section>
