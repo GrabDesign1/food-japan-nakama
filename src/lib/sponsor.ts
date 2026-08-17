@@ -140,6 +140,18 @@ function singleVenuePlans(withStay: boolean): SponsorPlan[] {
   ];
 }
 
+/**
+ * 宮崎県法人 特別割の価格（税別・円）。**特典は通常の宮崎開催プランと同一で、価格だけが違う**。
+ * LIGHT と STANDARD は通常と同額（割引なし）。
+ */
+const LOCAL_DISCOUNT_PRICES: Record<string, number> = {
+  light: 150000,
+  standard: 300000,
+  presenter: 400000,
+  strategic: 700000,
+  diamond: 2000000,
+};
+
 export const COURSES: Course[] = [
   {
     code: "miyazaki",
@@ -147,18 +159,16 @@ export const COURSES: Course[] = [
     heading: "宮崎開催のみへの協賛",
     venues: [VENUES.miyazaki],
     plans: singleVenuePlans(true),
-    // ⚠️ 特典の内訳はあえて出していない。PDF p.11 の特別割は、同額のSTANDARDで
-    //    カンファレンスパスが通常2名に対し1名、PRESENTER/STRATEGICは安いのに3名/4名と、
-    //    通常プラン（p.9）と人数が逆転している。確定するまでは価格だけを出す。
-    localPlans: [
-      { code: "light", name: "LIGHT", price: 150000, features: [] },
-      { code: "standard", name: "STANDARD", price: 300000, features: [] },
-      { code: "presenter", name: "PRESENTER", price: 400000, features: [] },
-      { code: "strategic", name: "STRATEGIC", price: 700000, features: [] },
-      { code: "diamond", name: "DIAMOND PARTNER", price: 2000000, features: [] },
-    ],
+    // ⚠️ 特別割は**特典の内容が宮崎開催プランと同一で、価格だけが違う**（ユーザー確定 2026-08-17）。
+    //    だから通常プランから価格だけ差し替えて作る。特典を別々に書くと必ず食い違う。
+    //    PDF p.11 はカンファレンスパスが1名/3名/4名となっていたが、これは資料側の誤りとして扱う
+    //    （同額のSTANDARDで通常2名に対し1名、値引きされたPRESENTERで通常2名に対し3名と逆転していた）。
+    localPlans: singleVenuePlans(true).map((p) => ({
+      ...p,
+      price: LOCAL_DISCOUNT_PRICES[p.code] ?? p.price,
+    })),
     localLead:
-      "宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割協賛プランを選択できます。各プランの基本特典は、宮崎開催協賛プランに準じます。詳細は事務局よりご案内します。",
+      "宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割価格でお申し込みいただけます。特典の内容は宮崎開催協賛プランと同じで、PRESENTER・STRATEGIC・DIAMOND PARTNERの価格が割引されます。",
   },
   {
     code: "nagoya",
