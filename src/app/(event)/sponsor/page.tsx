@@ -15,12 +15,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const STATS: [string, string][] = [
-  ["来場予定", "300名"],
-  ["参加企業", "50社"],
-  ["登壇者・自治体", "25名・20団体"],
-  ["商談機会", "100件を目標"],
-];
+// ⚠️ 来場予定300名・参加企業50社などの数字ブロックと「協賛企業の皆さまと、イベント当日だけで
+//    終わらない共創事業をつくっていきます。」の一文は、ユーザー指示で削除した（2026-08-17）。
+//    戻す場合は募集資料PDF p.2 の数字を参照。
 
 export default function SponsorPage() {
   return (
@@ -56,19 +53,6 @@ export default function SponsorPage() {
           <dd className="text-[var(--ink-2)]">{HOST}</dd>
         </div>
       </dl>
-
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {STATS.map(([k, v]) => (
-          <div key={k} className="rounded-[8px] bg-[var(--green-soft)] px-3 py-3 text-center">
-            <div className="text-[11px] text-[var(--ink-2)]">{k}</div>
-            <div className="mt-0.5 text-[15px] font-bold text-[var(--green-d)]">{v}</div>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-5 text-[14px] leading-8 text-[var(--ink-2)]">
-        協賛企業の皆さまと、イベント当日だけで終わらない共創事業をつくっていきます。
-      </p>
 
       <section className="mt-8 rounded-[10px] border border-[var(--line)] p-5">
         <h2 className="text-[15px] font-bold text-[var(--ink)]">協賛企業共通の提供価値</h2>
