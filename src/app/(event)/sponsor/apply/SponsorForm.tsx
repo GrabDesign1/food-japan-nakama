@@ -368,14 +368,15 @@ export function SponsorForm() {
                             </svg>
                           ) : null}
                         </span>
+                        {/* 日程・会場もタイトルと同じ太さにする（ユーザー指定 2026-08-18）。 */}
                         {c.plans.length > 0 ? (
                           c.venues.map((v) => (
-                            <span key={v.label} className="mt-1 block text-[13px] leading-6 text-[var(--ink-2)]">
+                            <span key={v.label} className="mt-1 block text-[13px] font-bold leading-6 text-[var(--ink-2)]">
                               {v.dates}／{v.venue}
                             </span>
                           ))
                         ) : (
-                          <span className="mt-1 block text-[13px] leading-6 text-[var(--ink-2)]">
+                          <span className="mt-1 block text-[13px] font-bold leading-6 text-[var(--ink-2)]">
                             事務局と相談しながら最適な参加方法を決めます。
                           </span>
                         )}
