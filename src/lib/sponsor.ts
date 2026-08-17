@@ -267,6 +267,42 @@ export const COURSES: Course[] = [
 /** 「内容を相談して決めたい」＝プランを選ばない場合の値 */
 export const PLAN_CONSULT = "consult";
 
+// ── 申込の締め切り ────────────────────────────────
+//
+// ⚠️ **宮崎は 2026年11月17日を過ぎたら選べない**（ユーザー指示 2026-08-18）。
+//    「17日を超えたら」＝**11月17日いっぱいは申し込めて、11月18日0時（JST）から締め切る**と解釈している。
+// ⚠️ **両開催も同時に締め切る**＝宮崎を含むので、宮崎が終わったあとに両開催だけ売ることはできない。
+// ⚠️ 名古屋（12/15・16）は指示が無いので締め切りを入れていない。必要なら下の表に1行足す。
+// ⚠️ 判定は**必ずJST**で行う（サーバーはUTCで動くので、素の getDate() を使うと日付が9時間ずれる）。
+// ⚠️ /sponsor/apply は静的に生成されるページなので、**ビルド時刻で判定してはいけない**。
+//    画面側はマウント後にブラウザの時計で判定し、**本当の関所はサーバーアクション**に置くこと。
+
+/** 開催コード → この日までは申し込める（YYYY-MM-DD・JST）。無い開催は締め切らない。 */
+const COURSE_CLOSE_AFTER: Record<string, string> = {
+  miyazaki: "2026-11-17",
+  both: "2026-11-17",
+};
+
+/** JSTでの「今日」を YYYY-MM-DD で返す（ISO形式なので文字列比較で日付を比べられる）。 */
+export function todayJst(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** その開催がまだ申し込めるか（JST基準。締切日当日は申し込める）。 */
+export function isCourseOpen(courseCode: string, now: Date = new Date()): boolean {
+  const close = COURSE_CLOSE_AFTER[courseCode];
+  if (!close) return true;
+  return todayJst(now) <= close;
+}
+
+/** 締め切った開催に出す文言。 */
+export const COURSE_CLOSED_LABEL = "受付を終了しました";
+
 // ── 申込フォームのカードUI用（2026-08-18 の指示書。/sponsor 案内ページには影響させない）──
 //
 // ⚠️ 価格は開催で入れ替わる（単独15/30/50/80/250万・両開催20/50/80/120/400万・

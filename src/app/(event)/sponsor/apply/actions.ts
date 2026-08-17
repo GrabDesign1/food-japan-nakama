@@ -2,7 +2,7 @@
 
 import { sendSponsorApplicationEmails } from "@/lib/email";
 import {
-  SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel, plansFor, LOCAL_DISCOUNT_COURSE,
+  SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel, plansFor, LOCAL_DISCOUNT_COURSE, isCourseOpen,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
 
@@ -75,6 +75,13 @@ export async function submitSponsorApplication(
       error: "協賛対象の開催を選択してください。",
       fields: { course: "協賛対象の開催を選択してください。" },
     };
+  }
+
+  // ⚠️ **締め切りの本当の関所はここ**。画面は静的生成＋ブラウザの時計で出し分けているだけなので、
+  //    古いタブを開きっぱなしにされたり時計を戻されたりすると素通りする。サーバーで必ず弾く。
+  if (!isCourseOpen(course.code)) {
+    const msg = `${course.label}の受付は終了しました。他の開催をお選びいただくか、事務局へご相談ください。`;
+    return { error: msg, fields: { course: msg } };
   }
 
   // ⚠️ 特別割は宮崎開催に限り適用される（名古屋のみ・両開催には適用しない。

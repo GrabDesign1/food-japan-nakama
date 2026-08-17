@@ -8,7 +8,7 @@ import {
   COURSES, PLAN_CONSULT, yen, yenFull, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
   CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, LOGO_SUBMISSION, CONSENTS,
-  APPLY_STEPS, COURSE_SHORT,
+  APPLY_STEPS, COURSE_SHORT, isCourseOpen, COURSE_CLOSED_LABEL,
   PLAN_TAGLINE, planBadge, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
   PLAN_NO, PLAN_NICKNAME, PLAN_ACCENT, yenParts,
   benefitIncluded, applicationTotal, presentationSlot, PRESENTATION_IMAGE,
@@ -109,6 +109,21 @@ export function SponsorForm() {
     };
   }, [imageModal]);
 
+  // 締め切りの判定。
+  // ⚠️ このページは静的生成なので、レンダー時に new Date() を読むと**ビルド時刻で固まる**。
+  //    マウント後にブラウザの時計で判定する。初期値 null＝「まだ判定しない（全部選べる）」なので、
+  //    プリレンダーしたHTMLと初回描画が一致し、ハイドレーションのずれも起きない。
+  // ⚠️ ブラウザの時計は当てにならない（時計を戻せば通る）。**本当の関所は actions.ts**。
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => { setNow(new Date()); }, []);
+  const isClosed = (code: string) => now !== null && !isCourseOpen(code, now);
+
+  // 締め切った開催が選ばれたままにならないようにする（時計が日付をまたいだ場合など）。
+  useEffect(() => {
+    if (course && isClosed(course)) pickCourse("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now, course]);
+
   const courseObj = findCourse(course) ?? null;
   // ⚠️ 特別割は宮崎開催のみ。名古屋のみ・両開催では効かせない（両開催向けの特別価格は定義しない）。
   const localEligible = course === LOCAL_DISCOUNT_COURSE;
@@ -137,7 +152,8 @@ export function SponsorForm() {
   function validate(s: number): Record<string, string> {
     const e: Record<string, string> = {};
     if (s === 0) {
-      if (!course) e.course = "協賛対象の開催を選択してください。";
+      if (!course) e.course = "協賛する開催場所を選択してください。";
+      else if (isClosed(course)) e.course = `${findCourse(course)?.label ?? "この開催"}の受付は終了しました。`;
     }
     if (s === 1) {
       if (!plan) e.plan = "希望する協賛プランを選択してください。";
@@ -340,13 +356,18 @@ export function SponsorForm() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {COURSES.map((c) => {
                   const on = c.code === course;
+                  // 締め切った開催は**隠さずに、押せない状態で見せる**（消えていると
+                  // 「あったはずの選択肢が無い」と混乱するため）。
+                  const closed = isClosed(c.code);
                   return (
                     <label
                       key={c.code}
-                      className={`${tap} flex cursor-pointer items-start gap-3 rounded-[10px] border-2 p-4 transition ${
-                        on
-                          ? "border-[var(--green)] bg-[var(--green-soft)]"
-                          : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                      className={`${tap} flex items-start gap-3 rounded-[10px] border-2 p-4 transition ${
+                        closed
+                          ? "cursor-not-allowed border-[var(--line-soft)] bg-[var(--surface)]"
+                          : on
+                            ? "cursor-pointer border-[var(--green)] bg-[var(--green-soft)]"
+                            : "cursor-pointer border-[var(--line)] bg-white hover:border-[var(--green)]"
                       }`}
                     >
                       <input
@@ -355,13 +376,19 @@ export function SponsorForm() {
                         value={c.code}
                         autoComplete="off"
                         checked={on}
+                        disabled={closed}
                         required={step === 0}
                         onChange={() => pickCourse(c.code)}
                         className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--green)]"
                       />
-                      <span className="min-w-0">
-                        <span className="flex items-center gap-1.5 text-[16px] font-bold text-[var(--ink)]">
+                      <span className={`min-w-0 ${closed ? "opacity-55" : ""}`}>
+                        <span className="flex flex-wrap items-center gap-1.5 text-[16px] font-bold text-[var(--ink)]">
                           {c.label}
+                          {closed ? (
+                            <span className="rounded-[3px] bg-[var(--line)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--ink-2)]">
+                              {COURSE_CLOSED_LABEL}
+                            </span>
+                          ) : null}
                           {on ? (
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--green)]" aria-hidden>
                               <path d="M20 6L9 17l-5-5" />
