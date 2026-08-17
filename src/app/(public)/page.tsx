@@ -439,8 +439,10 @@ export default async function PublicHome() {
           </p>
         </section>
 
-        {/* Food Japan Summit との連動 */}
-        <section className="rounded-2xl border border-[var(--line)] bg-white px-6 py-10">
+        {/* Food Japan Summit との連動。
+            枠は付けない＝他のセクション（目的別入口・実績・記事・3ステップ・サービス）と揃える。
+            枠付きにしてよいのは最終CTAだけ（意図的な強調）。 */}
+        <section>
           <SectionHead title="オンラインの出会いを、現場の事業へ。" />
           <p className="max-w-[860px] text-[14px] leading-8 text-[var(--ink-2)]">
             NAKAMAで課題や相手を見つけ、Food Japan Summitで対面し、試食、商談、現地視察、試作、実証へ進めます。
