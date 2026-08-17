@@ -337,11 +337,29 @@ export function yenParts(n: number): { num: string; unit: string } {
   return { num: (n / 10000).toLocaleString("ja-JP"), unit: "万円" };
 }
 
-/** カード右上のラベル。付けるプランだけ持たせる。 */
-export const PLAN_BADGE: Record<string, string> = {
-  presenter: "おすすめ",
-  diamond: "最上位プラン",
+/**
+ * 開催ごとの「おすすめ」プラン（ユーザー指定 2026-08-18）。
+ *
+ * ⚠️ **おすすめは開催で変わる**。プランコードだけで決めていた実装から直したので、
+ *    ここを1つの表にまとめている。宮崎のみ・両開催＝ゴールド(PRESENTER)、
+ *    **名古屋のみ＝プレミアム(STRATEGIC)**。
+ * ⚠️ 宮崎県法人の特別割は宮崎開催に対する価格違いなので、おすすめは宮崎と同じ。
+ * ⚠️ 「内容を相談して決めたい」(consult) はプランを出さないので対象外。
+ */
+export const RECOMMENDED_PLAN: Record<string, string> = {
+  miyazaki: "presenter",
+  nagoya: "strategic",
+  both: "presenter",
 };
+
+/** 最上位として常に目立たせるプラン。 */
+const TOP_PLAN = "diamond";
+
+/** カード右上のラベル。付かないときは null。 */
+export function planBadge(courseCode: string, planCode: string): string | null {
+  if (planCode === TOP_PLAN) return "最上位プラン";
+  return RECOMMENDED_PLAN[courseCode] === planCode ? "おすすめ" : null;
+}
 
 /**
  * ボタンを「選ぶ」ではなく「相談する」と出すプラン。

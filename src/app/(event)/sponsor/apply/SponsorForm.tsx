@@ -9,7 +9,7 @@ import {
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
   CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, LOGO_SUBMISSION, CONSENTS,
   APPLY_STEPS, COURSE_SHORT,
-  PLAN_TAGLINE, PLAN_BADGE, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
+  PLAN_TAGLINE, planBadge, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
   PLAN_NO, PLAN_NICKNAME, PLAN_ACCENT, yenParts,
   benefitIncluded, applicationTotal, presentationSlot, PRESENTATION_IMAGE,
   type SponsorPlan,
@@ -445,7 +445,7 @@ export function SponsorForm() {
                   {plans.map((p) => {
                     const on = p.code === plan;
                     const accent = PLAN_ACCENT[p.code] ?? "--muted";
-                    const badge = PLAN_BADGE[p.code];
+                    const badge = planBadge(course, p.code);
                     const shown = p.features.slice(0, PLAN_CARD_FEATURES);
                     const rest = p.features.length - shown.length;
                     const isOpen = openPlan === p.code;
