@@ -566,3 +566,132 @@ export async function sendAdminMessageEmail(params: {
     </div>`;
   await send({ to: [params.to], subject: params.subject, html });
 }
+
+// ── Food Japan Summit 協賛申込（/sponsor）─────────────────────────
+// ⚠️ 通常の send() は失敗してもログに出すだけだが、協賛の申込は取りこぼすと影響が大きい
+//    （最大250万円の申込）。ここだけは**送信できたかどうかを呼び出し側へ返し**、
+//    全滅した場合はフォーム側で「直接メールしてください」と案内する。
+
+/** 1通送って、成功したかどうかを返す（送信基盤が無い開発時は false ではなく true 扱いにしない）。 */
+async function sendOne(to: string, subject: string, html: string): Promise<boolean> {
+  if (!resend) {
+    console.log(`[email] RESEND_API_KEY 未設定のため送信スキップ: ${subject} -> ${to}`);
+    return false;
+  }
+  try {
+    const { error } = await resend.emails.send({ from: FROM, to: [to], subject, html });
+    if (error) {
+      console.error(`[email] 協賛申込の送信失敗(${to}):`, error);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error(`[email] 協賛申込の送信例外(${to}):`, e);
+    return false;
+  }
+}
+
+export type SponsorMailInput = {
+  refNo: string;
+  isLocalCorp: boolean;
+  entryType: string;
+  plan: string;
+  company: string;
+  companyKana: string;
+  name: string;
+  department: string;
+  email: string;
+  phone: string;
+  address: string;
+  website: string;
+  purpose: string;
+  themes: string[];
+  benefits: string[];
+  presentation: string;
+  invoiceName: string;
+  invoiceNote: string;
+  logoSubmission: string;
+  message: string;
+};
+
+/**
+ * 事務局2名へ申込内容を送り、申込者へ受付控えを送る。
+ * 戻り値の adminDelivered が false のときは、フォーム側でエラーを出すこと。
+ */
+export async function sendSponsorApplicationEmails(
+  a: SponsorMailInput,
+  inbox: string[]
+): Promise<{ adminDelivered: boolean }> {
+  const row = (label: string, value: string) =>
+    value
+      ? `<tr><th align="left" style="padding:6px 10px;background:#F4F5F2;border:1px solid #E3E6E1;font-size:13px;white-space:nowrap;vertical-align:top">${esc(label)}</th>
+           <td style="padding:6px 10px;border:1px solid #E3E6E1;font-size:13px;white-space:pre-wrap">${esc(value)}</td></tr>`
+      : "";
+
+  const adminHtml = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:640px;margin:0 auto;color:#141414">
+    <h2 style="font-size:17px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">
+      協賛申込がありました（Food Japan Summit 2026 in MIYAZAKI）
+    </h2>
+    <p style="font-size:13px">受付番号：<b>${esc(a.refNo)}</b></p>
+    ${a.isLocalCorp ? `<p style="font-size:13px;color:#B45309;font-weight:bold">※ 宮崎県内に本店または主たる事業所を置く法人（特別割の対象）</p>` : ""}
+    <table style="border-collapse:collapse;width:100%">
+      ${row("申込区分", a.entryType)}
+      ${row("希望プラン", a.plan)}
+      ${row("法人・団体名", a.company)}
+      ${row("フリガナ", a.companyKana)}
+      ${row("ご担当者名", a.name)}
+      ${row("部署・役職", a.department)}
+      ${row("メールアドレス", a.email)}
+      ${row("電話番号", a.phone)}
+      ${row("所在地", a.address)}
+      ${row("ウェブサイト", a.website)}
+      ${row("実現したいこと", a.purpose)}
+      ${row("関心のある共創テーマ", a.themes.join("／"))}
+      ${row("希望する協賛特典", a.benefits.join("／"))}
+      ${row("登壇・展示・試食の希望", a.presentation)}
+      ${row("請求書の宛名", a.invoiceName)}
+      ${row("請求書に関する希望", a.invoiceNote)}
+      ${row("ロゴデータの提出方法", a.logoSubmission)}
+      ${row("備考", a.message)}
+    </table>
+    <p style="font-size:12px;color:#7C8899;margin-top:14px">
+      返信は <a href="mailto:${esc(a.email)}">${esc(a.email)}</a> 宛に送れます。
+    </p>
+  </div>`;
+
+  const results = await Promise.all(
+    inbox.map((to) =>
+      sendOne(to, `【協賛申込】${a.company}／${a.plan}（${a.refNo}）`, adminHtml)
+    )
+  );
+
+  // 申込者への受付控え（届かなくても申込自体は成立させる）
+  const applicantHtml = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:560px;margin:0 auto;color:#141414">
+    <h2 style="font-size:17px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">協賛のお申し込みを受け付けました</h2>
+    <p style="font-size:14px;line-height:1.9">
+      ${esc(a.company)} 御中<br><br>
+      Food Japan Summit 2026 in MIYAZAKI へのお申し込みをいただき、ありがとうございます。<br>
+      内容を確認のうえ、フードジャパンサミット実行委員会より、協賛内容・ロゴデータの提出方法・請求書・今後の進行についてご連絡します。
+    </p>
+    <table style="border-collapse:collapse;width:100%;margin-top:10px">
+      ${row("受付番号", a.refNo)}
+      ${row("申込区分", a.entryType)}
+      ${row("希望プラン", a.plan)}
+      ${row("開催日", "2026年11月17日（火）・18日（水）")}
+      ${row("会場", "宮崎観光ホテル")}
+    </table>
+    <p style="font-size:14px;line-height:1.9;margin-top:14px">
+      Food Japan Summit 2026 in MIYAZAKI で、共に新しい事業を生み出していけることを楽しみにしております。
+    </p>
+    <p style="font-size:12px;color:#7C8899;margin-top:16px">
+      フードジャパンサミット実行委員会（株式会社グラブデザイン）<br>
+      〒102-0073 東京都千代田区九段北1-2-1<br>
+      <a href="mailto:info@grab-design.com">info@grab-design.com</a>／03-6825-3901
+    </p>
+  </div>`;
+  await sendOne(a.email, `【Food Japan Summit 2026 in MIYAZAKI】協賛申込を受け付けました（${a.refNo}）`, applicantHtml);
+
+  return { adminDelivered: results.some(Boolean) };
+}
