@@ -1,47 +1,92 @@
+import Link from "next/link";
 import type { Metadata } from "next";
-import { SponsorForm } from "./SponsorForm";
 import { SUMMIT_TITLE, VENUES, HOST, COMMON_BENEFITS } from "@/lib/sponsor";
+import { btn } from "@/lib/ui";
 
-// Food Japan Summit 2026 in MIYAZAKI の協賛申込フォーム。
-// ⚠️ NAKAMA の機能ではない。**NAKAMA からリンクは張らず**、URLを直接案内して使う
-//    （ユーザー指示 2026-08-17）。sitemap・llms.txt にも入れていない。
-// ⚠️ 検索に出さない（noindex）。公開したくなったら robots を外して sitemap に追加する。
-// ⚠️ 金額はすべて税別（NAKAMA本体は税込なので取り違えないこと）。
+// Food Japan Summit 協賛の案内ページ。ここから2つに分岐させる。
+//   ・協賛を申し込む       → /sponsor/apply（プラン選択を含む本申込）
+//   ・まずは相談する       → /sponsor/contact（連絡先だけの短いフォーム）
+// ⚠️ プランや金額を決めていない人が行き止まりにならないように、この2択にしている
+//    （ユーザー指示 2026-08-17「金額・プランを決めてからでないと押せない状態をなくす」）。
+// ⚠️ NAKAMA の機能ではないので noindex。URLを直接案内して使う。
 
 export const metadata: Metadata = {
-  title: "協賛申込フォーム｜Food Japan Summit 2026",
+  title: "協賛のご案内｜Food Japan Summit 2026",
   description:
-    "Food Japan Summit 2026（宮崎開催・名古屋開催）への協賛をご検討・お申し込みいただくためのフォームです。",
+    "Food Japan Summit 2026（宮崎開催・名古屋開催）の協賛のご案内です。協賛のお申し込み、内容のご相談を承ります。",
   robots: { index: false, follow: false },
 };
 
-// ⚠️ 来場予定300名・参加企業50社などの数字ブロックと「協賛企業の皆さまと、イベント当日だけで
-//    終わらない共創事業をつくっていきます。」の一文は、ユーザー指示で削除した（2026-08-17）。
-//    戻す場合は募集資料PDF p.2 の数字を参照。
+const THEMES = [
+  "地域の素材を生かした商品をつくりたい",
+  "新しい販路や取引先を見つけたい",
+  "生産者や自治体と連携したい",
+  "食品ロスや人材、物流などの課題を事業に変えたい",
+];
 
-export default function SponsorPage() {
+export default function SponsorLandingPage() {
   return (
     <div className="mx-auto flex max-w-[900px] flex-col px-4 py-12">
-      {/* このページ専用のヘッダー（NAKAMAのナビは出さない） */}
       <header className="flex flex-col gap-1">
         <p className="text-[11px] font-bold tracking-[0.18em] text-[var(--green-d)]">
           FOOD JAPAN SUMMIT 2026
         </p>
         <h1 className="font-serif text-[26px] leading-tight text-[var(--ink)] sm:text-[32px]">
-          協賛申込フォーム
+          協賛ではなく、共創へ。
         </h1>
       </header>
 
-      <p className="mt-5 text-[14px] leading-8 text-[var(--ink-2)]">
-        {SUMMIT_TITLE} への協賛をご検討・お申し込みいただくためのフォームです。
-        宮崎開催、名古屋開催、両開催への協賛を募集します。
-      </p>
-      <p className="mt-3 text-[14px] leading-8 text-[var(--ink-2)]">
-        Food Japan Summit は、生産者、食品メーカー、小売・流通、飲食、行政、金融、物流、スタートアップなどが集い、
-        登壇・試食・商談を通じて、新しい商品、販路、地域連携、食品ロス対策などの共創事業を生み出す場です。
+      <div className="mt-6 flex flex-col gap-4 text-[14px] leading-8 text-[var(--ink-2)]">
+        <p>Food Japan Summitは、企業名を掲出するだけのイベントではありません。</p>
+        <p>
+          生産者、食品メーカー、小売・流通、飲食、行政、金融、物流など、食の現場を動かす人たちと出会い、
+          試食、対話、商談を通じて、新しい事業を生み出す場です。
+        </p>
+      </div>
+
+      <ul className="mt-5 flex flex-col gap-2 border-l-[3px] border-[var(--green)] pl-4">
+        {THEMES.map((t) => (
+          <li key={t} className="text-[14px] leading-7 text-[var(--ink)]">
+            「{t}」
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-5 flex flex-col gap-4 text-[14px] leading-8 text-[var(--ink-2)]">
+        <p>
+          そんなテーマをお持ちの企業に、Food Japan Summitは具体的な出会いと、次の一歩をつくる機会を提供します。
+        </p>
+        <p>
+          協賛企業には、開催前から当日、開催後まで、事業者との接点を設計します。
+          登壇、試食・試飲、展示、商談候補者の紹介・面談調整、FOOD JAPAN NAKAMAへの掲載を通じて、
+          貴社の挑戦を共創事業へつなげます。
+        </p>
+        <p>
+          まずは、貴社が実現したいことをお聞かせください。
+          <b className="text-[var(--ink)]">協賛プランが決まっていない場合も、事務局が目的に合わせてご相談を承ります。</b>
+        </p>
+      </div>
+
+      {/* 2つの入口 */}
+      <div className="mt-9 flex flex-col items-stretch gap-3 rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] p-6 sm:flex-row sm:justify-center">
+        <Link
+          href="/sponsor/apply"
+          className={`${btn("primary", "lg")} border border-transparent text-[16px] sm:min-w-[280px]`}
+        >
+          {SUMMIT_TITLE} 協賛を申し込む
+        </Link>
+        <Link
+          href="/sponsor/contact"
+          className={`${btn("secondary", "lg")} text-[16px] sm:min-w-[280px]`}
+        >
+          まずは協賛内容を相談する
+        </Link>
+      </div>
+      <p className="mt-2.5 text-center text-[11px] leading-5 text-[var(--muted)]">
+        「相談する」は、ご連絡先だけの短いフォームです。プランや金額が決まっていなくてもお送りいただけます。
       </p>
 
-      <dl className="mt-6 flex flex-col gap-2 border-y border-[var(--line)] py-4">
+      <dl className="mt-10 flex flex-col gap-2 border-y border-[var(--line)] py-4">
         {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
           <div key={v.label} className="flex flex-wrap gap-x-3 text-[13px]">
             <dt className="w-[86px] shrink-0 font-bold text-[var(--ink)]">{v.label}</dt>
@@ -63,12 +108,8 @@ export default function SponsorPage() {
         </ul>
       </section>
 
-      <div className="mt-10">
-        <SponsorForm />
-      </div>
-
       <footer className="mt-12 border-t border-[var(--line)] pt-5 text-[12px] leading-7 text-[var(--muted)]">
-        フードジャパンサミット実行委員会（株式会社グラブデザイン）
+        {HOST}
         <br />
         〒102-0073 東京都千代田区九段北1-2-1／info@grab-design.com／03-6825-3901
       </footer>

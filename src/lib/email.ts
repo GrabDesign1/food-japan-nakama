@@ -698,3 +698,72 @@ export async function sendSponsorApplicationEmails(
 
   return { adminDelivered: results.some(Boolean) };
 }
+
+// ── 協賛内容の相談（/sponsor/contact）─────────────────────────
+// プランや金額が決まっていない段階の受け皿。連絡先だけを受け取る。
+// ⚠️ 申込と同じく、事務局あてが1通も送れなかったら呼び出し側でエラーを出す。
+
+export type SponsorInquiryInput = {
+  refNo: string;
+  company: string;
+  name: string;
+  phone: string;
+  email: string;
+  facebook: string;
+  message: string;
+};
+
+export async function sendSponsorInquiryEmails(
+  a: SponsorInquiryInput,
+  inbox: string[]
+): Promise<{ adminDelivered: boolean }> {
+  const row = (label: string, value: string) =>
+    value
+      ? `<tr><th align="left" style="padding:6px 10px;background:#F4F5F2;border:1px solid #E3E6E1;font-size:13px;white-space:nowrap;vertical-align:top">${esc(label)}</th>
+           <td style="padding:6px 10px;border:1px solid #E3E6E1;font-size:13px;white-space:pre-wrap">${esc(value)}</td></tr>`
+      : "";
+
+  const adminHtml = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:600px;margin:0 auto;color:#141414">
+    <h2 style="font-size:17px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">
+      協賛内容のご相談が届きました（Food Japan Summit 2026）
+    </h2>
+    <p style="font-size:13px">受付番号：<b>${esc(a.refNo)}</b></p>
+    <p style="font-size:13px;color:#B45309">※ プラン未定の段階のご相談です。事務局から目的をうかがってご提案してください。</p>
+    <table style="border-collapse:collapse;width:100%">
+      ${row("組織名・企業名", a.company)}
+      ${row("ご担当者名", a.name)}
+      ${row("電話番号", a.phone)}
+      ${row("メールアドレス", a.email)}
+      ${row("Facebook", a.facebook)}
+      ${row("ご相談の内容", a.message)}
+    </table>
+    <p style="font-size:12px;color:#7C8899;margin-top:14px">
+      返信は <a href="mailto:${esc(a.email)}">${esc(a.email)}</a> 宛に送れます。
+    </p>
+  </div>`;
+
+  const results = await Promise.all(
+    inbox.map((to) => sendOne(to, `【協賛相談】${a.company}（${a.refNo}）`, adminHtml))
+  );
+
+  const applicantHtml = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:560px;margin:0 auto;color:#141414">
+    <h2 style="font-size:17px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">ご相談を受け付けました</h2>
+    <p style="font-size:14px;line-height:1.9">
+      ${esc(a.company)} 御中<br><br>
+      Food Japan Summit 2026 の協賛についてお問い合わせいただき、ありがとうございます。<br>
+      フードジャパンサミット実行委員会より、あらためてご連絡いたします。
+      貴社が実現したいことをうかがったうえで、協賛内容をご提案します。
+    </p>
+    <p style="font-size:13px;margin-top:10px">受付番号：<b>${esc(a.refNo)}</b></p>
+    <p style="font-size:12px;color:#7C8899;margin-top:16px">
+      フードジャパンサミット実行委員会（株式会社グラブデザイン）<br>
+      〒102-0073 東京都千代田区九段北1-2-1<br>
+      <a href="mailto:info@grab-design.com">info@grab-design.com</a>／03-6825-3901
+    </p>
+  </div>`;
+  await sendOne(a.email, `【Food Japan Summit 2026】協賛のご相談を受け付けました（${a.refNo}）`, applicantHtml);
+
+  return { adminDelivered: results.some(Boolean) };
+}
