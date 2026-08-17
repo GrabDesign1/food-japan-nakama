@@ -41,6 +41,12 @@ export type Course = {
   /** 対象の開催（日程・会場を出す） */
   venues: { label: string; dates: string; venue: string }[];
   plans: SponsorPlan[];
+  /**
+   * 宮崎県法人の特別割価格。**宮崎開催のみに用意する**（PDF p.11「宮崎開催に限り」）。
+   * これがあるコースでだけ、フォームに特別割のチェックボックスを出す。
+   */
+  localPlans?: SponsorPlan[];
+  localLead?: string;
   /** プランを出さない選択肢（相談）は plans: [] */
 };
 
@@ -141,6 +147,18 @@ export const COURSES: Course[] = [
     heading: "宮崎開催のみへの協賛",
     venues: [VENUES.miyazaki],
     plans: singleVenuePlans(true),
+    // ⚠️ 特典の内訳はあえて出していない。PDF p.11 の特別割は、同額のSTANDARDで
+    //    カンファレンスパスが通常2名に対し1名、PRESENTER/STRATEGICは安いのに3名/4名と、
+    //    通常プラン（p.9）と人数が逆転している。確定するまでは価格だけを出す。
+    localPlans: [
+      { code: "light", name: "LIGHT", price: 150000, features: [] },
+      { code: "standard", name: "STANDARD", price: 300000, features: [] },
+      { code: "presenter", name: "PRESENTER", price: 400000, features: [] },
+      { code: "strategic", name: "STRATEGIC", price: 700000, features: [] },
+      { code: "diamond", name: "DIAMOND PARTNER", price: 2000000, features: [] },
+    ],
+    localLead:
+      "宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割協賛プランを選択できます。各プランの基本特典は、宮崎開催協賛プランに準じます。詳細は事務局よりご案内します。",
   },
   {
     code: "nagoya",
@@ -226,23 +244,6 @@ export const COURSES: Course[] = [
     ],
   },
   {
-    code: "miyazaki_local",
-    label: "宮崎県法人 特別割協賛",
-    heading: "宮崎県法人 特別割協賛プラン",
-    lead: "宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割協賛プランを選択できます。各プランの基本特典は、宮崎開催協賛プランに準じます。詳細は事務局よりご案内します。",
-    venues: [VENUES.miyazaki],
-    // ⚠️ 特典の内訳はあえて出していない。PDF p.11 の特別割は、同額のSTANDARDで
-    //    カンファレンスパスが通常2名に対し1名、PRESENTER/STRATEGICは安いのに3名/4名と、
-    //    通常プラン（p.9）と人数が逆転している。確定するまでは価格だけを出す。
-    plans: [
-      { code: "light", name: "LIGHT", price: 150000, features: [] },
-      { code: "standard", name: "STANDARD", price: 300000, features: [] },
-      { code: "presenter", name: "PRESENTER", price: 400000, features: [] },
-      { code: "strategic", name: "STRATEGIC", price: 700000, features: [] },
-      { code: "diamond", name: "DIAMOND PARTNER", price: 2000000, features: [] },
-    ],
-  },
-  {
     code: "consult",
     label: "内容を相談して決めたい",
     heading: "内容を相談して決めたい",
@@ -263,13 +264,24 @@ export function yen(n: number): string {
   return `${(n / 10000).toLocaleString("ja-JP")}万円`;
 }
 
-export function planLabel(courseCode: string, planCode: string): string {
-  if (planCode === PLAN_CONSULT) return "内容を相談して決めたい";
-  const c = findCourse(courseCode);
-  const p = c?.plans.find((x) => x.code === planCode);
-  if (!c || !p) return planCode;
-  return `${c.label}／${p.name}　${yen(p.price)}（税別）`;
+/** 特別割にチェックが入っているときは、そちらの価格表を使う。 */
+export function plansFor(course: Course, isLocal: boolean): SponsorPlan[] {
+  return isLocal && course.localPlans ? course.localPlans : course.plans;
 }
+
+export function planLabel(courseCode: string, planCode: string, isLocal: boolean): string {
+  const c = findCourse(courseCode);
+  if (!c) return planCode;
+  const suffix = isLocal ? "（宮崎県法人 特別割）" : "";
+  if (planCode === PLAN_CONSULT) return `${c.label}${suffix}／内容を相談して決めたい`;
+  const p = plansFor(c, isLocal).find((x) => x.code === planCode);
+  if (!p) return planCode;
+  return `${c.label}${suffix}／${p.name}　${yen(p.price)}（税別）`;
+}
+
+/** 特別割のチェックを出すコードか（宮崎開催のみ） */
+export const LOCAL_DISCOUNT_COURSE = "miyazaki";
+export const LOCAL_DISCOUNT_LABEL = "宮崎県内に本店または主たる事業所を置く法人";
 
 /** 年間会員（協賛プランとの併用可。PDF p.13） */
 export const ANNUAL_MEMBER = {

@@ -2,7 +2,7 @@
 
 import { sendSponsorApplicationEmails } from "@/lib/email";
 import {
-  SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel,
+  SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel, plansFor, LOCAL_DISCOUNT_COURSE,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
 
@@ -41,6 +41,7 @@ export async function submitSponsorApplication(
 
   const courseCode = g("course", 40);
   const plan = g("plan", 40);
+  const isLocalCorp = formData.get("isLocalCorp") === "on";
   const annualMember = formData.get("annualMember") === "on";
   const company = g("company", 200);
   const companyKana = g("companyKana", 200);
@@ -60,9 +61,14 @@ export async function submitSponsorApplication(
   const course = findCourse(courseCode);
   if (!course) return { error: "協賛対象の開催を選択してください。" };
 
-  // ⚠️ プランは**選んだ開催コースに存在するものだけ**を許可する
+  // ⚠️ 特別割は宮崎開催に限り適用される。画面では宮崎に固定しているが、サーバーでも守る。
+  if (isLocalCorp && course.code !== LOCAL_DISCOUNT_COURSE) {
+    return { error: "宮崎県法人の特別割は、宮崎開催のみに適用されます。" };
+  }
+
+  // ⚠️ プランは**選んだ開催コース（＋特別割の有無）に存在するものだけ**を許可する
   //   （画面で切り替えているが、送信値の付け替えを防ぐためサーバーでも見る）。
-  const planCodes = new Set([...course.plans.map((p) => p.code), PLAN_CONSULT]);
+  const planCodes = new Set([...plansFor(course, isLocalCorp).map((p) => p.code), PLAN_CONSULT]);
   if (!planCodes.has(plan)) return { error: "希望する協賛プランを選択してください。" };
 
   if (!company) return { error: "法人・団体名を入力してください。" };
@@ -84,9 +90,9 @@ export async function submitSponsorApplication(
   const { adminDelivered } = await sendSponsorApplicationEmails(
     {
       refNo,
-      isLocalCorp: course.code === "miyazaki_local",
-      entryType: course.label,
-      plan: planLabel(course.code, plan),
+      isLocalCorp,
+      entryType: isLocalCorp ? `${course.label}（宮崎県法人 特別割）` : course.label,
+      plan: planLabel(course.code, plan, isLocalCorp),
       annualMember,
       company, companyKana, name, department, email, phone, address, website,
       purpose,
