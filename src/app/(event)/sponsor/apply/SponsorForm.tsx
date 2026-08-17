@@ -335,7 +335,7 @@ export function SponsorForm() {
           {/* ══ STEP 1｜開催を選ぶ ══════════════════════════ */}
           <div hidden={step !== 0} className="flex flex-col gap-7">
             <section className="flex flex-col gap-3" data-field="course">
-              <h2 className={qCls}>協賛対象の開催{req}</h2>
+              <h2 className={qCls}>協賛する開催場所{req}</h2>
               <p className={hintCls}>選んだ開催に応じて、次の画面のプランと価格が切り替わります。</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {COURSES.map((c) => {
