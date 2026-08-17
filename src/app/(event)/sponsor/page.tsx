@@ -45,7 +45,7 @@ const HAPPENS = [
   },
   {
     no: "02 / TASTE",
-    title: ["試食・試飲で、", "反応をその場で得る。"],
+    title: ["試食・試飲・資料で、", "反応を得る。"],
     lead: "展示・試食・試飲",
     body: "で、商品を実際に味わってもらう。バイヤーや飲食店からの率直な反応を、商品改善や販売提案に持ち帰れます。",
   },
@@ -92,8 +92,15 @@ export default function SponsorLandingPage() {
           />
           <div className={`${s.wrap} ${s.heroMain}`}>
             <div className={s.ey}>CO-CREATION PARTNER / SPONSORSHIP</div>
-            {/* ⚠️ キャッチコピーはユーザー指定（2026-08-18）。改行や装飾を足さないこと。 */}
-            <h1>参加から商談と共創へ</h1>
+            {/* ⚠️ キャッチコピーはユーザー指定（2026-08-18）。改行の位置も指定どおり。
+                装飾（色替え等）を足さないこと。 */}
+            <h1>
+              協賛で
+              <br />
+              商談へつなげる。
+              <br />
+              共創をつくる。
+            </h1>
             <p>
               生産者、企業、流通、飲食、自治体、スタートアップが同じテーブルを囲む。Food Japan
               Summitは、商品を味わい、アイデアを磨き、次に一緒に動く相手を見つける場です。
@@ -110,12 +117,8 @@ export default function SponsorLandingPage() {
           </div>
         </section>
 
-        <div className={s.ticker}>
-          <p>
-            TRY IT <b>✦</b> TALK ABOUT IT <b>✦</b> MAKE IT TOGETHER <b>✦</b> SELL IT TOGETHER{" "}
-            <b>✦</b> TRY IT <b>✦</b> TALK ABOUT IT <b>✦</b> MAKE IT TOGETHER
-          </p>
-        </div>
+        {/* ⚠️ 英語のティッカー（TRY IT / TALK ABOUT IT …）は削除した
+            （ユーザー指示 2026-08-18「意味がわからない」）。CSSの .ticker も未使用。 */}
 
         <section className={s.intro}>
           <div className={`${s.wrap} ${s.introGrid}`}>
@@ -145,13 +148,8 @@ export default function SponsorLandingPage() {
             <div className={s.whatHead}>
               <div>
                 <div className={s.ey}>WHAT HAPPENS</div>
-                <h2 className={s.sectionTitle}>
-                  会場で、
-                  <br />
-                  新しい仕事が
-                  <br />
-                  動き出す。
-                </h2>
+                {/* ⚠️ 見出しはユーザー指定（2026-08-18）。改行や装飾を足さないこと。 */}
+                <h2 className={s.sectionTitle}>協賛するメリット</h2>
               </div>
               {/* ⚠️「参加者の同意を得た範囲での商談候補者紹介・面談調整」は指示書の必須文言。
                   成果を保証する表現に書き換えないこと。 */}
