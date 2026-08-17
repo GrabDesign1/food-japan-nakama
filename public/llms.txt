@@ -33,6 +33,8 @@
 - [共創プロデュース](https://nakama.food-japan-summit.jp/produce): 個別支援の内容・流れ・相談導線
 - [クラウドファンディング支援](https://nakama.food-japan-summit.jp/crowdfunding): Makuake等を使う販売・検証支援
 - [食品ロス支援](https://nakama.food-japan-summit.jp/food-loss): 未利用資源の活用相談
+- [実績](https://nakama.food-japan-summit.jp/cases): Food Japan Summit の出会いが取引・商品になった事例（関係各社の承諾を得たもののみ掲載）
+- [実績：仙台・玉澤とミガキイチゴ](https://nakama.food-japan-summit.jp/cases/tamazawa-migaki-ichigo): 創業350年の九重本舗玉澤とミガキイチゴ（株式会社GRA）の初コラボ「霜塩小餅かき氷（ミガキイチゴ）」が2026年7月1日発売。出会いから発売まで約5か月
 - [学び・セミナー](https://nakama.food-japan-summit.jp/learn): セミナー・アーカイブ
 - [利用の流れ](https://nakama.food-japan-summit.jp/flow): 登録から利用まで
 - [よくある質問](https://nakama.food-japan-summit.jp/faq): 料金・利用対象など

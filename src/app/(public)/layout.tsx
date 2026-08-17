@@ -46,6 +46,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           </div>
           <FooterCol title="NAKAMA" links={[
             ["NAKAMAとは", "/about"],
+            ["実績", "/cases"],
             ["学び・セミナー", "/learn"],
             ["利用の流れ", "/flow"],
             ["利用料金・共創支援", "/pricing"],

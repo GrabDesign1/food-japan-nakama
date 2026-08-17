@@ -18,12 +18,8 @@ import {
 } from "@/lib/offering-taxonomy";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { loadReplyRates } from "@/lib/reply-rate";
-import {
-  isLeadChargingActive,
-  LEAD_UNLOCK_START_LABEL,
-  LEAD_UNOPENED_NOTICE_DAYS,
-} from "@/lib/lead-unlock";
 import { sendInterest } from "../../messages/actions";
+import { InquiryFlowCard } from "@/components/InquiryFlowCard";
 import { PendingButton } from "@/components/PendingButton";
 import { duplicateOffering } from "../actions";
 import { FavoriteButton } from "./FavoriteButton";
@@ -472,16 +468,10 @@ export default async function OfferingDetailPage({
             <div className="text-[14px] font-semibold text-[var(--ink)]">
               この案件について問い合わせる
             </div>
+            {/* 開封課金と待ち時間の予告は下の InquiryFlowCard に集約した（2026-08-17）。
+                ここには「具体的に書くほど開いてもらいやすい」という書き方の助言だけ残す。 */}
             <p className="mb-2 mt-0.5 text-[12px] text-[var(--ink-2)]">
-              価格、数量、受け渡し方法などを売り手と相談できます（問い合わせ内容を送信 → 相手が確認 → 条件を相談）。
-              <b>問い合わせの送信は無料です。</b>
-            </p>
-            {/* 予告：開封が有料になることと、待たされたときに何が起きるかを先に伝える（2026-08-12） */}
-            <p className="mb-2 rounded-[8px] border border-[var(--amber-line)] bg-[var(--amber-bg)] px-3 py-2 text-[11px] leading-5 text-[var(--ink-2)]">
-              {isLeadChargingActive()
-                ? "お送りした内容は、売り手が開封してから読まれます（売り手は開封に紹介料1クレジットを使います）。"
-                : `${LEAD_UNLOCK_START_LABEL}以降にお送りいただく問い合わせは、売り手が開封してから読まれます（売り手は開封に紹介料1クレジットを使います）。`}
-              {LEAD_UNOPENED_NOTICE_DAYS}日たっても開封されない場合は、メールでお知らせします。
+              価格、数量、受け渡し方法などを売り手と相談できます。<b>問い合わせの送信は無料です。</b>
               具体的に書いていただくほど開いてもらいやすくなります（必要な数量・時期・用途・お届け先）。
             </p>
             <textarea
@@ -502,6 +492,8 @@ export default async function OfferingDetailPage({
           </form>
         )
       ) : null}
+      {/* 連絡から商談までの流れ（固定表示）。掲載者本人には出さない */}
+      {!isOwner ? <InquiryFlowCard direction={offering.direction} className="mt-4" /> : null}
       </div>
 
       {/* この商品・原料について */}

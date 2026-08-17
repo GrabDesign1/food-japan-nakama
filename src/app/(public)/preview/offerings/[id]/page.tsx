@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getPublicOffering } from "@/lib/public-content";
 import { Paywall } from "../../../_components/Paywall";
 import { PublicTopBar } from "../../../_components/PublicTopBar";
+import { InquiryFlowCard } from "@/components/InquiryFlowCard";
 import { categoryMeta, DIRECTION_SHORT, formatAmount } from "@/lib/offering-taxonomy";
 import { h1Cls } from "@/lib/ui";
 
@@ -65,6 +66,9 @@ export default async function PublicOfferingPreview({
           {remaining > 0 ? "…" : ""}
         </p>
       ) : null}
+
+      {/* 連絡から商談までの流れ。登録の前に「何が起きるか」を先に見せる */}
+      <InquiryFlowCard direction={o.direction} />
 
       <Paywall remaining={remaining} />
       </div>

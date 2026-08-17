@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { getPublicTenantId } from "@/lib/public-content";
+import { CASES_SORTED } from "@/lib/cases";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nakama.food-japan-summit.jp";
 
@@ -13,7 +14,7 @@ export const revalidate = 3600;
  * 検索結果に残り続ける（2026-08-11に実際に発生）。
  * 料金・サービス説明を変更したら必ずこの日付を更新すること。
  */
-const CONTENT_UPDATED_AT = new Date("2026-08-12T12:00:00+09:00");
+const CONTENT_UPDATED_AT = new Date("2026-08-17T12:00:00+09:00");
 
 // 公開静的ページ（middleware の PUBLIC_PATHS と対応）
 const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }[] = [
@@ -24,6 +25,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   { path: "/produce", priority: 0.9, changeFrequency: "weekly" },
   { path: "/crowdfunding", priority: 0.9, changeFrequency: "weekly" },
   { path: "/food-loss", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/cases", priority: 0.9, changeFrequency: "weekly" },
   { path: "/learn", priority: 0.8, changeFrequency: "weekly" },
   { path: "/flow", priority: 0.7, changeFrequency: "monthly" },
   { path: "/faq", priority: 0.7, changeFrequency: "monthly" },
@@ -42,6 +44,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: p.changeFrequency,
     priority: p.priority,
   }));
+
+  // 実績の詳細（静的定義。CASES に足せば自動で増える。非公開のものは出さない）
+  for (const c of CASES_SORTED) {
+    entries.push({
+      url: `${APP_URL}/cases/${c.slug}`,
+      lastModified: CONTENT_UPDATED_AT,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    });
+  }
 
   // 公開中の案件プレビュー（概要は未ログインでも閲覧可）
   try {

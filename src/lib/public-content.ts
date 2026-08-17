@@ -3,6 +3,14 @@ import { prisma } from "@/lib/db";
 
 const TENANT_SLUG = "food-japan-summit";
 
+/**
+ * 公開トップに案件セクションを出し始める件数（2026-08-17 ユーザー決定）。
+ * これに満たないうちはセクションごと出さない＝「現在ありません」を並べない。
+ * 4件にしているのは、トップのグリッドが lg:grid-cols-4 で1行が埋まる数だから。
+ * 判定は売りたい／探している／共創プロジェクトで**別々**に行う。
+ */
+export const MIN_LISTINGS_TO_SHOW = 4;
+
 export async function getPublicTenantId(): Promise<string | null> {
   const t = await prisma.tenant.findUnique({
     where: { slug: TENANT_SLUG },
@@ -102,6 +110,56 @@ export async function getPublicProject(id: string) {
     select: { name: true },
   });
   return { ...p, memberName: member?.name ?? "" };
+}
+
+/**
+ * 公開の案件一覧（/listings）用。
+ * ⚠️ 公開する情報の粒度はトップのカードと同じにすること（member は name と companyLogoUrl だけ）。
+ * ここに連絡先や非公開項目を足すと、未ログインに会員限定情報が出る。
+ */
+export async function getPublicListings(type: "give" | "want" | "coproject", take = 48) {
+  const tenantId = await getPublicTenantId();
+  if (!tenantId) return { offerings: [], projects: [], projNameMap: new Map<string, string>(), total: 0 };
+
+  if (type === "coproject") {
+    const [projects, total] = await Promise.all([
+      prisma.project.findMany({
+        where: { tenantId, status: "published" },
+        orderBy: { publishedAt: "desc" },
+        take,
+      }),
+      prisma.project.count({ where: { tenantId, status: "published" } }),
+    ]);
+    const ids = Array.from(new Set(projects.map((p) => p.memberId)));
+    const members = ids.length
+      ? await prisma.member.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+      : [];
+    return {
+      offerings: [],
+      projects,
+      projNameMap: new Map(members.map((m) => [m.id, m.name])),
+      total,
+    };
+  }
+
+  const where = {
+    isPublic: true,
+    visibility: "public",
+    title: { not: "" },
+    direction: type === "give" ? "GIVE" : "WANT",
+    member: { tenantId, status: "APPROVED" },
+  } as const;
+
+  const [offerings, total] = await Promise.all([
+    prisma.offering.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take,
+      include: { member: { select: { name: true, companyLogoUrl: true } } },
+    }),
+    prisma.offering.count({ where }),
+  ]);
+  return { offerings, projects: [], projNameMap: new Map<string, string>(), total };
 }
 
 /** 公開プレビュー用：公開中の持ち寄り1件（停止・未承認会員の掲載は出さない）。 */
