@@ -137,9 +137,20 @@ export function SponsorForm() {
   const selectedPlan: SponsorPlan | null = plans.find((p) => p.code === plan) ?? null;
   const total = applicationTotal(selectedPlan, boothOption);
 
+  // 請求書の宛名は法人・団体名と同じことがほとんどなので、**手で書き換えるまで追随させる**。
+  // 一度でも宛名を直接編集したら追随をやめる（せっかく直した宛名を上書きしないため）。
+  const [invoiceNameEdited, setInvoiceNameEdited] = useState(false);
+
   const setField = (k: TextKey, v: string) => {
-    setText((t) => ({ ...t, [k]: v }));
-    setErrors((e) => (e[k] ? { ...e, [k]: "" } : e));
+    setText((t) => {
+      const next = { ...t, [k]: v };
+      if (k === "company" && !invoiceNameEdited) next.invoiceName = v;
+      return next;
+    });
+    setErrors((e) => {
+      if (k === "company" && !invoiceNameEdited) return { ...e, company: "", invoiceName: "" };
+      return e[k] ? { ...e, [k]: "" } : e;
+    });
   };
 
   /** 開催を変えたら、プランと特別割は必ず捨てる（価格表が入れ替わるため）。 */
@@ -170,7 +181,6 @@ export function SponsorForm() {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(text.email.trim())) e.email = "正しいメールアドレスを入力してください。";
       if (!text.phone.trim()) e.phone = "電話番号を入力してください。";
       if (!text.address.trim()) e.address = "所在地を入力してください。";
-      if (!text.purpose.trim()) e.purpose = "協賛を通じて実現したいことを入力してください。";
       if (!text.invoiceName.trim()) e.invoiceName = "請求書の宛名を入力してください。";
       if (!LOGO_SUBMISSION.includes(logoSubmission)) e.logoSubmission = "ロゴデータの提出方法を選択してください。";
     }
@@ -906,14 +916,14 @@ export function SponsorForm() {
             </section>
 
             <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6" data-field="purpose">
-              <h2 className={qCls}>貴社は、Food Japan Summitで何を実現したいですか？{req}</h2>
+              <h2 className={qCls}>貴社は、Food Japan Summitで何を実現したいですか？{opt}</h2>
               <p className={hintCls}>
                 まだ具体的に決まっていなくても構いません。
                 <br />
                 例：新商品の認知拡大／販路開拓／生産者との連携／新商品開発／地域との共創／食品ロス対策／人材・採用／物流課題／自治体との連携
               </p>
               <textarea
-                name="purpose" rows={8} value={text.purpose} required={step === 2}
+                name="purpose" rows={8} value={text.purpose}
                 onChange={(e) => setField("purpose", e.target.value)}
                 className={fieldCls(errors.purpose)}
               />
@@ -1011,9 +1021,13 @@ export function SponsorForm() {
               <div hidden={!billingOpen} className="mt-3 flex flex-col gap-4">
                 <label className={labelCls} data-field="invoiceName">
                   請求書の宛名{req}
+                  <span className={hintCls}>
+                    法人・団体名がそのまま入ります。請求書の宛名が異なる場合は書き換えてください。
+                  </span>
                   <input
                     name="invoiceName" value={text.invoiceName} required={step === 2 && billingOpen}
-                    onChange={(e) => setField("invoiceName", e.target.value)}
+                    // 直接編集したら、以降は法人・団体名に追随させない。
+                    onChange={(e) => { setInvoiceNameEdited(true); setField("invoiceName", e.target.value); }}
                     className={fieldCls(errors.invoiceName)}
                   />
                   <FieldError msg={errors.invoiceName} />

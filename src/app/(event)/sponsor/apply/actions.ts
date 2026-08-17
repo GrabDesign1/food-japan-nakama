@@ -115,7 +115,6 @@ export async function submitSponsorApplication(
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fields.email = "正しいメールアドレスを入力してください。";
   if (!phone) fields.phone = "電話番号を入力してください。";
   if (!address) fields.address = "所在地を入力してください。";
-  if (!purpose) fields.purpose = "協賛を通じて実現したいことを入力してください。";
   if (!invoiceName) fields.invoiceName = "請求書の宛名を入力してください。";
   if (!LOGOS.has(logoSubmission)) fields.logoSubmission = "ロゴデータの提出方法を選択してください。";
   // 同意事項（3つとも必須）
