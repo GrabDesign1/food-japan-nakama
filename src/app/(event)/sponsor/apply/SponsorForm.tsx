@@ -822,8 +822,14 @@ export function SponsorForm() {
                 </span>
               </label>
 
-              {/* ブース出展（年間会員と同じデザイン体系・別枠の商品） */}
-              <label
+              {/* ブース出展（年間会員と同じデザイン体系・別枠の商品）。
+                  ⚠️ **カードを label にしないこと**（2026-08-18 に踏んだ）。label の対象になるのは
+                     中で最初に見つかる「ラベル付け可能な要素」で、**button も対象に含まれる**。
+                     「ブースイメージを見る」ボタンがチェックボックスより前にあったため、
+                     カードのどこを押してもモーダルが開き、チェックは一切入らなかった。
+                     div ＋ onClick でチェックを切り替え、ボタン側で伝播を止める。 */}
+              <div
+                onClick={() => setBoothOption((v) => !v)}
                 className={`flex cursor-pointer flex-col rounded-[10px] border-2 p-5 transition ${
                   boothOption
                     ? "border-[var(--green)] bg-[var(--green-soft)]"
@@ -844,25 +850,27 @@ export function SponsorForm() {
                   ))}
                 </span>
                 <span className="mt-2 block text-[12px] leading-5 text-[var(--muted)]">※ {BOOTH_OPTION.note}</span>
-                {/* ⚠️ カード全体が label なので、押したときにチェックが入らないよう
-                    preventDefault + stopPropagation する。モーダル本体は label の外
-                    （form 直下）に置くこと＝中に置くとモーダル内のクリックで
-                    ブース出展にチェックが入ってしまう。 */}
+                {/* この1つだけがモーダルを開く。カードのクリック（チェック切り替え）に
+                    伝播させないよう stopPropagation する。 */}
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     setImageModal({ title: "ブース出展のイメージ", ...BOOTH_OPTION.image });
                   }}
-                  className={`${btn("secondary", "sm")} mt-3 self-start`}
+                  className={`${btn("secondary", "md")} mt-3 self-start`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <rect x="3" y="4" width="18" height="14" rx="2" /><path d="M3 14l4.5-4.5 3 3L15 8l6 6" />
                   </svg>
                   ブースイメージを見る
                 </button>
-                <span className={`${tap} mt-3 flex items-center gap-2.5 border-t border-[var(--line-soft)] pt-3`}>
+                {/* チェック行。ここは label にしてよい（中に button が無いので対象はチェックボックス）。
+                    ⚠️ 親の onClick にも伝わると2回切り替わって元に戻るので、伝播を止める。 */}
+                <label
+                  onClick={(e) => e.stopPropagation()}
+                  className={`${tap} mt-3 flex cursor-pointer items-center gap-2.5 border-t border-[var(--line-soft)] pt-3`}
+                >
                   <input
                     type="checkbox"
                     name="boothOption"
@@ -872,8 +880,8 @@ export function SponsorForm() {
                     className="h-5 w-5 shrink-0 accent-[var(--green)]"
                   />
                   <span className="text-[15px] font-bold text-[var(--ink)]">{BOOTH_OPTION.label}</span>
-                </span>
-              </label>
+                </label>
+              </div>
             </section>
           </div>
 
