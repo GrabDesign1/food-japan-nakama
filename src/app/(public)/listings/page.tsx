@@ -5,6 +5,7 @@ import { OfferingCard } from "@/components/OfferingCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { getPublicListings } from "@/lib/public-content";
 import { CASES_SORTED } from "@/lib/cases";
+import { FJS_URL } from "@/lib/services";
 import { btn, h1Cls } from "@/lib/ui";
 
 // 公開の案件一覧（未ログインでも見られる）。
@@ -106,7 +107,20 @@ export default async function PublicListings({
             <p className="mt-1.5 text-[13px] leading-7 text-[var(--ink-2)]">
               事務局が順次登録しています。掲載され次第、ここに表示されます。
               <br />
-              先に自社の募集を出しておくこともできます。条件の合う相手から連絡が届きます。登録と掲載は無料です。
+              先に自社の募集を出しておくと、条件の合う相手に見つけてもらいやすくなります。登録と掲載は無料です。
+            </p>
+            {/* ⚠️事務局の約束。掲載者を Summit のネットワークへ実際に紹介する運用が前提（page.tsx と同じ一文） */}
+            <p className="mt-3 border-t border-[var(--green)] pt-3 text-[13px] font-bold leading-7 text-[var(--green-d)]">
+              いま掲載すると、
+              <a
+                href={FJS_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2 hover:no-underline"
+              >
+                Food Japan Summit
+              </a>
+              {" "}のネットワークへ先行して紹介されます。
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link href="/signup" className={btn("primary")}>

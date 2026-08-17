@@ -6,7 +6,7 @@ import { CASES_SORTED } from "@/lib/cases";
 import { OfferingCard } from "@/components/OfferingCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { btn, h2Cls } from "@/lib/ui";
-import { SERVICE_MENU, consultationHref } from "@/lib/services";
+import { SERVICE_MENU, consultationHref, FJS_URL } from "@/lib/services";
 import { HeroMobileMenu } from "./_components/HeroMobileMenu";
 
 export default async function PublicHome() {
@@ -61,7 +61,7 @@ export default async function PublicHome() {
             </p>
             <a
               className="fjn-hero__tag"
-              href="https://food.kanpai-lab.com/"
+              href={FJS_URL}
               target="_blank"
               rel="noreferrer"
             >
@@ -137,8 +137,23 @@ export default async function PublicHome() {
               売りたい・探している・共創したい<br className="sm:hidden" />
               に参加することができます！
             </p>
+            {/* ⚠️「連絡が届きます」とは書かない＝届く保証はない。事実は「見つけてもらいやすくなる」まで */}
             <p className="mx-auto mt-2.5 max-w-[620px] text-[13px] leading-7 text-[var(--ink-2)]">
-              売りたいもの、探しているもの、一緒につくりたいことを登録すると、条件の合う相手から連絡が届きます。登録と掲載は無料です。
+              売りたいもの、探しているもの、一緒につくりたいことを登録すると、条件の合う相手に見つけてもらいやすくなります。
+            </p>
+            {/* ⚠️ここは事務局の約束。掲載者を Summit のネットワークへ実際に紹介する運用が前提
+                （やらないと景表法上まずい表示になる）。運用を変えるならこの一文も直すこと。 */}
+            <p className="mx-auto mt-3 max-w-[620px] border-t border-[var(--green)] pt-3 text-[13px] font-bold leading-7 text-[var(--green-d)]">
+              いま掲載すると、
+              <a
+                href={FJS_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2 hover:no-underline"
+              >
+                Food Japan Summit
+              </a>
+              {" "}のネットワークへ先行して紹介されます。
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <Link
@@ -313,7 +328,7 @@ export default async function PublicHome() {
         <section>
           <SectionHead
             title="登録後、最初にすること"
-            sub="この3つが済むと、相手からの連絡が届くようになります"
+            sub="この3つが済むと、相手に見つけてもらいやすくなります"
           />
           <ol className="border-t border-[var(--line)]">
             {[
@@ -324,7 +339,8 @@ export default async function PublicHome() {
               },
               {
                 t: "案件を1件掲載する",
-                d: "売りたいもの、探しているもの、一緒につくりたいことを、具体的に載せます。掲載は無料です。",
+                /* 「掲載は無料」は下の※行に集約した（無料表記を繰り返すと逆に疑わせるため） */
+                d: "売りたいもの、探しているもの、一緒につくりたいことを、具体的に載せます。",
                 icon: "/steps/step-listing.png",
               },
               {
@@ -361,7 +377,9 @@ export default async function PublicHome() {
             )}
           </div>
           <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-            ※ 登録、掲載、閲覧、検索、問い合わせの送信は無料です。連絡が始まったあとのやり取りは、何往復でも無料です。
+            {/* 「どこまでが無料か」はサイト全体でここ1文に集約する。他所で繰り返さないこと
+                （繰り返すと安心ではなく「後から請求されるのでは」という疑いを生む） */}
+            ※ 無料でできるのは、登録・掲載・閲覧・検索・問い合わせの送信と、連絡が始まったあとのやり取り（何往復でも）です。
           </p>
         </section>
 
@@ -380,14 +398,16 @@ export default async function PublicHome() {
         <section>
           <SectionHead
             title="NAKAMAのサービス"
-            sub="基本掲載は無料です。必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します"
+            /* 「基本掲載は無料です」は、すぐ下のNAKAMA登録カードに価格として出ているので重ねない */
+            sub="必要なところだけ、NAKAMA事務局が販促・販売企画・共創事業化まで伴走します"
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-5">
               <div className="text-[11px] text-[var(--muted)]">まずは無料で始めたい</div>
               <h3 className="text-[15px] font-bold text-[var(--ink)]">NAKAMA登録</h3>
               <p className="mt-1 flex-1 text-[13px] leading-6 text-[var(--ink-2)]">
-                商品・会社・募集情報の掲載。登録・掲載・応募は無料。
+                {/* 価格は下の行に「無料」と出るので、説明文では繰り返さない */}
+                商品・会社・募集情報の掲載、案件への応募・問い合わせ。
               </p>
               <div className="mt-2 text-[13px] font-semibold text-[var(--green-d)]">無料</div>
               <Link href="/signup" className="mt-3 text-[12px] text-[var(--green-d)] underline">無料で登録する →</Link>
