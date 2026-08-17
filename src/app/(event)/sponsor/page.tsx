@@ -17,6 +17,8 @@ import s from "./sponsor-teaser.module.css";
 //    （金額を出す以上、税別である旨は消せない）。
 // ⚠️ NAKAMA の機能ではないので noindex のまま。URLを直接案内して使う。
 // ⚠️ 見た目は黒基調。申込フォーム（/sponsor/apply）は白基調のままで、意図的に別の顔にしている。
+// ⚠️ CTAの文言は納品HTMLの「共創パートナーに申し込む」から**「協賛に申し込む」へ変更**
+//    （ユーザー指示 2026-08-18）。リンク先は /sponsor/apply のまま。
 
 export const metadata: Metadata = {
   title: "Food Japan Summit 2026｜共創パートナー募集",
@@ -98,7 +100,7 @@ export default function SponsorLandingPage() {
             </p>
             <div className={s.actions}>
               <Link className={`${s.btn} ${s.primary}`} href="/sponsor/apply">
-                共創パートナーに申し込む
+                協賛に申し込む
               </Link>
               <Link className={`${s.btn} ${s.ghost}`} href="/sponsor/contact">
                 まずは相談する
@@ -369,7 +371,7 @@ export default function SponsorLandingPage() {
             </p>
             <div className={s.actions} style={{ justifyContent: "center" }}>
               <Link className={`${s.btn} ${s.primary}`} href="/sponsor/apply">
-                共創パートナーに申し込む
+                協賛に申し込む
               </Link>
               <Link className={`${s.btn} ${s.ghost}`} href="/sponsor/contact">
                 協賛内容を相談する
