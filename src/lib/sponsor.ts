@@ -206,6 +206,9 @@ export const COURSES: Course[] = [
           "試食会・スナック交流",
           LOGO,
           COWORK,
+          // ⚠️ 2026-08-17 に募集資料（マスターPPTX p.51）側で両開催のSTANDARDにも追加されたので合わせた。
+          //    単独開催のSTANDARDには元からあり、上位プランで特典が減る形になっていた。
+          HANDOUT,
           NAKAMA,
         ],
         note: SELF_STAY,
