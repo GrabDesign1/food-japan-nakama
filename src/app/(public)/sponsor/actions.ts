@@ -2,8 +2,7 @@
 
 import { sendSponsorApplicationEmails } from "@/lib/email";
 import {
-  SPONSOR_INBOX, SPONSOR_PLANS, PLAN_CONSULT, planLabel,
-  ENTRY_LABEL, ENTRY_LOCAL, ENTRY_MIYAZAKI, ENTRY_ANNUAL, ENTRY_CONSULT,
+  SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
 
@@ -13,8 +12,6 @@ export type SponsorState = { ok?: boolean; refNo?: string; error?: string };
 //    そのため、事務局あてが1通も送れなかった場合は**成功にせず**、
 //    申込者に直接メールしてもらう案内を出す（申込を黙って失う事故を防ぐ）。
 
-const ENTRY_TYPES = new Set([ENTRY_MIYAZAKI, ENTRY_LOCAL, ENTRY_ANNUAL, ENTRY_CONSULT]);
-const PLAN_CODES = new Set([...SPONSOR_PLANS.map((p) => p.code), PLAN_CONSULT]);
 const THEMES = new Set(CO_CREATION_THEMES);
 const BENEFITS = new Set(DESIRED_BENEFITS);
 const LOGOS = new Set(LOGO_SUBMISSION);
@@ -42,9 +39,9 @@ export async function submitSponsorApplication(
     return { ok: true, refNo: makeRefNo() };
   }
 
-  const isLocalCorp = formData.get("isLocalCorp") === "on";
-  const entryType = g("entryType", 40);
+  const courseCode = g("course", 40);
   const plan = g("plan", 40);
+  const annualMember = formData.get("annualMember") === "on";
   const company = g("company", 200);
   const companyKana = g("companyKana", 200);
   const name = g("name", 100);
@@ -60,8 +57,14 @@ export async function submitSponsorApplication(
   const logoSubmission = g("logoSubmission", 100);
   const message = g("message");
 
-  if (!ENTRY_TYPES.has(entryType)) return { error: "申込区分を選択してください。" };
-  if (!PLAN_CODES.has(plan)) return { error: "希望する協賛プランを選択してください。" };
+  const course = findCourse(courseCode);
+  if (!course) return { error: "協賛対象の開催を選択してください。" };
+
+  // ⚠️ プランは**選んだ開催コースに存在するものだけ**を許可する
+  //   （画面で切り替えているが、送信値の付け替えを防ぐためサーバーでも見る）。
+  const planCodes = new Set([...course.plans.map((p) => p.code), PLAN_CONSULT]);
+  if (!planCodes.has(plan)) return { error: "希望する協賛プランを選択してください。" };
+
   if (!company) return { error: "法人・団体名を入力してください。" };
   if (!companyKana) return { error: "法人・団体名（フリガナ）を入力してください。" };
   if (!name) return { error: "ご担当者名を入力してください。" };
@@ -73,20 +76,18 @@ export async function submitSponsorApplication(
   if (!LOGOS.has(logoSubmission)) return { error: "ロゴデータの提出方法を選択してください。" };
 
   // 同意事項（3つとも必須）
-  const agreed = formData.getAll("consent").length;
-  if (agreed < CONSENTS.length) return { error: "同意事項のすべてにチェックしてください。" };
-
-  // 宮崎県法人のチェックと申込区分の整合（画面側で制御しているが、サーバーでも守る）
-  if (isLocalCorp && entryType === ENTRY_MIYAZAKI) return { error: "申込区分を選び直してください。" };
-  if (!isLocalCorp && entryType === ENTRY_LOCAL) return { error: "宮崎県内の法人にチェックを入れてください。" };
+  if (formData.getAll("consent").length < CONSENTS.length) {
+    return { error: "同意事項のすべてにチェックしてください。" };
+  }
 
   const refNo = makeRefNo();
   const { adminDelivered } = await sendSponsorApplicationEmails(
     {
       refNo,
-      isLocalCorp,
-      entryType: ENTRY_LABEL[entryType] ?? entryType,
-      plan: planLabel(plan, isLocalCorp),
+      isLocalCorp: course.code === "miyazaki_local",
+      entryType: course.label,
+      plan: planLabel(course.code, plan),
+      annualMember,
       company, companyKana, name, department, email, phone, address, website,
       purpose,
       themes: many("themes", THEMES),

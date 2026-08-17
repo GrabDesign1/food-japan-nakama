@@ -4,8 +4,7 @@ import { useActionState, useState } from "react";
 import { submitSponsorApplication, type SponsorState } from "./actions";
 import { btn, input } from "@/lib/ui";
 import {
-  SPONSOR_PLANS, PLAN_CONSULT, yen,
-  ENTRY_LABEL, ENTRY_LOCAL, ENTRY_MIYAZAKI, ENTRY_ANNUAL, ENTRY_CONSULT,
+  COURSES, PLAN_CONSULT, yen, ANNUAL_MEMBER,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
 
@@ -22,8 +21,9 @@ function Section({ children }: { children: React.ReactNode }) {
 
 export function SponsorForm() {
   const [state, action, pending] = useActionState<SponsorState, FormData>(submitSponsorApplication, {});
-  // 宮崎県内の法人かどうか。ここにチェックを入れた時点で、表示するプランを特別割だけに切り替える。
-  const [isLocal, setIsLocal] = useState(false);
+  // 設問1で選んだ開催コース。ここを変えると、プラン一覧と設問2の価格がまるごと入れ替わる。
+  const [courseCode, setCourseCode] = useState(COURSES[0].code);
+  const course = COURSES.find((c) => c.code === courseCode) ?? COURSES[0];
 
   if (state.ok) {
     return (
@@ -41,94 +41,105 @@ export function SponsorForm() {
     );
   }
 
-  const plans = SPONSOR_PLANS.map((p) => ({ ...p, shown: isLocal ? p.localPrice : p.price }));
-
   return (
     <form action={action} className="flex flex-col gap-7">
-      {/* 宮崎県法人の判定。ここが表示の切り替えスイッチ */}
-      <div className="rounded-[10px] border-2 border-[var(--amber)] bg-[var(--amber-bg)] p-5">
-        <label className="flex cursor-pointer items-start gap-3">
-          {/* ⚠️ autoComplete="off" は必須。これが無いと、ブラウザが再読み込み時に
-              チェック状態を復元してしまい、意図せず特別割プランが表示される
-              （React の checked は false のままなので、表示と実際がずれる）。 */}
-          <input
-            type="checkbox"
-            name="isLocalCorp"
-            autoComplete="off"
-            checked={isLocal}
-            onChange={(e) => setIsLocal(e.target.checked)}
-            className="mt-1 h-5 w-5 shrink-0 accent-[var(--amber-d)]"
-          />
-          <span>
-            <span className="text-[15px] font-bold text-[var(--ink)]">
-              宮崎県内に本店または主たる事業所を置く法人
-            </span>
-            <span className="mt-1 block text-[12px] leading-6 text-[var(--ink-2)]">
-              チェックを入れると、<b>宮崎県法人 特別割協賛プラン</b>のみが表示されます。
-            </span>
-          </span>
-        </label>
-      </div>
-
-      {/* プラン一覧（チェックの有無で入れ替わる） */}
+      {/* 設問1｜協賛対象の開催。ここが表示の切り替えスイッチ */}
       <div className="flex flex-col gap-2.5">
-        <h2 className={qCls}>{isLocal ? "宮崎県法人 特別割協賛プラン" : "宮崎開催 協賛プラン"}</h2>
-        {isLocal ? (
-          <p className={hintCls}>
-            宮崎県内に本店または主たる事業所を置く法人は、特別割プランを選択できます。
-            各プランの基本特典は、宮崎開催協賛プランに準じます。詳細は事務局よりご案内します。
-          </p>
-        ) : null}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {plans.map((p) => (
-            <div key={p.code} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[15px] font-bold tracking-[0.04em] text-[var(--ink)]">{p.name}</span>
-                <span className="text-[15px] font-bold text-[var(--green-d)]">
-                  {yen(p.shown)}
-                  <span className="ml-1 text-[11px] font-normal text-[var(--muted)]">（税別）</span>
-                </span>
-              </div>
-              <ul className="mt-2 flex flex-col gap-1">
-                {p.features.map((f) => (
-                  <li key={f} className="text-[12px] leading-6 text-[var(--ink-2)]">・{f}</li>
-                ))}
-              </ul>
-              {p.note ? <p className="mt-1.5 text-[11px] text-[var(--muted)]">※ {p.note}</p> : null}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 設問1 */}
-      <Section>
-        <h2 className={qCls}>1｜申込区分{req}</h2>
+        <h2 className={qCls}>1｜協賛対象の開催{req}</h2>
+        <p className={hintCls}>
+          選んだ開催に応じて、下のプランと価格が切り替わります。
+        </p>
         <div className="flex flex-col gap-2">
-          {[isLocal ? ENTRY_LOCAL : ENTRY_MIYAZAKI, ENTRY_ANNUAL, ENTRY_CONSULT].map((v, i) => (
-            <label key={v} className="flex cursor-pointer items-center gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3 text-[14px] text-[var(--ink)]">
-              <input type="radio" name="entryType" value={v} required defaultChecked={i === 0} className="h-4 w-4 accent-[var(--green)]" />
-              {ENTRY_LABEL[v]}
+          {COURSES.map((c) => (
+            <label
+              key={c.code}
+              className={`flex cursor-pointer items-center gap-2.5 rounded-[8px] border px-4 py-3 text-[14px] ${
+                c.code === courseCode
+                  ? "border-[var(--green)] bg-[var(--green-soft)] font-bold text-[var(--ink)]"
+                  : "border-[var(--line)] bg-white text-[var(--ink)]"
+              }`}
+            >
+              {/* ⚠️ autoComplete="off" は必須。無いとブラウザが再読み込み時に選択を復元し、
+                  React の state と表示がずれる（チェックボックス版で実際に踏んだ）。 */}
+              <input
+                type="radio"
+                name="course"
+                value={c.code}
+                autoComplete="off"
+                checked={c.code === courseCode}
+                onChange={() => setCourseCode(c.code)}
+                className="h-4 w-4 accent-[var(--green)]"
+              />
+              {c.label}
             </label>
           ))}
         </div>
-      </Section>
+      </div>
 
-      {/* 設問2 */}
+      {/* 選んだ開催のプラン一覧 */}
+      <div className="flex flex-col gap-2.5 rounded-[10px] bg-[var(--green-soft)] p-5">
+        <h2 className={qCls}>{course.heading}</h2>
+        <div className="flex flex-wrap gap-x-5 gap-y-1">
+          {course.venues.map((v) => (
+            <span key={v.label} className="text-[12px] text-[var(--ink-2)]">
+              <b className="text-[var(--ink)]">{v.label}</b>　{v.dates}／{v.venue}
+            </span>
+          ))}
+        </div>
+        {course.lead ? <p className="text-[12px] leading-6 text-[var(--ink-2)]">{course.lead}</p> : null}
+        {course.plans.length > 0 ? (
+          <div className="mt-1 grid gap-3 sm:grid-cols-2">
+            {course.plans.map((p) => (
+              <div key={p.code} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[15px] font-bold tracking-[0.04em] text-[var(--ink)]">{p.name}</span>
+                  <span className="text-[15px] font-bold text-[var(--green-d)]">
+                    {yen(p.price)}
+                    <span className="ml-1 text-[11px] font-normal text-[var(--muted)]">（税別）</span>
+                  </span>
+                </div>
+                {p.features.length > 0 ? (
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {p.features.map((f) => (
+                      <li key={f} className="text-[12px] leading-6 text-[var(--ink-2)]">・{f}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {p.note ? <p className="mt-1.5 text-[11px] text-[var(--muted)]">※ {p.note}</p> : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {/* 設問2｜希望協賛プラン（コースで中身が入れ替わる） */}
       <Section>
         <h2 className={qCls}>2｜希望協賛プラン{req}</h2>
         <div className="flex flex-col gap-2">
-          {plans.map((p) => (
+          {course.plans.map((p) => (
             <label key={p.code} className="flex cursor-pointer items-center gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3 text-[14px] text-[var(--ink)]">
               <input type="radio" name="plan" value={p.code} required className="h-4 w-4 accent-[var(--green)]" />
               <span className="font-bold tracking-[0.04em]">{p.name}</span>
-              <span className="text-[var(--green-d)]">{yen(p.shown)}（税別）</span>
+              <span className="text-[var(--green-d)]">{yen(p.price)}（税別）</span>
             </label>
           ))}
           <label className="flex cursor-pointer items-center gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3 text-[14px] text-[var(--ink)]">
-            <input type="radio" name="plan" value={PLAN_CONSULT} required className="h-4 w-4 accent-[var(--green)]" />
+            <input type="radio" name="plan" value={PLAN_CONSULT} required defaultChecked={course.plans.length === 0} className="h-4 w-4 accent-[var(--green)]" />
             内容を相談して決めたい
           </label>
         </div>
+      </Section>
+
+      {/* 年間会員（協賛プランと併用できるので、開催の選択とは独立させる） */}
+      <Section>
+        <h2 className={qCls}>2-2｜年間会員{opt}</h2>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3">
+          <input type="checkbox" name="annualMember" autoComplete="off" className="mt-1 h-4 w-4 shrink-0 accent-[var(--green)]" />
+          <span>
+            <span className="text-[14px] font-bold text-[var(--ink)]">{ANNUAL_MEMBER.label}</span>
+            <span className="mt-1 block text-[12px] leading-6 text-[var(--ink-2)]">{ANNUAL_MEMBER.detail}</span>
+          </span>
+        </label>
       </Section>
 
       {/* 設問3〜10 */}

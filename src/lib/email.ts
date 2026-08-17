@@ -596,6 +596,7 @@ export type SponsorMailInput = {
   isLocalCorp: boolean;
   entryType: string;
   plan: string;
+  annualMember: boolean;
   company: string;
   companyKana: string;
   name: string;
@@ -636,8 +637,9 @@ export async function sendSponsorApplicationEmails(
     <p style="font-size:13px">受付番号：<b>${esc(a.refNo)}</b></p>
     ${a.isLocalCorp ? `<p style="font-size:13px;color:#B45309;font-weight:bold">※ 宮崎県内に本店または主たる事業所を置く法人（特別割の対象）</p>` : ""}
     <table style="border-collapse:collapse;width:100%">
-      ${row("申込区分", a.entryType)}
+      ${row("協賛対象の開催", a.entryType)}
       ${row("希望プラン", a.plan)}
+      ${row("年間会員", a.annualMember ? "あわせて相談したい" : "")}
       ${row("法人・団体名", a.company)}
       ${row("フリガナ", a.companyKana)}
       ${row("ご担当者名", a.name)}
@@ -677,8 +679,9 @@ export async function sendSponsorApplicationEmails(
     </p>
     <table style="border-collapse:collapse;width:100%;margin-top:10px">
       ${row("受付番号", a.refNo)}
-      ${row("申込区分", a.entryType)}
+      ${row("協賛対象の開催", a.entryType)}
       ${row("希望プラン", a.plan)}
+      ${row("年間会員", a.annualMember ? "あわせて相談したい" : "")}
       ${row("開催日", "2026年11月17日（火）・18日（水）")}
       ${row("会場", "宮崎観光ホテル")}
     </table>

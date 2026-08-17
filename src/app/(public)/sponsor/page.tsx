@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SponsorForm } from "./SponsorForm";
-import { SUMMIT, COMMON_BENEFITS } from "@/lib/sponsor";
+import { SUMMIT_TITLE, VENUES, HOST, COMMON_BENEFITS } from "@/lib/sponsor";
 
 // Food Japan Summit 2026 in MIYAZAKI の協賛申込フォーム。
 // ⚠️ NAKAMA の機能ではない。**NAKAMA からリンクは張らず**、URLを直接案内して使う
@@ -9,9 +9,9 @@ import { SUMMIT, COMMON_BENEFITS } from "@/lib/sponsor";
 // ⚠️ 金額はすべて税別（NAKAMA本体は税込なので取り違えないこと）。
 
 export const metadata: Metadata = {
-  title: "協賛申込フォーム｜Food Japan Summit 2026 in MIYAZAKI",
+  title: "協賛申込フォーム｜Food Japan Summit 2026",
   description:
-    "Food Japan Summit 2026 in MIYAZAKI への協賛をご検討・お申し込みいただくためのフォームです。",
+    "Food Japan Summit 2026（宮崎開催・名古屋開催）への協賛をご検討・お申し込みいただくためのフォームです。",
   robots: { index: false, follow: false },
 };
 
@@ -28,7 +28,7 @@ export default function SponsorPage() {
       {/* このページ専用のヘッダー（NAKAMAのナビは出さない） */}
       <header className="flex flex-col gap-1">
         <p className="text-[11px] font-bold tracking-[0.18em] text-[var(--green-d)]">
-          FOOD JAPAN SUMMIT 2026 in MIYAZAKI
+          FOOD JAPAN SUMMIT 2026
         </p>
         <h1 className="font-serif text-[26px] leading-tight text-[var(--ink)] sm:text-[32px]">
           協賛申込フォーム
@@ -36,24 +36,25 @@ export default function SponsorPage() {
       </header>
 
       <p className="mt-5 text-[14px] leading-8 text-[var(--ink-2)]">
-        Food Japan Summit 2026 in MIYAZAKI への協賛をご検討・お申し込みいただくためのフォームです。
+        {SUMMIT_TITLE} への協賛をご検討・お申し込みいただくためのフォームです。
+        宮崎開催、名古屋開催、両開催への協賛を募集します。
       </p>
       <p className="mt-3 text-[14px] leading-8 text-[var(--ink-2)]">
         Food Japan Summit は、生産者、食品メーカー、小売・流通、飲食、行政、金融、物流、スタートアップなどが集い、
         登壇・試食・商談を通じて、新しい商品、販路、地域連携、食品ロス対策などの共創事業を生み出す場です。
       </p>
 
-      <dl className="mt-6 grid gap-x-6 gap-y-2 border-y border-[var(--line)] py-4 sm:grid-cols-2">
-        {([
-          ["開催日", SUMMIT.dates],
-          ["会場", SUMMIT.venue],
-          ["主催", SUMMIT.host],
-        ] as [string, string][]).map(([k, v]) => (
-          <div key={k} className="flex gap-3 text-[13px]">
-            <dt className="w-[64px] shrink-0 font-bold text-[var(--ink)]">{k}</dt>
-            <dd className="text-[var(--ink-2)]">{v}</dd>
+      <dl className="mt-6 flex flex-col gap-2 border-y border-[var(--line)] py-4">
+        {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
+          <div key={v.label} className="flex flex-wrap gap-x-3 text-[13px]">
+            <dt className="w-[86px] shrink-0 font-bold text-[var(--ink)]">{v.label}</dt>
+            <dd className="text-[var(--ink-2)]">{v.dates}／{v.venue}</dd>
           </div>
         ))}
+        <div className="flex flex-wrap gap-x-3 text-[13px]">
+          <dt className="w-[86px] shrink-0 font-bold text-[var(--ink)]">主催</dt>
+          <dd className="text-[var(--ink-2)]">{HOST}</dd>
+        </div>
       </dl>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
