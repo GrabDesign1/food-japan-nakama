@@ -99,6 +99,9 @@ export function SponsorForm() {
   const [imgFailed, setImgFailed] = useState(false);
   // 見積書。開いたときに番号と日付を確定させ、閉じるまで変わらないようにする。
   const [quote, setQuote] = useState<{ no: string; issuedOn: string; expiresOn: string } | null>(null);
+  // 会社情報より前に見積書を作るとき、宛名だけ先に聞くモーダル。
+  const [quoteAsk, setQuoteAsk] = useState(false);
+  const [quoteAskError, setQuoteAskError] = useState("");
 
   // モーダルは Esc で閉じ、開いている間は背後をスクロールさせない。
   useEffect(() => {
@@ -164,6 +167,30 @@ export function SponsorForm() {
 
   const toggleIn = (list: string[], v: string) =>
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+
+  /**
+   * 見積書ボタンの入口。会社名がまだ無ければ、先に宛名を聞く。
+   * ⚠️ 聞いた値は STEP3 の欄と同じ state に入れる（二度打ちさせない）。
+   */
+  const startQuote = () => {
+    if (!text.company.trim()) {
+      setQuoteAskError("");
+      setQuoteAsk(true);
+      return;
+    }
+    openQuote();
+  };
+
+  /** 見積書を開く。開いた時点で番号と日付を確定させ、閉じるまで変えない。 */
+  const openQuote = () => {
+    const issued = new Date();
+    const seed = Math.random().toString(36).slice(2, 8);
+    setQuote({
+      no: quoteNo(issued, seed),
+      issuedOn: formatJpDate(issued),
+      expiresOn: formatJpDate(new Date(issued.getTime() + QUOTE_VALID_DAYS * 86400000)),
+    });
+  };
 
   function validate(s: number): Record<string, string> {
     const e: Record<string, string> = {};
@@ -339,6 +366,21 @@ export function SponsorForm() {
           </p>
         ) : null}
       </div>
+      {/* 見積書はプランが決まればどのステップからでも作れる（社内決裁を先に通したい人向け）。
+          会社名が未入力のうちは宛名が空欄の見積書になる。 */}
+      <button
+        type="button"
+        disabled={!selectedPlan}
+        onClick={startQuote}
+        className={`${btn("secondary", "lg")} mt-3 w-full`}
+      >
+        見積書を作成
+      </button>
+      {!selectedPlan ? (
+        <p className="mt-1.5 text-[11px] leading-5 text-[var(--muted)]">
+          プランが決まると作成できます。
+        </p>
+      ) : null}
     </div>
   );
 
@@ -1098,7 +1140,7 @@ export function SponsorForm() {
                 <button
                   type="button"
                   onClick={() => goTo(0)}
-                  className={btn("secondary", "sm")}
+                  className={btn("secondary", "md")}
                 >
                   内容を修正する
                 </button>
@@ -1106,18 +1148,8 @@ export function SponsorForm() {
                 <button
                   type="button"
                   disabled={!selectedPlan}
-                  onClick={() => {
-                    const issued = new Date();
-                    const seed = Math.random().toString(36).slice(2, 8);
-                    setQuote({
-                      no: quoteNo(issued, seed),
-                      issuedOn: formatJpDate(issued),
-                      expiresOn: formatJpDate(
-                        new Date(issued.getTime() + QUOTE_VALID_DAYS * 86400000)
-                      ),
-                    });
-                  }}
-                  className={btn("secondary", "sm")}
+                  onClick={startQuote}
+                  className={btn("secondary", "md")}
                 >
                   見積書を作成
                 </button>
@@ -1215,6 +1247,87 @@ export function SponsorForm() {
         </aside>
       </div>
 
+      {/* ── 見積書の宛名を先に聞くモーダル ─────────────────
+          会社情報（STEP3）より前に見積書を作りたい人向け。
+          ⚠️ ここの入力欄に **name を付けないこと**。付けると同じ name の欄が2つになり、
+             FormData に値が二重で載る。値は STEP3 の欄と同じ state を書き換えている。 */}
+      {quoteAsk ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="見積書の宛名"
+          onClick={() => setQuoteAsk(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-full w-full max-w-[520px] flex-col overflow-auto rounded-[12px] bg-white"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
+              <h2 className="text-[16px] font-bold text-[var(--ink)]">見積書の宛名</h2>
+              <button type="button" onClick={() => setQuoteAsk(false)} className={`${btn("secondary", "sm")} shrink-0`}>
+                閉じる
+              </button>
+            </div>
+            <div className="flex flex-col gap-4 p-5">
+              <p className="text-[13px] leading-6 text-[var(--ink-2)]">
+                見積書に入れる宛名をご記入ください。ここで入れた内容は、そのまま STEP 3「会社情報」にも入ります。
+              </p>
+              <label className={labelCls}>
+                法人・団体名{req}
+                <input
+                  value={text.company}
+                  onChange={(e) => { setField("company", e.target.value); setQuoteAskError(""); }}
+                  className={fieldCls(quoteAskError || undefined)}
+                />
+              </label>
+              <label className={labelCls}>
+                ご担当者名{opt}
+                <input
+                  value={text.name}
+                  onChange={(e) => setField("name", e.target.value)}
+                  className={fieldCls()}
+                />
+              </label>
+              <label className={labelCls}>
+                メールアドレス{opt}
+                <span className={hintCls}>見積書には印刷されません。お申し込みのときに使います。</span>
+                <input
+                  type="email"
+                  value={text.email}
+                  onChange={(e) => setField("email", e.target.value)}
+                  className={fieldCls()}
+                />
+              </label>
+              <FieldError msg={quoteAskError} />
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!text.company.trim()) {
+                      setQuoteAskError("法人・団体名を入力してください。");
+                      return;
+                    }
+                    setQuoteAsk(false);
+                    openQuote();
+                  }}
+                  className={btn("primary", "md")}
+                >
+                  この内容で見積書を作成
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setQuoteAsk(false); openQuote(); }}
+                  className={btn("secondary", "md")}
+                >
+                  宛名なしで作成
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* ── 見積書 ─────────────────────────────────
           ⚠️ 印刷時はこのシートだけを残す（他は print:hidden にしている）。
              PDFはサーバーに保存せず、ブラウザの「PDFとして保存」で出してもらう
@@ -1244,9 +1357,16 @@ export function SponsorForm() {
 
               <div className="mt-7 flex flex-wrap items-start justify-between gap-6">
                 <div className="min-w-0">
-                  <p className="border-b border-[var(--ink)] pb-1 text-[17px] font-bold">
-                    {text.company || "　"}　御中
+                  {/* 会社情報より前（STEP1・2）から見積書を作れるので、宛名が空のことがある。
+                      そのときは罫線だけを残して手書きできるようにする。 */}
+                  <p className="min-w-[260px] border-b border-[var(--ink)] pb-1 text-[17px] font-bold">
+                    {text.company ? `${text.company}　御中` : <span className="inline-block">　</span>}
                   </p>
+                  {!text.company ? (
+                    <p className="mt-1 text-[11px] text-[var(--muted)] print:hidden">
+                      宛名は会社情報（STEP 3）を入力すると入ります。空欄のまま印刷して手書きすることもできます。
+                    </p>
+                  ) : null}
                   {text.name ? (
                     <p className="mt-1.5 text-[12px] text-[var(--ink-2)]">ご担当：{text.name} 様</p>
                   ) : null}
