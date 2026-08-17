@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { submitSponsorApplication, type SponsorState } from "./actions";
 import { btn, input, inputBare } from "@/lib/ui";
+import { formatJpDate } from "@/lib/invoice";
 import {
   COURSES, PLAN_CONSULT, yen, yenFull, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
@@ -13,6 +14,7 @@ import {
   PLAN_TAGLINE, planBadge, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
   PLAN_NO, PLAN_NICKNAME, PLAN_ACCENT, yenParts,
   benefitIncluded, applicationTotal, presentationSlot, PRESENTATION_IMAGE,
+  quoteNo, quoteTotals, QUOTE_TAX_RATE, QUOTE_VALID_DAYS, ISSUER, type QuoteItem,
   type SponsorPlan,
 } from "@/lib/sponsor";
 
@@ -95,6 +97,8 @@ export function SponsorForm() {
     { title: string; src: string; alt: string; caption: string } | null
   >(null);
   const [imgFailed, setImgFailed] = useState(false);
+  // 見積書。開いたときに番号と日付を確定させ、閉じるまで変わらないようにする。
+  const [quote, setQuote] = useState<{ no: string; issuedOn: string; expiresOn: string } | null>(null);
 
   // モーダルは Esc で閉じ、開いている間は背後をスクロールさせない。
   useEffect(() => {
@@ -282,6 +286,21 @@ export function SponsorForm() {
   const amountText = selectedPlan ? `${yenFull(selectedPlan.price)}（税別）` : "事務局と相談";
   const totalText = total === null ? "事務局と相談" : `${yenFull(total)}（税別）`;
 
+  // 見積書の明細（税抜）。年間会員は「相談」で金額が確定しないので明細に入れず、備考で触れる。
+  const quoteItems: QuoteItem[] = selectedPlan
+    ? [
+        {
+          label: `協賛プラン ${PLAN_NICKNAME[selectedPlan.code] ?? selectedPlan.name}（${selectedPlan.name}）`,
+          // courseText には特別割のときだけ「（宮崎県法人 特別割）」が付く。
+          note: courseText,
+          amount: selectedPlan.price,
+        },
+        ...(boothOption
+          ? [{ label: `${BOOTH_OPTION.title}　1ブース`, amount: BOOTH_OPTION.price }]
+          : []),
+      ]
+    : [];
+
   const summaryRows: { k: string; v: string }[] = [
     { k: "開催", v: courseText },
     { k: "プラン", v: planText },
@@ -325,7 +344,7 @@ export function SponsorForm() {
       {/* ── ステップナビ（常時表示・現在地を強調）───────────────── */}
       <nav
         aria-label="申込の進行状況"
-        className="sticky top-0 z-30 -mx-4 border-b border-[var(--line)] bg-white/95 px-4 py-3 backdrop-blur"
+        className={`sticky top-0 z-30 -mx-4 border-b border-[var(--line)] bg-white/95 px-4 py-3 backdrop-blur ${quote ? "print:hidden" : ""}`}
       >
         <ol className="flex gap-2 overflow-x-auto sm:gap-3">
           {APPLY_STEPS.map((s, i) => {
@@ -366,7 +385,7 @@ export function SponsorForm() {
         </ol>
       </nav>
 
-      <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_284px]">
+      <div className={`mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_284px] ${quote ? "print:hidden" : ""}`}>
         <div className="flex min-w-0 flex-col gap-7">
           {/* ══ STEP 1｜開催を選ぶ ══════════════════════════ */}
           <div hidden={step !== 0} className="flex flex-col gap-7">
@@ -1061,13 +1080,39 @@ export function SponsorForm() {
                 <p className="text-[13px] text-[var(--ink-2)]">現時点の申込金額</p>
                 <p className="mt-0.5 text-[20px] font-bold text-[var(--green-d)]">{totalText}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => goTo(0)}
-                className={`${btn("secondary", "sm")} self-start`}
-              >
-                内容を修正する
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => goTo(0)}
+                  className={btn("secondary", "sm")}
+                >
+                  内容を修正する
+                </button>
+                {/* 見積書。社内決裁に回してもらうためのもので、申込を送らなくても作れる。 */}
+                <button
+                  type="button"
+                  disabled={!selectedPlan}
+                  onClick={() => {
+                    const issued = new Date();
+                    const seed = Math.random().toString(36).slice(2, 8);
+                    setQuote({
+                      no: quoteNo(issued, seed),
+                      issuedOn: formatJpDate(issued),
+                      expiresOn: formatJpDate(
+                        new Date(issued.getTime() + QUOTE_VALID_DAYS * 86400000)
+                      ),
+                    });
+                  }}
+                  className={btn("secondary", "sm")}
+                >
+                  見積書を作成
+                </button>
+              </div>
+              {!selectedPlan ? (
+                <p className={hintCls}>
+                  ※ 見積書は協賛プランが決まると作成できます（「内容を相談して決めたい」は金額が未定のため作成できません）。
+                </p>
+              ) : null}
             </section>
 
             <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6" data-field="consent">
@@ -1156,6 +1201,117 @@ export function SponsorForm() {
         </aside>
       </div>
 
+      {/* ── 見積書 ─────────────────────────────────
+          ⚠️ 印刷時はこのシートだけを残す（他は print:hidden にしている）。
+             PDFはサーバーに保存せず、ブラウザの「PDFとして保存」で出してもらう
+             （会員側の納品書・請求書と同じ方針＝電子帳簿保存法の要件を負わないため）。 */}
+      {quote && selectedPlan ? (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/60 p-4 print:static print:block print:overflow-visible print:bg-transparent print:p-0">
+          <div className="w-full max-w-[840px] rounded-[12px] bg-white print:max-w-none print:rounded-none">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3 print:hidden">
+              <h2 className="text-[16px] font-bold text-[var(--ink)]">見積書</h2>
+              <div className="flex shrink-0 gap-2">
+                <button type="button" onClick={() => window.print()} className={btn("primary", "sm")}>
+                  PDFとして保存
+                </button>
+                <button type="button" onClick={() => setQuote(null)} className={btn("secondary", "sm")}>
+                  閉じる
+                </button>
+              </div>
+            </div>
+            <p className="border-b border-[var(--line)] bg-[var(--amber-bg)] px-4 py-2.5 text-[12px] leading-6 text-[var(--amber-ink)] print:hidden">
+              「PDFとして保存」を押すと印刷画面が開きます。送信先を「PDFに保存」にしてください。
+              この見積書は申込の送信とは別で、作成しても申し込んだことにはなりません。
+            </p>
+
+            {/* ここから見積書の本体 */}
+            <div className="p-8 text-[13px] leading-6 text-[var(--ink)] print:p-0">
+              <h3 className="text-center text-[22px] font-bold tracking-[0.3em]">見　積　書</h3>
+
+              <div className="mt-7 flex flex-wrap items-start justify-between gap-6">
+                <div className="min-w-0">
+                  <p className="border-b border-[var(--ink)] pb-1 text-[17px] font-bold">
+                    {text.company || "　"}　御中
+                  </p>
+                  {text.name ? (
+                    <p className="mt-1.5 text-[12px] text-[var(--ink-2)]">ご担当：{text.name} 様</p>
+                  ) : null}
+                  <p className="mt-4 text-[13px]">下記のとおりお見積り申し上げます。</p>
+                </div>
+                <dl className="text-[12px] leading-6">
+                  <div className="flex gap-2"><dt className="w-[70px] text-[var(--muted)]">見積番号</dt><dd>{quote.no}</dd></div>
+                  <div className="flex gap-2"><dt className="w-[70px] text-[var(--muted)]">発行日</dt><dd>{quote.issuedOn}</dd></div>
+                  <div className="flex gap-2"><dt className="w-[70px] text-[var(--muted)]">有効期限</dt><dd>{quote.expiresOn}</dd></div>
+                </dl>
+              </div>
+
+              <p className="mt-6 border-y-2 border-[var(--ink)] py-3 text-[20px] font-bold">
+                お見積金額　{yenFull(quoteTotals(quoteItems).including)}
+                <span className="ml-2 text-[12px] font-normal text-[var(--ink-2)]">（消費税込）</span>
+              </p>
+
+              <table className="mt-6 w-full border-collapse text-[13px]">
+                <thead>
+                  <tr>
+                    <th className="border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-left font-bold">品目</th>
+                    <th className="w-[150px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-right font-bold">金額（税抜）</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteItems.map((it) => (
+                    <tr key={it.label}>
+                      <td className="border border-[var(--line)] px-3 py-2.5 align-top">
+                        {it.label}
+                        {it.note ? (
+                          <span className="mt-0.5 block text-[11px] text-[var(--ink-2)]">{it.note}</span>
+                        ) : null}
+                      </td>
+                      <td className="border border-[var(--line)] px-3 py-2.5 text-right align-top">
+                        {yenFull(it.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <th className="border border-[var(--line)] px-3 py-2 text-right font-normal text-[var(--ink-2)]">小計（税抜）</th>
+                    <td className="border border-[var(--line)] px-3 py-2 text-right">{yenFull(quoteTotals(quoteItems).excluding)}</td>
+                  </tr>
+                  <tr>
+                    <th className="border border-[var(--line)] px-3 py-2 text-right font-normal text-[var(--ink-2)]">消費税（{QUOTE_TAX_RATE}%）</th>
+                    <td className="border border-[var(--line)] px-3 py-2 text-right">{yenFull(quoteTotals(quoteItems).tax)}</td>
+                  </tr>
+                  <tr>
+                    <th className="border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-right font-bold">合計（税込）</th>
+                    <td className="border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-right text-[15px] font-bold">
+                      {yenFull(quoteTotals(quoteItems).including)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="mt-5 text-[12px] leading-6 text-[var(--ink-2)]">
+                <p className="font-bold text-[var(--ink)]">備考</p>
+                <ul className="mt-1 flex flex-col gap-0.5">
+                  <li>・開催：{courseText}</li>
+                  {annualMember ? (
+                    <li>・年間会員（{ANNUAL_MEMBER.price}）についてもご相談を承ります。上記金額には含まれておりません。</li>
+                  ) : null}
+                  <li>・本見積は協賛内容の確定前のものです。内容の変更に応じて金額が変わる場合があります。</li>
+                  <li>・お申し込みは {ISSUER.email} または協賛申込フォームより承ります。</li>
+                </ul>
+              </div>
+
+              <div className="mt-7 flex justify-end">
+                <div className="text-[12px] leading-6">
+                  <p className="text-[14px] font-bold text-[var(--ink)]">{ISSUER.name}</p>
+                  <p>{ISSUER.address}</p>
+                  <p>TEL {ISSUER.tel}／{ISSUER.email}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* ── ブースイメージのモーダル ─────────────────────
           ⚠️ label の外（form 直下）に置くこと。label の中に入れると、モーダル内を
              クリックしただけでブース出展にチェックが入る。 */}
@@ -1204,7 +1360,7 @@ export function SponsorForm() {
       ) : null}
 
       {/* ── スマホ：画面下の固定バー ───────────────────── */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+      <div className={`fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden ${quote ? "print:hidden" : ""}`}>
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12px] text-[var(--muted)]">選択中：{barPick}</p>

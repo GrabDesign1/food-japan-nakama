@@ -318,6 +318,56 @@ export function isApplicationClosed(now: Date = new Date()): boolean {
   return COURSES.every((c) => !isCourseOpen(c.code, now));
 }
 
+// ── 見積書 ────────────────────────────────────
+//
+// ⚠️ **PDFはサーバーに保存しない**。会員側の納品書・請求書（src/lib/invoice.ts）と同じ方針で、
+//    HTMLで組んでブラウザの「PDFとして保存」で出してもらう。保存すると電子帳簿保存法の
+//    検索機能・訂正削除防止の要件を負うため。PDFライブラリも入れない（日本語フォントの
+//    埋め込みが不要になる）。
+// ⚠️ 見積書の金額は**税抜・消費税・税込を並べて出す**。フォームの表示は税別なので、
+//    見積書だけ税込を足して見せると食い違って見える。
+// ⚠️ **適格請求書発行事業者の登録番号は載せていない**（番号を把握していないため）。
+//    見積書に登録番号は必須ではないが、載せるなら実際の番号を確認してから足すこと。
+
+export const QUOTE_TAX_RATE = 10;
+
+/** 見積書の有効期限（発行日からの日数）。ユーザー指定 2026-08-18。 */
+export const QUOTE_VALID_DAYS = 30;
+
+/** 見積書の発行者。 */
+export const ISSUER = {
+  name: HOST,
+  address: "〒102-0073 東京都千代田区九段北1-2-1",
+  tel: "03-6825-3901",
+  email: "info@grab-design.com",
+};
+
+export type QuoteItem = { label: string; note?: string; amount: number };
+
+/**
+ * 税抜の明細から合計を出す。
+ * ⚠️ invoice.ts の `taxBreakdown()` は**税込から割り戻す**関数で向きが逆なので使えない。
+ *    こちらは税抜から積み上げる。消費税は円未満切り捨て（税率1本なので端数処理は1回）。
+ */
+export function quoteTotals(items: QuoteItem[]): {
+  rate: number;
+  excluding: number;
+  tax: number;
+  including: number;
+} {
+  const excluding = items.reduce((s, i) => s + i.amount, 0);
+  const tax = Math.floor((excluding * QUOTE_TAX_RATE) / 100);
+  return { rate: QUOTE_TAX_RATE, excluding, tax, including: excluding + tax };
+}
+
+/** 見積番号。EST-YYYYMMDD-XXXXXX。 */
+export function quoteNo(issuedAt: Date, seed: string): string {
+  const y = issuedAt.getFullYear();
+  const m = String(issuedAt.getMonth() + 1).padStart(2, "0");
+  const d = String(issuedAt.getDate()).padStart(2, "0");
+  return `EST-${y}${m}${d}-${seed.toUpperCase().slice(0, 6)}`;
+}
+
 /** 募集終了時に出す文言（ユーザー指定 2026-08-18）。 */
 export const APPLICATION_CLOSED_TITLE = "協賛の募集が終了しました。";
 export const APPLICATION_CLOSED_BODY =
