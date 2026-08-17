@@ -1,0 +1,163 @@
+/* Food Japan Summit 2026 協賛ティザー（/sponsor）専用のスタイル。
+ *
+ * ⚠️ 納品された sponsor-top.html の CSS をそのまま持ち込んでいる（2026-08-18）。
+ *    見た目を変えないため、値はいじらないこと。
+ * ⚠️ **CSSモジュールにしているのは、サイト全体を汚さないため**。
+ *    納品HTMLは `body{background:#000}` と `:root{--b:…}` を書いていたが、
+ *    そのまま入れるとNAKAMA全体の背景が黒くなり、変数名（--w/--b/--l）も
+ *    グローバルに漏れる。**色変数は .page に載せ替え、body には触っていない**。
+ * ⚠️ クラス名（.hero/.nav/.btn/.city 等）は汎用的だが、モジュールなのでローカル化される。
+ */
+
+.page {
+  --b: #000;
+  --n: #0a0a09;
+  --w: #fafaf7;
+  --m: #b8b8b1;
+  --l: #353532;
+  --o: #f4a000;
+  --lime: #b8df6b;
+
+  /* 納品HTMLの body スタイル。body ではなくこの入れ物に当てる */
+  background: var(--b);
+  color: var(--w);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  line-height: 1.7;
+}
+
+.page * { box-sizing: border-box; }
+.page a { color: inherit; text-decoration: none; }
+
+.wrap { width: min(1220px, calc(100% - 64px)); margin: auto; }
+
+.ey { display: flex; gap: 10px; align-items: center; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+.ey:before { content: ""; width: 24px; border-top: 2px solid var(--o); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 54px; padding: 0 24px; font-size: 14px; font-weight: 800; transition: .2s;
+}
+.btn:hover { transform: translateY(-3px); }
+.primary { background: var(--o); color: #140e00; }
+.ghost { border: 1px solid #aaa; }
+
+.hero { position: relative; min-height: 100svh; isolation: isolate; overflow: hidden; }
+.hero:before {
+  content: ""; position: absolute; inset: 0; z-index: -2;
+  background: url("/sponsor/teaser/co-creation-daytime.jpg") center/cover no-repeat;
+}
+.hero:after {
+  content: ""; position: absolute; z-index: -1; inset: 0;
+  background:
+    linear-gradient(90deg, #000 0%, rgba(0,0,0,.93) 30%, rgba(0,0,0,.38) 64%, rgba(0,0,0,.04)),
+    linear-gradient(0deg, rgba(0,0,0,.74), transparent 40%);
+}
+
+.nav {
+  height: 104px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,.2);
+}
+.nav span, .nav a { font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+.nav a:after { content: " ↗"; color: var(--o); }
+
+.heroMain { max-width: 760px; padding: clamp(175px, 20vw, 250px) 0 76px; }
+.heroLogo {
+  position: absolute; z-index: 2; right: clamp(24px, 5vw, 86px); top: clamp(122px, 13vw, 190px);
+  width: min(365px, 34vw); height: auto; box-shadow: 0 18px 42px rgba(0,0,0,.34);
+}
+.hero h1 { margin: 20px 0; font-size: clamp(3.9rem, 8.5vw, 8.6rem); letter-spacing: -.095em; line-height: .87; }
+.hero h1 i { font-style: normal; color: var(--lime); }
+.hero p { max-width: 590px; margin: 0; color: #e4e4df; font-size: clamp(15px, 1.35vw, 18px); }
+
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+.note { margin-top: 18px !important; font-size: 12px !important; color: #bab9b2 !important; }
+
+.ticker { overflow: hidden; white-space: nowrap; border-top: 1px solid var(--l); border-bottom: 1px solid var(--l); }
+.ticker p { margin: 0; padding: 13px 0; font-size: 12px; font-weight: 900; letter-spacing: .15em; }
+.ticker b { color: var(--o); margin: 0 27px; }
+
+.intro { padding: 150px 0 118px; }
+.introGrid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 70px; align-items: end; }
+.intro h2, .sectionTitle { margin: 17px 0 0; font-size: clamp(3rem, 6vw, 6.5rem); line-height: 1; letter-spacing: -.085em; }
+.intro h2 i { font-style: normal; color: var(--o); }
+.introCopy { border-left: 1px solid var(--l); padding-left: 28px; color: #d0d0ca; font-size: 17px; }
+.introCopy p { margin: 0 0 18px; }
+.introCopy strong { color: var(--lime); }
+
+.what { padding: 120px 0; background: var(--n); border-top: 1px solid var(--l); border-bottom: 1px solid var(--l); }
+.whatHead { display: grid; grid-template-columns: 1fr 1fr; gap: 35px; align-items: end; }
+.whatHead p { margin: 0; color: #c4c4be; font-size: 16px; }
+
+.happen { margin-top: 58px; border-top: 1px solid var(--l); }
+.happen article {
+  display: grid; grid-template-columns: 105px 1.1fr .9fr; gap: 38px;
+  padding: 37px 0; border-bottom: 1px solid var(--l);
+}
+.happen b { font-size: 12px; letter-spacing: .12em; color: var(--o); }
+.happen h3 { margin: -7px 0 0; font-size: clamp(1.65rem, 2.7vw, 2.7rem); line-height: 1.18; letter-spacing: -.06em; }
+.happen p { margin: 0; color: var(--m); font-size: 15px; }
+.happen p strong { color: var(--w); }
+
+.cities { padding: 142px 0; }
+.cities .sectionTitle { margin-bottom: 51px; }
+.cityGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.city { position: relative; min-height: 610px; overflow: hidden; border: 1px solid #282826; background: #131313; }
+.cityBg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: .6s; }
+.city:hover .cityBg { transform: scale(1.035); }
+.miyazaki .cityBg {
+  background-image: linear-gradient(0deg, rgba(0,0,0,.91), rgba(0,0,0,.07) 72%),
+    url("/sponsor/teaser/miyazaki-lanterns.jpeg");
+}
+.nagoya .cityBg {
+  background-image: linear-gradient(0deg, rgba(0,0,0,.92), rgba(0,0,0,.12) 75%),
+    url("/sponsor/teaser/techgala-logo.jpg");
+}
+.cityContent { position: absolute; inset: auto 36px 34px; }
+.city .label { font-size: 11px; font-weight: 900; color: var(--lime); letter-spacing: .17em; }
+.city h3 { margin: 6px 0 9px; font-size: clamp(3.1rem, 4.8vw, 4.8rem); line-height: 1; letter-spacing: -.07em; }
+.city p { margin: 0; max-width: 430px; color: #e2e2dc; font-size: 15px; }
+.city time { display: block; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,.5); font-size: 13px; font-weight: 800; }
+.tech { position: absolute; top: 23px; right: 23px; width: 160px; background: rgba(255,255,255,.95); padding: 9px; }
+.tech img { width: 100%; display: block; height: auto; }
+
+.after { padding: 130px 0; background: #0b0b0a; border-top: 1px solid var(--l); }
+.afterGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: end; }
+.after p { margin: 0; color: #c5c5be; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 65px; border-top: 1px solid var(--l); border-left: 1px solid var(--l); }
+.step { padding: 27px; min-height: 258px; border-right: 1px solid var(--l); border-bottom: 1px solid var(--l); }
+.step b { font-size: 12px; color: var(--o); letter-spacing: .13em; }
+.step h3 { margin: 56px 0 9px; font-size: 25px; line-height: 1.22; letter-spacing: -.055em; }
+.step p { font-size: 14px; color: #aaa9a3; }
+
+.final { padding: 150px 0; text-align: center; position: relative; overflow: hidden; }
+.final:before {
+  content: "FJS"; position: absolute; inset: auto 0 -0.38em;
+  color: rgba(255,255,255,.035); font-size: 32vw; font-weight: 900; line-height: .7; letter-spacing: -.16em;
+}
+.final .wrap { position: relative; }
+.final h2 { margin: 17px auto; font-size: clamp(3.1rem, 6.2vw, 6.5rem); line-height: 1.02; letter-spacing: -.095em; }
+.final h2 i { font-style: normal; color: var(--o); }
+.final p { max-width: 650px; margin: auto; color: #c2c2bc; }
+
+.foot { padding: 25px 0; border-top: 1px solid var(--l); color: #93938d; font-size: 12px; }
+
+@media (max-width: 760px) {
+  .wrap { width: min(100% - 34px, 1220px); }
+  .nav { height: 76px; }
+  .heroMain { padding: 60px 0 88px; }
+  .heroLogo { position: relative; right: auto; top: auto; width: min(410px, 100%); margin: 50px 0 35px; }
+  .hero h1 { font-size: clamp(3.4rem, 15vw, 5.6rem); }
+  .intro, .cities { padding: 84px 0; }
+  .introGrid, .whatHead, .afterGrid { grid-template-columns: 1fr; gap: 29px; }
+  .introCopy { padding-left: 18px; }
+  .what, .after { padding: 83px 0; }
+  .happen article { grid-template-columns: 68px 1fr; gap: 18px; }
+  .happen p { grid-column: 2; }
+  .cityGrid { grid-template-columns: 1fr; }
+  .city { min-height: 470px; }
+  .cityContent { inset: auto 23px 24px; }
+  .steps { grid-template-columns: 1fr; margin-top: 43px; }
+  .step { min-height: 0; }
+  .step h3 { margin-top: 28px; }
+  .final { padding: 92px 0; }
+}
