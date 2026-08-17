@@ -9,6 +9,7 @@ import {
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
   CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, LOGO_SUBMISSION, CONSENTS,
   APPLY_STEPS, COURSE_SHORT, isCourseOpen, COURSE_CLOSED_LABEL,
+  isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
   PLAN_TAGLINE, planBadge, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
   PLAN_NO, PLAN_NICKNAME, PLAN_ACCENT, yenParts,
   benefitIncluded, applicationTotal, presentationSlot, PRESENTATION_IMAGE,
@@ -231,6 +232,25 @@ export function SponsorForm() {
       setFocusField(Object.keys(bad.e)[0]);
     }
   };
+
+  // 募集が終了したら、フォームは出さずに知らせだけにする（押せるものを残さない）。
+  // ⚠️ now が null のあいだ（マウント前）は出さない＝静的HTMLとのずれを避けるため。
+  if (now !== null && isApplicationClosed(now)) {
+    return (
+      <div className={`${cardCls} p-8`} role="status">
+        <h2 className="text-[18px] font-bold text-[var(--ink)]">{APPLICATION_CLOSED_TITLE}</h2>
+        <p className="mt-3 text-[14px] leading-8 text-[var(--ink-2)]">{APPLICATION_CLOSED_BODY}</p>
+        <p className="mt-4 text-[13px] leading-7 text-[var(--muted)]">
+          フードジャパンサミット実行委員会（株式会社グラブデザイン）
+          <br />
+          <a href="mailto:info@grab-design.com" className="text-[var(--green-d)] underline">
+            info@grab-design.com
+          </a>
+          ／03-6825-3901
+        </p>
+      </div>
+    );
+  }
 
   if (state.ok) {
     return (

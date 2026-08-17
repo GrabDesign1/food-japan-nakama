@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SponsorForm } from "./SponsorForm";
-import { SUMMIT_TITLE, HOST, HERO_CHIPS, yen, MIN_PLAN_PRICE } from "@/lib/sponsor";
+import {
+  SUMMIT_TITLE, HOST, HERO_CHIPS, yen, MIN_PLAN_PRICE,
+  isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
+} from "@/lib/sponsor";
 
 // Food Japan Summit 2026 in MIYAZAKI の協賛申込フォーム。
 // ⚠️ NAKAMA の機能ではない。**NAKAMA からリンクは張らず**、URLを直接案内して使う
@@ -27,7 +30,16 @@ export const metadata: Metadata = {
 //    ・協賛企業共通の提供価値 → フォーム STEP1（開催選択の下）へカード5枚で移動
 //    削除ではなく移動なので、内容は落ちていない。
 
+// ⚠️ **静的生成にしない**（2026-08-18）。募集の締め切りを日付で判定するので、
+//    静的に焼くとビルド時点の状態のまま固定されてしまう。サーバーの時計で毎回判定する。
+//    このページは noindex の申込フォームでアクセスも多くないため、動的で問題ない。
+export const dynamic = "force-dynamic";
+
 export default function SponsorPage() {
+  // 募集が終了していたら、リード文も情報チップも相談リンクも出さない
+  // （フォームだけ隠すと「お選びいただけます」「相談して決めたい」が残って矛盾する）。
+  const closed = isApplicationClosed();
+
   return (
     <div className="mx-auto flex max-w-[1100px] flex-col px-4 py-10">
       {/* このページ専用のヘッダー（NAKAMAのナビは出さない） */}
@@ -44,6 +56,18 @@ export default function SponsorPage() {
         </h1>
       </header>
 
+      {closed ? (
+        <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-white p-8">
+          <h2 className="text-[18px] font-bold text-[var(--ink)]">{APPLICATION_CLOSED_TITLE}</h2>
+          <p className="mt-3 text-[15px] leading-8 text-[var(--ink-2)]">{APPLICATION_CLOSED_BODY}</p>
+          <p className="mt-4 text-[13px] leading-7 text-[var(--muted)]">
+            {HOST}
+            <br />
+            info@grab-design.com／03-6825-3901
+          </p>
+        </div>
+      ) : (
+        <>
       <p className="mt-3.5 text-[15px] leading-7 text-[var(--ink-2)]">
         {SUMMIT_TITLE} への協賛をお申し込みいただくフォームです。協賛プランは{yen(MIN_PLAN_PRICE)}から。
         宮崎開催・名古屋開催・両開催からお選びいただけます。
@@ -80,6 +104,8 @@ export default function SponsorPage() {
       <div className="mt-6">
         <SponsorForm />
       </div>
+        </>
+      )}
 
       <footer className="mt-12 border-t border-[var(--line)] pt-5 text-[13px] leading-7 text-[var(--muted)]">
         {HOST}

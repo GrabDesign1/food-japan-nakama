@@ -3,6 +3,7 @@
 import { sendSponsorApplicationEmails } from "@/lib/email";
 import {
   SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel, plansFor, LOCAL_DISCOUNT_COURSE, isCourseOpen,
+  isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
 
@@ -68,6 +69,11 @@ export async function submitSponsorApplication(
   const invoiceNote = g("invoiceNote");
   const logoSubmission = g("logoSubmission", 100);
   const message = g("message");
+
+  // 募集そのものが終了していれば、開催の判定より先に打ち切る。
+  if (isApplicationClosed()) {
+    return { error: `${APPLICATION_CLOSED_TITLE}${APPLICATION_CLOSED_BODY}` };
+  }
 
   const course = findCourse(courseCode);
   if (!course) {
