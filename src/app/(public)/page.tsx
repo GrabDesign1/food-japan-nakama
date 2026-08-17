@@ -459,7 +459,14 @@ export default async function PublicHome() {
               { t: "取引・事業化", d: "条件を決めて、取引を始める", icon: "/process/process-5-deal.png" },
               { t: "成果発表", d: "次のSummitで成果を共有する", icon: "/process/process-6-results.png" },
             ].map((s, i) => (
-              <li key={s.t} className="flex flex-col items-center text-center">
+              // PCだけ、アイコンの中心線上に細い線を渡して「順に進む工程」に見せる。
+              // 位置＝アイコンの右端+6px から 次のアイコンの左端-6px まで
+              //（アイコンは lg で56px＝中心は上から28px＝top-7、半径28px＋余白6px＝34px）。
+              // スマホ・タブレットでは折り返して順序が繋がらないので出さない（番号で足りる）。
+              <li
+                key={s.t}
+                className="relative flex flex-col items-center text-center after:hidden lg:after:absolute lg:after:top-7 lg:after:left-[calc(50%+34px)] lg:after:block lg:after:h-px lg:after:w-[calc(100%-52px)] lg:after:bg-[var(--line)] lg:after:content-[''] lg:last:after:hidden"
+              >
                 <Image
                   src={s.icon}
                   alt=""
