@@ -267,6 +267,88 @@ export const COURSES: Course[] = [
 /** 「内容を相談して決めたい」＝プランを選ばない場合の値 */
 export const PLAN_CONSULT = "consult";
 
+// ── 申込フォームのカードUI用（2026-08-18 の指示書。/sponsor 案内ページには影響させない）──
+//
+// ⚠️ 価格は開催で入れ替わる（単独15/30/50/80/250万・両開催20/50/80/120/400万・
+//    特別割15/30/40/70/200万）ので、**カードに価格を書かず plansFor() から出す**。
+//    ここに持たせるのは「開催が変わっても変わらないもの」＝プランの性格だけ。
+
+/** カードの見出し下に置く1行要約（文言はユーザー提供・指示書 2026-08-18）。 */
+export const PLAN_TAGLINE: Record<string, string> = {
+  light: "まずは協賛企業として参加",
+  standard: "商品を見てもらい、交流したい企業向け",
+  presenter: "登壇して、自社の取り組みを伝える",
+  strategic: "商談・共創をより本格的に進める",
+  diamond: "協賛ではなく、共創プロジェクトを一緒につくる",
+};
+
+/**
+ * 開催の短縮表記。スマホ下部の固定バーのように幅が取れない場所で使う
+ * （「宮崎・名古屋の両開催」がそのままだと省略されて読めない）。
+ */
+export const COURSE_SHORT: Record<string, string> = {
+  miyazaki: "宮崎",
+  nagoya: "名古屋",
+  both: "両開催",
+  consult: "相談",
+};
+
+/** カード右上のラベル。付けるプランだけ持たせる。 */
+export const PLAN_BADGE: Record<string, string> = {
+  presenter: "おすすめ",
+  diamond: "最上位プラン",
+};
+
+/**
+ * ボタンを「選ぶ」ではなく「相談する」と出すプラン。
+ * ⚠️ 送信値は他のプランと同じ（plan=diamond）。表記だけを変える。
+ */
+export const PLAN_CTA_CONSULT = new Set(["diamond"]);
+
+/** カードに出す主要特典の数（残りは「すべての特典を見る」で開く）。 */
+export const PLAN_CARD_FEATURES = 4;
+
+/**
+ * 協賛企業共通の提供価値（申込フォーム用の5カード）。
+ * ⚠️ 案内ページ（/sponsor）が使っている COMMON_BENEFITS とは**別に持つ**。
+ *    文章の箇条書きとカードでは必要な長さが違うため。内容の意味は揃えること。
+ * ⚠️ 「参加者の同意を得た範囲で」を落とさない（参加者名簿の第三者提供ではない）。
+ */
+export const COMMON_VALUE_CARDS: { icon: string; label: string; text: string }[] = [
+  { icon: "awareness", label: "認知", text: "Food Japan Summitの協賛企業として、会場・関連媒体に社名またはロゴを掲載します。" },
+  { icon: "listing", label: "NAKAMA掲載", text: "FOOD JAPAN NAKAMAに、協賛企業として紹介情報を掲載します。" },
+  { icon: "meet", label: "出会い", text: "生産者、食品メーカー、小売・流通、飲食、行政などとの接点を提供します。" },
+  { icon: "deal", label: "商談", text: "参加者の同意を得た範囲で、商談候補者の紹介・面談調整を行います。" },
+  { icon: "cocreate", label: "共創", text: "登壇、展示、試食・試飲、商談設定などを、各協賛プランに応じて提供します。" },
+];
+
+/** 上のカードに添える注記＝協賛の範囲と年間会員特典の切り分け（崩さないこと）。 */
+export const COMMON_VALUE_NOTE =
+  "案件掲載、メッセージ、マッチング相談などの継続利用は、年間会員特典として提供します。";
+
+/** フォーム上部に固定表示する4ステップ。id は本文側のアンカーと対応させる。 */
+export const APPLY_STEPS = [
+  { id: "step-venue", no: "STEP 1", label: "開催を選ぶ" },
+  { id: "step-plan", no: "STEP 2", label: "プラン・オプションを選ぶ" },
+  { id: "step-company", no: "STEP 3", label: "会社情報・目的を入力" },
+  { id: "step-confirm", no: "STEP 4", label: "確認・申込" },
+] as const;
+
+/**
+ * 全プランの最安価格（税別）。ファーストビューの「〇万円〜」に使う。
+ * ⚠️ **固定値を書かない**（ユーザー指示 2026-08-18）。価格を直したら表示が自動で追随する。
+ */
+export const MIN_PLAN_PRICE = Math.min(
+  ...COURSES.flatMap((c) => [...c.plans, ...(c.localPlans ?? [])]).map((p) => p.price)
+);
+
+/** ファーストビューの情報チップ（開催選択の直前に置く3つ）。 */
+export const HERO_CHIPS = [
+  { head: `${yen(MIN_PLAN_PRICE)}〜`, body: "協賛プラン" },
+  { head: "宮崎・名古屋・両開催", body: "開催地を選択" },
+  { head: "登壇・展示・商談・NAKAMA", body: "プランに応じて提供" },
+];
+
 export function findCourse(code: string): Course | undefined {
   return COURSES.find((c) => c.code === code);
 }
@@ -289,6 +371,76 @@ export function planLabel(courseCode: string, planCode: string, isLocal: boolean
   if (!p) return planCode;
   return `${c.label}${suffix}／${p.name}　${yen(p.price)}（税別）`;
 }
+
+/** 「500,000円」形式。申込内容サマリーの金額に使う（yen() は「50万円」形式）。 */
+export function yenFull(n: number): string {
+  return `${n.toLocaleString("ja-JP")}円`;
+}
+
+/**
+ * 現時点の申込金額（税別）。プランが決まっていない（相談）ときは null。
+ * ⚠️ 年間会員は「あわせて相談したい」＝金額が確定しないので**加算しない**（指示書10）。
+ *    ブース出展は定価が決まっている買い物なので加算する。
+ */
+export function applicationTotal(plan: SponsorPlan | null, boothOption: boolean): number | null {
+  if (!plan) return null;
+  return plan.price + (boothOption ? BOOTH_OPTION.price : 0);
+}
+
+/**
+ * 「希望する協賛特典」が、選んだプランに含まれるか。
+ *  true＝含まれる／false＝含まれない（画面に「要相談」を出す）／null＝判定しない。
+ *
+ * ⚠️ これが無いと LIGHT（最安）を選んだ人が登壇・展示・商談まで全部チェックでき、
+ *    含まれていると誤解する（指示書11）。判定は PLAN_SUMMARY と同じ述語を使うこと。
+ * ⚠️ DIAMOND PARTNER は特典が個別に列挙されず「全プランの特典」で表されるので、
+ *    それを見落とすと最上位プランだけ「含まれない」と誤判定する（過去に踏んだ）。
+ */
+export function benefitIncluded(benefit: string, plan: SponsorPlan | null): boolean | null {
+  // プラン未選択・「内容を相談して決めたい」のときは、含む/含まないを断定しない。
+  if (!plan) return null;
+  // 特典の指定ではないので判定の対象外。
+  if (benefit === "特に希望はない" || benefit === "その他") return null;
+
+  const f = plan.features;
+  const all = f.includes("全プランの特典");
+  if (all) return true;
+
+  switch (benefit) {
+    case "登壇・協賛プレゼンテーション":
+      return f.some((x) => x.includes("協賛プレゼンテーション枠"));
+    case "試食・試飲・展示":
+      return f.some((x) => x === HANDOUT || x.includes("試食会・スナック交流"));
+    case "チラシ・ノベルティ配布":
+      return f.includes(HANDOUT);
+    case "商談候補者の紹介・面談調整":
+      return f.includes(MATCHING);
+    case "FOOD JAPAN NAKAMAへの掲載":
+      return f.some((x) => x.startsWith("FOOD JAPAN NAKAMA"));
+    // 共通提供価値として全プランに提供するもの（PDF p.9〜11 の共通項）。
+    case "生産者・食品メーカー・小売・行政との共創相談":
+      return true;
+    default:
+      return null;
+  }
+}
+
+/**
+ * そのプランに付く登壇（協賛プレゼンテーション）枠。付かないプランは null。
+ *
+ * ⚠️ 協賛の価値として一番大きいのが登壇枠だという判断（ユーザー 2026-08-18）なので、
+ *    プランカードでは特典リストに埋めず、価格のすぐ下に独立して出す。
+ * ⚠️ **付かないプランには「なし」と明示する**こと。黙って省くと LIGHT・STANDARD でも
+ *    登壇できると読めてしまう（指示書11 と同じ論点）。
+ * ⚠️ 判定は PLAN_SUMMARY の hasPresentation と同じものを使う（別に書くと必ず食い違う）。
+ */
+export function presentationSlot(plan: SponsorPlan): string | null {
+  return hasPresentation(plan.features);
+}
+
+/** 希望特典の下に必ず出す注記（プランに含まれない特典への誤解を防ぐ）。 */
+export const DESIRED_BENEFITS_NOTE =
+  "各特典は、選択した協賛プランに含まれる範囲で提供します。プランに含まれない内容をご希望の場合は、事務局より別途ご相談いたします。";
 
 /** 特別割のチェックを出すコードか（宮崎開催のみ） */
 export const LOCAL_DISCOUNT_COURSE = "miyazaki";
@@ -316,19 +468,29 @@ export const LOCAL_DISCOUNT_LABEL = "宮崎県内に本店または主たる事�
  */
 export const ANNUAL_MEMBER = {
   label: "年間会員もあわせて相談したい",
-  // 見出しは募集資料PDF p.13 の文言をそのまま使う（出典があるので言い過ぎにならない）
-  headline: "年間を通じて、共創コミュニティに属する。",
-  lines: [
-    "月額30,000円（税別）／1団体2名まで登録。",
-    // ⚠️主従＝月例ミーティング等が主、NAKAMAは付帯（ユーザー指示 2026-08-17）。順番を入れ替えないこと。
-    "月例ミーティング、年間アクセラレータープログラム、優先マッチングに参加できます。",
-    // ⚠️「使いたい放題」は**実際に無制限なものだけ**に付けている。NAKAMAで無制限なのは
-    //   掲載・閲覧・検索・メッセージで、初回の提案はクレジットを消費するため月50件分が上限
-    //   （クーポンで付与するビジネス会員の特典）。この但し書きを外さないこと。
-    "あわせて、FOOD JAPAN NAKAMAのビジネス会員としてご利用いただけます。案件掲載・メッセージ・マッチング相談は使いたい放題、提案は毎月50件分までお使いいただけます。",
-    "「相手を探す」だけで終わらず、出会いから商談、共創、事業化まで継続的にサポートします。",
-    "協賛プランとの併用も可能です。",
+  title: "年間会員",
+  badge: "おすすめオプション",
+  // ⚠️ 見出しは 2026-08-18 の指示書でユーザー指定の文言に差し替えた
+  //    （旧＝募集資料PDF p.13 の「年間を通じて、共創コミュニティに属する。」）。
+  // ⚠️「使いたい放題」は**実際に無制限なものだけ**に付ける約束なので、見出しで広く言う代わりに
+  //    すぐ下の features で「提案：毎月50件まで」を必ず並べて上限を同じカード内に見せている。
+  //    この1行を features から外さないこと（外すと無制限と読める＝景表法の論点が戻る）。
+  headline: "FOOD JAPAN NAKAMAを1年間、使いたい放題。",
+  price: "月額30,000円（税別）",
+  seats: "1団体2名まで登録",
+  // ⚠️ 2026-08-17 に決めた主従（月例ミーティング等が主・NAKAMAは付帯）とは順番が逆になっている。
+  //    2026-08-18 の指示書がNAKAMA側を先に列挙しているため、そちらに合わせた。
+  features: [
+    "案件掲載：使いたい放題",
+    "メッセージ：使いたい放題",
+    "マッチング相談：使いたい放題",
+    "提案：毎月50件まで",
+    "月例ミーティング",
+    "優先マッチング",
+    "年間アクセラレータープログラム",
   ],
+  note: "「相手を探す」だけで終わらず、出会いから商談、共創、事業化まで継続的にサポートします。",
+  combinable: "協賛プランとの併用が可能です。",
 };
 
 /**
@@ -339,9 +501,13 @@ export const ANNUAL_MEMBER = {
  */
 export const BOOTH_OPTION = {
   label: "ブース出展もあわせて申し込みたい",
+  title: "ブース出展",
   price: 200000,
-  detail:
-    "1ブース200,000円（税別）。協賛プランとは別枠のオプションです。試食・試飲・商品展示を行うスペースをご用意します。ブース数・位置・什器は、会場運営上の都合により事務局と個別に調整します。",
+  // ⚠️ 金額を本文に書かない（2026-08-18）。以前は detail に「200,000円」と書いていて price と
+  //    二重になっていた。表示は price から yen()/yenFull() で作る。
+  lead: "試食・試飲・商品展示を行うスペースをご用意します。",
+  features: ["試食", "試飲", "商品展示", "来場者との直接交流"],
+  note: "協賛プランとは別枠のオプションです。ブース数・位置・什器は、会場運営上の都合により事務局と個別に調整します。",
 };
 
 export const CO_CREATION_THEMES = [

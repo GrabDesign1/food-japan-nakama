@@ -6,7 +6,17 @@ import {
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
 
-export type SponsorState = { ok?: boolean; refNo?: string; error?: string };
+/**
+ * fields＝項目ごとのエラー（キーは input の name）。
+ * ⚠️ 画面側はこのキーで「どのステップに戻すか」を決めるので、キー名は input の name と必ず一致させる。
+ *    送信する側（name / value / payload）は一切変えていない＝**戻り値の形だけを増やしている**。
+ */
+export type SponsorState = {
+  ok?: boolean;
+  refNo?: string;
+  error?: string;
+  fields?: Record<string, string>;
+};
 
 // ⚠️ このフォームはDBに保存しない（受付はメールのみ）。
 //    そのため、事務局あてが1通も送れなかった場合は**成功にせず**、
@@ -60,31 +70,48 @@ export async function submitSponsorApplication(
   const message = g("message");
 
   const course = findCourse(courseCode);
-  if (!course) return { error: "協賛対象の開催を選択してください。" };
+  if (!course) {
+    return {
+      error: "協賛対象の開催を選択してください。",
+      fields: { course: "協賛対象の開催を選択してください。" },
+    };
+  }
 
-  // ⚠️ 特別割は宮崎開催に限り適用される。画面では宮崎に固定しているが、サーバーでも守る。
+  // ⚠️ 特別割は宮崎開催に限り適用される（名古屋のみ・両開催には適用しない。
+  //    両開催向けの宮崎県法人特別価格は定義していない）。
+  //    画面では宮崎開催を選んだときだけチェックを出しているが、送信値の付け替えを防ぐため
+  //    サーバーでも必ず弾く。
   if (isLocalCorp && course.code !== LOCAL_DISCOUNT_COURSE) {
-    return { error: "宮崎県法人の特別割は、宮崎開催のみに適用されます。" };
+    return {
+      error: "宮崎県法人の特別割は、宮崎開催のみに適用されます。",
+      fields: { isLocalCorp: "宮崎県法人の特別割は、宮崎開催のみに適用されます。" },
+    };
   }
 
   // ⚠️ プランは**選んだ開催コース（＋特別割の有無）に存在するものだけ**を許可する
   //   （画面で切り替えているが、送信値の付け替えを防ぐためサーバーでも見る）。
   const planCodes = new Set([...plansFor(course, isLocalCorp).map((p) => p.code), PLAN_CONSULT]);
-  if (!planCodes.has(plan)) return { error: "希望する協賛プランを選択してください。" };
 
-  if (!company) return { error: "法人・団体名を入力してください。" };
-  if (!companyKana) return { error: "法人・団体名（フリガナ）を入力してください。" };
-  if (!name) return { error: "ご担当者名を入力してください。" };
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "正しいメールアドレスを入力してください。" };
-  if (!phone) return { error: "電話番号を入力してください。" };
-  if (!address) return { error: "所在地を入力してください。" };
-  if (!purpose) return { error: "協賛を通じて実現したいことを入力してください。" };
-  if (!invoiceName) return { error: "請求書の宛名を入力してください。" };
-  if (!LOGOS.has(logoSubmission)) return { error: "ロゴデータの提出方法を選択してください。" };
-
+  // ⚠️ 項目別のエラーをまとめて返す（1件ずつ返すと、直して送るたびに次のエラーが出る）。
+  //    キーの順序は画面の並び順＝ステップ順にしておくと、戻す先を先頭から探せる。
+  const fields: Record<string, string> = {};
+  if (!planCodes.has(plan)) fields.plan = "希望する協賛プランを選択してください。";
+  if (!company) fields.company = "法人・団体名を入力してください。";
+  if (!companyKana) fields.companyKana = "法人・団体名（フリガナ）を入力してください。";
+  if (!name) fields.name = "ご担当者名を入力してください。";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fields.email = "正しいメールアドレスを入力してください。";
+  if (!phone) fields.phone = "電話番号を入力してください。";
+  if (!address) fields.address = "所在地を入力してください。";
+  if (!purpose) fields.purpose = "協賛を通じて実現したいことを入力してください。";
+  if (!invoiceName) fields.invoiceName = "請求書の宛名を入力してください。";
+  if (!LOGOS.has(logoSubmission)) fields.logoSubmission = "ロゴデータの提出方法を選択してください。";
   // 同意事項（3つとも必須）
   if (formData.getAll("consent").length < CONSENTS.length) {
-    return { error: "同意事項のすべてにチェックしてください。" };
+    fields.consent = "同意事項のすべてにチェックしてください。";
+  }
+
+  if (Object.keys(fields).length > 0) {
+    return { error: "入力内容をご確認ください。", fields };
   }
 
   const refNo = makeRefNo();

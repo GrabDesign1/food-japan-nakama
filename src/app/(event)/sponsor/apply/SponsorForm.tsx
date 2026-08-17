@@ -1,345 +1,1062 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { submitSponsorApplication, type SponsorState } from "./actions";
-import { btn, input } from "@/lib/ui";
+import { btn, input, inputBare } from "@/lib/ui";
 import {
-  COURSES, PLAN_CONSULT, yen, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
+  COURSES, PLAN_CONSULT, yen, yenFull, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
-  CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
+  CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, LOGO_SUBMISSION, CONSENTS,
+  APPLY_STEPS, COMMON_VALUE_CARDS, COMMON_VALUE_NOTE, COURSE_SHORT,
+  PLAN_TAGLINE, PLAN_BADGE, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
+  benefitIncluded, applicationTotal, presentationSlot,
+  type SponsorPlan,
 } from "@/lib/sponsor";
 
-const inputCls = `${input()} w-full`;
-const labelCls = "flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--ink)]";
-const qCls = "text-[15px] font-bold text-[var(--ink)]";
-const hintCls = "text-[12px] font-normal leading-6 text-[var(--muted)]";
-const req = <span className="ml-1 rounded-[3px] bg-[var(--red-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--red)]">必須</span>;
-const opt = <span className="ml-1 rounded-[3px] bg-[var(--green-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--green-d)]">任意</span>;
+// Food Japan Summit 2026 協賛申込フォーム（4ステップ）。
+//
+// ⚠️ 送信する値（input の name / value / FormData の形）は 2026-08-18 の改修でも**一切変えていない**。
+//    見た目とステップ分割だけを変えている。メール本文（src/lib/email.ts）も無変更。
+// ⚠️ **入力欄はすべて制御コンポーネントにする**。React 19 はサーバーアクション完了時に form を
+//    リセットするため、defaultValue 方式だと送信エラーで入力が全部消える
+//    （認証フォームで実際に踏んで commit c08dcb7 で直した件と同じ）。
+// ⚠️ **ステップを切り替えても DOM から外さない**（hidden で隠すだけ）。外すと入力値が消え、
+//    さらに FormData に載らなくなる。hidden な input は送信対象に残るのでこれで正しい。
+// ⚠️ form に noValidate を付け、必須の判定は自前で行う。折りたたみや非表示ステップの中に
+//    required な欄があると、ブラウザは「フォーカスできない欄」を検証しようとして
+//    **無言で送信を止める**（エラーも出ない）。表示中ステップにだけ required を付けるのは
+//    支援技術向けの意味づけとして残している。
 
-function Section({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6">{children}</div>;
+/** 入力欄の name → 属するステップ。サーバーからのエラーで戻す先を決めるのに使う。 */
+const FIELD_STEP: Record<string, number> = {
+  course: 0, isLocalCorp: 0,
+  plan: 1,
+  company: 2, companyKana: 2, name: 2, department: 2, email: 2, phone: 2,
+  address: 2, website: 2, purpose: 2, invoiceName: 2, logoSubmission: 2,
+  consent: 3,
+};
+
+const EMPTY_TEXT = {
+  company: "", companyKana: "", name: "", department: "", email: "", phone: "",
+  address: "", website: "", purpose: "", presentation: "",
+  invoiceName: "", invoiceNote: "", message: "",
+};
+type TextKey = keyof typeof EMPTY_TEXT;
+
+const qCls = "text-[18px] font-bold text-[var(--ink)]";
+const labelCls = "flex flex-col gap-1.5 text-[14px] font-semibold text-[var(--ink)]";
+const hintCls = "text-[13px] font-normal leading-6 text-[var(--muted)]";
+const cardCls = "rounded-[10px] border border-[var(--line)] bg-white";
+const req = <span className="ml-1 rounded-[3px] bg-[var(--red-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--red)]">必須</span>;
+const opt = <span className="ml-1 rounded-[3px] bg-[var(--green-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--green-d)]">任意</span>;
+
+/** 44px 以上のタップ領域を確保するための最低高さ（指示書19）。 */
+const tap = "min-h-[44px]";
+
+function fieldCls(err?: string): string {
+  return err
+    ? `${inputBare()} w-full border border-[var(--red)] bg-[var(--red-soft)]`
+    : `${input()} w-full`;
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return (
+    <span role="alert" className="text-[13px] font-normal leading-5 text-[var(--red)]">
+      {msg}
+    </span>
+  );
+}
+
+/** 共通提供価値カードのアイコン（線画・塗りつぶさない）。 */
+function ValueIcon({ name }: { name: string }) {
+  const common = {
+    width: 20, height: 20, viewBox: "0 0 24 24", fill: "none",
+    stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const, "aria-hidden": true,
+  };
+  switch (name) {
+    case "awareness": // 認知＝掲示
+      return <svg {...common}><path d="M3 11l16-6v14L3 13z" /><path d="M6 12v6" /></svg>;
+    case "listing": // NAKAMA掲載＝一覧
+      return <svg {...common}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h10M7 17h6" /></svg>;
+    case "meet": // 出会い＝人
+      return <svg {...common}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="10" r="2.4" /><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5" /></svg>;
+    case "deal": // 商談＝握手
+      return <svg {...common}><path d="M4 13l4-4 4 4 4-4 4 4" /><path d="M4 13v3a2 2 0 002 2h12a2 2 0 002-2v-3" /></svg>;
+    default: // 共創＝重なる円
+      return <svg {...common}><circle cx="9" cy="12" r="6" /><circle cx="15" cy="12" r="6" /></svg>;
+  }
 }
 
 export function SponsorForm() {
   const [state, action, pending] = useActionState<SponsorState, FormData>(submitSponsorApplication, {});
-  // ① 宮崎県法人かどうか（特別割）。**一番最初に分岐させる**＝チェックすると開催は
-  //    宮崎に確定し、価格表が特別割に切り替わる（特別割は宮崎開催に限り適用されるため）。
-  const [isLocal, setIsLocal] = useState(false);
-  // ② 開催コース。特別割のときは宮崎で固定。
-  const [picked, setPicked] = useState(COURSES[0].code);
-  const courseCode = isLocal ? LOCAL_DISCOUNT_COURSE : picked;
-  const course = findCourse(courseCode) ?? COURSES[0];
-  const plans = plansFor(course, isLocal);
 
-  // ⚠️ 読み込み直後は必ず未選択から始める。
-  //    ブラウザ（Chrome等）は再読み込み・戻る操作でチェック状態を復元することがあり、
-  //    autoComplete="off" だけでは防ぎきれない。復元されると**表示は特別割なのに
-  //    Reactのstateは未選択**という食い違いが起き、県外の企業に特別割が先に出てしまう。
-  //    ここはDOMを書き戻すだけで setState はしないので、react-hooks のルールにも触れない。
-  const localRef = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState(0);
+  // 開催は未選択から始める（STEP1 を本当の選択にする）。
+  const [course, setCourse] = useState("");
+  const [isLocal, setIsLocal] = useState(false);
+  const [plan, setPlan] = useState("");
+  const [annualMember, setAnnualMember] = useState(false);
+  const [boothOption, setBoothOption] = useState(false);
+  const [text, setText] = useState({ ...EMPTY_TEXT });
+  const [themes, setThemes] = useState<string[]>([]);
+  const [benefits, setBenefits] = useState<string[]>([]);
+  const [logoSubmission, setLogoSubmission] = useState(LOGO_SUBMISSION[0]);
+  const [consent, setConsent] = useState<boolean[]>(CONSENTS.map(() => false));
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [openPlan, setOpenPlan] = useState<string | null>(null);
+  // 請求・ロゴは必須を含むので**開いた状態から始める**（閉じたまま気づかず送信できないように）。
+  const [billingOpen, setBillingOpen] = useState(true);
+
+  const courseObj = findCourse(course) ?? null;
+  // ⚠️ 特別割は宮崎開催のみ。名古屋のみ・両開催では効かせない（両開催向けの特別価格は定義しない）。
+  const localEligible = course === LOCAL_DISCOUNT_COURSE;
+  const effectiveLocal = isLocal && localEligible;
+  const plans = courseObj ? plansFor(courseObj, effectiveLocal) : [];
+  const selectedPlan: SponsorPlan | null = plans.find((p) => p.code === plan) ?? null;
+  const total = applicationTotal(selectedPlan, boothOption);
+
+  const setField = (k: TextKey, v: string) => {
+    setText((t) => ({ ...t, [k]: v }));
+    setErrors((e) => (e[k] ? { ...e, [k]: "" } : e));
+  };
+
+  /** 開催を変えたら、プランと特別割は必ず捨てる（価格表が入れ替わるため）。 */
+  const pickCourse = (code: string) => {
+    setCourse(code);
+    setPlan("");
+    if (code !== LOCAL_DISCOUNT_COURSE) setIsLocal(false);
+    setOpenPlan(null);
+    setErrors((e) => ({ ...e, course: "", plan: "" }));
+  };
+
+  const toggleIn = (list: string[], v: string) =>
+    list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+
+  function validate(s: number): Record<string, string> {
+    const e: Record<string, string> = {};
+    if (s === 0) {
+      if (!course) e.course = "協賛対象の開催を選択してください。";
+    }
+    if (s === 1) {
+      if (!plan) e.plan = "希望する協賛プランを選択してください。";
+    }
+    if (s === 2) {
+      if (!text.company.trim()) e.company = "法人・団体名を入力してください。";
+      if (!text.companyKana.trim()) e.companyKana = "法人・団体名（フリガナ）を入力してください。";
+      if (!text.name.trim()) e.name = "ご担当者名を入力してください。";
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(text.email.trim())) e.email = "正しいメールアドレスを入力してください。";
+      if (!text.phone.trim()) e.phone = "電話番号を入力してください。";
+      if (!text.address.trim()) e.address = "所在地を入力してください。";
+      if (!text.purpose.trim()) e.purpose = "協賛を通じて実現したいことを入力してください。";
+      if (!text.invoiceName.trim()) e.invoiceName = "請求書の宛名を入力してください。";
+      if (!LOGO_SUBMISSION.includes(logoSubmission)) e.logoSubmission = "ロゴデータの提出方法を選択してください。";
+    }
+    if (s === 3) {
+      if (consent.some((c) => !c)) e.consent = "同意事項のすべてにチェックしてください。";
+    }
+    return e;
+  }
+
+  /** 最初にエラーが出るステップを探す（見つからなければ null）。 */
+  function firstInvalid(upTo: number): { s: number; e: Record<string, string> } | null {
+    for (let s = 0; s <= upTo; s++) {
+      const e = validate(s);
+      if (Object.keys(e).length > 0) return { s, e };
+    }
+    return null;
+  }
+
+  const [focusField, setFocusField] = useState<string | null>(null);
   useEffect(() => {
-    if (localRef.current) localRef.current.checked = false;
-  }, []);
+    if (!focusField) return;
+    const el = document.querySelector<HTMLElement>(`[data-field="${focusField}"]`);
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setFocusField(null);
+  }, [focusField]);
+
+  const goTo = (target: number) => {
+    if (target <= step) {
+      setStep(target);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const bad = firstInvalid(target - 1);
+    if (bad) {
+      setErrors(bad.e);
+      setStep(bad.s);
+      setFocusField(Object.keys(bad.e)[0]);
+      return;
+    }
+    setErrors({});
+    setStep(target);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // サーバー側の項目エラーは、その項目が属するステップまで戻して見せる。
+  useEffect(() => {
+    const f = state.fields;
+    if (!f) return;
+    const keys = Object.keys(f).filter((k) => f[k]);
+    if (keys.length === 0) return;
+    setErrors(f);
+    const back = Math.min(...keys.map((k) => FIELD_STEP[k] ?? 3));
+    setStep(back);
+    setFocusField(keys.find((k) => (FIELD_STEP[k] ?? 3) === back) ?? keys[0]);
+  }, [state.fields]);
+
+  const onSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
+    const bad = firstInvalid(3);
+    if (bad) {
+      ev.preventDefault();
+      setErrors(bad.e);
+      setStep(bad.s);
+      setFocusField(Object.keys(bad.e)[0]);
+    }
+  };
 
   if (state.ok) {
     return (
       <div className="rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] p-8">
-        <h2 className="text-[18px] font-bold text-[var(--ink)]">お申し込みありがとうございます。</h2>
-        <p className="mt-3 text-[14px] leading-8 text-[var(--ink-2)]">
+        <h2 className="text-[20px] font-bold text-[var(--ink)]">お申し込みありがとうございます。</h2>
+        <p className="mt-3 text-[15px] leading-8 text-[var(--ink-2)]">
           内容を確認のうえ、フードジャパンサミット実行委員会より、協賛内容・ロゴデータの提出方法・請求書・今後の進行についてご連絡します。
           <br />
           Food Japan Summit 2026 で、共に新しい事業を生み出していけることを楽しみにしております。
         </p>
-        <p className="mt-4 text-[13px] text-[var(--ink-2)]">
+        <p className="mt-4 text-[14px] text-[var(--ink-2)]">
           受付番号：<b>{state.refNo}</b>（お問い合わせの際にお伝えください）
         </p>
       </div>
     );
   }
 
-  return (
-    <form action={action} className="flex flex-col gap-7">
-      {/* ①宮崎県法人の特別割。ここで最初に分岐させる */}
-      <div className="rounded-[10px] border-2 border-[var(--amber)] bg-[var(--amber-bg)] p-5">
-        <label className="flex cursor-pointer items-start gap-3">
-          {/* ⚠️ autoComplete="off" は必須。無いとブラウザが再読み込み時にチェック状態を
-              復元し、React の state と表示がずれる（実際に踏んだ）。 */}
-          <input
-            ref={localRef}
-            type="checkbox"
-            name="isLocalCorp"
-            autoComplete="off"
-            checked={isLocal}
-            onChange={(e) => setIsLocal(e.target.checked)}
-            className="mt-1 h-5 w-5 shrink-0 accent-[var(--amber-d)]"
-          />
-          <span>
-            <span className="text-[15px] font-bold text-[var(--ink)]">{LOCAL_DISCOUNT_LABEL}</span>
-            <span className="mt-1 block text-[12px] leading-6 text-[var(--ink-2)]">
-              チェックを入れると<b>宮崎県法人 特別割協賛プラン</b>に切り替わります。
-              特別割は<b>宮崎開催に限り</b>適用されます。
-            </span>
-          </span>
-        </label>
-      </div>
+  // ── 申込内容サマリー（PCは右カラム、スマホは画面下の固定バー）──────────
+  const courseText = courseObj
+    ? `${courseObj.label}${effectiveLocal ? "（宮崎県法人 特別割）" : ""}`
+    : "未選択";
+  const planText = !plan
+    ? "未選択"
+    : plan === PLAN_CONSULT
+      ? "内容を相談して決めたい"
+      : selectedPlan
+        ? selectedPlan.name
+        : "未選択";
+  const amountText = selectedPlan ? `${yenFull(selectedPlan.price)}（税別）` : "事務局と相談";
+  const totalText = total === null ? "事務局と相談" : `${yenFull(total)}（税別）`;
 
-      {/* 設問1｜協賛対象の開催。特別割のときは宮崎で確定するので選択肢を出さない */}
-      <div className="flex flex-col gap-2.5">
-        <h2 className={qCls}>1｜協賛対象の開催{req}</h2>
-        {isLocal ? (
-          <>
-            <input type="hidden" name="course" value={LOCAL_DISCOUNT_COURSE} />
-            <p className="rounded-[8px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[14px] font-bold text-[var(--ink)]">
-              宮崎開催のみ
-              <span className="ml-2 text-[12px] font-normal text-[var(--ink-2)]">
-                （宮崎県法人 特別割は宮崎開催に限り適用されるため）
-              </span>
-            </p>
-            <p className={hintCls}>
-              名古屋開催や両開催をご希望の場合は、上のチェックを外してください。
-            </p>
-          </>
-        ) : (
-          <>
-            <p className={hintCls}>選んだ開催に応じて、下のプランと価格が切り替わります。</p>
-            <div className="flex flex-col gap-2">
-              {COURSES.map((c) => (
-                <label
-                  key={c.code}
-                  className={`flex cursor-pointer items-center gap-2.5 rounded-[8px] border px-4 py-3 text-[14px] ${
-                    c.code === courseCode
-                      ? "border-[var(--green)] bg-[var(--green-soft)] font-bold text-[var(--ink)]"
-                      : "border-[var(--line)] bg-white text-[var(--ink)]"
+  const summaryRows: { k: string; v: string }[] = [
+    { k: "開催", v: courseText },
+    { k: "プラン", v: planText },
+    { k: "協賛金額", v: amountText },
+    { k: "年間会員", v: annualMember ? "相談あり" : "なし" },
+    { k: "ブース", v: boothOption ? `あり（${yenFull(BOOTH_OPTION.price)}）` : "なし" },
+  ];
+
+  const Summary = (
+    <div className={`${cardCls} p-4`}>
+      <h2 className="text-[14px] font-bold text-[var(--ink)]">現在の申込内容</h2>
+      <dl className="mt-3 flex flex-col gap-2 border-t border-[var(--line-soft)] pt-3">
+        {summaryRows.map((r) => (
+          <div key={r.k} className="flex items-baseline justify-between gap-3 text-[13px]">
+            <dt className="shrink-0 text-[var(--muted)]">{r.k}</dt>
+            <dd className="text-right font-semibold text-[var(--ink)]">{r.v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-3 border-t border-[var(--line)] pt-3">
+        <p className="text-[12px] text-[var(--muted)]">現時点の申込金額</p>
+        <p className="mt-0.5 text-[18px] font-bold text-[var(--green-d)]">{totalText}</p>
+        {annualMember ? (
+          <p className="mt-1.5 text-[12px] leading-5 text-[var(--muted)]">
+            年間会員は「相談」のため金額に含めていません。
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  // モバイル固定バーのラベル（選択中の要点だけ）。
+  // ⚠️ 幅が狭いので開催は短縮表記を使う（「宮崎・名古屋の両開催」だと省略されて読めない）。
+  const barPick = [
+    course ? `${COURSE_SHORT[course] ?? courseObj?.label}${effectiveLocal ? "・特別割" : ""}` : "開催 未選択",
+    planText === "未選択" ? "プラン 未選択" : planText,
+  ].join("｜");
+
+  return (
+    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col pb-[104px] lg:pb-0">
+      {/* ── ステップナビ（常時表示・現在地を強調）───────────────── */}
+      <nav
+        aria-label="申込の進行状況"
+        className="sticky top-0 z-30 -mx-4 border-b border-[var(--line)] bg-white/95 px-4 py-3 backdrop-blur"
+      >
+        <ol className="flex gap-2 overflow-x-auto sm:gap-3">
+          {APPLY_STEPS.map((s, i) => {
+            const cur = i === step;
+            const done = i < step;
+            return (
+              <li key={s.id} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-current={cur ? "step" : undefined}
+                  className={`flex flex-col items-start rounded-[8px] border px-3 py-1.5 text-left transition ${
+                    cur
+                      ? "border-[var(--green)] bg-[var(--green-soft)]"
+                      : done
+                        ? "border-[var(--line)] bg-white"
+                        : "border-[var(--line-soft)] bg-white"
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="course"
-                    value={c.code}
-                    autoComplete="off"
-                    checked={c.code === courseCode}
-                    onChange={() => setPicked(c.code)}
-                    className="h-4 w-4 accent-[var(--green)]"
-                  />
-                  {c.label}
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 選んだ開催のプラン一覧 */}
-      <div className="flex flex-col gap-2.5 rounded-[10px] bg-[var(--green-soft)] p-5">
-        <h2 className={qCls}>{isLocal ? "宮崎県法人 特別割協賛プラン" : course.heading}</h2>
-        <div className="flex flex-wrap gap-x-5 gap-y-1">
-          {course.venues.map((v) => (
-            <span key={v.label} className="text-[12px] text-[var(--ink-2)]">
-              <b className="text-[var(--ink)]">{v.label}</b>　{v.dates}／{v.venue}
-            </span>
-          ))}
-        </div>
-        {(isLocal ? course.localLead : course.lead) ? (
-          <p className="text-[12px] leading-6 text-[var(--ink-2)]">{isLocal ? course.localLead : course.lead}</p>
-        ) : null}
-        {plans.length > 0 ? (
-          <div className="mt-1 grid gap-3 sm:grid-cols-2">
-            {plans.map((p) => (
-              <div key={p.code} className="flex flex-col rounded-[10px] border border-[var(--line)] bg-white p-4">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[15px] font-bold tracking-[0.04em] text-[var(--ink)]">{p.name}</span>
-                  <span className="text-[15px] font-bold text-[var(--green-d)]">
-                    {yen(p.price)}
-                    <span className="ml-1 text-[11px] font-normal text-[var(--muted)]">（税別）</span>
+                  <span
+                    className={`text-[11px] font-bold tracking-[0.12em] ${
+                      cur ? "text-[var(--green-d)]" : "text-[var(--muted)]"
+                    }`}
+                  >
+                    {s.no}
                   </span>
-                </div>
-                {p.features.length > 0 ? (
-                  <ul className="mt-2 flex flex-col gap-1">
-                    {p.features.map((f) => (
-                      <li key={f} className="text-[12px] leading-6 text-[var(--ink-2)]">・{f}</li>
-                    ))}
-                  </ul>
-                ) : null}
-                {p.note ? <p className="mt-1.5 text-[11px] text-[var(--muted)]">※ {p.note}</p> : null}
+                  <span
+                    className={`text-[13px] whitespace-nowrap ${
+                      cur ? "font-bold text-[var(--ink)]" : "text-[var(--ink-2)]"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_284px]">
+        <div className="flex min-w-0 flex-col gap-7">
+          {/* ══ STEP 1｜開催を選ぶ ══════════════════════════ */}
+          <div hidden={step !== 0} className="flex flex-col gap-7">
+            <section className="flex flex-col gap-3" data-field="course">
+              <h2 className={qCls}>協賛対象の開催{req}</h2>
+              <p className={hintCls}>選んだ開催に応じて、次の画面のプランと価格が切り替わります。</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {COURSES.map((c) => {
+                  const on = c.code === course;
+                  return (
+                    <label
+                      key={c.code}
+                      className={`${tap} flex cursor-pointer items-start gap-3 rounded-[10px] border-2 p-4 transition ${
+                        on
+                          ? "border-[var(--green)] bg-[var(--green-soft)]"
+                          : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="course"
+                        value={c.code}
+                        autoComplete="off"
+                        checked={on}
+                        required={step === 0}
+                        onChange={() => pickCourse(c.code)}
+                        className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--green)]"
+                      />
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-1.5 text-[16px] font-bold text-[var(--ink)]">
+                          {c.label}
+                          {on ? (
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--green)]" aria-hidden>
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          ) : null}
+                        </span>
+                        {c.plans.length > 0 ? (
+                          c.venues.map((v) => (
+                            <span key={v.label} className="mt-1 block text-[13px] leading-6 text-[var(--ink-2)]">
+                              {v.dates}／{v.venue}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="mt-1 block text-[13px] leading-6 text-[var(--ink-2)]">
+                            事務局と相談しながら最適な参加方法を決めます。
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
-            ))}
+              <FieldError msg={errors.course} />
+            </section>
+
+            {/* 宮崎県法人 特別割＝**宮崎開催を選んだときだけ**出す（県外企業に見せない） */}
+            {localEligible ? (
+              <section
+                data-field="isLocalCorp"
+                className="rounded-[10px] border border-[var(--amber-line)] bg-[var(--amber-bg)] p-4"
+              >
+                <label className={`${tap} flex cursor-pointer items-start gap-3`}>
+                  {/* ⚠️ autoComplete="off" は残す。ブラウザが再読み込みでチェックを復元すると
+                      表示と state がずれる（実際に踏んだ）。 */}
+                  <input
+                    type="checkbox"
+                    name="isLocalCorp"
+                    autoComplete="off"
+                    checked={isLocal}
+                    onChange={(e) => { setIsLocal(e.target.checked); setPlan(""); }}
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--amber-d)]"
+                  />
+                  <span>
+                    <span className="text-[15px] font-bold text-[var(--ink)]">宮崎県内法人ですか？</span>
+                    <span className="mt-1 block text-[13px] leading-6 text-[var(--ink-2)]">
+                      {LOCAL_DISCOUNT_LABEL}の場合はチェックしてください。
+                      特別割は<b>宮崎開催に限り</b>適用されます（名古屋開催・両開催は通常価格です）。
+                    </span>
+                  </span>
+                </label>
+                {isLocal ? (
+                  <p className="mt-3 rounded-[8px] border border-[var(--amber)] bg-white px-3 py-2 text-[14px] font-bold text-[var(--amber-ink)]">
+                    宮崎県法人 特別割プランが適用されます
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
+
+            {/* 協賛企業共通の提供価値（開催選択の下へ移動・カード化） */}
+            <section className="flex flex-col gap-3">
+              <h2 className={qCls}>協賛企業共通の提供価値</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {COMMON_VALUE_CARDS.map((c) => (
+                  <div key={c.label} className={`${cardCls} flex flex-col gap-1.5 p-4`}>
+                    <span className="flex items-center gap-2 text-[var(--green-d)]">
+                      <ValueIcon name={c.icon} />
+                      <span className="text-[14px] font-bold text-[var(--ink)]">{c.label}</span>
+                    </span>
+                    <span className="text-[13px] leading-6 text-[var(--ink-2)]">{c.text}</span>
+                  </div>
+                ))}
+              </div>
+              <p className={hintCls}>※ {COMMON_VALUE_NOTE}</p>
+            </section>
           </div>
-        ) : null}
+
+          {/* ══ STEP 2｜プラン・オプションを選ぶ ═══════════════ */}
+          <div hidden={step !== 1} className="flex flex-col gap-7">
+            <section className="flex flex-col gap-3" data-field="plan">
+              <h2 className={qCls}>希望協賛プラン{req}</h2>
+              {courseObj ? (
+                <p className={hintCls}>
+                  {effectiveLocal ? "宮崎県法人 特別割価格" : courseObj.heading}
+                  {courseObj.venues.length > 0 && courseObj.plans.length > 0
+                    ? `／${courseObj.venues.map((v) => `${v.label} ${v.dates}`).join("・")}`
+                    : ""}
+                </p>
+              ) : null}
+              {(effectiveLocal ? courseObj?.localLead : courseObj?.lead) ? (
+                <p className="text-[13px] leading-6 text-[var(--ink-2)]">
+                  {effectiveLocal ? courseObj?.localLead : courseObj?.lead}
+                </p>
+              ) : null}
+
+              {plans.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {plans.map((p) => {
+                    const on = p.code === plan;
+                    const top = p.code === "diamond";
+                    const badge = PLAN_BADGE[p.code];
+                    const shown = p.features.slice(0, PLAN_CARD_FEATURES);
+                    const rest = p.features.length - shown.length;
+                    const isOpen = openPlan === p.code;
+                    const consultCta = PLAN_CTA_CONSULT.has(p.code);
+                    return (
+                      <div
+                        key={p.code}
+                        onClick={() => { setPlan(p.code); setErrors((e) => ({ ...e, plan: "" })); }}
+                        className={`flex cursor-pointer flex-col rounded-[10px] border-2 p-4 transition ${
+                          on
+                            ? "border-[var(--green)] bg-[var(--green-soft)]"
+                            : top
+                              ? "border-[var(--gold)] bg-white hover:border-[var(--gold-d)]"
+                              : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                        }`}
+                      >
+                        <label className="flex cursor-pointer items-start gap-2.5">
+                          <input
+                            type="radio"
+                            name="plan"
+                            value={p.code}
+                            autoComplete="off"
+                            checked={on}
+                            required={step === 1}
+                            onChange={() => { setPlan(p.code); setErrors((e) => ({ ...e, plan: "" })); }}
+                            className="mt-1 h-5 w-5 shrink-0 accent-[var(--green)]"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span className="text-[16px] font-bold tracking-[0.04em] text-[var(--ink)]">
+                                {p.name}
+                              </span>
+                              {badge ? (
+                                <span
+                                  className={`rounded-[3px] px-1.5 py-0.5 text-[11px] font-bold ${
+                                    top
+                                      ? "bg-[var(--gold)] text-white"
+                                      : "bg-[var(--action)] text-white"
+                                  }`}
+                                >
+                                  {badge}
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="mt-1 block text-[20px] font-bold text-[var(--green-d)]">
+                              {yen(p.price)}
+                              <span className="ml-1 text-[12px] font-normal text-[var(--muted)]">（税別）</span>
+                            </span>
+                          </span>
+                        </label>
+
+                        <p className="mt-2 text-[13px] font-semibold leading-6 text-[var(--ink-2)]">
+                          {PLAN_TAGLINE[p.code] ?? ""}
+                        </p>
+
+                        {/* 登壇（トークセッション）枠＝協賛で一番大きい価値なので、
+                            特典リストに埋めずここに独立して出す。付かないプランは「なし」と明示する。 */}
+                        {(() => {
+                          const slot = presentationSlot(p);
+                          return (
+                            <p
+                              className={`mt-2 flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] ${
+                                slot
+                                  ? "bg-[var(--amber-soft)] font-bold text-[var(--amber-ink)]"
+                                  : "bg-[var(--surface)] text-[var(--muted)]"
+                              }`}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M12 3v10" /><path d="M9 6a3 3 0 016 0v4a3 3 0 01-6 0z" /><path d="M8 20h8" /><path d="M12 16v4" />
+                              </svg>
+                              登壇枠：{slot ?? "なし"}
+                            </p>
+                          );
+                        })()}
+
+                        <ul className="mt-2 flex flex-1 flex-col gap-1">
+                          {shown.map((f) => (
+                            <li key={f} className="text-[13px] leading-6 text-[var(--ink-2)]">・{f}</li>
+                          ))}
+                        </ul>
+
+                        {rest > 0 || p.note ? (
+                          <>
+                            {isOpen ? (
+                              <ul className="mt-1 flex flex-col gap-1 border-t border-[var(--line-soft)] pt-2">
+                                {p.features.slice(PLAN_CARD_FEATURES).map((f) => (
+                                  <li key={f} className="text-[13px] leading-6 text-[var(--ink-2)]">・{f}</li>
+                                ))}
+                                {p.note ? (
+                                  <li className="text-[12px] leading-5 text-[var(--muted)]">※ {p.note}</li>
+                                ) : null}
+                              </ul>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setOpenPlan(isOpen ? null : p.code); }}
+                              aria-expanded={isOpen}
+                              className="mt-2 self-start text-[13px] font-bold text-[var(--green-d)] underline"
+                            >
+                              {isOpen ? "特典を閉じる" : `すべての特典を見る${rest > 0 ? `（他${rest}件）` : ""}`}
+                            </button>
+                          </>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setPlan(p.code); setErrors((x) => ({ ...x, plan: "" })); }}
+                          className={`${btn(on ? "primary" : "secondary", "sm")} mt-3 w-full`}
+                        >
+                          {on ? "選択中" : consultCta ? `${p.name}を相談する` : `${p.name}を選ぶ`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {/* 「内容を相談して決めたい」＝プランを選ばない選択肢 */}
+              <label
+                className={`${tap} flex cursor-pointer items-start gap-2.5 rounded-[10px] border-2 p-4 transition ${
+                  plan === PLAN_CONSULT
+                    ? "border-[var(--green)] bg-[var(--green-soft)]"
+                    : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="plan"
+                  value={PLAN_CONSULT}
+                  autoComplete="off"
+                  checked={plan === PLAN_CONSULT}
+                  required={step === 1}
+                  onChange={() => { setPlan(PLAN_CONSULT); setErrors((e) => ({ ...e, plan: "" })); }}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--green)]"
+                />
+                <span>
+                  <span className="text-[15px] font-bold text-[var(--ink)]">内容を相談して決めたい</span>
+                  <span className="mt-1 block text-[13px] leading-6 text-[var(--ink-2)]">
+                    ご希望の開催・予算・実現したいことをうかがったうえで、事務局から協賛内容をご提案します。
+                  </span>
+                </span>
+              </label>
+              <FieldError msg={errors.plan} />
+            </section>
+
+            {/* 年間会員（独立オプションカード） */}
+            <section className="flex flex-col gap-2.5">
+              <h2 className={qCls}>オプション{opt}</h2>
+              <label
+                className={`flex cursor-pointer flex-col rounded-[10px] border-2 p-5 transition ${
+                  annualMember
+                    ? "border-[var(--gold-d)] bg-[var(--amber-bg)]"
+                    : "border-[var(--gold)] bg-white hover:border-[var(--gold-d)]"
+                }`}
+              >
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-[16px] font-bold text-[var(--ink)]">＋ {ANNUAL_MEMBER.title}</span>
+                  <span className="rounded-[3px] bg-[var(--gold)] px-1.5 py-0.5 text-[11px] font-bold text-white">
+                    {ANNUAL_MEMBER.badge}
+                  </span>
+                </span>
+                <span className="mt-2 block text-[16px] font-bold leading-7 text-[var(--amber-ink)]">
+                  {ANNUAL_MEMBER.headline}
+                </span>
+                <span className="mt-2 flex flex-wrap items-baseline gap-x-3">
+                  <span className="text-[18px] font-bold text-[var(--ink)]">{ANNUAL_MEMBER.price}</span>
+                  <span className="text-[13px] text-[var(--ink-2)]">{ANNUAL_MEMBER.seats}</span>
+                </span>
+                <span className="mt-2.5 grid gap-1 sm:grid-cols-2">
+                  {ANNUAL_MEMBER.features.map((f) => (
+                    <span key={f} className="text-[13px] leading-6 text-[var(--ink-2)]">・{f}</span>
+                  ))}
+                </span>
+                <span className="mt-2 block text-[13px] leading-6 text-[var(--ink-2)]">{ANNUAL_MEMBER.note}</span>
+                <span className="mt-1 block text-[12px] leading-5 text-[var(--muted)]">
+                  ※ {ANNUAL_MEMBER.combinable}
+                </span>
+                <span className={`${tap} mt-3 flex items-center gap-2.5 border-t border-[var(--amber-line)] pt-3`}>
+                  <input
+                    type="checkbox"
+                    name="annualMember"
+                    autoComplete="off"
+                    checked={annualMember}
+                    onChange={(e) => setAnnualMember(e.target.checked)}
+                    className="h-5 w-5 shrink-0 accent-[var(--amber-d)]"
+                  />
+                  <span className="text-[15px] font-bold text-[var(--ink)]">{ANNUAL_MEMBER.label}</span>
+                </span>
+              </label>
+
+              {/* ブース出展（年間会員と同じデザイン体系・別枠の商品） */}
+              <label
+                className={`flex cursor-pointer flex-col rounded-[10px] border-2 p-5 transition ${
+                  boothOption
+                    ? "border-[var(--green)] bg-[var(--green-soft)]"
+                    : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                }`}
+              >
+                <span className="text-[16px] font-bold text-[var(--ink)]">＋ {BOOTH_OPTION.title}</span>
+                <span className="mt-2 block text-[18px] font-bold text-[var(--green-d)]">
+                  1ブース {yenFull(BOOTH_OPTION.price)}
+                  <span className="ml-1 text-[12px] font-normal text-[var(--muted)]">（税別）</span>
+                </span>
+                <span className="mt-2 block text-[13px] leading-6 text-[var(--ink-2)]">{BOOTH_OPTION.lead}</span>
+                <span className="mt-2 flex flex-wrap gap-1.5">
+                  {BOOTH_OPTION.features.map((f) => (
+                    <span key={f} className="rounded-[4px] border border-[var(--line)] px-2 py-0.5 text-[13px] text-[var(--ink-2)]">
+                      {f}
+                    </span>
+                  ))}
+                </span>
+                <span className="mt-2 block text-[12px] leading-5 text-[var(--muted)]">※ {BOOTH_OPTION.note}</span>
+                <span className={`${tap} mt-3 flex items-center gap-2.5 border-t border-[var(--line-soft)] pt-3`}>
+                  <input
+                    type="checkbox"
+                    name="boothOption"
+                    autoComplete="off"
+                    checked={boothOption}
+                    onChange={(e) => setBoothOption(e.target.checked)}
+                    className="h-5 w-5 shrink-0 accent-[var(--green)]"
+                  />
+                  <span className="text-[15px] font-bold text-[var(--ink)]">{BOOTH_OPTION.label}</span>
+                </span>
+              </label>
+            </section>
+          </div>
+
+          {/* ══ STEP 3｜会社情報・目的を入力 ═══════════════════ */}
+          <div hidden={step !== 2} className="flex flex-col gap-7">
+            <section className="flex flex-col gap-3">
+              <h2 className={qCls}>お申し込み者の情報</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className={labelCls} data-field="company">
+                  法人・団体名{req}
+                  <span className={hintCls}>協賛企業として掲載する正式名称をご記入ください。</span>
+                  <input
+                    name="company" value={text.company} required={step === 2}
+                    onChange={(e) => setField("company", e.target.value)}
+                    className={fieldCls(errors.company)}
+                  />
+                  <FieldError msg={errors.company} />
+                </label>
+                <label className={labelCls} data-field="companyKana">
+                  法人・団体名（フリガナ）{req}
+                  <input
+                    name="companyKana" value={text.companyKana} required={step === 2}
+                    onChange={(e) => setField("companyKana", e.target.value)}
+                    className={fieldCls(errors.companyKana)}
+                  />
+                  <FieldError msg={errors.companyKana} />
+                </label>
+                <label className={labelCls} data-field="name">
+                  ご担当者名{req}
+                  <input
+                    name="name" value={text.name} required={step === 2}
+                    onChange={(e) => setField("name", e.target.value)}
+                    className={fieldCls(errors.name)}
+                  />
+                  <FieldError msg={errors.name} />
+                </label>
+                <label className={labelCls} data-field="department">
+                  部署・役職{opt}
+                  <input
+                    name="department" value={text.department}
+                    onChange={(e) => setField("department", e.target.value)}
+                    className={fieldCls()}
+                  />
+                </label>
+                <label className={labelCls} data-field="email">
+                  ご担当者メールアドレス{req}
+                  <input
+                    name="email" type="email" value={text.email} required={step === 2}
+                    onChange={(e) => setField("email", e.target.value)}
+                    className={fieldCls(errors.email)}
+                  />
+                  <FieldError msg={errors.email} />
+                </label>
+                <label className={labelCls} data-field="phone">
+                  電話番号{req}
+                  <input
+                    name="phone" value={text.phone} required={step === 2} placeholder="例：0985-00-0000"
+                    onChange={(e) => setField("phone", e.target.value)}
+                    className={fieldCls(errors.phone)}
+                  />
+                  <FieldError msg={errors.phone} />
+                </label>
+                <label className={labelCls} data-field="address">
+                  所在地{req}
+                  <span className={hintCls}>都道府県・市区町村までご記入ください。</span>
+                  <input
+                    name="address" value={text.address} required={step === 2}
+                    onChange={(e) => setField("address", e.target.value)}
+                    className={fieldCls(errors.address)}
+                  />
+                  <FieldError msg={errors.address} />
+                </label>
+                <label className={labelCls} data-field="website">
+                  ウェブサイト{opt}
+                  <input
+                    name="website" value={text.website}
+                    onChange={(e) => setField("website", e.target.value)}
+                    className={fieldCls()}
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6" data-field="purpose">
+              <h2 className={qCls}>貴社は、Food Japan Summitで何を実現したいですか？{req}</h2>
+              <p className={hintCls}>
+                まだ具体的に決まっていなくても構いません。
+                <br />
+                例：新商品の認知拡大／販路開拓／生産者との連携／新商品開発／地域との共創／食品ロス対策／人材・採用／物流課題／自治体との連携
+              </p>
+              <textarea
+                name="purpose" rows={8} value={text.purpose} required={step === 2}
+                onChange={(e) => setField("purpose", e.target.value)}
+                className={fieldCls(errors.purpose)}
+              />
+              <FieldError msg={errors.purpose} />
+            </section>
+
+            <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6">
+              <h2 className={qCls}>関心のある共創テーマ{opt}</h2>
+              <p className={hintCls}>複数選択できます。</p>
+              <div className="flex flex-wrap gap-2">
+                {CO_CREATION_THEMES.map((t) => {
+                  const on = themes.includes(t);
+                  return (
+                    <label
+                      key={t}
+                      className={`flex cursor-pointer items-center rounded-full border px-3.5 py-2 text-[14px] transition ${
+                        on
+                          ? "border-[var(--green)] bg-[var(--green-soft)] font-bold text-[var(--green-d)]"
+                          : "border-[var(--line)] bg-white text-[var(--ink-2)] hover:border-[var(--green)]"
+                      }`}
+                    >
+                      <input
+                        type="checkbox" name="themes" value={t} autoComplete="off" checked={on}
+                        onChange={() => setThemes((l) => toggleIn(l, t))}
+                        className="sr-only"
+                      />
+                      {t}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6">
+              <h2 className={qCls}>希望する協賛特典{opt}</h2>
+              {/* ⚠️ この注記を外さないこと。LIGHT を選んだ人が登壇・展示・商談まで
+                  含まれていると誤解する（指示書11）。 */}
+              <p className="rounded-[8px] border border-[var(--orange)] bg-[var(--orange-soft)] px-3.5 py-2.5 text-[13px] leading-6 text-[var(--ink-2)]">
+                ※ {DESIRED_BENEFITS_NOTE}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {DESIRED_BENEFITS.map((t) => {
+                  const incl = benefitIncluded(t, selectedPlan);
+                  return (
+                    <label key={t} className={`${tap} flex cursor-pointer items-center gap-2.5 text-[14px] text-[var(--ink)]`}>
+                      <input
+                        type="checkbox" name="benefits" value={t} autoComplete="off"
+                        checked={benefits.includes(t)}
+                        onChange={() => setBenefits((l) => toggleIn(l, t))}
+                        className="h-5 w-5 shrink-0 accent-[var(--green)]"
+                      />
+                      <span>{t}</span>
+                      {incl === true ? (
+                        <span className="rounded-[3px] bg-[var(--green-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--green-d)]">
+                          プランに含まれます
+                        </span>
+                      ) : incl === false ? (
+                        <span className="rounded-[3px] bg-[var(--amber-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--amber-ink)]">
+                          要相談
+                        </span>
+                      ) : null}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6">
+              <h2 className={qCls}>登壇・展示・試食の希望内容{opt}</h2>
+              <p className={hintCls}>希望する商品、サービス、テーマ、展示・試食の内容などをご記入ください。</p>
+              <textarea
+                name="presentation" rows={4} value={text.presentation}
+                onChange={(e) => setField("presentation", e.target.value)}
+                className={fieldCls()}
+              />
+            </section>
+
+            {/* 請求・ロゴ・その他（開閉できるが、必須を含むので既定は開いた状態） */}
+            <section className="border-t border-[var(--line)] pt-6">
+              <button
+                type="button"
+                onClick={() => setBillingOpen((v) => !v)}
+                aria-expanded={billingOpen}
+                className={`${tap} flex w-full items-center justify-between gap-2 text-left`}
+              >
+                <span className={qCls}>請求・ロゴ・その他{req}</span>
+                <span className="flex shrink-0 items-center gap-1 text-[13px] font-bold text-[var(--green-d)]">
+                  {billingOpen ? "閉じる" : "開く"}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={billingOpen ? "rotate-180" : ""} aria-hidden>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+              {/* ⚠️ 閉じているときも DOM から外さない（入力値と送信対象を保つ）。 */}
+              <div hidden={!billingOpen} className="mt-3 flex flex-col gap-4">
+                <label className={labelCls} data-field="invoiceName">
+                  請求書の宛名{req}
+                  <input
+                    name="invoiceName" value={text.invoiceName} required={step === 2 && billingOpen}
+                    onChange={(e) => setField("invoiceName", e.target.value)}
+                    className={fieldCls(errors.invoiceName)}
+                  />
+                  <FieldError msg={errors.invoiceName} />
+                </label>
+                <label className={labelCls}>
+                  請求書に関するご希望{opt}
+                  <span className={hintCls}>請求書の送付先、記載内容、支払条件に関するご希望があればご記入ください。</span>
+                  <textarea
+                    name="invoiceNote" rows={3} value={text.invoiceNote}
+                    onChange={(e) => setField("invoiceNote", e.target.value)}
+                    className={fieldCls()}
+                  />
+                </label>
+                <div data-field="logoSubmission">
+                  <h3 className="text-[14px] font-semibold text-[var(--ink)]">ロゴデータの提出方法{req}</h3>
+                  <div className="mt-2 flex flex-col gap-1">
+                    {LOGO_SUBMISSION.map((v) => (
+                      <label key={v} className={`${tap} flex cursor-pointer items-center gap-2.5 text-[14px] text-[var(--ink)]`}>
+                        <input
+                          type="radio" name="logoSubmission" value={v} autoComplete="off"
+                          checked={logoSubmission === v}
+                          required={step === 2 && billingOpen}
+                          onChange={() => { setLogoSubmission(v); setErrors((e) => ({ ...e, logoSubmission: "" })); }}
+                          className="h-5 w-5 shrink-0 accent-[var(--green)]"
+                        />
+                        {v}
+                      </label>
+                    ))}
+                  </div>
+                  <FieldError msg={errors.logoSubmission} />
+                </div>
+                <label className={labelCls}>
+                  備考・事務局へのメッセージ{opt}
+                  <textarea
+                    name="message" rows={4} value={text.message}
+                    onChange={(e) => setField("message", e.target.value)}
+                    className={fieldCls()}
+                  />
+                </label>
+              </div>
+            </section>
+          </div>
+
+          {/* ══ STEP 4｜確認・申込 ═════════════════════════ */}
+          <div hidden={step !== 3} className="flex flex-col gap-7">
+            <section className="flex flex-col gap-3">
+              <h2 className={qCls}>お申し込み内容</h2>
+              <dl className={`${cardCls} divide-y divide-[var(--line-soft)]`}>
+                {[
+                  ...summaryRows,
+                  { k: "会社名", v: text.company || "—" },
+                  { k: "ご担当者", v: text.name ? `${text.name} 様` : "—" },
+                  { k: "メールアドレス", v: text.email || "—" },
+                  { k: "共創テーマ", v: themes.length ? themes.join("／") : "—" },
+                  { k: "希望する特典", v: benefits.length ? benefits.join("／") : "—" },
+                ].map((r) => (
+                  <div key={r.k} className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 text-[14px]">
+                    <dt className="w-[110px] shrink-0 text-[var(--muted)]">{r.k}</dt>
+                    <dd className="min-w-0 flex-1 font-semibold break-words text-[var(--ink)]">{r.v}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="rounded-[10px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3">
+                <p className="text-[13px] text-[var(--ink-2)]">現時点の申込金額</p>
+                <p className="mt-0.5 text-[20px] font-bold text-[var(--green-d)]">{totalText}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => goTo(0)}
+                className={`${btn("secondary", "sm")} self-start`}
+              >
+                内容を修正する
+              </button>
+            </section>
+
+            <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6" data-field="consent">
+              <h2 className={qCls}>同意事項{req}</h2>
+              <div className="flex flex-col gap-2">
+                {CONSENTS.map((c, i) => (
+                  <label
+                    key={c}
+                    className={`flex cursor-pointer items-start gap-3 rounded-[10px] border p-4 text-[14px] leading-7 transition ${
+                      consent[i]
+                        ? "border-[var(--green)] bg-[var(--green-soft)] text-[var(--ink)]"
+                        : "border-[var(--line)] bg-white text-[var(--ink-2)]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox" name="consent" value="1" autoComplete="off"
+                      checked={consent[i]}
+                      required={step === 3}
+                      onChange={(e) => {
+                        setConsent((c2) => c2.map((v, j) => (j === i ? e.target.checked : v)));
+                        setErrors((x) => ({ ...x, consent: "" }));
+                      }}
+                      className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--green)]"
+                    />
+                    <span>{c}</span>
+                  </label>
+                ))}
+              </div>
+              <FieldError msg={errors.consent} />
+            </section>
+          </div>
+
+          {/* honeypot（人には見えない） */}
+          <input type="text" name="nickname" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
+
+          {state.error ? (
+            <p role="alert" className="rounded-[8px] border border-[var(--red)] bg-[var(--red-soft)] px-4 py-3 text-[14px] leading-6 text-[var(--red)]">
+              {state.error}
+            </p>
+          ) : null}
+
+          {/* ── ステップの移動／送信 ───────────────────── */}
+          <div className="flex flex-col gap-3 border-t border-[var(--line)] pt-6">
+            <div className="flex flex-wrap items-center gap-3">
+              {step > 0 ? (
+                <button type="button" onClick={() => goTo(step - 1)} className={btn("secondary", "md")}>
+                  戻る
+                </button>
+              ) : null}
+              {step < 3 ? (
+                <button
+                  type="button"
+                  onClick={() => goTo(step + 1)}
+                  className={`${btn("primary", "lg")} min-w-[220px] flex-1 sm:flex-none`}
+                >
+                  {step === 2 ? "申込内容を確認する" : "次へ進む"}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className={`${btn("action", "lg")} min-w-[280px] flex-1 text-[18px] sm:flex-none`}
+                >
+                  {pending ? "送信中…" : "この内容で申し込む"}
+                </button>
+              )}
+            </div>
+            {step === 3 ? (
+              <p className="text-[12px] leading-5 text-[var(--muted)]">
+                送信後、ご担当者のメールアドレス宛に受付の控えをお送りします。
+              </p>
+            ) : null}
+            {/* 相談導線は最後まで消さない（高額協賛のため・指示書18） */}
+            <p className="text-[13px] leading-6 text-[var(--muted)]">
+              プランが決めきれない場合は{" "}
+              <Link href="/sponsor/contact" className={`${btn("ghost", "sm")} px-1.5 align-baseline underline`}>
+                プランを相談して決めたい
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* ── PC：右カラムのサマリー ─────────────────────── */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-[92px]">{Summary}</div>
+        </aside>
       </div>
 
-      {/* 設問2｜希望協賛プラン（コースで中身が入れ替わる） */}
-      <Section>
-        <h2 className={qCls}>2｜希望協賛プラン{req}</h2>
-        <div className="flex flex-col gap-2">
-          {plans.map((p) => (
-            <label key={p.code} className="flex cursor-pointer items-center gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3 text-[14px] text-[var(--ink)]">
-              <input type="radio" name="plan" value={p.code} required className="h-4 w-4 accent-[var(--green)]" />
-              <span className="font-bold tracking-[0.04em]">{p.name}</span>
-              <span className="text-[var(--green-d)]">{yen(p.price)}（税別）</span>
-            </label>
-          ))}
-          <label className="flex cursor-pointer items-center gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-3 text-[14px] text-[var(--ink)]">
-            <input type="radio" name="plan" value={PLAN_CONSULT} required defaultChecked={plans.length === 0} className="h-4 w-4 accent-[var(--green)]" />
-            内容を相談して決めたい
-          </label>
-        </div>
-      </Section>
-
-      {/* 年間会員（協賛プランと併用できるので、開催の選択とは独立させる） */}
-      <Section>
-        <h2 className={qCls}>2-2｜年間会員{opt}</h2>
-        <label className="flex cursor-pointer items-start gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-4">
-          <input type="checkbox" name="annualMember" autoComplete="off" className="mt-1 h-4 w-4 shrink-0 accent-[var(--green)]" />
-          <span>
-            <span className="text-[14px] font-bold text-[var(--ink)]">{ANNUAL_MEMBER.label}</span>
-            {/* 訴求の1行目だけ大きく出す（年間会員の価値が一読で伝わるように） */}
-            <span className="mt-2 block text-[15px] font-bold leading-7 text-[var(--green-d)]">
-              {ANNUAL_MEMBER.headline}
-            </span>
-            <span className="mt-1.5 block text-[12px] leading-7 text-[var(--ink-2)]">
-              {ANNUAL_MEMBER.lines.map((l) => (
-                <span key={l} className="block">{l}</span>
-              ))}
-            </span>
-          </span>
-        </label>
-      </Section>
-
-      {/* ブース出展（協賛プランとは別枠のオプション） */}
-      <Section>
-        <h2 className={qCls}>2-3｜ブース出展{opt}</h2>
-        <label className="flex cursor-pointer items-start gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-4">
-          <input type="checkbox" name="boothOption" autoComplete="off" className="mt-1 h-4 w-4 shrink-0 accent-[var(--green)]" />
-          <span>
-            <span className="text-[14px] font-bold text-[var(--ink)]">{BOOTH_OPTION.label}</span>
-            <span className="mt-2 block text-[15px] font-bold leading-7 text-[var(--green-d)]">
-              1ブース {yen(BOOTH_OPTION.price)}（税別）
-            </span>
-            <span className="mt-1.5 block text-[12px] leading-7 text-[var(--ink-2)]">{BOOTH_OPTION.detail}</span>
-          </span>
-        </label>
-      </Section>
-
-      {/* 設問3〜10 */}
-      <Section>
-        <h2 className={qCls}>お申し込み者の情報</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={`${labelCls} sm:col-span-2`}>
-            3｜法人・団体名{req}
-            <span className={hintCls}>協賛企業として掲載する正式名称をご記入ください。</span>
-            <input name="company" required className={inputCls} />
-          </label>
-          <label className={labelCls}>4｜法人・団体名（フリガナ）{req}<input name="companyKana" required className={inputCls} /></label>
-          <label className={labelCls}>5｜ご担当者名{req}<input name="name" required className={inputCls} /></label>
-          <label className={labelCls}>6｜部署・役職{opt}<input name="department" className={inputCls} /></label>
-          <label className={labelCls}>7｜ご担当者メールアドレス{req}<input name="email" type="email" required className={inputCls} /></label>
-          <label className={labelCls}>
-            8｜電話番号{req}
-            <input name="phone" required placeholder="例：0985-00-0000" className={inputCls} />
-          </label>
-          <label className={labelCls}>
-            9｜所在地{req}
-            <span className={hintCls}>都道府県・市区町村までご記入ください。</span>
-            <input name="address" required className={inputCls} />
-          </label>
-          <label className={`${labelCls} sm:col-span-2`}>10｜ウェブサイト{opt}<input name="website" className={inputCls} /></label>
-        </div>
-      </Section>
-
-      {/* 設問11 */}
-      <Section>
-        <h2 className={qCls}>11｜協賛を通じて実現したいこと{req}</h2>
-        <p className={hintCls}>
-          例：新商品の認知拡大、販路開拓、生産者との連携、地域との共創、食品ロス対策、採用・人材育成、自治体との連携など
-        </p>
-        <textarea name="purpose" required rows={5} className={inputCls} />
-      </Section>
-
-      {/* 設問12 */}
-      <Section>
-        <h2 className={qCls}>12｜関心のある共創テーマ{opt}</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {CO_CREATION_THEMES.map((t) => (
-            <label key={t} className="flex cursor-pointer items-center gap-2 text-[13px] text-[var(--ink)]">
-              <input type="checkbox" name="themes" value={t} className="h-4 w-4 accent-[var(--green)]" />
-              {t}
-            </label>
-          ))}
-        </div>
-      </Section>
-
-      {/* 設問13 */}
-      <Section>
-        <h2 className={qCls}>13｜希望する協賛特典{opt}</h2>
-        <div className="flex flex-col gap-2">
-          {DESIRED_BENEFITS.map((t) => (
-            <label key={t} className="flex cursor-pointer items-center gap-2 text-[13px] text-[var(--ink)]">
-              <input type="checkbox" name="benefits" value={t} className="h-4 w-4 accent-[var(--green)]" />
-              {t}
-            </label>
-          ))}
-        </div>
-      </Section>
-
-      {/* 設問14 */}
-      <Section>
-        <h2 className={qCls}>14｜登壇・展示・試食の希望内容{opt}</h2>
-        <p className={hintCls}>希望する商品、サービス、テーマ、展示・試食の内容などをご記入ください。</p>
-        <textarea name="presentation" rows={4} className={inputCls} />
-      </Section>
-
-      {/* 設問15〜18 */}
-      <Section>
-        <h2 className={qCls}>請求・ロゴ・その他</h2>
-        <label className={labelCls}>15｜請求書の宛名{req}<input name="invoiceName" required className={inputCls} /></label>
-        <label className={`${labelCls} mt-2`}>
-          16｜請求書に関するご希望{opt}
-          <span className={hintCls}>請求書の送付先、記載内容、支払条件に関するご希望があればご記入ください。</span>
-          <textarea name="invoiceNote" rows={3} className={inputCls} />
-        </label>
-        <div className="mt-3">
-          <h3 className={qCls}>17｜ロゴデータの提出方法{req}</h3>
-          <div className="mt-2 flex flex-col gap-2">
-            {LOGO_SUBMISSION.map((v, i) => (
-              <label key={v} className="flex cursor-pointer items-center gap-2.5 text-[13px] text-[var(--ink)]">
-                <input type="radio" name="logoSubmission" value={v} required defaultChecked={i === 0} className="h-4 w-4 accent-[var(--green)]" />
-                {v}
-              </label>
-            ))}
+      {/* ── スマホ：画面下の固定バー ───────────────────── */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12px] text-[var(--muted)]">選択中：{barPick}</p>
+            <p className="truncate text-[14px] font-bold text-[var(--green-d)]">{totalText}</p>
           </div>
+          {step < 3 ? (
+            <button type="button" onClick={() => goTo(step + 1)} className={`${btn("primary", "md")} shrink-0`}>
+              {step === 2 ? "内容を確認" : "次へ"}
+            </button>
+          ) : (
+            <button type="submit" disabled={pending} className={`${btn("action", "md")} shrink-0`}>
+              {pending ? "送信中…" : "申し込む"}
+            </button>
+          )}
         </div>
-        <label className={`${labelCls} mt-3`}>18｜備考・事務局へのメッセージ{opt}<textarea name="message" rows={4} className={inputCls} /></label>
-      </Section>
-
-      {/* 同意事項 */}
-      <Section>
-        <h2 className={qCls}>同意事項{req}</h2>
-        <div className="flex flex-col gap-2.5 rounded-[10px] border border-[var(--line)] bg-white p-4">
-          {CONSENTS.map((c) => (
-            <label key={c} className="flex cursor-pointer items-start gap-2.5 text-[13px] leading-6 text-[var(--ink-2)]">
-              <input type="checkbox" name="consent" value="1" required className="mt-1 h-4 w-4 shrink-0 accent-[var(--green)]" />
-              {c}
-            </label>
-          ))}
-        </div>
-      </Section>
-
-      {/* honeypot（人には見えない） */}
-      <input type="text" name="nickname" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
-
-      {state.error ? (
-        <p className="rounded-[8px] border border-[var(--red)] bg-[var(--red-soft)] px-4 py-3 text-[13px] leading-6 text-[var(--red)]">
-          {state.error}
-        </p>
-      ) : null}
-
-      <div className="flex flex-col items-start gap-2">
-        <button type="submit" disabled={pending} className={`${btn("primary", "lg")} w-full text-[16px] sm:w-auto sm:min-w-[280px]`}>
-          {pending ? "送信中…" : "この内容で申し込む"}
-        </button>
-        <p className="text-[11px] leading-5 text-[var(--muted)]">
-          送信後、ご担当者のメールアドレス宛に受付の控えをお送りします。
-        </p>
       </div>
     </form>
   );

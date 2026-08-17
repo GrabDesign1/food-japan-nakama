@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SponsorForm } from "./SponsorForm";
-import { SUMMIT_TITLE, VENUES, HOST, COMMON_BENEFITS } from "@/lib/sponsor";
+import { SUMMIT_TITLE, HOST, HERO_CHIPS, yen, MIN_PLAN_PRICE } from "@/lib/sponsor";
 
 // Food Japan Summit 2026 in MIYAZAKI の協賛申込フォーム。
 // ⚠️ NAKAMA の機能ではない。**NAKAMA からリンクは張らず**、URLを直接案内して使う
@@ -19,17 +19,24 @@ export const metadata: Metadata = {
 // ⚠️ 来場予定300名・参加企業50社などの数字ブロックと「協賛企業の皆さまと、イベント当日だけで
 //    終わらない共創事業をつくっていきます。」の一文は、ユーザー指示で削除した（2026-08-17）。
 //    戻す場合は募集資料PDF p.2 の数字を参照。
+//
+// ⚠️ ファーストビューは**開催選択に届く長さまで詰める**（2026-08-18 の指示書2）。
+//    以前はここに「開催情報の一覧」と「協賛企業共通の提供価値」を置いていて、
+//    スマホで1画面目が全部読み物になり、開催を選ぶまで1,352px スクロールが必要だった。
+//    ・開催の日程・会場 → フォーム STEP1 の開催カードの中へ
+//    ・協賛企業共通の提供価値 → フォーム STEP1（開催選択の下）へカード5枚で移動
+//    削除ではなく移動なので、内容は落ちていない。
 
 export default function SponsorPage() {
   return (
-    <div className="mx-auto flex max-w-[900px] flex-col px-4 py-12">
+    <div className="mx-auto flex max-w-[1100px] flex-col px-4 py-10">
       {/* このページ専用のヘッダー（NAKAMAのナビは出さない） */}
-      <Link href="/sponsor" className="text-[12px] text-[var(--green-d)] underline">
+      <Link href="/sponsor" className="text-[13px] text-[var(--green-d)] underline">
         ← 協賛のご案内に戻る
       </Link>
 
-      <header className="mt-6 flex flex-col gap-1">
-        <p className="text-[11px] font-bold tracking-[0.18em] text-[var(--green-d)]">
+      <header className="mt-5 flex flex-col gap-1">
+        <p className="text-[12px] font-bold tracking-[0.18em] text-[var(--green-d)]">
           FOOD JAPAN SUMMIT 2026
         </p>
         <h1 className="font-serif text-[26px] leading-tight text-[var(--ink)] sm:text-[32px]">
@@ -37,44 +44,40 @@ export default function SponsorPage() {
         </h1>
       </header>
 
-      <p className="mt-5 text-[14px] leading-8 text-[var(--ink-2)]">
-        {SUMMIT_TITLE} への協賛をお申し込みいただくフォームです。宮崎開催、名古屋開催、両開催から選べます。
+      <p className="mt-3.5 text-[15px] leading-7 text-[var(--ink-2)]">
+        {SUMMIT_TITLE} への協賛をお申し込みいただくフォームです。協賛プランは{yen(MIN_PLAN_PRICE)}から。
+        宮崎開催・名古屋開催・両開催からお選びいただけます。
         <br />
-        プランや金額が決まっていない場合は、
-        <Link href="/sponsor/contact" className="text-[var(--green-d)] underline">
-          こちらから先にご相談
-        </Link>
-        いただけます。
+        プランや金額がまだ決まっていない場合も、そのまま「内容を相談して決めたい」を選んでお進みください。
       </p>
 
-      <dl className="mt-6 flex flex-col gap-2 border-y border-[var(--line)] py-4">
-        {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
-          <div key={v.label} className="flex flex-wrap gap-x-3 text-[13px]">
-            <dt className="w-[86px] shrink-0 font-bold text-[var(--ink)]">{v.label}</dt>
-            <dd className="text-[var(--ink-2)]">{v.dates}／{v.venue}</dd>
-          </div>
+      {/* 情報チップ（読み物にせず、3点だけを一目で） */}
+      <ul className="mt-4 grid gap-2 sm:grid-cols-3">
+        {HERO_CHIPS.map((c) => (
+          <li
+            key={c.head}
+            className="rounded-[8px] border border-[var(--line)] bg-white px-3.5 py-2.5"
+          >
+            <span className="block text-[15px] font-bold text-[var(--ink)]">{c.head}</span>
+            <span className="mt-0.5 block text-[12px] text-[var(--muted)]">{c.body}</span>
+          </li>
         ))}
-        <div className="flex flex-wrap gap-x-3 text-[13px]">
-          <dt className="w-[86px] shrink-0 font-bold text-[var(--ink)]">主催</dt>
-          <dd className="text-[var(--ink-2)]">{HOST}</dd>
-        </div>
-      </dl>
+      </ul>
 
-      <section className="mt-8 rounded-[10px] border border-[var(--line)] p-5">
-        <h2 className="text-[15px] font-bold text-[var(--ink)]">協賛企業共通の提供価値</h2>
-        <ul className="mt-2.5 flex flex-col gap-1.5">
-          {COMMON_BENEFITS.map((b) => (
-            <li key={b} className="text-[13px] leading-7 text-[var(--ink-2)]">・{b}</li>
-          ))}
-        </ul>
-      </section>
+      {/* 相談導線はページ上部にも置く（申込だけに絞らない・指示書18） */}
+      <p className="mt-3 text-[13px] leading-6 text-[var(--muted)]">
+        まず相談したい場合は{" "}
+        <Link href="/sponsor/contact" className="font-bold text-[var(--green-d)] underline">
+          プランを相談して決めたい
+        </Link>
+      </p>
 
-      <div className="mt-10">
+      <div className="mt-6">
         <SponsorForm />
       </div>
 
-      <footer className="mt-12 border-t border-[var(--line)] pt-5 text-[12px] leading-7 text-[var(--muted)]">
-        フードジャパンサミット実行委員会（株式会社グラブデザイン）
+      <footer className="mt-12 border-t border-[var(--line)] pt-5 text-[13px] leading-7 text-[var(--muted)]">
+        {HOST}
         <br />
         〒102-0073 東京都千代田区九段北1-2-1／info@grab-design.com／03-6825-3901
       </footer>

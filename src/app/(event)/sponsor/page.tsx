@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SUMMIT_TITLE, VENUES, HOST, COMMON_BENEFITS, PLAN_SUMMARY, PLAN_HIGHLIGHTS } from "@/lib/sponsor";
+import { VENUES, HOST, COMMON_BENEFITS, PLAN_SUMMARY, PLAN_HIGHLIGHTS } from "@/lib/sponsor";
 import { btn } from "@/lib/ui";
 
 // Food Japan Summit 協賛の案内ページ。ここから2つに分岐させる。
@@ -143,11 +143,15 @@ export default function SponsorLandingPage() {
 
       {/* 2つの入口 */}
       <div className="mt-9 flex flex-col items-stretch gap-3 rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] p-6 sm:flex-row sm:justify-center">
+        {/* ⚠️ btn() の土台に whitespace-nowrap が入っているので、ラベルを長くすると
+            折り返せずに枠からはみ出す（375px で「Food Japan Summit 2026 協賛を申し込む」の26文字が
+            実際にはみ出していた）。ページ見出しで既にサミット名を出しているので、
+            ボタンは動詞だけにしている（ユーザー判断 2026-08-18）。伸ばすときは幅を確認すること。 */}
         <Link
           href="/sponsor/apply"
           className={`${btn("primary", "lg")} border border-transparent text-[16px] sm:min-w-[280px]`}
         >
-          {SUMMIT_TITLE} 協賛を申し込む
+          協賛を申し込む
         </Link>
         <Link
           href="/sponsor/contact"
