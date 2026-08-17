@@ -446,14 +446,34 @@ export default async function PublicHome() {
             NAKAMAで課題や相手を見つけ、Food Japan Summitで対面し、試食、商談、現地視察、試作、実証へ進めます。
             生まれた事業は、次のSummitで成果として共有し、新しい連携につなげます。
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--ink)]">
-            {["登録・募集", "候補探索", "商談・試食", "試作・実証", "取引・事業化", "成果発表"].map((step, i) => (
-              <span key={step} className="flex items-center gap-2">
-                {i > 0 ? <span className="text-[var(--green)]">→</span> : null}
-                <span className="rounded-full bg-[var(--green-soft)] px-3 py-1.5 text-[var(--green-d)]">{step}</span>
-              </span>
+          {/* 6工程。矢印つきのピルだと狭い幅で折り返して順番が読めなくなるので、
+              アイコン＋名前＋1行説明のグリッドにした（説明は30字以内で揃える）。 */}
+          <ol className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { t: "登録・募集", d: "売りたい・探しているものを掲載する", icon: "/process/process-1-register.png" },
+              { t: "候補探索", d: "条件の合う相手を自分でも事務局とも探す", icon: "/process/process-2-search.png" },
+              { t: "商談・試食", d: "Summitで対面し、試食して話す", icon: "/process/process-3-meeting.png" },
+              { t: "試作・実証", d: "サンプルや試作品で実現性を確かめる", icon: "/process/process-4-prototype.png" },
+              { t: "取引・事業化", d: "条件を決めて、取引を始める", icon: "/process/process-5-deal.png" },
+              { t: "成果発表", d: "次のSummitで成果を共有する", icon: "/process/process-6-results.png" },
+            ].map((s, i) => (
+              <li key={s.t} className="flex flex-col items-center text-center">
+                <Image
+                  src={s.icon}
+                  alt=""
+                  width={192}
+                  height={192}
+                  sizes="56px"
+                  className="h-12 w-12 sm:h-14 sm:w-14"
+                />
+                <span className="mt-2 text-[11px] font-bold tracking-[0.06em] text-[var(--green-d)]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="text-[13px] font-bold leading-6 text-[var(--ink)]">{s.t}</h3>
+                <p className="mt-0.5 text-[12px] leading-6 text-[var(--ink-2)]">{s.d}</p>
+              </li>
             ))}
-          </div>
+          </ol>
         </section>
 
         {/* 最終CTA（3択） */}
