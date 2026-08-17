@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { submitSponsorApplication, type SponsorState } from "./actions";
 import { btn, input } from "@/lib/ui";
 import {
-  COURSES, PLAN_CONSULT, yen, ANNUAL_MEMBER, plansFor, findCourse,
+  COURSES, PLAN_CONSULT, yen, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
 } from "@/lib/sponsor";
@@ -201,6 +201,21 @@ export function SponsorForm() {
                 <span key={l} className="block">{l}</span>
               ))}
             </span>
+          </span>
+        </label>
+      </Section>
+
+      {/* ブース出展（協賛プランとは別枠のオプション） */}
+      <Section>
+        <h2 className={qCls}>2-3｜ブース出展{opt}</h2>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-[8px] border border-[var(--line)] bg-white px-4 py-4">
+          <input type="checkbox" name="boothOption" autoComplete="off" className="mt-1 h-4 w-4 shrink-0 accent-[var(--green)]" />
+          <span>
+            <span className="text-[14px] font-bold text-[var(--ink)]">{BOOTH_OPTION.label}</span>
+            <span className="mt-2 block text-[15px] font-bold leading-7 text-[var(--green-d)]">
+              1ブース {yen(BOOTH_OPTION.price)}（税別）
+            </span>
+            <span className="mt-1.5 block text-[12px] leading-7 text-[var(--ink-2)]">{BOOTH_OPTION.detail}</span>
           </span>
         </label>
       </Section>

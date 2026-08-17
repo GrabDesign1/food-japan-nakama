@@ -597,6 +597,7 @@ export type SponsorMailInput = {
   entryType: string;
   plan: string;
   annualMember: boolean;
+  boothOption: boolean;
   company: string;
   companyKana: string;
   name: string;
@@ -632,7 +633,7 @@ export async function sendSponsorApplicationEmails(
   const adminHtml = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:640px;margin:0 auto;color:#141414">
     <h2 style="font-size:17px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">
-      協賛申込がありました（Food Japan Summit 2026 in MIYAZAKI）
+      協賛申込がありました（Food Japan Summit 2026）
     </h2>
     <p style="font-size:13px">受付番号：<b>${esc(a.refNo)}</b></p>
     ${a.isLocalCorp ? `<p style="font-size:13px;color:#B45309;font-weight:bold">※ 宮崎県内に本店または主たる事業所を置く法人（特別割の対象）</p>` : ""}
@@ -640,6 +641,7 @@ export async function sendSponsorApplicationEmails(
       ${row("協賛対象の開催", a.entryType)}
       ${row("希望プラン", a.plan)}
       ${row("年間会員", a.annualMember ? "あわせて相談したい" : "")}
+      ${row("ブース出展", a.boothOption ? "あわせて申し込みたい（1ブース200,000円・税別）" : "")}
       ${row("法人・団体名", a.company)}
       ${row("フリガナ", a.companyKana)}
       ${row("ご担当者名", a.name)}
@@ -674,7 +676,7 @@ export async function sendSponsorApplicationEmails(
     <h2 style="font-size:17px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">協賛のお申し込みを受け付けました</h2>
     <p style="font-size:14px;line-height:1.9">
       ${esc(a.company)} 御中<br><br>
-      Food Japan Summit 2026 in MIYAZAKI へのお申し込みをいただき、ありがとうございます。<br>
+      Food Japan Summit 2026 へのお申し込みをいただき、ありがとうございます。<br>
       内容を確認のうえ、フードジャパンサミット実行委員会より、協賛内容・ロゴデータの提出方法・請求書・今後の進行についてご連絡します。
     </p>
     <table style="border-collapse:collapse;width:100%;margin-top:10px">
@@ -682,11 +684,14 @@ export async function sendSponsorApplicationEmails(
       ${row("協賛対象の開催", a.entryType)}
       ${row("希望プラン", a.plan)}
       ${row("年間会員", a.annualMember ? "あわせて相談したい" : "")}
-      ${row("開催日", "2026年11月17日（火）・18日（水）")}
-      ${row("会場", "宮崎観光ホテル")}
+      ${row("ブース出展", a.boothOption ? "あわせて申し込みたい（1ブース200,000円・税別）" : "")}
     </table>
+    <p style="font-size:13px;line-height:1.9;margin-top:12px;color:#4A5A50">
+      宮崎開催：2026年11月17日（火）・18日（水）／宮崎観光ホテル<br>
+      名古屋開催：2026年12月15日（火）・16日（水）／名鉄グランドホテル
+    </p>
     <p style="font-size:14px;line-height:1.9;margin-top:14px">
-      Food Japan Summit 2026 in MIYAZAKI で、共に新しい事業を生み出していけることを楽しみにしております。
+      Food Japan Summit 2026 で、共に新しい事業を生み出していけることを楽しみにしております。
     </p>
     <p style="font-size:12px;color:#7C8899;margin-top:16px">
       フードジャパンサミット実行委員会（株式会社グラブデザイン）<br>
@@ -694,7 +699,7 @@ export async function sendSponsorApplicationEmails(
       <a href="mailto:info@grab-design.com">info@grab-design.com</a>／03-6825-3901
     </p>
   </div>`;
-  await sendOne(a.email, `【Food Japan Summit 2026 in MIYAZAKI】協賛申込を受け付けました（${a.refNo}）`, applicantHtml);
+  await sendOne(a.email, `【Food Japan Summit 2026】協賛申込を受け付けました（${a.refNo}）`, applicantHtml);
 
   return { adminDelivered: results.some(Boolean) };
 }

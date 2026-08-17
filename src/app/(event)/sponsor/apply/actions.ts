@@ -43,6 +43,7 @@ export async function submitSponsorApplication(
   const plan = g("plan", 40);
   const isLocalCorp = formData.get("isLocalCorp") === "on";
   const annualMember = formData.get("annualMember") === "on";
+  const boothOption = formData.get("boothOption") === "on";
   const company = g("company", 200);
   const companyKana = g("companyKana", 200);
   const name = g("name", 100);
@@ -94,6 +95,7 @@ export async function submitSponsorApplication(
       entryType: isLocalCorp ? `${course.label}（宮崎県法人 特別割）` : course.label,
       plan: planLabel(course.code, plan, isLocalCorp),
       annualMember,
+      boothOption,
       company, companyKana, name, department, email, phone, address, website,
       purpose,
       themes: many("themes", THEMES),
