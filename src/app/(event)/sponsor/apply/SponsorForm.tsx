@@ -368,11 +368,14 @@ export function SponsorForm() {
                             </svg>
                           ) : null}
                         </span>
-                        {/* 日程・会場もタイトルと同じ太さにする（ユーザー指定 2026-08-18）。 */}
+                        {/* 日程・会場もタイトルと同じ太さにする（ユーザー指定 2026-08-18）。
+                            ⚠️ 会場名は**日程と同じ行に続けない**（「宮崎観光ホ／テル」のように
+                               途中で折れて読みにくかった）。行を分けて会場名を丸ごと1行に置く。 */}
                         {c.plans.length > 0 ? (
                           c.venues.map((v) => (
                             <span key={v.label} className="mt-1 block text-[13px] font-bold leading-6 text-[var(--ink-2)]">
-                              {v.dates}／{v.venue}
+                              <span className="block">{v.dates}</span>
+                              <span className="block">{v.venue}</span>
                             </span>
                           ))
                         ) : (
