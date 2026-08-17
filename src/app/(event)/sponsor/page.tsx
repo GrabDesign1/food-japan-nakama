@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { VENUES, HOST, COMMON_BENEFITS, PLAN_SUMMARY, PLAN_HIGHLIGHTS } from "@/lib/sponsor";
+import { VENUES, HOST, PLAN_HIGHLIGHTS } from "@/lib/sponsor";
+import { CommonValueCards } from "./_components/CommonValueCards";
 import { btn } from "@/lib/ui";
 
 // Food Japan Summit 協賛の案内ページ。ここから2つに分岐させる。
@@ -97,48 +98,16 @@ export default function SponsorLandingPage() {
         ))}
       </ul>
 
-      {/* プラン早見表。中身は sponsor.ts のプラン定義から導出しているので手で直さない */}
-      <div className="mt-5 overflow-x-auto">
-        <table className="w-full min-w-[620px] border-collapse text-[13px]">
-          <thead>
-            <tr>
-              {["プラン", "単独開催", "両開催", "登壇", "展示・試食", "商談の紹介", "NAKAMA掲載"].map((h) => (
-                <th
-                  key={h}
-                  className="border border-[var(--line)] bg-[var(--green-soft)] px-2.5 py-2 text-left text-[12px] font-bold text-[var(--ink)]"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {PLAN_SUMMARY.map((r) => (
-              <tr key={r.name}>
-                <th className="border border-[var(--line)] px-2.5 py-2 text-left font-bold tracking-[0.03em] text-[var(--ink)]">
-                  {r.name}
-                </th>
-                <td className="border border-[var(--line)] px-2.5 py-2 text-[var(--ink-2)]">{r.single}</td>
-                <td className="border border-[var(--line)] px-2.5 py-2 text-[var(--ink-2)]">{r.both}</td>
-                <td className="border border-[var(--line)] px-2.5 py-2 text-[var(--ink-2)]">
-                  {r.presentation ?? "—"}
-                </td>
-                <td className="border border-[var(--line)] px-2.5 py-2 text-center text-[var(--ink-2)]">
-                  {r.exhibit ? "○" : "—"}
-                </td>
-                <td className="border border-[var(--line)] px-2.5 py-2 text-center text-[var(--ink-2)]">
-                  {r.matching ? "○" : "—"}
-                </td>
-                <td className="border border-[var(--line)] px-2.5 py-2 text-center text-[var(--ink-2)]">
-                  {r.nakama ? "○" : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* 早見表（PLAN_SUMMARY の表）はここにあったが、2026-08-18 にユーザー判断で削除し、
+          申込フォームに置いていた「協賛企業共通の提供価値」をこの位置へ移した。
+          理由＝表は申込フォームのプランカードと役割が重なり、共通提供価値は申込フォームでは
+          入力の邪魔になっていたため。プランごとの価格・特典の比較は /sponsor/apply が正。
+          ⚠️ `PLAN_SUMMARY`（sponsor.ts）は表を戻せるように残してあるが、現在どこからも使っていない。 */}
+      <div className="mt-7">
+        <CommonValueCards headingCls="text-[16px] font-bold text-[var(--ink)]" />
       </div>
-      <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
-        金額はすべて税別です。宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割価格（PRESENTER 40万円／STRATEGIC 70万円／DIAMOND PARTNER 200万円）でお申し込みいただけます。各プランの詳しい特典は申込フォームでご確認いただけます。
+      <p className="mt-4 text-[11px] leading-5 text-[var(--muted)]">
+        金額はすべて税別です。宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割価格（PRESENTER 40万円／STRATEGIC 70万円／DIAMOND PARTNER 200万円）でお申し込みいただけます。各プランの価格と詳しい特典は申込フォームでご確認いただけます。
       </p>
 
       {/* 2つの入口 */}
@@ -176,15 +145,6 @@ export default function SponsorLandingPage() {
           <dd className="text-[var(--ink-2)]">{HOST}</dd>
         </div>
       </dl>
-
-      <section className="mt-8 rounded-[10px] border border-[var(--line)] p-5">
-        <h2 className="text-[15px] font-bold text-[var(--ink)]">協賛企業共通の提供価値</h2>
-        <ul className="mt-2.5 flex flex-col gap-1.5">
-          {COMMON_BENEFITS.map((b) => (
-            <li key={b} className="text-[13px] leading-7 text-[var(--ink-2)]">・{b}</li>
-          ))}
-        </ul>
-      </section>
 
       <footer className="mt-12 border-t border-[var(--line)] pt-5 text-[12px] leading-7 text-[var(--muted)]">
         {HOST}

@@ -8,9 +8,10 @@ import {
   COURSES, PLAN_CONSULT, yen, yenFull, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
   CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, LOGO_SUBMISSION, CONSENTS,
-  APPLY_STEPS, COMMON_VALUE_CARDS, COMMON_VALUE_NOTE, COURSE_SHORT,
+  APPLY_STEPS, COURSE_SHORT,
   PLAN_TAGLINE, PLAN_BADGE, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
-  benefitIncluded, applicationTotal, presentationSlot,
+  PLAN_NO, PLAN_NICKNAME, PLAN_ACCENT, yenParts,
+  benefitIncluded, applicationTotal, presentationSlot, PRESENTATION_IMAGE,
   type SponsorPlan,
 } from "@/lib/sponsor";
 
@@ -69,27 +70,6 @@ function FieldError({ msg }: { msg?: string }) {
   );
 }
 
-/** 共通提供価値カードのアイコン（線画・塗りつぶさない）。 */
-function ValueIcon({ name }: { name: string }) {
-  const common = {
-    width: 20, height: 20, viewBox: "0 0 24 24", fill: "none",
-    stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const, "aria-hidden": true,
-  };
-  switch (name) {
-    case "awareness": // 認知＝掲示
-      return <svg {...common}><path d="M3 11l16-6v14L3 13z" /><path d="M6 12v6" /></svg>;
-    case "listing": // NAKAMA掲載＝一覧
-      return <svg {...common}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h10M7 17h6" /></svg>;
-    case "meet": // 出会い＝人
-      return <svg {...common}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="10" r="2.4" /><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5" /></svg>;
-    case "deal": // 商談＝握手
-      return <svg {...common}><path d="M4 13l4-4 4 4 4-4 4 4" /><path d="M4 13v3a2 2 0 002 2h12a2 2 0 002-2v-3" /></svg>;
-    default: // 共創＝重なる円
-      return <svg {...common}><circle cx="9" cy="12" r="6" /><circle cx="15" cy="12" r="6" /></svg>;
-  }
-}
-
 export function SponsorForm() {
   const [state, action, pending] = useActionState<SponsorState, FormData>(submitSponsorApplication, {});
 
@@ -109,6 +89,25 @@ export function SponsorForm() {
   const [openPlan, setOpenPlan] = useState<string | null>(null);
   // 請求・ロゴは必須を含むので**開いた状態から始める**（閉じたまま気づかず送信できないように）。
   const [billingOpen, setBillingOpen] = useState(true);
+  // 図を出すモーダル（ブースのレイアウト図・登壇のイメージで共用）。
+  const [imageModal, setImageModal] = useState<
+    { title: string; src: string; alt: string; caption: string } | null
+  >(null);
+  const [imgFailed, setImgFailed] = useState(false);
+
+  // モーダルは Esc で閉じ、開いている間は背後をスクロールさせない。
+  useEffect(() => {
+    if (!imageModal) return;
+    setImgFailed(false); // 別の図を開いたら読み込み失敗の表示をリセットする
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setImageModal(null); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [imageModal]);
 
   const courseObj = findCourse(course) ?? null;
   // ⚠️ 特別割は宮崎開催のみ。名古屋のみ・両開催では効かせない（両開催向けの特別価格は定義しない）。
@@ -421,22 +420,6 @@ export function SponsorForm() {
               </section>
             ) : null}
 
-            {/* 協賛企業共通の提供価値（開催選択の下へ移動・カード化） */}
-            <section className="flex flex-col gap-3">
-              <h2 className={qCls}>協賛企業共通の提供価値</h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {COMMON_VALUE_CARDS.map((c) => (
-                  <div key={c.label} className={`${cardCls} flex flex-col gap-1.5 p-4`}>
-                    <span className="flex items-center gap-2 text-[var(--green-d)]">
-                      <ValueIcon name={c.icon} />
-                      <span className="text-[14px] font-bold text-[var(--ink)]">{c.label}</span>
-                    </span>
-                    <span className="text-[13px] leading-6 text-[var(--ink-2)]">{c.text}</span>
-                  </div>
-                ))}
-              </div>
-              <p className={hintCls}>※ {COMMON_VALUE_NOTE}</p>
-            </section>
           </div>
 
           {/* ══ STEP 2｜プラン・オプションを選ぶ ═══════════════ */}
@@ -461,7 +444,7 @@ export function SponsorForm() {
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {plans.map((p) => {
                     const on = p.code === plan;
-                    const top = p.code === "diamond";
+                    const accent = PLAN_ACCENT[p.code] ?? "--muted";
                     const badge = PLAN_BADGE[p.code];
                     const shown = p.features.slice(0, PLAN_CARD_FEATURES);
                     const rest = p.features.length - shown.length;
@@ -471,48 +454,70 @@ export function SponsorForm() {
                       <div
                         key={p.code}
                         onClick={() => { setPlan(p.code); setErrors((e) => ({ ...e, plan: "" })); }}
-                        className={`flex cursor-pointer flex-col rounded-[10px] border-2 p-4 transition ${
+                        className={`flex cursor-pointer flex-col overflow-hidden rounded-[10px] border-2 transition ${
                           on
                             ? "border-[var(--green)] bg-[var(--green-soft)]"
-                            : top
-                              ? "border-[var(--gold)] bg-white hover:border-[var(--gold-d)]"
-                              : "border-[var(--line)] bg-white hover:border-[var(--green)]"
+                            : "border-[var(--line)] bg-white hover:border-[var(--green)]"
                         }`}
                       >
-                        <label className="flex cursor-pointer items-start gap-2.5">
-                          <input
-                            type="radio"
-                            name="plan"
-                            value={p.code}
-                            autoComplete="off"
-                            checked={on}
-                            required={step === 1}
-                            onChange={() => { setPlan(p.code); setErrors((e) => ({ ...e, plan: "" })); }}
-                            className="mt-1 h-5 w-5 shrink-0 accent-[var(--green)]"
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="text-[16px] font-bold tracking-[0.04em] text-[var(--ink)]">
-                                {p.name}
-                              </span>
-                              {badge ? (
+                        {/* 上端のアクセントバー。プランごとの色で価格の階段を見せる。
+                            ⚠️ 色は inline style で CSS変数を渡す（クラス名を動的に組み立てると
+                               Tailwind がスキャンできずCSSが出ない）。 */}
+                        <span
+                          aria-hidden
+                          className="block h-[5px] w-full shrink-0"
+                          style={{ backgroundColor: `var(${accent})` }}
+                        />
+                        <div className="flex flex-1 flex-col p-4">
+                          <label className="flex cursor-pointer items-start gap-2.5">
+                            <input
+                              type="radio"
+                              name="plan"
+                              value={p.code}
+                              autoComplete="off"
+                              checked={on}
+                              required={step === 1}
+                              onChange={() => { setPlan(p.code); setErrors((e) => ({ ...e, plan: "" })); }}
+                              className="mt-1 h-5 w-5 shrink-0 accent-[var(--green)]"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                 <span
-                                  className={`rounded-[3px] px-1.5 py-0.5 text-[11px] font-bold ${
-                                    top
-                                      ? "bg-[var(--gold)] text-white"
-                                      : "bg-[var(--action)] text-white"
-                                  }`}
+                                  className="text-[12px] font-bold tracking-[0.14em]"
+                                  style={{ color: `var(${accent})` }}
                                 >
-                                  {badge}
+                                  {PLAN_NO[p.code]}｜{p.name}
                                 </span>
-                              ) : null}
+                                {badge ? (
+                                  <span
+                                    className="rounded-[3px] px-1.5 py-0.5 text-[11px] font-bold text-white"
+                                    style={{ backgroundColor: `var(${accent})` }}
+                                  >
+                                    {badge}
+                                  </span>
+                                ) : null}
+                              </span>
+                              {/* 日本語の通称（資料の表記）。プラン名そのものは上の英字。 */}
+                              <span className="mt-0.5 block text-[22px] font-bold leading-tight text-[var(--ink)]">
+                                {PLAN_NICKNAME[p.code] ?? p.name}
+                              </span>
                             </span>
-                            <span className="mt-1 block text-[20px] font-bold text-[var(--green-d)]">
-                              {yen(p.price)}
-                              <span className="ml-1 text-[12px] font-normal text-[var(--muted)]">（税別）</span>
+                          </label>
+
+                          <span
+                            aria-hidden
+                            className="mt-3 block h-[2px] w-10 shrink-0"
+                            style={{ backgroundColor: `var(${accent})` }}
+                          />
+
+                          {/* 数字だけ大きく（資料の見せ方） */}
+                          <p className="mt-2 flex items-baseline gap-0.5 text-[var(--ink)]">
+                            <span className="text-[38px] font-bold leading-none tracking-tight">
+                              {yenParts(p.price).num}
                             </span>
-                          </span>
-                        </label>
+                            <span className="text-[15px] font-bold">{yenParts(p.price).unit}</span>
+                            <span className="ml-1 text-[12px] font-normal text-[var(--muted)]">（税別）</span>
+                          </p>
 
                         <p className="mt-2 text-[13px] font-semibold leading-6 text-[var(--ink-2)]">
                           {PLAN_TAGLINE[p.code] ?? ""}
@@ -522,25 +527,46 @@ export function SponsorForm() {
                             特典リストに埋めずここに独立して出す。付かないプランは「なし」と明示する。 */}
                         {(() => {
                           const slot = presentationSlot(p);
+                          const mic = (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
+                              <path d="M12 3v10" /><path d="M9 6a3 3 0 016 0v4a3 3 0 01-6 0z" /><path d="M8 20h8" /><path d="M12 16v4" />
+                            </svg>
+                          );
+                          // 枠が無いプランは押せない（見せる図が無い）。ここを押しても
+                          // プランが選ばれないよう preventDefault + stopPropagation する。
+                          if (!slot) {
+                            return (
+                              <p className="mt-2 flex items-center gap-1.5 rounded-[6px] bg-[var(--surface)] px-2.5 py-1.5 text-[13px] text-[var(--muted)]">
+                                {mic}登壇枠：なし
+                              </p>
+                            );
+                          }
                           return (
-                            <p
-                              className={`mt-2 flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] ${
-                                slot
-                                  ? "bg-[var(--amber-soft)] font-bold text-[var(--amber-ink)]"
-                                  : "bg-[var(--surface)] text-[var(--muted)]"
-                              }`}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setImageModal({
+                                  title: `登壇のイメージ（${slot}）`,
+                                  src: PRESENTATION_IMAGE.src,
+                                  alt: PRESENTATION_IMAGE.alt,
+                                  caption: PRESENTATION_IMAGE.caption(slot),
+                                });
+                              }}
+                              className="mt-2 flex w-full items-center gap-1.5 rounded-[6px] bg-[var(--amber-soft)] px-2.5 py-1.5 text-left text-[13px] font-bold text-[var(--amber-ink)] underline decoration-[var(--amber)] underline-offset-2 hover:bg-[var(--amber-line)]"
                             >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                <path d="M12 3v10" /><path d="M9 6a3 3 0 016 0v4a3 3 0 01-6 0z" /><path d="M8 20h8" /><path d="M12 16v4" />
-                              </svg>
-                              登壇枠：{slot ?? "なし"}
-                            </p>
+                              {mic}登壇枠：{slot}
+                            </button>
                           );
                         })()}
 
                         <ul className="mt-2 flex flex-1 flex-col gap-1">
                           {shown.map((f) => (
-                            <li key={f} className="text-[13px] leading-6 text-[var(--ink-2)]">・{f}</li>
+                            <li key={f} className="flex gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
+                              <span aria-hidden className="shrink-0" style={{ color: `var(${accent})` }}>▸</span>
+                              {f}
+                            </li>
                           ))}
                         </ul>
 
@@ -549,7 +575,10 @@ export function SponsorForm() {
                             {isOpen ? (
                               <ul className="mt-1 flex flex-col gap-1 border-t border-[var(--line-soft)] pt-2">
                                 {p.features.slice(PLAN_CARD_FEATURES).map((f) => (
-                                  <li key={f} className="text-[13px] leading-6 text-[var(--ink-2)]">・{f}</li>
+                                  <li key={f} className="flex gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
+                              <span aria-hidden className="shrink-0" style={{ color: `var(${accent})` }}>▸</span>
+                              {f}
+                            </li>
                                 ))}
                                 {p.note ? (
                                   <li className="text-[12px] leading-5 text-[var(--muted)]">※ {p.note}</li>
@@ -574,6 +603,7 @@ export function SponsorForm() {
                         >
                           {on ? "選択中" : consultCta ? `${p.name}を相談する` : `${p.name}を選ぶ`}
                         </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -692,6 +722,24 @@ export function SponsorForm() {
                   ))}
                 </span>
                 <span className="mt-2 block text-[12px] leading-5 text-[var(--muted)]">※ {BOOTH_OPTION.note}</span>
+                {/* ⚠️ カード全体が label なので、押したときにチェックが入らないよう
+                    preventDefault + stopPropagation する。モーダル本体は label の外
+                    （form 直下）に置くこと＝中に置くとモーダル内のクリックで
+                    ブース出展にチェックが入ってしまう。 */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setImageModal({ title: "ブース出展のイメージ", ...BOOTH_OPTION.image });
+                  }}
+                  className={`${btn("secondary", "sm")} mt-3 self-start`}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="4" width="18" height="14" rx="2" /><path d="M3 14l4.5-4.5 3 3L15 8l6 6" />
+                  </svg>
+                  ブースイメージを見る
+                </button>
                 <span className={`${tap} mt-3 flex items-center gap-2.5 border-t border-[var(--line-soft)] pt-3`}>
                   <input
                     type="checkbox"
@@ -1056,6 +1104,53 @@ export function SponsorForm() {
           <div className="sticky top-[92px]">{Summary}</div>
         </aside>
       </div>
+
+      {/* ── ブースイメージのモーダル ─────────────────────
+          ⚠️ label の外（form 直下）に置くこと。label の中に入れると、モーダル内を
+             クリックしただけでブース出展にチェックが入る。 */}
+      {imageModal ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={imageModal.title}
+          onClick={() => setImageModal(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-full w-full max-w-[1100px] flex-col overflow-hidden rounded-[12px] bg-white"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
+              <h2 className="text-[16px] font-bold text-[var(--ink)]">{imageModal.title}</h2>
+              <button
+                type="button"
+                onClick={() => setImageModal(null)}
+                className={`${btn("secondary", "sm")} shrink-0`}
+              >
+                閉じる
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+              {/* ⚠️ 画像が無い／読み込めないときは、alt の長い説明文がそのまま広がって
+                  「壊れている」ようにしか見えない。読み込みに失敗したら短い一文に差し替える。 */}
+              {imgFailed ? (
+                <p className="rounded-[8px] border border-[var(--line)] bg-[var(--surface)] px-4 py-8 text-center text-[13px] leading-6 text-[var(--muted)]">
+                  図を読み込めませんでした。お手数ですが事務局までお問い合わせください。
+                </p>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageModal.src}
+                  alt={imageModal.alt}
+                  onError={() => setImgFailed(true)}
+                  className="mx-auto h-auto w-full"
+                />
+              )}
+              <p className="mt-3 text-[13px] leading-6 text-[var(--ink-2)]">{imageModal.caption}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* ── スマホ：画面下の固定バー ───────────────────── */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">

@@ -293,6 +293,50 @@ export const COURSE_SHORT: Record<string, string> = {
   consult: "相談",
 };
 
+/**
+ * 募集資料の料金表に合わせた番号と日本語の通称（ユーザー提供 2026-08-18）。
+ * ⚠️ **送信値・メール本文で使うプラン名は `SponsorPlan.name`（LIGHT 等）のまま**。
+ *    ここで足しているのは画面上の呼び方だけで、申込データの中身は変えていない。
+ */
+export const PLAN_NO: Record<string, string> = {
+  light: "PLAN 01",
+  standard: "PLAN 02",
+  presenter: "PLAN 03",
+  strategic: "PLAN 04",
+  diamond: "PLAN 05",
+};
+
+export const PLAN_NICKNAME: Record<string, string> = {
+  light: "協賛のみ",
+  standard: "シルバー",
+  presenter: "ゴールド",
+  strategic: "プレミアム",
+  diamond: "パートナー",
+};
+
+/**
+ * プランごとのアクセント色。**CSS変数名だけを持つ**（色を直書きしない）。
+ *
+ * ⚠️ Tailwind のクラスを組み立てないこと。`bg-[var(${x})]` のように動的に作った文字列は
+ *    ビルド時のスキャンに引っかからず**CSSが生成されない**（色が出ない）。
+ *    使うときは inline style で `var(--xxx)` を渡す。
+ * ⚠️ 上に行くほど強い色にして、価格の階段が色でも分かるようにしている。
+ *    資料は DIAMOND に紫を使っているが、NAKAMA の変数に紫が無く、globals.css を
+ *    触らない方針。**DIAMOND は深い緑**（ユーザー指定 2026-08-18）。
+ */
+export const PLAN_ACCENT: Record<string, string> = {
+  light: "--muted",
+  standard: "--ink-2",
+  presenter: "--amber",
+  strategic: "--action",
+  diamond: "--green-d",
+};
+
+/** 数字だけ大きく見せたいので「50」と「万円」に分ける。 */
+export function yenParts(n: number): { num: string; unit: string } {
+  return { num: (n / 10000).toLocaleString("ja-JP"), unit: "万円" };
+}
+
 /** カード右上のラベル。付けるプランだけ持たせる。 */
 export const PLAN_BADGE: Record<string, string> = {
   presenter: "おすすめ",
@@ -438,6 +482,22 @@ export function presentationSlot(plan: SponsorPlan): string | null {
   return hasPresentation(plan.features);
 }
 
+/**
+ * 登壇（協賛プレゼンテーション）のイメージ図。申込フォームでモーダル表示する
+ * （ユーザー指示 2026-08-18）。30分・60分で同じ図を使い、キャプションだけ枠に合わせて変える。
+ * ⚠️ キャプションは「セッションタイトルに企業名が入ります」まで（ユーザー提供の文面）。
+ *    客席数・登壇者数・進行役の有無など、図から読み取れるだけの要素を保証として書かないこと。
+ */
+export const PRESENTATION_IMAGE = {
+  src: "/sponsor/presentation-stage.png",
+  alt:
+    "登壇のイメージ。FOOD JAPAN SUMMIT のロゴと「食を起点に、未来の共創を考える。」と書かれた" +
+    "大型のバックパネルを背にしたステージで、登壇者が話し、進行役がマイクを持って立ち、" +
+    "客席の来場者が着席して聞いている様子。",
+  /** 枠（30分／60分／60分＋セッション主催）を受けてキャプションを作る。 */
+  caption: (slot: string) => `${slot}の登壇枠です。セッションタイトルに企業名が入ります。`,
+};
+
 /** 希望特典の下に必ず出す注記（プランに含まれない特典への誤解を防ぐ）。 */
 export const DESIRED_BENEFITS_NOTE =
   "各特典は、選択した協賛プランに含まれる範囲で提供します。プランに含まれない内容をご希望の場合は、事務局より別途ご相談いたします。";
@@ -512,6 +572,22 @@ export const BOOTH_OPTION = {
   lead: "試食・試飲・商品展示を行うスペースをご用意します。",
   features: ["試食", "試飲", "商品展示", "来場者との直接交流"],
   note: "協賛プランとは別枠のオプションです。ブース数・位置・什器は、会場運営上の都合により事務局と個別に調整します。",
+  /**
+   * ブースのレイアウト図（申込フォームでモーダル表示する。ユーザー指示 2026-08-18）。
+   * ⚠️ alt は図の中身を言葉で書く（画像が出ないときに何の図か分かるように）。
+   * ⚠️ **キャプションで「〜が付きます」と書かないこと**。什器は上の note のとおり個別調整なので、
+   *    何が含まれるかを断定できない。図はあくまで「イメージ」。
+   */
+  image: {
+    src: "/sponsor/booth-layout.png",
+    alt:
+      "ブース出展のレイアウト図。正面イメージは、パーテーションの前に試食・試飲用のテーブルを置き、" +
+      "商品と試食皿を並べて来場者と会話している様子。俯瞰イメージは、間口2,000mm×奥行1,500mmの区画に、" +
+      "パーテーション・椅子2脚・テーブル・案内看板スタンドを配置した平面図。",
+    caption:
+      "ブースの標準レイアウトのイメージです（間口2,000mm × 奥行1,500mm）。" +
+      "什器の内容と配置は、会場運営上の都合により事務局と個別に調整します。",
+  },
 };
 
 export const CO_CREATION_THEMES = [

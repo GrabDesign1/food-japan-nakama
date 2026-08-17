@@ -51,12 +51,17 @@ export default function SponsorPage() {
         プランや金額がまだ決まっていない場合も、そのまま「内容を相談して決めたい」を選んでお進みください。
       </p>
 
-      {/* 情報チップ（読み物にせず、3点だけを一目で） */}
-      <ul className="mt-4 grid gap-2 sm:grid-cols-3">
-        {HERO_CHIPS.map((c) => (
+      {/* 情報チップ（読み物にせず、3点だけを一目で）。
+          ⚠️ **一つずつ枠で囲まない**（ユーザー指摘 2026-08-18）。囲むと押せるものに見えて
+             クリックを待たせてしまう。押せないので上下の罫線だけで一帯にまとめる
+             （この形はページ内の開催情報の並びでも使っている書式）。 */}
+      <ul className="mt-4 flex flex-col gap-3 border-y border-[var(--line)] py-4 sm:flex-row sm:gap-0">
+        {HERO_CHIPS.map((c, i) => (
           <li
             key={c.head}
-            className="rounded-[8px] border border-[var(--line)] bg-white px-3.5 py-2.5"
+            className={`sm:flex-1 ${i > 0 ? "sm:border-l sm:border-[var(--line)] sm:pl-5" : ""} ${
+              i < HERO_CHIPS.length - 1 ? "sm:pr-5" : ""
+            }`}
           >
             <span className="block text-[15px] font-bold text-[var(--ink)]">{c.head}</span>
             <span className="mt-0.5 block text-[12px] text-[var(--muted)]">{c.body}</span>
