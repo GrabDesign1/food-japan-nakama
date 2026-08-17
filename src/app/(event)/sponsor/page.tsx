@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { HOST, MIN_PLAN_PRICE, yen } from "@/lib/sponsor";
+import {
+  HOST, MIN_PLAN_PRICE, yen, VENUES, PLAN_HIGHLIGHTS,
+  COMMON_VALUE_CARDS, COMMON_VALUE_NOTE,
+} from "@/lib/sponsor";
 import s from "./sponsor-teaser.module.css";
 
 // Food Japan Summit 2026 協賛のティザーページ。
@@ -21,6 +24,14 @@ export const metadata: Metadata = {
     "試食、対話、商談から、次の商品・販路・地域連携を生み出す。Food Japan Summit 2026の共創パートナーを募集しています。",
   robots: { index: false, follow: false },
 };
+
+/** 協賛の詳細セクションで出す4つのテーマ（ユーザー指定の文面 2026-08-18）。 */
+const THEMES = [
+  "「地域の素材を生かした商品をつくりたい」",
+  "「新しい販路や取引先を見つけたい」",
+  "「生産者や自治体と連携したい」",
+  "「食品ロスや人材、物流などの課題を事業に変えたい」",
+];
 
 /** 会場で起きること（納品HTMLの WHAT HAPPENS）。 */
 const HAPPENS = [
@@ -79,11 +90,8 @@ export default function SponsorLandingPage() {
           />
           <div className={`${s.wrap} ${s.heroMain}`}>
             <div className={s.ey}>CO-CREATION PARTNER / SPONSORSHIP</div>
-            <h1>
-              試食から、
-              <br />
-              <i>商談と商品化へ。</i>
-            </h1>
+            {/* ⚠️ キャッチコピーはユーザー指定（2026-08-18）。改行や装飾を足さないこと。 */}
+            <h1>参加から商談と共創へ</h1>
             <p>
               生産者、企業、流通、飲食、自治体、スタートアップが同じテーブルを囲む。Food Japan
               Summitは、商品を味わい、アイデアを磨き、次に一緒に動く相手を見つける場です。
@@ -166,6 +174,103 @@ export default function SponsorLandingPage() {
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── 協賛の詳細（2026-08-18 ユーザー指定の文面をそのまま掲載）──
+            ⚠️ 文面は要約・言い換えをしないこと。ページ中央のCTAもここに置く
+               （ヒーロー下・途中・一番下の3か所に置くというユーザー指示）。 */}
+        <section className={s.detail}>
+          <div className={s.wrap}>
+            <div className={s.ey}>SPONSORSHIP</div>
+            {/* 見出しはユーザー文面の一文をそのまま昇格させたもの（書き換えていない）。 */}
+            <h2 className={s.detailTitle}>協賛で得られるのは、露出だけではありません。</h2>
+
+            <p className={s.lead}>
+              Food Japan
+              Summitは、企業名を掲出するだけのイベントではありません。生産者、食品メーカー、小売・流通、飲食、行政、金融、物流など、食の現場を動かす人たちと出会い、試食、対話、商談を通じて、新しい事業を生み出す場です。
+            </p>
+
+            <ul className={s.themes}>
+              {THEMES.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+
+            <div className={s.body}>
+              <p>
+                そんなテーマをお持ちの企業に、Food Japan Summitは具体的な出会いと、次の一歩をつくる機会を提供します。
+              </p>
+              <p>
+                協賛企業には、開催前から当日、開催後まで、事業者との接点を設計します。登壇、試食・試飲、展示、商談候補者の紹介・面談調整、FOOD
+                JAPAN NAKAMAへの掲載を通じて、貴社の挑戦を共創事業へつなげます。
+              </p>
+              <p>
+                まずは、貴社が実現したいことをお聞かせください。協賛プランが決まっていない場合も、事務局が目的に合わせてご相談を承ります。
+              </p>
+              <p>
+                貴社の事業テーマに応じて、生産者、食品メーカー、小売・流通、飲食、行政などとの接点を設計します。商品開発、販路開拓、地域連携、食品ロス、人材、物流など、解決したいテーマが明確でなくても構いません。まずは「何を実現したいか」をお聞かせください。
+              </p>
+              <p>
+                協賛プランは{yen(MIN_PLAN_PRICE)}から。宮崎開催、名古屋開催、両開催からお選びいただけます。プランや金額が未確定の場合も、事務局がご相談を承ります。
+              </p>
+            </div>
+
+            <ul className={s.highlights}>
+              {PLAN_HIGHLIGHTS.map((h) => (
+                <li key={h}>{h}</li>
+              ))}
+            </ul>
+
+            <h3 className={`${s.detailTitle}`} style={{ marginTop: "54px", fontSize: "clamp(1.4rem,2.2vw,1.9rem)" }}>
+              協賛企業共通の提供価値
+            </h3>
+            <div className={s.values}>
+              {COMMON_VALUE_CARDS.map((c) => (
+                <div key={c.label}>
+                  <h3>{c.label}</h3>
+                  <p>{c.text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className={s.notes}>
+              <p>※ {COMMON_VALUE_NOTE}</p>
+              {/* ⚠️ 特別割の価格はここに手書きしている。sponsor.ts の LOCAL_DISCOUNT_PRICES を
+                  変えたら、この一文も直すこと（申込フォームは定義から導出しているのでずれる）。 */}
+              <p>
+                金額はすべて税別です。宮崎県内に本店または主たる事業所を置く法人は、宮崎開催に限り特別割価格（PRESENTER
+                40万円／STRATEGIC 70万円／DIAMOND PARTNER
+                200万円）でお申し込みいただけます。各プランの価格と詳しい特典は申込フォームでご確認いただけます。
+              </p>
+            </div>
+
+            <div className={s.actions}>
+              <Link className={`${s.btn} ${s.primary}`} href="/sponsor/apply">
+                協賛を申し込む
+              </Link>
+              <Link className={`${s.btn} ${s.ghost}`} href="/sponsor/contact">
+                まずは協賛内容を相談する
+              </Link>
+            </div>
+            <p className={s.notes} style={{ marginTop: "14px" }}>
+              「相談する」は、ご連絡先だけの短いフォームです。プランや金額が決まっていなくてもお送りいただけます。
+            </p>
+
+            <dl className={s.venues}>
+              {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
+                <div key={v.label}>
+                  <dt>{v.label}</dt>
+                  <dd>
+                    {v.dates}／{v.venue}
+                  </dd>
+                </div>
+              ))}
+              <div>
+                <dt>主催</dt>
+                <dd>{HOST}</dd>
+              </div>
+            </dl>
           </div>
         </section>
 
@@ -272,8 +377,10 @@ export default function SponsorLandingPage() {
             </div>
           </div>
         </section>
+      {/* ⚠️ フッターは「フードジャパンサミット実行委員会」だけにする（ユーザー指定 2026-08-18）。
+          運営会社と連絡先は、上の「主催」と申込・相談フォーム側で示している。 */}
       <footer className={s.foot}>
-        <div className={s.wrap}>{HOST}</div>
+        <div className={s.wrap}>フードジャパンサミット実行委員会</div>
       </footer>
     </div>
   );
