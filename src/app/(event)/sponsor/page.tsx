@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   // ⚠️ SNSに出る文言はここ（openGraph）。上の title / description はブラウザのタブと
   //    検索向けで別物なので、片方だけ直すと食い違う。
   openGraph: {
-    title: "協賛企業を募集しています！",
+    title: "協賛パートナーを募集しています！",
     description:
       "試食、対話、商談から、次の商品・販路・地域連携を生み出す。Food Japan Summit 2026の協賛企業を募集しています。",
     images: [
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "協賛企業を募集しています！",
+    title: "協賛パートナーを募集しています！",
     description:
       "試食、対話、商談から、次の商品・販路・地域連携を生み出す。Food Japan Summit 2026の協賛企業を募集しています。",
     images: ["/sponsor/og-sponsor.jpg"],
