@@ -965,7 +965,7 @@ export const PLAN_HIGHLIGHTS = [
 export const PARTICIPANTS_EYEBROW = "WHO YOU CAN MEET";
 export const PARTICIPANTS_TITLE = "登壇・参加予定企業・団体";
 export const PARTICIPANTS_NOTE =
-  "資料提供を受けた登壇・参加予定企業・団体の一部です。掲載内容は開催準備に伴い変更となる場合があります。";
+  "資料提供を受けた登壇・参加予定企業・団体の一部です（順不同）。掲載内容は開催準備に伴い変更となる場合があります。";
 
 export const PARTICIPANT_LOGOS: { src: string; alt: string }[] = [
   { src: "/images/participants/kanro.jpg", alt: "カンロ" },
