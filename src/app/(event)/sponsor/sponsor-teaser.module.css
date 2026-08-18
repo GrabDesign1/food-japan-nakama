@@ -128,6 +128,15 @@
 .happen h3 { margin: -2px 0 0; font-size: clamp(1.3rem, 2vw, 1.9rem); line-height: 1.35; letter-spacing: -.04em; }
 .happen p { margin: 0; color: var(--m); font-size: 15px; }
 .happen p strong { color: var(--w); }
+/* ⚠️ .page a は text-decoration:none なので、リンクだと分かるよう下線を明示する。
+   本文の導入語（<strong>）と同じ白の太字にしたうえで下線だけ足している。 */
+/* ⚠️ `.page a { text-decoration: none }` の方が詳細度が高いので、.page を前置しないと
+   下線が出ない。ここを単独クラスに戻さないこと。 */
+.page .leadLink {
+  color: var(--w); font-weight: 700;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--o);
+}
+.page .leadLink:hover { color: var(--o); }
 /* ⚠️ 画像は 16:9 固定。素材の比率が違っても cover で切って段の高さを揃える。 */
 .happenImg { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
 
@@ -177,12 +186,20 @@
 .notes p { margin: 0 0 8px; }
 .detail .actions { margin-top: 38px; }
 /* ⚠️ 開催概要はフッター直前に置いている（ユーザー指示 2026-08-18）。
-   .final は上下150pxの余白を持つので、ここは下側だけ空ければ足りる。 */
-.outline { padding: 0 0 52px; }
-.venues { margin: 0; padding-top: 26px; border-top: 1px solid var(--l); display: grid; gap: 10px; }
+   .final は上下の余白を持つので、ここは下側だけ空ければ足りる。 */
+.outline { padding: 0 0 60px; border-top: 1px solid var(--l); padding-top: 60px; }
+.outlineTitle { margin: 14px 0 34px; font-size: clamp(1.5rem, 2.4vw, 2.1rem); letter-spacing: -.04em; }
+.outlineGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; }
+.outlineGrid h3 { margin: 0; font-size: 15px; letter-spacing: .01em; color: var(--o); }
+/* ⚠️ dd の中は1行=1<span>。改行を <br> ではなく span のブロック化で作っているので、
+   span を外すと住所と会場名が続けて表示される。 */
+.venues { margin: 14px 0 0; padding-top: 18px; border-top: 1px solid var(--l); display: grid; gap: 14px; }
 .venues div { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; }
-.venues dt { width: 86px; flex-shrink: 0; font-weight: 800; color: var(--w); }
-.venues dd { margin: 0; color: #b7b7b1; }
+.venues dt { width: 128px; flex-shrink: 0; font-weight: 800; color: var(--w); }
+.venues dd { margin: 0; min-width: 0; flex: 1; color: #b7b7b1; }
+.venues dd span { display: block; }
+.host { margin-top: 34px; }
+.host dt { width: 128px; }
 
 .after { padding: 90px 0; background: #0b0b0a; border-top: 1px solid var(--l); }
 .afterGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: end; }
@@ -230,6 +247,10 @@
   .city { min-height: 470px; }
   .cityContent { inset: auto 23px 24px; }
   .detail { padding: 60px 0; }
+  .outlineGrid { grid-template-columns: 1fr; gap: 30px; }
+  /* 狭い画面では項目名を上に置く（横並びだと値が2〜3文字幅まで潰れる） */
+  .venues div { display: block; }
+  .venues dt, .host dt { width: auto; margin-bottom: 2px; }
   .themes { grid-template-columns: 1fr; }
   .values { grid-template-columns: 1fr; gap: 24px; }
   .steps { grid-template-columns: 1fr; margin-top: 43px; }

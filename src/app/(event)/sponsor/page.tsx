@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  HOST, MIN_PLAN_PRICE, yen, VENUES,
+  HOST, MIN_PLAN_PRICE, yen, NAKAMA_URL, EVENT_OUTLINE,
   COMMON_VALUE_CARDS, COMMON_VALUE_NOTE,
 } from "@/lib/sponsor";
 import s from "./sponsor-teaser.module.css";
@@ -76,7 +76,7 @@ const HAPPENS = [
     alt: "会場のステージで登壇者が食材を前に話し、着席した参加者が聞いている様子",
     title: ["ブランドを伝える。", "次の相手を見つける。"],
     lead: "60分と30分のスポンサーセッション",
-    body: "を協賛企業様にご用意。貴社のブランドの考え方と、新商品・地域連携・サステナビリティへの取り組みを発信。経営者、商品開発責任者、バイヤー、シェフ、行政担当者との次の対話をつくります。",
+    body: "を協賛企業様にご用意。貴社ブランドの冠がついたセッションタイトルで、貴社のブランドの考え方と、新商品・地域連携・サステナビリティへの取り組みを発信。経営者、商品開発責任者、バイヤー、シェフ、行政担当者との次の対話をつくります。",
     // ⚠️ 登壇枠が付くのは PRESENTER 以上で、LIGHT・STANDARD には無い（sponsor.ts の features が正）。
     //    注記が無いと「協賛企業様にご用意」が全プラン一律の提供に読める＝改訂指示書の
     //    禁止事項（全協賛企業へ登壇を一律保証しない）に触れる。この一文を外さないこと。
@@ -106,6 +106,9 @@ const HAPPENS = [
     alt: "FOOD JAPAN NAKAMA のバナー。食の出会い・学び・共創をつくる会員制ネットワーク",
     title: ["イベント後も、", "事業を進め続ける。"],
     lead: "FOOD JAPAN NAKAMA",
+    // ⚠️ NAKAMAが何なのか分からないままにしないためのリンク（ユーザー指示 2026-08-18）。
+    //    **別タブで開くこと**。このページは申込への導線なので、離脱させない。
+    leadHref: NAKAMA_URL,
     body: "に協賛企業として紹介情報を掲載。出会いを一日で終わらせず、実証、販路開拓、共創プロジェクトへ進むための接点を継続します。",
     // ⚠️ 継続利用は年間会員特典という切り分けを崩さない。
     note: "案件掲載、メッセージ、マッチング相談などの継続利用は、年間会員特典として提供します。",
@@ -233,7 +236,18 @@ export default function SponsorLandingPage() {
                     {h.title[1]}
                   </h3>
                   <p>
-                    <strong>{h.lead}</strong>
+                    {"leadHref" in h && h.leadHref ? (
+                      <a
+                        className={s.leadLink}
+                        href={h.leadHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {h.lead}
+                      </a>
+                    ) : (
+                      <strong>{h.lead}</strong>
+                    )}
                     {h.body}
                     {h.note ? (
                       <span className={s.itemNote}>※ {h.note}</span>
@@ -417,18 +431,33 @@ export default function SponsorLandingPage() {
                上へ戻さないこと。日付・会場は sponsor.ts の VENUES が正。 */}
         <section className={s.outline}>
           <div className={s.wrap}>
-            <dl className={s.venues}>
-              {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
-                <div key={v.label}>
-                  <dt>{v.label}</dt>
-                  <dd>
-                    {v.dates}／{v.venue}
-                  </dd>
+            <div className={s.ey}>EVENT OUTLINE</div>
+            <h2 className={s.outlineTitle}>開催概要</h2>
+            <div className={s.outlineGrid}>
+              {EVENT_OUTLINE.map((o) => (
+                <div key={o.key}>
+                  <h3>{o.title}</h3>
+                  <dl className={s.venues}>
+                    {o.rows.map((r) => (
+                      <div key={r.label}>
+                        <dt>{r.label}</dt>
+                        <dd>
+                          {r.lines.map((line) => (
+                            <span key={line}>{line}</span>
+                          ))}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
                 </div>
               ))}
+            </div>
+            <dl className={`${s.venues} ${s.host}`}>
               <div>
                 <dt>主催</dt>
-                <dd>{HOST}</dd>
+                <dd>
+                  <span>{HOST}</span>
+                </dd>
               </div>
             </dl>
           </div>
