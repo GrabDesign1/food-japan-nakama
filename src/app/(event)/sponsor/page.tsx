@@ -20,11 +20,30 @@ import s from "./sponsor-teaser.module.css";
 // ⚠️ CTAの文言は納品HTMLの「共創パートナーに申し込む」から**「協賛に申し込む」へ変更**
 //    （ユーザー指示 2026-08-18）。リンク先は /sponsor/apply のまま。
 
+// ⚠️ OGP画像はこのページだけ差し替えている（ユーザー指示 2026-08-18）。
+//    ルート（src/app/layout.tsx）は /og.jpg を出しているが、ここで上書きすると
+//    このページのみ og-sponsor.jpg になる（/sponsor/apply などには波及しない）。
+//    ⚠️ twitter も一緒に指定すること。openGraph だけだとXでは /og.jpg のままになる。
+//    画像はヒーローの共創シーンから 1200×630 に切り出したもの。
 export const metadata: Metadata = {
   title: "Food Japan Summit 2026｜共創パートナー募集",
   description:
     "試食、対話、商談から、次の商品・販路・地域連携を生み出す。Food Japan Summit 2026の共創パートナーを募集しています。",
   robots: { index: false, follow: false },
+  openGraph: {
+    title: "Food Japan Summit 2026｜共創パートナー募集",
+    description:
+      "試食、対話、商談から、次の商品・販路・地域連携を生み出す。Food Japan Summit 2026の共創パートナーを募集しています。",
+    images: [
+      {
+        url: "/sponsor/og-sponsor.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Food Japan Summit 2026 共創パートナー募集。生産者・シェフ・企業が同じテーブルで試食しながら事業案を詰めている様子",
+      },
+    ],
+  },
+  twitter: { card: "summary_large_image", images: ["/sponsor/og-sponsor.jpg"] },
 };
 
 /**
