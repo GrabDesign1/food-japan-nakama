@@ -4,12 +4,17 @@ import { prisma } from "@/lib/db";
 const TENANT_SLUG = "food-japan-summit";
 
 /**
- * 公開トップに案件セクションを出し始める件数（2026-08-17 ユーザー決定）。
+ * 公開トップに案件セクションを出し始める件数。
  * これに満たないうちはセクションごと出さない＝「現在ありません」を並べない。
- * 4件にしているのは、トップのグリッドが lg:grid-cols-4 で1行が埋まる数だから。
  * 判定は売りたい／探している／共創プロジェクトで**別々**に行う。
+ *
+ * ⚠️ **2026-08-18 に 4 → 1 へ変更**（ユーザー指示）。折兼の「バガス容器」が
+ *    掲載されたので、1件でもトップに出す方針に切り替えた。
+ *    4件にしていたのは lg:grid-cols-4 で1行が埋まる数だったから（2026-08-17 の決定）で、
+ *    1件だと横に空きが出る。**0件のセクションは従来どおり丸ごと消える**ので、
+ *    「現在ありません」が並ぶことはない。
  */
-export const MIN_LISTINGS_TO_SHOW = 4;
+export const MIN_LISTINGS_TO_SHOW = 1;
 
 export async function getPublicTenantId(): Promise<string | null> {
   const t = await prisma.tenant.findUnique({
