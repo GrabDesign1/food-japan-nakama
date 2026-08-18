@@ -158,6 +158,8 @@ export default function SponsorLandingPage() {
               <p>
                 貴社の商品・技術・課題を起点に、
                 <strong>会いたい相手と出会い、会場で試し、次の商談・共創へ繋げる。</strong>
+                {/* ⚠️ ここで必ず改行する（ユーザー指定 2026-08-18）。 */}
+                <br />
                 これがFood Japan Summitの協賛です。
               </p>
               <p>
