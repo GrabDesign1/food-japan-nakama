@@ -208,6 +208,10 @@ export default function SponsorLandingPage() {
             置き場所は**数字帯の直後・WHY SPONSOR の直前**（指示書の指定＝ヒーロー直下の空きに敷く）。
             ⚠️ **白いのはロゴの帯だけ**（ユーザー指示「縦幅ロゴくらいの部分を白背景で」）。
                 見出しと注記は黒地のまま。帯は .wrap の外に置いて画面の端まで伸ばす。
+            ⚠️ **`width`/`height` を必ず出す**＝CSSは `height` 実寸＋`width: auto` なので、
+                属性が無いと**読み込みが終わるまで幅0**になり、帯だけが白く空いて見える。
+            ⚠️ **ロゴに `loading="lazy"` を付けないこと**＝流れている（transform 中の）要素は
+                iOS Safari で可視判定が働かず、読み込まれないまま白い帯だけが残ることがある（2026-08-18 に実機で発生）。
             ⚠️ **同じロゴを2セット並べる**のは無限ループの継ぎ目を消すためで、社数を二重に見せる意図ではない。
                 2セット目は aria-hidden にして読み上げから外す。 */}
         <section className={s.meet} aria-labelledby="fjs-participants">
@@ -228,7 +232,7 @@ export default function SponsorLandingPage() {
                   {PARTICIPANT_LOGOS.map((l) => (
                     <figure key={l.src}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={l.src} alt={l.alt} loading="lazy" decoding="async" />
+                      <img src={l.src} alt={l.alt} width={l.w} height={l.h} decoding="async" />
                     </figure>
                   ))}
                 </div>
@@ -236,7 +240,7 @@ export default function SponsorLandingPage() {
                   {PARTICIPANT_LOGOS.map((l) => (
                     <figure key={`clone-${l.src}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={l.src} alt="" loading="lazy" decoding="async" />
+                      <img src={l.src} alt="" width={l.w} height={l.h} decoding="async" />
                     </figure>
                   ))}
                 </div>

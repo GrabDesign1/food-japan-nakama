@@ -286,7 +286,12 @@
 .meetHead h2 { margin: 14px 0 0; font-size: clamp(1.4rem, 2.6vw, 2.2rem); line-height: 1.2; letter-spacing: -.04em; }
 
 /* ロゴの帯＝ここだけ白。高さはロゴ（76px）＋上下の余白 */
-.meetBand { background: #fff; padding: 20px 0; overflow: hidden; }
+/* ⚠️ **見せるだけの帯**（ユーザー指示 2026-08-18「クリックやマウスオーバーなどの操作は期待していない」）。
+   `pointer-events: none` で当たり判定を消し、長押しメニュー・選択・ドラッグも止める。
+   iOS で画像を長押しすると共有シートが出るのも、これで起きなくなる。
+   ⚠️ 動きを減らす設定のときだけは横スクロールで見てもらうので、下の media query で戻している。 */
+.meetBand { background: #fff; padding: 20px 0; overflow: hidden; pointer-events: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .meetViewport { position: relative; overflow: hidden; width: 100%; }
 /* 端をぼかして「まだ続いている」ことを見せる。地が白なので白へフェードさせる */
 .meetViewport:before,
@@ -306,8 +311,12 @@
      **見た目の間隔だけが広い**まま揃わない。高さで揃え、幅はロゴなりにする。
    ③img には **max-width / max-height を必ず付ける**（納品HTMLにもあった。外すと①の事故に戻る）。
      max-width は極端に横長のロゴ（JDOCCO＝比率7.7）が1枚で場所を取りすぎないための頭打ち。 */
-.meetSet figure { flex: 0 0 auto; height: 76px; margin: 0; }
-.meetSet figure img { display: block; width: auto; height: 100%; max-width: 200px; max-height: 100%; object-fit: contain; }
+.meetSet figure { flex: 0 0 auto; margin: 0; display: flex; align-items: center; }
+/* ⚠️ 画像の高さは**実寸で指定する**（`height: 100%` にしない）。
+   器の幅が auto（中身なり）なのに中の高さを % で書くと、幅と高さが互いを参照する形になり、
+   **iOS Safari では幅0に潰れてロゴが1枚も出ない**（2026-08-18 に実機で発生）。
+   Chrome は解決できてしまうので、開発ブラウザだけの確認では気づけない。 */
+.meetSet figure img { display: block; height: 76px; width: auto; max-width: 200px; object-fit: contain; }
 /* ⚠️ ホバーで止める指定は**入れていない**（ユーザー判断 2026-08-18「マウスオーバーで止まらなくてもOK」）。
    指示書4は停止を求めているが、流れ続けるほうを採った。戻すなら
    `.meetBand:hover .meetTrack { animation-play-state: paused; }` を足すだけ。 */
@@ -318,14 +327,15 @@
 @media (max-width: 640px) {
   .meet { padding: 34px 0 30px; }
   .meetBand { padding: 16px 0; }
-  .meetSet figure { height: 58px; }
-  .meetSet figure img { max-width: 150px; }
+  .meetSet figure img { height: 58px; max-width: 150px; }
   .meetSet { gap: 16px; padding-right: 16px; }
   .meetTrack { animation-duration: 68s; }
 }
 
 /* 動きを減らす設定のときは流さず、横スクロールで見てもらう（複製は隠す） */
 @media (prefers-reduced-motion: reduce) {
+  /* 流さない代わりに指でスクロールしてもらうので、ここだけ当たり判定を戻す */
+  .meetBand { pointer-events: auto; }
   .meetViewport { overflow-x: auto; }
   .meetTrack { animation: none; }
   .meetSetClone { display: none; }
