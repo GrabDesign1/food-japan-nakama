@@ -312,7 +312,7 @@ export default function SponsorLandingPage() {
             <h2 className={s.sectionTitle}>
               深くつながる宮崎。
               <br />
-              広く進める名古屋。
+              広く伝える名古屋。
             </h2>
             <div className={s.cityGrid}>
               <article className={`${s.city} ${s.miyazaki}`}>
