@@ -389,10 +389,12 @@ export default function SponsorLandingPage() {
             <div className={s.ey} style={{ justifyContent: "center" }}>
               JOIN THE CO-CREATION
             </div>
+            {/* ⚠️ 文言はユーザー指定（2026-08-18）。オレンジ（<i>）は後半に掛ける。
+                読点で折り返すよう word-break: auto-phrase を .final h2 に入れている。 */}
             <h2>
-              次の商品と、
+              次の商談、次の商品、
               <br />
-              <i>次の商談をつくろう。</i>
+              <i>次の共創、次の地方創生をつくろう。</i>
             </h2>
             {/* ⚠️「（税別）」は納品HTMLには無いが足している（ユーザー判断 2026-08-18）。
                 金額を出す以上、税別である旨を消せないため。金額はプラン定義から導出。 */}
