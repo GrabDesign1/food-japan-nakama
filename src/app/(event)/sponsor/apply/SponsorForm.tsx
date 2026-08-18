@@ -8,7 +8,8 @@ import { formatJpDate } from "@/lib/invoice";
 import {
   COURSES, PLAN_CONSULT, yen, yenFull, ANNUAL_MEMBER, BOOTH_OPTION, plansFor, findCourse,
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
-  CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, LOGO_SUBMISSION, CONSENTS,
+  CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, BENEFIT_LINKS, LOGO_SUBMISSION, CONSENTS,
+  LOGO_SUBMISSION_UPLOAD, LOGO_SUBMISSION_DEFAULT, LOGO_MAX_BYTES, LOGO_ACCEPT,
   APPLY_STEPS, COURSE_SHORT, isCourseOpen, COURSE_CLOSED_LABEL,
   isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
   PLAN_TAGLINE, planBadge, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
@@ -37,7 +38,7 @@ const FIELD_STEP: Record<string, number> = {
   course: 0, isLocalCorp: 0,
   plan: 1,
   company: 2, companyKana: 2, name: 2, department: 2, email: 2, phone: 2,
-  address: 2, website: 2, referrer: 2, purpose: 2, invoiceName: 2, logoSubmission: 2,
+  address: 2, website: 2, referrer: 2, purpose: 2, invoiceName: 2, logoSubmission: 2, logoFile: 2,
   consent: 3,
 };
 
@@ -64,6 +65,30 @@ function fieldCls(err?: string): string {
     : `${input()} w-full`;
 }
 
+/** 特典ラベルの一部を別タブリンクにする（例：FOOD JAPAN NAKAMA）。
+ *  ⚠️ ラベルは <label> の中なので、リンクを押したときにチェックが切り替わらないよう
+ *     onClick で stopPropagation している。preventDefault はしない（遷移はさせる）。 */
+function benefitLabel(t: string) {
+  const link = BENEFIT_LINKS[t];
+  if (!link) return t;
+  const [before, after] = t.split(link.text);
+  return (
+    <>
+      {before}
+      <a
+        href={link.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="font-semibold text-[var(--green-d)] underline underline-offset-2"
+      >
+        {link.text}
+      </a>
+      {after}
+    </>
+  );
+}
+
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
@@ -86,7 +111,10 @@ export function SponsorForm() {
   const [text, setText] = useState({ ...EMPTY_TEXT });
   const [themes, setThemes] = useState<string[]>([]);
   const [benefits, setBenefits] = useState<string[]>([]);
-  const [logoSubmission, setLogoSubmission] = useState(LOGO_SUBMISSION[0]);
+  const [logoSubmission, setLogoSubmission] = useState(LOGO_SUBMISSION_DEFAULT);
+  // 添付ファイルの表示名。input[type=file] は React で値を制御できないので、
+  // 選ばれたファイル名だけを持って画面に出す。
+  const [logoFileName, setLogoFileName] = useState("");
   const [consent, setConsent] = useState<boolean[]>(CONSENTS.map(() => false));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [openPlan, setOpenPlan] = useState<string | null>(null);
@@ -888,7 +916,7 @@ export function SponsorForm() {
           {/* ══ STEP 3｜会社情報・目的を入力 ═══════════════════ */}
           <div hidden={step !== 2} className="flex flex-col gap-7">
             <section className="flex flex-col gap-3">
-              <h2 className={qCls}>お申し込み者の情報</h2>
+              <h2 className={qCls}>協賛お申込みフォーム</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className={labelCls} data-field="company">
                   法人・団体名{req}
@@ -975,7 +1003,7 @@ export function SponsorForm() {
             </section>
 
             <section className="flex flex-col gap-2.5 border-t border-[var(--line)] pt-6" data-field="purpose">
-              <h2 className={qCls}>貴社は、Food Japan Summitで何を実現したいですか？{opt}</h2>
+              <h2 className={qCls}>Food Japan Summitで何を実現したいですか？{opt}</h2>
               <p className={hintCls}>
                 まだ具体的に決まっていなくても構いません。
                 <br />
@@ -1034,7 +1062,7 @@ export function SponsorForm() {
                         onChange={() => setBenefits((l) => toggleIn(l, t))}
                         className="h-5 w-5 shrink-0 accent-[var(--green)]"
                       />
-                      <span>{t}</span>
+                      <span>{benefitLabel(t)}</span>
                       {incl === true ? (
                         <span className="rounded-[3px] bg-[var(--green-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--green-d)]">
                           プランに含まれます
@@ -1117,6 +1145,34 @@ export function SponsorForm() {
                     ))}
                   </div>
                   <FieldError msg={errors.logoSubmission} />
+                  {/* ⚠️ 「こちらから提出する」を選んだときだけ出す。hidden ではなく未描画に
+                      しているのは、選んでいない人のファイルが送信に混ざらないようにするため。 */}
+                  {logoSubmission === LOGO_SUBMISSION_UPLOAD ? (
+                    <div className="mt-2.5 flex flex-col gap-1.5" data-field="logoFile">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className={`${btn("secondary", "sm")} cursor-pointer`}>
+                          ファイルを添付
+                          <input
+                            type="file" name="logoFile" accept={LOGO_ACCEPT}
+                            className="hidden"
+                            onChange={(e) => {
+                              setLogoFileName(e.target.files?.[0]?.name ?? "");
+                              setErrors((x) => ({ ...x, logoFile: "" }));
+                            }}
+                          />
+                        </label>
+                        <span className="min-w-0 break-all text-[13px] text-[var(--ink-2)]">
+                          {logoFileName || "選択されていません"}
+                        </span>
+                      </div>
+                      <span className={hintCls}>
+                        Illustratorデータ（.ai）またはPDFをお送りください（
+                        {Math.round(LOGO_MAX_BYTES / 1024 / 1024)}MBまで）。
+                        これより大きい場合は「メールで提出する」をお選びください。
+                      </span>
+                      <FieldError msg={errors.logoFile} />
+                    </div>
+                  ) : null}
                 </div>
                 <label className={labelCls}>
                   備考・事務局へのメッセージ{opt}

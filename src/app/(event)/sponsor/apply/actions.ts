@@ -5,7 +5,9 @@ import {
   SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel, plansFor, LOCAL_DISCOUNT_COURSE, isCourseOpen,
   isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
+  LOGO_SUBMISSION_UPLOAD, LOGO_MAX_BYTES,
 } from "@/lib/sponsor";
+import type { MailAttachment } from "@/lib/email";
 
 /**
  * fields＝項目ごとのエラー（キーは input の name）。
@@ -109,6 +111,27 @@ export async function submitSponsorApplication(
   // ⚠️ 項目別のエラーをまとめて返す（1件ずつ返すと、直して送るたびに次のエラーが出る）。
   //    キーの順序は画面の並び順＝ステップ順にしておくと、戻す先を先頭から探せる。
   const fields: Record<string, string> = {};
+
+  // ロゴの添付。「こちらから提出する」を選んだときだけ受け取る。
+  // ⚠️ 拡張子は自己申告なので中身の検証はしていない。**事務局宛にしか送らない**ことと、
+  //    どこにも保存しないことで影響を閉じている。保存先を足すならここで型検査を足すこと。
+  let logoFile: MailAttachment | undefined;
+  if (logoSubmission === LOGO_SUBMISSION_UPLOAD) {
+    const f = formData.get("logoFile");
+    if (!(f instanceof File) || f.size === 0) {
+      fields.logoFile = "ロゴデータのファイルを選択してください。";
+    } else if (f.size > LOGO_MAX_BYTES) {
+      fields.logoFile = `ファイルが大きすぎます（${Math.round(LOGO_MAX_BYTES / 1024 / 1024)}MBまで）。メールでの提出をお選びください。`;
+    } else if (!/\.(ai|pdf|eps)$/i.test(f.name)) {
+      fields.logoFile = "Illustrator（.ai）・PDF・EPS のいずれかを選択してください。";
+    } else {
+      logoFile = {
+        filename: f.name.slice(0, 120),
+        content: Buffer.from(await f.arrayBuffer()),
+      };
+    }
+  }
+
   if (!planCodes.has(plan)) fields.plan = "希望する協賛プランを選択してください。";
   if (!company) fields.company = "法人・団体名を入力してください。";
   if (!companyKana) fields.companyKana = "法人・団体名（フリガナ）を入力してください。";
@@ -141,7 +164,7 @@ export async function submitSponsorApplication(
       purpose,
       themes: many("themes", THEMES),
       benefits: many("benefits", BENEFITS),
-      presentation, invoiceName, invoiceNote, logoSubmission, message,
+      presentation, invoiceName, invoiceNote, logoSubmission, logoFile, message,
     },
     SPONSOR_INBOX
   );

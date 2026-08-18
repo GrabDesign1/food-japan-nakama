@@ -807,10 +807,22 @@ export const CO_CREATION_THEMES = [
   "食品ロス",
   "商品開発",
   "販路開拓",
+  // 2026-08-18 にユーザー指示で追加。「その他」は必ず末尾に置くこと。
+  "マーケティング",
+  "ファンづくり",
+  "地方創生",
+  "関係人口の増加",
+  "サスティナブル",
+  "食料問題",
+  // ⚠️ 区切り記号は既存の「食×環境」等に合わせた全角の × （U+00D7）。
+  //    指示原文は ✕ （U+2715）だが、リスト内で字形が揃わないため統一している。
+  "食×芸術",
   "その他",
 ];
 
 export const DESIRED_BENEFITS = [
+  // 2026-08-18 ユーザー指示で先頭に追加。
+  "企業ロゴ・ブランドロゴの掲載",
   "登壇・協賛プレゼンテーション",
   "試食・試飲・展示",
   "チラシ・ノベルティ配布",
@@ -821,8 +833,29 @@ export const DESIRED_BENEFITS = [
   "その他",
 ];
 
+/** 特典ラベルの一部を外部リンクにする指定。キー＝DESIRED_BENEFITS の値。
+ *  ⚠️ ラベルは <label> の中にあるので、リンクのクリックでチェックが変わらないよう
+ *     呼び出し側で stopPropagation すること（2026-08-18）。 */
+export const BENEFIT_LINKS: Record<string, { text: string; href: string }> = {
+  "FOOD JAPAN NAKAMAへの掲載": { text: "FOOD JAPAN NAKAMA", href: NAKAMA_URL },
+};
+
+/** ロゴ提出方法。**先頭の値を選んだときだけ**フォームにファイル添付欄が出る
+ *  （SponsorForm / actions.ts の両方がこの定数を見て判定するので、文言を変えるときは
+ *  LOGO_SUBMISSION_UPLOAD も一緒に直すこと）。 */
+export const LOGO_SUBMISSION_UPLOAD = "こちらから提出する（Illustratorデータ／PDF）";
+/** 添付できる最大サイズ。⚠️ next.config.ts の serverActions.bodySizeLimit(8mb) より
+ *  十分小さくすること。他の入力値もリクエストに乗るため、上限いっぱいにしない。 */
+export const LOGO_MAX_BYTES = 4 * 1024 * 1024;
+export const LOGO_ACCEPT = ".ai,.pdf,.eps";
+
+/** ラジオの初期選択。⚠️ 先頭（＝添付）を初期値にしないこと。
+ *  初期状態でファイル添付が必須になり、ロゴをまだ用意していない人が進めなくなる。 */
+export const LOGO_SUBMISSION_DEFAULT = "申込後、事務局からの案内に従いメールで提出する";
+
 export const LOGO_SUBMISSION = [
-  "申込後、事務局からの案内に従いメールで提出する",
+  LOGO_SUBMISSION_UPLOAD,
+  LOGO_SUBMISSION_DEFAULT,
   "すでに事務局へ提出済み",
   "後日相談したい",
 ];

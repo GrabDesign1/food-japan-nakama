@@ -573,13 +573,24 @@ export async function sendAdminMessageEmail(params: {
 //    全滅した場合はフォーム側で「直接メールしてください」と案内する。
 
 /** 1通送って、成功したかどうかを返す（送信基盤が無い開発時は false ではなく true 扱いにしない）。 */
-async function sendOne(to: string, subject: string, html: string): Promise<boolean> {
+/** メール添付。content は Buffer（Resend がそのまま base64 にする）。 */
+export type MailAttachment = { filename: string; content: Buffer };
+
+async function sendOne(
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: MailAttachment[]
+): Promise<boolean> {
   if (!resend) {
     console.log(`[email] RESEND_API_KEY 未設定のため送信スキップ: ${subject} -> ${to}`);
     return false;
   }
   try {
-    const { error } = await resend.emails.send({ from: FROM, to: [to], subject, html });
+    const { error } = await resend.emails.send({
+      from: FROM, to: [to], subject, html,
+      ...(attachments?.length ? { attachments } : {}),
+    });
     if (error) {
       console.error(`[email] 協賛申込の送信失敗(${to}):`, error);
       return false;
@@ -615,6 +626,9 @@ export type SponsorMailInput = {
   invoiceName: string;
   invoiceNote: string;
   logoSubmission: string;
+  /** ロゴの添付（任意）。⚠️ **事務局宛にだけ付ける**。申込者への控えには付けない
+   *  （送り返す必要がないうえ、控えのサイズが無駄に膨らむため）。 */
+  logoFile?: MailAttachment;
   message: string;
 };
 
@@ -660,6 +674,7 @@ export async function sendSponsorApplicationEmails(
       ${row("請求書の宛名", a.invoiceName)}
       ${row("請求書に関する希望", a.invoiceNote)}
       ${row("ロゴデータの提出方法", a.logoSubmission)}
+      ${row("添付されたロゴデータ", a.logoFile ? a.logoFile.filename : "")}
       ${row("備考", a.message)}
     </table>
     <p style="font-size:12px;color:#7C8899;margin-top:14px">
@@ -669,7 +684,12 @@ export async function sendSponsorApplicationEmails(
 
   const results = await Promise.all(
     inbox.map((to) =>
-      sendOne(to, `【協賛申込】${a.company}／${a.plan}（${a.refNo}）`, adminHtml)
+      sendOne(
+        to,
+        `【協賛申込】${a.company}／${a.plan}（${a.refNo}）`,
+        adminHtml,
+        a.logoFile ? [a.logoFile] : undefined
+      )
     )
   );
 
