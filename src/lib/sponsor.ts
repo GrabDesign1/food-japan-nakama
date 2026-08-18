@@ -67,7 +67,7 @@ export const EVENT_OUTLINE: { key: string; title: string; rows: OutlineRow[] }[]
   },
   {
     key: "nagoya",
-    title: "Food Japan Summit TechGALA",
+    title: "Food Japan Summit ✕TechGALA名古屋",
     rows: [
       {
         label: "開催日時",
