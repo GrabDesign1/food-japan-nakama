@@ -264,3 +264,63 @@
      分断される。文言を長くしたら 375px で必ず確認すること。 */
   .final h2 { font-size: clamp(1.5rem, 7.2vw, 2.4rem); }
 }
+
+/* ── 登壇・参加予定企業・団体のロゴマルキー（2026-08-18・指示書＝参加企業ロゴ/CloudCode_協賛ページ追加指示書.md）──
+ *
+ * ⚠️ **白いのはロゴの帯だけ**（ユーザー指示 2026-08-18「縦幅ロゴくらいの部分を白背景で」）。
+ *    納品HTMLはセクション全体が白だったが、見出しと注記はページの黒地のまま残し、
+ *    ロゴの行の高さぶんだけを白く抜いている。**帯に余分な上下余白を足さないこと**（白い面が増えて意図から外れる）。
+ * ⚠️ 帯は**画面の端まで伸ばす**（.wrap の外に置く）。中に入れると左右に黒が残って帯に見えない。
+ * ⚠️ ロゴは1セットを2回描いて translateX(-50%) で送る。**2セットは同じ内容・同じ順**でないと
+ *    折り返しで飛ぶ。片方だけにすると継ぎ目が途切れる。
+ * ⚠️ 幅の違うロゴが混ざるので、カード（194×108）で器を揃えて object-fit: contain で収める。
+ *    ロゴの縦横比は変えない。
+ */
+.meet { padding: 46px 0 40px; border-bottom: 1px solid var(--l); }
+.meetHead { margin-bottom: 22px; }
+.meetHead h2 { margin: 14px 0 0; font-size: clamp(1.4rem, 2.6vw, 2.2rem); line-height: 1.2; letter-spacing: -.04em; }
+
+/* ロゴの帯＝ここだけ白。高さはロゴ（76px）＋上下の余白 */
+.meetBand { background: #fff; padding: 20px 0; overflow: hidden; }
+.meetViewport { position: relative; overflow: hidden; width: 100%; }
+/* 端をぼかして「まだ続いている」ことを見せる。地が白なので白へフェードさせる */
+.meetViewport:before,
+.meetViewport:after { content: ""; position: absolute; z-index: 1; top: 0; bottom: 0; width: clamp(28px, 8vw, 140px); pointer-events: none; }
+.meetViewport:before { left: 0; background: linear-gradient(90deg, #fff, rgba(255,255,255,0)); }
+.meetViewport:after { right: 0; background: linear-gradient(-90deg, #fff, rgba(255,255,255,0)); }
+
+.meetTrack { display: flex; width: max-content; animation: meetScroll 82s linear infinite; }
+/* ⚠️ **ロゴを囲む枠は付けない**（ユーザー指示 2026-08-18「ロゴの周りの枠は不要」）。
+   枠が無いぶん隣と近いと1枚に見えるので、間隔（gap）で離している。 */
+.meetSet { display: flex; align-items: center; gap: 22px; padding-right: 22px; }
+/* ⚠️ 器は **block ＋ 高さだけ固定・幅は auto**。
+   ①`display:grid` + `place-items:center` にすると中の img の `height:100%` が解決されず、
+     **正方形のロゴが器を突き抜けて帯の下で切れる**（2026-08-18 に実際に発生。240×240 が 164×164 で描かれた）。
+   ②**幅を固定しない**（ユーザー指示 2026-08-18「間隔を狭くして」）＝固定幅だと細いロゴ
+     （縦長の飫肥杉は高さ76pxのとき幅30px）の左右に器の余りが残り、gap を詰めても
+     **見た目の間隔だけが広い**まま揃わない。高さで揃え、幅はロゴなりにする。
+   ③img には **max-width / max-height を必ず付ける**（納品HTMLにもあった。外すと①の事故に戻る）。
+     max-width は極端に横長のロゴ（JDOCCO＝比率7.7）が1枚で場所を取りすぎないための頭打ち。 */
+.meetSet figure { flex: 0 0 auto; height: 76px; margin: 0; }
+.meetSet figure img { display: block; width: auto; height: 100%; max-width: 200px; max-height: 100%; object-fit: contain; }
+/* 気になったロゴを読めるように、載せているあいだは止める */
+.meetBand:hover .meetTrack { animation-play-state: paused; }
+@keyframes meetScroll { to { transform: translateX(-50%); } }
+
+.meetNote { margin: 16px 0 0; color: #8f8f89; font-size: 12px; line-height: 1.7; }
+
+@media (max-width: 640px) {
+  .meet { padding: 34px 0 30px; }
+  .meetBand { padding: 16px 0; }
+  .meetSet figure { height: 58px; }
+  .meetSet figure img { max-width: 150px; }
+  .meetSet { gap: 16px; padding-right: 16px; }
+  .meetTrack { animation-duration: 68s; }
+}
+
+/* 動きを減らす設定のときは流さず、横スクロールで見てもらう（複製は隠す） */
+@media (prefers-reduced-motion: reduce) {
+  .meetViewport { overflow-x: auto; }
+  .meetTrack { animation: none; }
+  .meetSetClone { display: none; }
+}

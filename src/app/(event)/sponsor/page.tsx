@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   HOST, MIN_PLAN_PRICE, yen, NAKAMA_URL, EVENT_OUTLINE,
+  PARTICIPANT_LOGOS, PARTICIPANTS_EYEBROW, PARTICIPANTS_TITLE, PARTICIPANTS_NOTE,
   COMMON_VALUE_CARDS, COMMON_VALUE_NOTE,
 } from "@/lib/sponsor";
 import s from "./sponsor-teaser.module.css";
@@ -199,6 +200,46 @@ export default function SponsorLandingPage() {
                 <span>{f.label}</span>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* 登壇・参加予定企業・団体のロゴ（2026-08-18・指示書＝参加企業ロゴ/CloudCode_協賛ページ追加指示書.md）。
+            置き場所は**数字帯の直後・WHY SPONSOR の直前**（指示書の指定＝ヒーロー直下の空きに敷く）。
+            ⚠️ **白いのはロゴの帯だけ**（ユーザー指示「縦幅ロゴくらいの部分を白背景で」）。
+                見出しと注記は黒地のまま。帯は .wrap の外に置いて画面の端まで伸ばす。
+            ⚠️ **同じロゴを2セット並べる**のは無限ループの継ぎ目を消すためで、社数を二重に見せる意図ではない。
+                2セット目は aria-hidden にして読み上げから外す。 */}
+        <section className={s.meet} aria-labelledby="fjs-participants">
+          <div className={`${s.wrap} ${s.meetHead}`}>
+            <div className={s.ey}>{PARTICIPANTS_EYEBROW}</div>
+            <h2 id="fjs-participants">{PARTICIPANTS_TITLE}</h2>
+          </div>
+
+          <div className={s.meetBand}>
+            <div className={s.meetViewport}>
+              <div className={s.meetTrack}>
+                <div className={s.meetSet} aria-label={`${PARTICIPANTS_TITLE}のロゴ`}>
+                  {PARTICIPANT_LOGOS.map((l) => (
+                    <figure key={l.src}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={l.src} alt={l.alt} loading="lazy" decoding="async" />
+                    </figure>
+                  ))}
+                </div>
+                <div className={`${s.meetSet} ${s.meetSetClone}`} aria-hidden="true">
+                  {PARTICIPANT_LOGOS.map((l) => (
+                    <figure key={`clone-${l.src}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={l.src} alt="" loading="lazy" decoding="async" />
+                    </figure>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={s.wrap}>
+            <p className={s.meetNote}>{PARTICIPANTS_NOTE}</p>
           </div>
         </section>
 

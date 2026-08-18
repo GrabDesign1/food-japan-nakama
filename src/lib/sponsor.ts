@@ -947,3 +947,59 @@ export const PLAN_HIGHLIGHTS = [
   "宮崎開催・名古屋開催・両開催から選べます",
   "登壇、展示・試食、商談の紹介、NAKAMA掲載の範囲はプランごとに異なります",
 ];
+
+/**
+ * 登壇・参加予定企業・団体のロゴ（2026-08-18 提供・34件／指示書＝参加企業ロゴ/CloudCode_協賛ページ追加指示書.md）。
+ *
+ * ⚠️ **見出しは必ず「登壇・参加予定企業・団体」**。「協賛企業」「参加確定企業」とは書かない（指示書）。
+ * ⚠️ **提供されたファイルだけを使う**（外部からロゴを取得しない）。同一企業のロゴは1点だけ。
+ * ⚠️ 掲載内容が変わる前提なので、**セクション下の注記（PARTICIPANTS_NOTE）を消さないこと**。
+ * ⚠️ **並び順はユーザー指定（2026-08-18）**＝カンロ／ミツカン／クリスピー・クリーム／Dole／紀文／有楽製菓／
+ *    塚田農場／エステー／サンマルクカフェ／オイシックス／宮崎大学／愛知／ベイシア／八代目儀兵衛 を先頭に置き、
+ *    残りは提供順のまま。**先頭14件の順序を勝手に変えないこと**。マルキーは**この配列を2回描く**（1周ぶんの複製＝継ぎ目を消すためで、
+ *    社数を二重に見せる意図ではない。2セット目は aria-hidden にして読み上げから外す）。
+ * ⚠️ 画像は `public/images/participants/`。表示枠は194×108（モバイル156×90）なので、
+ *    取り込み時に**長辺400px以内へ縮小**してある（2.2MB→600KB）。差し替えるときも同じ手順で。
+ *    jdocco はSVG（240KB・中身は埋め込みラスタ）だったので400px幅のPNGに変換した（10KB）。
+ */
+export const PARTICIPANTS_EYEBROW = "WHO YOU CAN MEET";
+export const PARTICIPANTS_TITLE = "登壇・参加予定企業・団体";
+export const PARTICIPANTS_NOTE =
+  "資料提供を受けた登壇・参加予定企業・団体の一部です。掲載内容は開催準備に伴い変更となる場合があります。";
+
+export const PARTICIPANT_LOGOS: { src: string; alt: string }[] = [
+  { src: "/images/participants/kanro.jpg", alt: "カンロ" },
+  { src: "/images/participants/mizkan.jpg", alt: "Mizkan" },
+  { src: "/images/participants/krispy-kreme.gif", alt: "クリスピー・クリーム・ドーナツ" },
+  { src: "/images/participants/dole.png", alt: "Dole" },
+  { src: "/images/participants/kibun.png", alt: "紀文食品" },
+  { src: "/images/participants/yuraku.jpg", alt: "有楽製菓（ブラックサンダー）" },
+  { src: "/images/participants/tsukada-farm.jpg", alt: "塚田農場" },
+  { src: "/images/participants/s-t.png", alt: "エステー" },
+  { src: "/images/participants/saint-marc-cafe.jpeg", alt: "サンマルクカフェ" },
+  { src: "/images/participants/oisix.webp", alt: "オイシックス" },
+  { src: "/images/participants/university-of-miyazaki.jpg", alt: "宮崎大学" },
+  { src: "/images/participants/aichi-agricultural-innovation-project.webp", alt: "Aichi Agricultural Innovation Project" },
+  { src: "/images/participants/beisia.png", alt: "ベイシア" },
+  { src: "/images/participants/hachidaime-gihey.jpg", alt: "八代目儀兵衛" },
+  { src: "/images/participants/asano-suisan.jpg", alt: "浅野水産" },
+  { src: "/images/participants/bronco-billy.jpeg", alt: "ブロンコビリー" },
+  { src: "/images/participants/daiwa-farm.jpg", alt: "ダイワファーム" },
+  { src: "/images/participants/gra.jpeg", alt: "GRA" },
+  { src: "/images/participants/hideji-beer.png", alt: "宮崎ひでじビール" },
+  { src: "/images/participants/jdocco.png", alt: "JDOCCO" },
+  { src: "/images/participants/kadoya.png", alt: "角屋食品" },
+  { src: "/images/participants/kagoshima-buns.png", alt: "カゴシマバンズ" },
+  { src: "/images/participants/kakuyasu.jpg", alt: "カクヤス" },
+  { src: "/images/participants/kasugai.png", alt: "春日井製菓" },
+  { src: "/images/participants/michino-le-tourbillon.png", alt: "ミチノ・ル・トゥールビヨン" },
+  { src: "/images/participants/tsuno-wine.png", alt: "都農ワイン" },
+  { src: "/images/participants/tsumoto-shiki.jpeg", alt: "津本式" },
+  { src: "/images/participants/tsuboichi.jpg", alt: "つぼ市製茶本舗" },
+  { src: "/images/participants/tanaka-farm.jpeg", alt: "田中農場" },
+  { src: "/images/participants/revonity.jpg", alt: "Rebonity Holdings" },
+  { src: "/images/participants/pasta-cuore.jpg", alt: "パスタクオーレ" },
+  { src: "/images/participants/origane.png", alt: "折兼ホールディングス" },
+  { src: "/images/participants/obisugi.png", alt: "飫肥杉" },
+  { src: "/images/participants/nakamo.png", alt: "ナカモ" },
+];
