@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  HOST, MIN_PLAN_PRICE, yen, VENUES, PLAN_HIGHLIGHTS,
+  HOST, MIN_PLAN_PRICE, yen, VENUES,
   COMMON_VALUE_CARDS, COMMON_VALUE_NOTE,
 } from "@/lib/sponsor";
 import s from "./sponsor-teaser.module.css";
@@ -27,12 +27,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** 協賛の詳細セクションで出す4つのテーマ（ユーザー指定の文面 2026-08-18）。 */
-const THEMES = [
-  "「地域の素材を生かした商品をつくりたい」",
-  "「新しい販路や取引先を見つけたい」",
-  "「生産者や自治体と連携したい」",
-  "「食品ロスや人材、物流などの課題を事業に変えたい」",
+/**
+ * ヒーロー直下の判断材料（2026-08-18 改訂指示書1。出典＝2026_マスターJapanFoodSummit(5).pptx）。
+ * ⚠️ これは**目標・想定であって実績ではない**。「予定」「目標」「想定」の語を外さないこと。
+ *    外すと達成を保証したことになる（指示書の禁止事項）。
+ */
+const FIGURES = [
+  { n: "25名", label: "登壇者を予定" },
+  { n: "50社", label: "参加企業を予定" },
+  { n: "100件", label: "商談機会を目標" },
+  // ⚠️ 来場想定は開催で規模が違うので分けて出す（1枠に詰めると改行位置が崩れる）。
+  { n: "200〜300名", label: "宮崎の来場想定" },
+  { n: "400〜500名", label: "名古屋の来場想定" },
 ];
 
 /** 会場で起きること（納品HTMLの WHAT HAPPENS）。 */
@@ -41,25 +47,29 @@ const HAPPENS = [
     no: "01 / SPEAK",
     title: ["ブランドを伝える。", "次の相手を見つける。"],
     lead: "スポンサーセッション",
-    body: "で、新商品、地域連携、サステナビリティ、事業課題を発信。経営者、商品開発責任者、バイヤー、シェフ、行政担当者との会話が始まります。",
+    body: "で、貴社のブランドの考え方と、新商品・地域連携・サステナビリティへの取り組みを発信。経営者、商品開発責任者、バイヤー、シェフ、行政担当者との次の対話をつくります。",
   },
   {
     no: "02 / TASTE",
     title: ["試食・試飲・資料で、", "反応を得る。"],
     lead: "展示・試食・試飲",
-    body: "で、商品を実際に味わってもらう。バイヤーや飲食店からの率直な反応を、商品改善や販売提案に持ち帰れます。",
+    body: "に加え、資料を通じて商品や取り組みを具体的に伝えます。バイヤーや飲食店からの率直な反応を、商品改善、販売提案、次の商談に生かせます。",
+    // ⚠️ 全協賛企業へ一律で保証しないための注記（指示書の禁止事項）。外さないこと。
+    note: "展示・試食・試飲・資料配布の内容は協賛プランに応じます。",
   },
   {
     no: "03 / MEET",
     title: ["会うべき相手と、", "次の話を始める。"],
-    lead: "共創マッチング",
-    body: "で、目的やテーマに合う相手との接点を設計。名刺交換で終わらず、商談、共同開発、地域連携の入口をつくります。",
+    lead: "事務局",
+    body: "が、貴社の目的やテーマに応じて商談候補者を選定します。参加者の同意を得た範囲で紹介・面談調整を行い、名刺交換で終わらない商談、共同開発、地域連携の入口をつくります。",
   },
   {
     no: "04 / CONTINUE",
     title: ["イベント後も、", "事業を進め続ける。"],
-    lead: "Food Japan NAKAMA",
-    body: "に協賛企業を紹介。出会いを一日で終わらせず、実証、販路開拓、共創プロジェクトへつなげます。",
+    lead: "FOOD JAPAN NAKAMA",
+    body: "に協賛企業として紹介情報を掲載。出会いを一日で終わらせず、実証、販路開拓、共創プロジェクトへ進むための接点を継続します。",
+    // ⚠️ 継続利用は年間会員特典という切り分けを崩さない。
+    note: "案件掲載、メッセージ、マッチング相談などの継続利用は、年間会員特典として提供します。",
   },
 ];
 
@@ -79,18 +89,19 @@ export default function SponsorLandingPage() {
             <span>FOOD JAPAN SUMMIT / 2026</span>
             <Link href="/sponsor/contact">協賛のご相談</Link>
           </div>
-          {/* ⚠️ ヒーローの画像は遅延読み込みしない（指示書）。next/image は使わず、
-              CSSの背景と素の img のままにして納品どおりの見え方を保っている。 */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={s.heroLogo}
-            src="/sponsor/teaser/fjs-logo-hero.png"
-            alt="食のリーダーが共創づくり Food Japan Summit"
-            width={800}
-            height={348}
-            fetchPriority="high"
-          />
           <div className={`${s.wrap} ${s.heroMain}`}>
+            {/* ⚠️ ロゴは本文と同じ流れに置いて左端を揃える（ユーザー指示 2026-08-18）。
+                絶対配置に戻すと、器が中央寄せなぶん本文の左端とずれる。
+                ⚠️ 遅延読み込みしない（指示書）。 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className={s.heroLogo}
+              src="/sponsor/teaser/fjs-logo-hero.png"
+              alt="食のリーダーが共創づくり Food Japan Summit"
+              width={800}
+              height={348}
+              fetchPriority="high"
+            />
             <div className={s.ey}>CO-CREATION PARTNER / SPONSORSHIP</div>
             {/* ⚠️ キャッチコピーはユーザー指定（2026-08-18）。改行の位置も指定どおり。
                 装飾（色替え等）を足さないこと。 */}
@@ -120,6 +131,19 @@ export default function SponsorLandingPage() {
         {/* ⚠️ 英語のティッカー（TRY IT / TALK ABOUT IT …）は削除した
             （ユーザー指示 2026-08-18「意味がわからない」）。CSSの .ticker も未使用。 */}
 
+        {/* 判断材料の数字帯（改訂指示書1）。
+            ⚠️ ラベルの「予定」「目標」「想定」を外さないこと＝外すと達成保証になる。 */}
+        <section className={s.figures}>
+          <div className={`${s.wrap} ${s.figureGrid}`}>
+            {FIGURES.map((f) => (
+              <div key={f.label} className={s.figure}>
+                <b>{f.n}</b>
+                <span>{f.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className={s.intro}>
           <div className={`${s.wrap} ${s.introGrid}`}>
             <div>
@@ -133,7 +157,7 @@ export default function SponsorLandingPage() {
             <div className={s.introCopy}>
               <p>
                 貴社の商品・技術・課題を起点に、
-                <strong>会いたい相手と出会い、会場で試し、次の商談につなげる。</strong>
+                <strong>会いたい相手と出会い、会場で試し、次の商談・共創へ繋げる。</strong>
                 これがFood Japan Summitの協賛です。
               </p>
               <p>
@@ -170,6 +194,9 @@ export default function SponsorLandingPage() {
                   <p>
                     <strong>{h.lead}</strong>
                     {h.body}
+                    {h.note ? (
+                      <span className={s.itemNote}>※ {h.note}</span>
+                    ) : null}
                   </p>
                 </article>
               ))}
@@ -180,51 +207,15 @@ export default function SponsorLandingPage() {
         {/* ── 協賛の詳細（2026-08-18 ユーザー指定の文面をそのまま掲載）──
             ⚠️ 文面は要約・言い換えをしないこと。ページ中央のCTAもここに置く
                （ヒーロー下・途中・一番下の3か所に置くというユーザー指示）。 */}
+        {/* ── 協賛企業共通の提供価値＋価格・CTA（2026-08-18 改訂指示書3）──
+            ⚠️ ここにあった「協賛で得られるのは、露出だけではありません。」の見出しと、
+               その後の長い説明文・課題リスト・事務局の接点設計は**01〜04と内容が重複する**ため
+               指示書の指定で削除した。短い提供価値と価格・CTAだけを置く。 */}
         <section className={s.detail}>
           <div className={s.wrap}>
-            <div className={s.ey}>SPONSORSHIP</div>
-            {/* 見出しはユーザー文面の一文をそのまま昇格させたもの（書き換えていない）。 */}
-            <h2 className={s.detailTitle}>協賛で得られるのは、露出だけではありません。</h2>
+            <div className={s.ey}>WHAT YOU GET</div>
+            <h2 className={s.detailTitle}>協賛企業共通の提供価値</h2>
 
-            <p className={s.lead}>
-              Food Japan
-              Summitは、企業名を掲出するだけのイベントではありません。生産者、食品メーカー、小売・流通、飲食、行政、金融、物流など、食の現場を動かす人たちと出会い、試食、対話、商談を通じて、新しい事業を生み出す場です。
-            </p>
-
-            <ul className={s.themes}>
-              {THEMES.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-
-            <div className={s.body}>
-              <p>
-                そんなテーマをお持ちの企業に、Food Japan Summitは具体的な出会いと、次の一歩をつくる機会を提供します。
-              </p>
-              <p>
-                協賛企業には、開催前から当日、開催後まで、事業者との接点を設計します。登壇、試食・試飲、展示、商談候補者の紹介・面談調整、FOOD
-                JAPAN NAKAMAへの掲載を通じて、貴社の挑戦を共創事業へつなげます。
-              </p>
-              <p>
-                まずは、貴社が実現したいことをお聞かせください。協賛プランが決まっていない場合も、事務局が目的に合わせてご相談を承ります。
-              </p>
-              <p>
-                貴社の事業テーマに応じて、生産者、食品メーカー、小売・流通、飲食、行政などとの接点を設計します。商品開発、販路開拓、地域連携、食品ロス、人材、物流など、解決したいテーマが明確でなくても構いません。まずは「何を実現したいか」をお聞かせください。
-              </p>
-              <p>
-                協賛プランは{yen(MIN_PLAN_PRICE)}から。宮崎開催、名古屋開催、両開催からお選びいただけます。プランや金額が未確定の場合も、事務局がご相談を承ります。
-              </p>
-            </div>
-
-            <ul className={s.highlights}>
-              {PLAN_HIGHLIGHTS.map((h) => (
-                <li key={h}>{h}</li>
-              ))}
-            </ul>
-
-            <h3 className={`${s.detailTitle}`} style={{ marginTop: "54px", fontSize: "clamp(1.4rem,2.2vw,1.9rem)" }}>
-              協賛企業共通の提供価値
-            </h3>
             <div className={s.values}>
               {COMMON_VALUE_CARDS.map((c) => (
                 <div key={c.label}>
@@ -234,7 +225,22 @@ export default function SponsorLandingPage() {
               ))}
             </div>
 
+            <p className={s.lead}>
+              協賛プランは{yen(MIN_PLAN_PRICE)}（税別）から。宮崎開催、名古屋開催、両開催からお選びいただけます。登壇、展示・試食、商談候補者紹介・面談調整、NAKAMA掲載の範囲はプランごとに異なります。
+            </p>
+
+            <div className={s.actions}>
+              <Link className={`${s.btn} ${s.primary}`} href="/sponsor/apply">
+                協賛に申し込む
+              </Link>
+              <Link className={`${s.btn} ${s.ghost}`} href="/sponsor/contact">
+                まずは協賛内容を相談する
+              </Link>
+            </div>
             <div className={s.notes}>
+              <p>
+                「相談する」は、ご連絡先だけの短いフォームです。プランや金額が決まっていなくてもお送りいただけます。
+              </p>
               <p>※ {COMMON_VALUE_NOTE}</p>
               {/* ⚠️ 特別割の価格はここに手書きしている。sponsor.ts の LOCAL_DISCOUNT_PRICES を
                   変えたら、この一文も直すこと（申込フォームは定義から導出しているのでずれる）。 */}
@@ -244,18 +250,6 @@ export default function SponsorLandingPage() {
                 200万円）でお申し込みいただけます。各プランの価格と詳しい特典は申込フォームでご確認いただけます。
               </p>
             </div>
-
-            <div className={s.actions}>
-              <Link className={`${s.btn} ${s.primary}`} href="/sponsor/apply">
-                協賛を申し込む
-              </Link>
-              <Link className={`${s.btn} ${s.ghost}`} href="/sponsor/contact">
-                まずは協賛内容を相談する
-              </Link>
-            </div>
-            <p className={s.notes} style={{ marginTop: "14px" }}>
-              「相談する」は、ご連絡先だけの短いフォームです。プランや金額が決まっていなくてもお送りいただけます。
-            </p>
 
             <dl className={s.venues}>
               {[VENUES.miyazaki, VENUES.nagoya].map((v) => (

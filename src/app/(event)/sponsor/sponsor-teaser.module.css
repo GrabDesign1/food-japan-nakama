@@ -62,10 +62,12 @@
 .nav span, .nav a { font-size: 11px; font-weight: 800; letter-spacing: .13em; }
 .nav a:after { content: " ↗"; color: var(--o); }
 
-.heroMain { max-width: 760px; padding: clamp(175px, 20vw, 250px) 0 76px; }
+.heroMain { max-width: 760px; padding: clamp(70px, 9vw, 130px) 0 76px; }
+/* ⚠️ ロゴは絶対配置にしない（ユーザー指示 2026-08-18 で左寄せにした）。
+   本文と同じ流れに置くことで、器が中央寄せでも本文の左端と必ず揃う。 */
 .heroLogo {
-  position: absolute; z-index: 2; right: clamp(24px, 5vw, 86px); top: clamp(122px, 13vw, 190px);
-  width: min(365px, 34vw); height: auto; box-shadow: 0 18px 42px rgba(0,0,0,.34);
+  display: block; width: min(340px, 62%); height: auto;
+  margin: 0 0 26px; box-shadow: 0 18px 42px rgba(0,0,0,.34);
 }
 /* ⚠️ 3行のコピー（協賛で／商談へつなげる。／共創をつくる。）が入る大きさにしている。
    これより大きくすると「商談へつなげ／る。」のように行の途中で折れる（2026-08-18 に実際に起きた）。
@@ -80,6 +82,16 @@
 .ticker { overflow: hidden; white-space: nowrap; border-top: 1px solid var(--l); border-bottom: 1px solid var(--l); }
 .ticker p { margin: 0; padding: 13px 0; font-size: 12px; font-weight: 900; letter-spacing: .15em; }
 .ticker b { color: var(--o); margin: 0 27px; }
+
+/* ── 判断材料の数字帯（2026-08-18 改訂指示書1）──
+ * ⚠️ 数字は目標・想定であって実績ではない。ラベルの「予定」「目標」「想定」を外さないこと
+ *    （外すと達成保証と読める）。出典＝2026_マスターJapanFoodSummit(5).pptx。 */
+.figures { border-bottom: 1px solid var(--l); }
+.figureGrid { display: grid; grid-template-columns: repeat(5, 1fr); }
+.figure { padding: 30px 20px; border-left: 1px solid var(--l); }
+.figure:first-child { border-left: 0; }
+.figure b { display: block; font-size: clamp(1.5rem, 2.4vw, 2.2rem); font-weight: 900; letter-spacing: -.04em; line-height: 1.2; }
+.figure span { display: block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--w); }
 
 .intro { padding: 150px 0 118px; }
 .introGrid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 70px; align-items: end; }
@@ -106,6 +118,7 @@
 .happen h3 { margin: -2px 0 0; font-size: clamp(1.3rem, 2vw, 1.9rem); line-height: 1.35; letter-spacing: -.04em; }
 .happen p { margin: 0; color: var(--m); font-size: 15px; }
 .happen p strong { color: var(--w); }
+.itemNote { display: block; margin-top: 8px; font-size: 12px; line-height: 1.8; color: #8f8f89; }
 
 .cities { padding: 142px 0; }
 .cities .sectionTitle { margin-bottom: 51px; }
@@ -180,11 +193,15 @@
   .wrap { width: min(100% - 34px, 1220px); }
   .nav { height: 76px; }
   .heroMain { padding: 60px 0 88px; }
-  .heroLogo { position: relative; right: auto; top: auto; width: min(410px, 100%); margin: 50px 0 35px; }
+  .heroLogo { width: min(300px, 82%); margin: 0 0 22px; }
   .hero h1 { font-size: clamp(1.6rem, 9.6vw, 2.6rem); }
   /* 狭い画面ではボタンを全幅にして押しやすくする */
   .btn { width: 100%; padding: 0 20px; font-size: 16px; }
   .actions { gap: 10px; }
+  .figureGrid { grid-template-columns: 1fr 1fr; }
+  .figure { padding: 20px 14px; border-top: 1px solid var(--l); }
+  .figure:first-child { border-left: 0; }
+  .figure:nth-child(odd) { border-left: 0; }
   .intro, .cities { padding: 84px 0; }
   .introGrid, .whatHead, .afterGrid { grid-template-columns: 1fr; gap: 29px; }
   .introCopy { padding-left: 18px; }
