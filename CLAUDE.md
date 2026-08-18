@@ -7,6 +7,8 @@ Food Japan Summit の参加者を会員とする、通年運用の食の共創�
 一次資料: `docs/HANDOVER.md`（初期仕様）, `docs/DECISIONS.md`, `docs/current-state.md`（現状構成）,
 `NAKAMA_ClaudeCode_implementation_spec.md`（3サービス改修の実装指示書＝最新方針）。
 
+**いまサイトに何があるか（ページ・機能・システム・記載内容の全量）は「現況の棚卸し」の節にまとめてある**（下の「現在の進捗」は時系列の作業記録）。
+
 **機能別の実装指示書**（すべて `~/Desktop/00_デスクトップ/企画書/スナックフォーラム/NAKAMAサイト制作/`。改修時は必ず該当書を参照）:
 `NAKAMA_dashboard_final_ClaudeCode_instructions.md`（マイページ最終形）/ `NAKAMA_sell_listing_ClaudeCode_instructions.md`＋`NAKAMA_sell_story_ClaudeCode_instructions.md`（売りたい）/ `NAKAMA_projects_ClaudeCode_instructions.md`（共創プロジェクト・AUBA参考）/ `NAKAMA_buyer_ClaudeCode_instructions.md`（探している＝買いたい）。
 
@@ -69,6 +71,107 @@ Favorite, Announcement, Banner, CuratedArticle(食の注目記事), **Consultati
 - **規約・特商法は旧月額文言が残存＝改定差分案は `docs/legal-revision-draft-20260810.md`（弁護士確認前・未適用）**。法務ページ本文は `src/lib/legal.ts`、特商法は `/tokushoho`。
 - **規約 第17条の2＝掲載文およびプロフィールの作成補助（AI下書き）**。8/14新設・8/15にプロフィールへ拡張、いずれも即日施行。送信先＝OpenAI, Inc.（米国）。プライバシーポリシーの3.利用目的・7.外国にある事業者にも記載済み。**弁護士確認は未了（下記1に追加すること）**。
 - signup に案内メール同意チェック（任意・users.marketing_opt_in_at に記録。Google OAuth 登録は同意なし=null。配信開始前に配信停止手段の整備が必要）。
+
+## 現況の棚卸し（2026-08-18 時点・サイトの内容／機能／システムの全体像）
+
+**この節は「いま何があるか」の一覧**（下の「現在の進捗」は「いつ何をしたか」の時系列記録）。
+実装から実測して作った。**画面や仕様を変えたらこの節も直すこと**。上の「ルーティング」「データモデル」は抜粋なので、全量はここを見る。
+
+### ゾーンは4つ（ルートグループ）
+| ゾーン | ルートグループ | 中身 | ヘッダー／フッター |
+| --- | --- | --- | --- |
+| 公開 | `(public)` | LP・サービス紹介・法務・案件のプレビュー | トップはヒーロー内蔵、下層は `PublicTopBar`／NAKAMAフッター |
+| 会員 | `(app)` | ログイン後の全機能＋事務局管理 | `(app)/layout.tsx` の `NAV`（PC/モバイル共通） |
+| 認証 | `(auth)` | ログイン・登録・パスワード | 専用 |
+| 協賛 | `(event)` | Food Japan Summit の協賛（NAKAMA本体ではない） | スキップリンクと `<main>` だけ＝**NAKAMAのナビ・フッターを出さない** |
+
+### 公開ゾーン（22ページ）
+公開ヘッダーのナビ＝**探している案件を見る／NAKAMAとは／販路開拓支援／共創プロデュース／食品ロス支援／クラウドファンディング支援／ログイン**（ログイン済みは「マイページトップへ」）。
+
+- **`/`（トップ・10セクション）**＝①ヒーロー（h1「食の『売りたい』『探している』『あったらいいな』を共創でつなぐ」／CTA「仕入れたい企業を見る」「商品を無料で掲載する」／料金の注記＝掲載と閲覧は無料・提案と初回開封にクレジット）②目的別入口3枚（売りたい／探している／共創したい＋掲載件数。0件のときは件数を出さない）③掲載導線（大ボタン「案件を登録する」「事務局に代筆を申し込む」＋Summitネットワークへの先行紹介）④今、企業が探している食材・商品 ⑤売りたい（提供したい）⑥共創プロジェクト（④〜⑥は**各区分4件未満なら丸ごと非表示**＝`MIN_LISTINGS_TO_SHOW`）⑦実績（`/cases` の記事カード・常設）⑧注目記事（`CuratedArticle`・共創タグ）⑨登録後、最初にすること（3ステップ）⑩実践者から学ぶ／NAKAMAのサービス／Summit連動の6工程（登録・募集→候補探索→商談・試食→試作・実証→取引・事業化→成果発表）／最終CTA3択。
+- **`/about`**＝WHY NAKAMA?／WHAT HAPPENS HERE「出会いから、共創事業へ。」／FROM THE FIELD／HOW TO USE（無料でできること・事務局へ依頼できること）。
+- **`/pricing`**＝「利用料金・共創支援」。無料範囲＋紹介クレジット＋掲載オプション＋事務局へ依頼する（`SERVICE_MENU` を参照）。
+- **`/flow`**＝4ステップ（登録→掲載→問い合わせ→商談・共創）。**紹介料の条件を本文で明示**（提案1,100円／確認済み3,300円／初回開封1,100円・2026-08-26から）。
+- **`/faq`**＝9問（料金・収益源・無料範囲・有料になる3つ・共創支援の費用・未ログイン閲覧・取引の当事者ほか）。FAQPage構造化データつき。
+- **`/listings`**＝公開の案件一覧（`?type=give|want|coproject`）。0件時は空状態＋掲載導線。
+- **`/cases`・`/cases/[slug]`**＝実績（`src/lib/cases.ts` の静的定義・DBなし）。プレスリリース体裁。**参照は必ず `CASES_SORTED`（公開中のみ）**。
+- 個別支援4ページ＝**`/hanro`（販路開拓・110,000円〜／440,000円〜）／`/produce`（共創プロデュース）／`/food-loss`（食品循環プロデュース・金額は出さない）／`/crowdfunding`（手数料35%）**。書式は `publicUi.ts` の共通規格。
+- 受付・情報＝**`/consultation`（個別相談フォーム＝`Consultation` に保存＋通知＋自動返信。`?type=` で設問が変わる）／`/contact`／`/company`／`/learn`（最小）**。
+- 法務＝**`/terms`（利用規約 全34条）／`/privacy`（全15項）／`/tokushoho`**。本文は `src/lib/legal.ts`。
+- そのほか＝`/preview/offerings/[id]`・`/preview/projects/[id]`（未ログインでも見える案件プレビュー）、`/suspended`。
+- クローラ向け＝`robots.ts` / `sitemap.ts`（`CONTENT_UPDATED_AT` を手で更新）／`public/llms.txt`／`og.jpg`。
+
+### 会員ゾーン（ナビ10項目）
+**ホーム(`/dashboard`／表示名「マイページトップ」)／案件を探す(`/search`)／売りたい・探している(`/ledger`)／進行中の活動(`/deals`)／メッセージ(`/messages`)／共創プロジェクト(`/projects`)／お気に入り(`/favorites`)／プロフィール(`/profile`)／プラン・お支払い(`/billing`)／事務局管理(`/admin`・権限者のみ)**
+
+- **案件（Offering）**＝`/ledger`（自分の案件）・`/ledger/new`・`/ledger/[id]`（詳細）・`/[id]/edit`・`/[id]/options`（掲載オプション購入）・`/[id]/propose`（提案＝紹介クレジット消費）・`/[id]/proposals`（掲載者向けの提案一覧＝クラウドワークスの応募者一覧に相当）・`/[id]/proposals/[threadId]`（個別のやり取り＋進捗）・`/document`（納品書・請求書・領収書の発行）。
+- **やり取り**＝`/messages`・`/messages/[id]`。スレッドは**(会員ペア × 案件)単位**。`ThreadHeader` に対象案件、進捗ステッパーは案件ごとの画面に集約。添付は非公開バケット。
+- **進行中の活動**＝`/deals`・`/deals/board`。段階は7つ（ご商談／ご契約／発送／受け取り／納品書・請求書発行／入金確認／完了（領収書発行））で**表示専用＝事実から自動で進む**（`reconcileDealPhase`）。
+- **プロフィール**＝会社情報・ロゴ・アバター・画像、AI下書き支援、案内メールの受け取り設定（`MailPreference`）、退会。**記入率50%未満は事業者一覧に出ない**。
+- **プラン・お支払い**＝クレジット残高・プラン・サービスメニュー・購入履歴。
+- **そのほか**＝`/producers/[id]`（事業者ページ）・`/report`（違反報告）・`/favorites`。
+- **共創プロジェクト**＝`/projects` 一覧／`new`／`[id]`／`edit`／`applicants`（応募者管理）。
+
+### 事務局ゾーン（タブ8つ）
+タブ＝**事務局管理／会員管理／掲載の監視／問い合わせ・応募の状況／個別相談の管理／課金管理／違反報告／監査ログ**、その下のリンク＝**お知らせ／バナー／記事キュレーション／管理者アカウント**（`AdminNav` の `PAGES`／`SECTIONS`。**新しい管理ページを足したら `PAGES` に1行**）。
+
+- `/admin`＝「対応が必要なもの」（要対応5種＋対応期限ぎれ）と「現在の数字」に分離。
+- `/admin/members`＝名刺台帳型の一覧。**選択→一括DM配信（`EmailJob` でバックグラウンド送信）**・**CSV書き出し（上位管理者のみ・監査ログ）**・審査・課金状態・月次クレジットの手動付与。
+- `/admin/crm/[memberId]`＝顧客カルテ（担当・状況・次にやること・期限・タグ・対応履歴・反応の数字・購入履歴・監査ログ・**メール送信**）。**メッセージ本文は事務局にも出さない（規約17条）**。
+- `/admin/billing`＝商品マスター（seed／有効化）・オプション審査・条件一致通知の審査・優良案件の確認・注文・クレジット台帳。
+- 見た目の規約は `admin/_components/adminUi.ts`（**`src/lib/ui.ts` と `globals.css` は触らない**）。
+
+### 協賛ゾーン `/sponsor`（Food Japan Summit 2026・現状仕様）
+**NAKAMA本体の機能ではない**＝ヘッダー・フッターからリンクせず、`sitemap.ts`／`llms.txt` にも入れず、**`robots: noindex`**。URLを直接案内して使う。定義は **`src/lib/sponsor.ts` に集約**（949行・サーバー依存を持たせない＝クライアントからも import する）。
+
+- **3ページ**＝`/sponsor`（黒基調のティザー・案内）／`/sponsor/apply`（白基調・4ステップの本申込）／`/sponsor/contact`（連絡先だけの短い相談＝**組織名・担当者名・電話・メール＋任意でFacebook・相談内容の6項目。ここに項目を足さない**）。
+- **登壇・参加予定企業・団体のロゴマルキー（2026-08-18・指示書＝参加企業ロゴ/CloudCode_協賛ページ追加指示書.md）**＝**数字帯の直後・WHY SPONSOR の直前**。⚠️**白いのはロゴの帯だけ**（ユーザー指示「縦幅ロゴくらいの部分を白背景で」）＝納品HTMLはセクション全体が白だったが、見出し（WHO YOU CAN MEET／登壇・参加予定企業・団体）と注記は黒地のまま残し、帯だけ白く抜いている（PC116px＝ロゴ76＋上下20／モバイル90px）。**帯は `.wrap` の外に置いて画面端まで伸ばす**。データは `sponsor.ts` の `PARTICIPANT_LOGOS`（34件・提供順）。**見出しは必ず「登壇・参加予定企業・団体」**（「協賛企業」「参加確定企業」とは書かない）、**注記 `PARTICIPANTS_NOTE` を消さない**、**提供ファイル以外のロゴを足さない**。⚠️**同じ配列を2回描く**のは継ぎ目を消すためで社数を二重に見せる意図ではない（2セット目は `aria-hidden`）。ホバーで停止、`prefers-reduced-motion` では止めて横スクロールにする。**ロゴを囲む枠は付けない**（ユーザー指示）＝高さ76px（モバイル58px）で揃え、**幅はロゴなり**（器を固定幅にすると細いロゴの左右に余りが残り、gapを詰めても見た目の間隔が揃わない）。間隔は16px（モバイル12px）。⚠️**器を `display:grid`＋`place-items:center` にしない／img の `max-width`・`max-height` を外さない**＝どちらも正方形ロゴが器を突き抜けて帯の下端で切れる（2026-08-18 に実際に発生。240×240 が 164×164 で描かれた）。画像は `public/images/participants/`（表示は高さ76px基準なので**長辺400px以内に縮小**して 2.2MB→600KB。jdocco は中身が埋め込みラスタの240KB SVGだったので400px幅のPNGへ変換＝10KB）。**ロゴ画像は取り込み時に補正してある（2026-08-18・ユーザー指示「変形しているものや背景にグレー・黒が入っているものを調整して」）**＝①**全点で周囲の一様な地（白・グレー・黒）を切り落として**中身の大きさを揃えた（切らないと、余白の多い素材だけ小さく見える）②`revonity`＝黒地に白抜きの**単色ロゴだったので白黒反転**して白地・黒ロゴにした（彩度0%を実測してから反転する。色つきロゴを反転するとブランド色が壊れる）③`pasta-cuore`＝角丸アイコンの外周が黒だったので**四隅から塗りつぶして白に置換**④`yuraku`＝**ユーラクとブラックサンダーが1枚に並んでいるが、これはこのまま使う**（ユーザー判断 2026-08-18。一度ユーラク側だけに切り出したが、ブラックサンダーが載っているほうがよいとの指示で戻した）。⚠️**この1点だけ自動トリムをかけていない**＝左が白地・右が黒地で四隅の色が揃わず、切る位置を誤るため。縮小だけしてある⑤`asano-suisan`＝グレーの余白を落として黒い看板画像だけにした。⚠️**正方形のタイル型ロゴ（`bronco-billy` 赤／`kakuyasu` ピンク／`tsuboichi` 緑／`tsumoto-shiki` 黒）は、地の色も形もロゴの一部なのでトリムせず正方形のまま使う**（ユーザー判断 2026-08-18。一度トリムして横長のバーにしたが「正方形のロゴもそのままで良い」と指示があり戻した）。`asano-suisan` の黒い看板も素材そのもの。**白地版を各社からもらえたときだけ差し替える**。元ファイルは `~/Desktop/00_デスクトップ/企画書/スナックフォーラム/参加企業ロゴ/` の zip にある（**加工前の原本から作り直すこと**）。
+- **`/sponsor` の構成**＝ヒーロー（CO-CREATION PARTNER / SPONSORSHIP・h1「協賛で／商談へつなげる。／共創をつくる。」）→ FIGURES（**25名 登壇者を予定／50社 参加企業を予定／100件 商談機会を目標／宮崎200〜300名・名古屋400〜500名の来場想定**。⚠️「予定・目標・想定」を外さない）→ WHY SPONSOR → **WHAT HAPPENS「協賛するメリット」01 SPEAK／02 TASTE／03 MEET／04 CONTINUE**（4件とも写真1200×675）→ WHAT YOU GET「協賛企業共通の提供価値」（`COMMON_VALUE_CARDS` 5枚＋価格＋CTA）→ TWO CITIES → FROM EVENT TO BUSINESS「一日で終わらせない。」（BEFORE／AT THE SUMMIT／AFTER）→ 最終CTA「次の共創、次の地方創生をつくろう。」→ **EVENT OUTLINE 開催概要（フッター直前・位置を上へ戻さない）** → フッター「フードジャパンサミット実行委員会」。CTAは**ヒーロー下・途中・一番下の3か所**。
+- **CSSはページ専用のCSSモジュール**（`sponsor-teaser.module.css`）。色変数はページの入れ物に載せる（`:root`/`body` に入れるとサイト全体が黒くなる）。
+- **メタ**＝タブ「Food Japan Summit 2026｜共創パートナー募集」／**OGPだけ別文言「協賛パートナーを募集しています！」＋専用画像 `/sponsor/og-sponsor.jpg`**（`openGraph` と `twitter` の両方を指定すること）。
+- **開催と会場**＝宮崎 2026年11月17日（火）・18日（水）／宮崎観光ホテル、名古屋 2026年12月15日（火）・16日（水）／名鉄グランドホテル（`EVENT_OUTLINE` では「（予定）」付き）。
+- **協賛プラン（すべて税別）**＝
+
+  | プラン | 単独開催（宮崎／名古屋） | 両開催 | 宮崎県法人 特別割 |
+  | --- | --- | --- | --- |
+  | LIGHT（協賛のみ） | 150,000 | 200,000 | 150,000 |
+  | STANDARD（シルバー） | 300,000 | 500,000 | 300,000 |
+  | PRESENTER（ゴールド） | 500,000 | 800,000 | 400,000 |
+  | STRATEGIC（プレミアム） | 800,000 | 1,200,000 | 700,000 |
+  | DIAMOND PARTNER（パートナー） | 2,500,000 | 4,000,000 | 2,000,000 |
+
+  価格の定義は `sponsor.ts` の3か所（`singleVenuePlans()`／`COURSES` の both／`LOCAL_DISCOUNT_PRICES`）だけで、**`plansFor()` が唯一の参照元**。⚠️**特別割は宮崎開催のみ**（特典は宮崎通常プランと同一で価格だけ違う。守りは3重＝`localPlans` を宮崎にしか持たせない／サーバーで弾く／チェックボックスを宮崎選択時だけ描画）。
+- **登壇枠**＝なし／なし／30分／60分／60分＋テーマセッション主催（`presentationSlot()`。**LIGHT・STANDARDは「登壇枠：なし」と明示する**）。共通特典＝協賛ロゴ掲載・NAKAMA掲載・コワーキングルーム使用・試食・チラシ・ノベルティの配布・商談候補者の優先紹介・面談調整。⚠️**「参加後の参加者リストのご提供」は入れない**。
+- **おすすめ表示**＝`RECOMMENDED_PLAN`＝**宮崎のみ・両開催＝PRESENTER／名古屋のみ＝STRATEGIC**（`planBadge(courseCode, planCode)` で出し分け。プランコードだけで決めない）。DIAMOND は常に「最上位プラン」。
+- **オプション**＝**ブース出展 200,000円（税別・間口2,000×奥行1,500mm・レイアウト図モーダル）**は協賛プランと別枠で加算する。**年間会員 月額30,000円（税別）・1団体2名**は「あわせて相談」なので**金額を加算しない**。年間会員の実体＝**Stripeのクーポンで NAKAMAビジネス会員を付与**（システムは作らない）＝毎月50クレジット＋20%割引。⚠️features の「提案：毎月50件まで」を外さない（景表法）。
+- **申込フォーム（`/sponsor/apply`）**＝4ステップ（①開催 ②プラン・オプション ③会社情報・目的 ④確認・申込）。送信項目22＝`course` `isLocalCorp` `plan` `boothOption` `annualMember` `presentation` `themes` `benefits` `purpose` `company` `companyKana` `name` `department` `phone` `email` `address` `website` `referrer` `invoiceName` `invoiceNote` `logoSubmission` `logoPath`/`logoName` `message` `consent`＋ハニーポット `nickname`。**壊してはいけない3点＝全入力を制御コンポーネントにする／ステップ切替は `hidden` で隠すだけ（DOMから外さない）／`noValidate` で必須判定は自前**。
+- **締め切り**＝宮崎・両開催は**2026-11-17**まで、名古屋・相談は**2026-12-15**まで（`COURSE_CLOSE_AFTER`・判定は必ずJST `todayJst()`）。全部終わるとページごと「協賛の募集が終了しました。」に差し替え。`/sponsor/apply` は `force-dynamic`、**本当の関所は `actions.ts`**。
+- **受付＝メールのみでDBに保存しない**。宛先＝`info@grab-design.com` と `umetaku@grab-design.com`＋申込者への控え。受付番号は申込 `FJS-`／相談 `FJS-Q-`。**事務局あてが1通も送れなければ成功にしない**（`adminDelivered`）。
+- **ロゴ提出**＝既定はメール提出。「こちらから提出する」を選んだときだけ添付欄が出る。**Server Actionを通さず**ブラウザから非公開バケット `sponsor-logos` へ直アップロード（20MB・`.ai/.pdf/.eps`）。事務局へは**30日間有効の署名付きURL**。パスは `isLogoPath()` で検証。⚠️**自動削除はない**。
+- **見積書**＝申込を送らなくても作れる。HTMLで組んでブラウザの「PDFとして保存」（PDFライブラリなし・サーバーに保存しない）。税抜・消費税10%・税込を並べ、有効期限は発行から30日（`quoteTotals()`／`QUOTE_VALID_DAYS`）。
+
+### 課金・クレジットの現行値（`src/lib/billing-core.ts` が正）
+- 1クレジット **1,100円**。通常案件の初回提案＝**1クレジット**、NAKAMA確認済み案件＝**3クレジット**。
+- **ビジネス会員＝月22,000円（税込）／毎月50クレジット付与（`MEMBER_MONTHLY_CREDITS = 50`・繰越なし＝1クレジットあたり440円）＋単品クレジットと掲載オプションが20%割引**。⚠️下の「課金の価格整合（Phase 7）」に**「月次チケット20→30件」と書いてあるが、現在のコードは50**。数字を引くときはコードを見ること。
+- 有償クレジットは**購入日から180日**で失効。承認時に**無償3クレジット**（組織単位・一度だけ・無期限）。消費順＝月次→有償→無償（同順位は期限が早い順）。**送信後14日未読で自動返還**（元ロットが期限切れなら返還しない）。
+- **開封課金**＝「売りたい」に届いた問い合わせの初回開封に1クレジット。**施行 2026-08-26 00:00 JST**（`LEAD_UNLOCK_START_AT`）。未開封は先頭40字だけ見える。7日未開封で買い手へ通知。
+- 掲載オプション＝注目表示5,500〜11,000／最上部PR22,000／急募3,300〜5,500（各7日）／案内メール一斉送信11,000（最大100件）／非公開募集22,000・応募者限定公開11,000（各30日）／セット8,800・22,000。見積系（バナー・SNS・特集記事・探索・商談設定など）は相談導線。
+- 個別支援メニュー＝`src/lib/services.ts` の `SERVICE_MENU`（110,000円〜／440,000円〜／月33,000／月110,000＋広告費／50万〜／売上の10〜20%／共創・商品開発は「ご相談」）。**金額は `services.ts`・`/faq` の本文・`llms.txt` の3か所に分かれているので必ず一緒に直す**。
+
+### システム構成
+- Next.js 16（App Router）／React 19／TS／Tailwind v4／Prisma 7＋Supabase(PostgreSQL)／Supabase Auth＋Google OAuth／Stripe（LIVE）／Resend／Vercel／OpenAI `gpt-5.6-terra`。
+- **Prisma モデル40・enum6**（Tenant, User, Member, MemberNote, EmailJob, StripeEvent, AuditLog, Announcement, Banner, Consultation, CuratedArticle, Project, ProjectRole, ProjectResource, ProjectApplication, ProjectActivity, Deal, Thread, NdaAgreement, ViolationReport, ContractOffer, ProposalNote, Message, MessageAttachment, AuthAttempt, MessageTemplate, MessageDraft, Favorite, Offering, OfferingRequirement, BillingProduct, BillingOrder, BillingOrderItem, ListingPromotion, ContactUnlock, MatchedNotice, ContactCreditLedger, OfferingView, IssuedDocument, LeadUnlock）。**新規テーブルは必ずRLS有効化＋anon/authenticatedからREVOKE**。
+- **APIルートは5本**＝`/api/stripe/webhook`（課金状態の正）／`/api/cron/billing-daily`（Vercel Cron・毎日0:00・`CRON_SECRET`必須）／`/api/attachments/[messageId]`（非公開添付の配信）／`/api/admin/members/export`（CSV・上位管理者）／`/api/health`。
+- **日次バッチの中身**＝①掲載オプション scheduled→active ②終了3日前通知 ③active→expired＋公開範囲の復帰 ④14日未読のクレジット返還 ⑤月次クレジットの取りこぼし補填 ⑥期限切れロットの失効 ⑦**最後のやり取りから1年たったスレッドの本文と添付を削除**（1回200件）⑧未開封リードを買い手へ通知 ⑨中断した一括メール（`EmailJob`）の再開。
+- **Server Actions は27ファイル**（`src/app/**/actions.ts`）。**メールは `src/lib/email.ts` の約20関数**（パスワード・退会・課金完了・オプション終了予告／終了・未読返還・未開封通知・条件一致通知・新規登録／会員登録の事務局通知・新着メッセージ・PJ応募／承認／差し戻し・掲載停止・個別相談・事務局からの会員メール・協賛の申込／相談）。
+- **Storage バケット3つ**＝`member-images`（公開・プロフィール／案件／PJ／バナー）、`message-attachments`（非公開・API経由で配信）、`sponsor-logos`（非公開・20MB・署名付きURL）。
+- **AI**＝掲載文とプロフィールの下書きだけ（`AI_DRAFT_DAILY_LIMIT = 20`／利用は監査ログに記録）。**会員間メッセージには一切使わない（規約17条）**。`OPENAI_API_KEY` が無ければ機能自体を出さない。
+- 認証の保護＝`src/middleware.ts` の `PUBLIC_PATHS`（`/sponsor` を含む）。**公開ページを足したらここに追加**。
+
+### 記載内容（法務・`src/lib/legal.ts`）
+- **利用規約 全34条**＝適用／定義／本サービスの内容および当社の立場／登録／登録情報の変更および本人確認／アカウント管理／利用料金／**第7条の2 紹介料および紹介クレジット**／**第7条の3 掲載オプション**／支払方法および請求／契約期間および自動更新／解約／料金改定／投稿情報／投稿情報の利用許諾／当社の知的財産権／秘密情報／禁止事項／**第17条 監視、調査および通報対応**／**第17条の2 掲載文およびプロフィールの作成補助（AI下書き）**／利用停止および登録抹消／退会後のデータ／サービスの変更・中断・保守／サービスの終了／第三者サービス／保証の範囲／損害賠償および責任制限／反社会的勢力の排除／権利義務の譲渡／通知／**第27条の2 案内メール**／本規約の変更／分離可能性／準拠法および合意管轄／協議。
+- **プライバシーポリシー 全15項**＝事業者情報／取得する情報／利用目的／公開および会員間提供／第三者提供／委託／外国にある事業者への取扱いの委託等／Cookie等／安全管理措置／**保存期間（メッセージと添付を1年で削除）**／保有個人データに関する請求／漏えい等への対応／未成年者／本ポリシーの変更／問い合わせ・苦情窓口。
+- **⚠️`legal.ts` の本文を触ったら、必ず同じコミットで改定履歴にも1行足す**（履歴は文字列の末尾）。特商法は `/tokushoho`。
 
 ## 現在の進捗（3サービス改修）
 - **Phase 1 完了**: 料金修正(¥22,000/単一/無料廃止), `/produce` `/crowdfunding` `/pricing`(3サービス比較) `/consultation`(フォーム+Consultationモデル+`info@grab-design.com`通知+自動返信+`/admin/consultations`) `/learn`(最小), トップに3サービス/学び/最終3択CTA, ヘッダー/フッターの3サービスナビ, SEO(title/description)。
