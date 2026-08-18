@@ -72,6 +72,17 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <div className="border-t border-white/60">
           <div className="mx-auto flex max-w-[1100px] flex-col gap-2 px-4 py-4 text-[11px] text-[var(--muted)] sm:flex-row sm:items-center">
             <span>© FOOD JAPAN SUMMIT実行委員会</span>
+            {/* Food Japan Summit の協賛募集への導線（2026-08-19・ユーザー指示）。
+                ⚠️ **サイト内から /sponsor へ張る唯一のリンク**＝検索エンジンがこのページを見つける入口。
+                   Search Console に「URL が Google に認識されていません」と出たため、
+                   サイトマップだけでなくリンクからも辿れるようにした。外すと発見経路がサイトマップだけに戻る。
+                ⚠️ NAKAMA本体の機能ではないので、ナビ（上の5列）には入れずここに小さく置く。 */}
+            <Link
+              href="/sponsor"
+              className="hover:text-[var(--green-d)] hover:underline"
+            >
+              Food Japan Summit 2026 協賛募集・協賛スポンサー募集
+            </Link>
             <span className="sm:ml-auto flex items-center gap-4">
               <Link href="/login" className="hover:underline">ログイン</Link>
               <Link href="/signup" className={btn("primary", "sm")}>無料で登録する</Link>
