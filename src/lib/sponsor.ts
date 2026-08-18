@@ -963,7 +963,10 @@ export const PLAN_HIGHLIGHTS = [
  *    jdocco はSVG（240KB・中身は埋め込みラスタ）だったので400px幅のPNGに変換した（10KB）。
  */
 export const PARTICIPANTS_EYEBROW = "WHO YOU CAN MEET";
-export const PARTICIPANTS_TITLE = "登壇・参加予定企業・団体";
+// ⚠️ 見出しは「登壇・参加予定企業・団体」を必ず含める（指示書。「協賛企業」「参加確定企業」とは書かない）。
+//    2026-08-18 にユーザー指示でサミット名を頭に付けた。名前は SUMMIT_TITLE から作る（表記ゆれを防ぐ）。
+export const PARTICIPANTS_TITLE_MAIN = "登壇・参加予定企業・団体";
+export const PARTICIPANTS_TITLE = `${SUMMIT_TITLE} ${PARTICIPANTS_TITLE_MAIN}`;
 export const PARTICIPANTS_NOTE =
   "資料提供を受けた登壇・参加予定企業・団体の一部です（順不同）。掲載内容は開催準備に伴い変更となる場合があります。";
 

@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   HOST, MIN_PLAN_PRICE, yen, NAKAMA_URL, EVENT_OUTLINE,
-  PARTICIPANT_LOGOS, PARTICIPANTS_EYEBROW, PARTICIPANTS_TITLE, PARTICIPANTS_NOTE,
+  PARTICIPANT_LOGOS, PARTICIPANTS_EYEBROW, PARTICIPANTS_TITLE, PARTICIPANTS_TITLE_MAIN, PARTICIPANTS_NOTE,
+  SUMMIT_TITLE,
   COMMON_VALUE_CARDS, COMMON_VALUE_NOTE,
 } from "@/lib/sponsor";
 import s from "./sponsor-teaser.module.css";
@@ -212,7 +213,12 @@ export default function SponsorLandingPage() {
         <section className={s.meet} aria-labelledby="fjs-participants">
           <div className={`${s.wrap} ${s.meetHead}`}>
             <div className={s.ey}>{PARTICIPANTS_EYEBROW}</div>
-            <h2 id="fjs-participants">{PARTICIPANTS_TITLE}</h2>
+            {/* ⚠️ 後半は `nowrap` の span に入れる。1つの文字列にすると 375px で
+                「登壇・／参加予定企業・団体」と中点で折れる（`word-break: keep-all` では止まらない）。 */}
+            <h2 id="fjs-participants">
+              {SUMMIT_TITLE}{" "}
+              <span className={s.meetTitleMain}>{PARTICIPANTS_TITLE_MAIN}</span>
+            </h2>
           </div>
 
           <div className={s.meetBand}>

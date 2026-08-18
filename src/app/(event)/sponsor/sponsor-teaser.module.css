@@ -278,6 +278,11 @@
  */
 .meet { padding: 46px 0 40px; border-bottom: 1px solid var(--l); }
 .meetHead { margin-bottom: 22px; }
+/* ⚠️ 見出しの後半は `.meetTitleMain`（nowrap）に入れて、改行できる場所を
+   サミット名との間のスペースだけにしている。1つの文字列のままだと 375px で
+   「登壇・／参加予定企業・団体」と中点で折れる（`word-break: keep-all` でも止まらない）。
+   見出しを長くしたら 375px で行数と折り返し位置を必ず確認すること。 */
+.meetTitleMain { white-space: nowrap; }
 .meetHead h2 { margin: 14px 0 0; font-size: clamp(1.4rem, 2.6vw, 2.2rem); line-height: 1.2; letter-spacing: -.04em; }
 
 /* ロゴの帯＝ここだけ白。高さはロゴ（76px）＋上下の余白 */
@@ -303,8 +308,9 @@
      max-width は極端に横長のロゴ（JDOCCO＝比率7.7）が1枚で場所を取りすぎないための頭打ち。 */
 .meetSet figure { flex: 0 0 auto; height: 76px; margin: 0; }
 .meetSet figure img { display: block; width: auto; height: 100%; max-width: 200px; max-height: 100%; object-fit: contain; }
-/* 気になったロゴを読めるように、載せているあいだは止める */
-.meetBand:hover .meetTrack { animation-play-state: paused; }
+/* ⚠️ ホバーで止める指定は**入れていない**（ユーザー判断 2026-08-18「マウスオーバーで止まらなくてもOK」）。
+   指示書4は停止を求めているが、流れ続けるほうを採った。戻すなら
+   `.meetBand:hover .meetTrack { animation-play-state: paused; }` を足すだけ。 */
 @keyframes meetScroll { to { transform: translateX(-50%); } }
 
 .meetNote { margin: 16px 0 0; color: #8f8f89; font-size: 12px; line-height: 1.7; }
