@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import {
   HOST, MIN_PLAN_PRICE, yen, NAKAMA_URL, EVENT_OUTLINE,
   PARTICIPANT_LOGOS, PARTICIPANTS_EYEBROW, PARTICIPANTS_TITLE, PARTICIPANTS_TITLE_MAIN, PARTICIPANTS_NOTE,
-  SUMMIT_TITLE,
+  SUMMIT_TITLE, VENUES,
   COMMON_VALUE_CARDS, COMMON_VALUE_NOTE,
 } from "@/lib/sponsor";
+import { JsonLd } from "@/app/(public)/_components/JsonLd";
 import s from "./sponsor-teaser.module.css";
 
 // Food Japan Summit 2026 協賛のティザーページ。
@@ -27,11 +28,19 @@ import s from "./sponsor-teaser.module.css";
 //    このページのみ og-sponsor.jpg になる（/sponsor/apply などには波及しない）。
 //    ⚠️ twitter も一緒に指定すること。openGraph だけだとXでは /og.jpg のままになる。
 //    画像はヒーローの共創シーンから 1200×630 に切り出したもの。
+// ⚠️ **このページだけ検索・AI検索の対象にしている**（ユーザー指示 2026-08-19「/sponsor のみ単独の SEO と AIO」）。
+//    `/sponsor/apply` と `/sponsor/contact` は申込・相談フォームなので **noindex のまま**。
+//    ここで robots を書かない＝ルートの既定（index, follow）に従う。閉じたいときは
+//    `robots: { index: false, follow: false }` を1行足すだけで元に戻る。
+//    ⚠️ 検索に出す以上、sitemap（src/app/sitemap.ts）と public/llms.txt の記載も一緒に保つこと。
 export const metadata: Metadata = {
-  title: "Food Japan Summit 2026｜共創パートナー募集",
+  // ⚠️ タブと検索結果に出る文言。日程・会場まで入れているのは、
+  //    「協賛 いつ どこで」で探す人がタイトルだけで判断できるようにするため。
+  title: "Food Japan Summit 2026 協賛募集｜宮崎11/17-18・名古屋12/15-16",
   description:
-    "試食、対話、商談から、次の商品・販路・地域連携を生み出す。Food Japan Summit 2026の共創パートナーを募集しています。",
-  robots: { index: false, follow: false },
+    "食の事業者が集まる Food Japan Summit 2026（宮崎 11月17-18日／名古屋 12月15-16日）の協賛企業を募集しています。" +
+    "登壇（30分・60分）、試食・試飲・商品展示、商談候補者の紹介、FOOD JAPAN NAKAMAへの掲載など、" +
+    "協賛プランは15万円（税別）から。宮崎県内に本店を置く法人向けの特別価格、ブース出展（20万円・税別）もあります。",
   // ⚠️ SNSに出る文言はここ（openGraph）。上の title / description はブラウザのタブと
   //    検索向けで別物なので、片方だけ直すと食い違う。
   openGraph: {
@@ -55,6 +64,72 @@ export const metadata: Metadata = {
     images: ["/sponsor/og-sponsor.jpg"],
   },
 };
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nakama.food-japan-summit.jp";
+
+/**
+ * 構造化データ（2026-08-19・SEO/AIO）。**開催そのもの**を機械可読にする。
+ *
+ * ⚠️ 日付は**日付だけ**にしている＝資料に「時間調整中」と明記されており、
+ *    時刻まで書くと確定情報として扱われるため。時刻が固まったら +09:00 付きで足す。
+ * ⚠️ **`offers` は入れない**＝schema.org の Event.offers は「来場チケットの販売」を指す。
+ *    協賛プランをここに入れると、検索結果に入場券のように出て誤解を生む。
+ *    協賛プランの内容と価格は `public/llms.txt` に文章で置いてある（AI検索向けの経路）。
+ * ⚠️ 会場・日程・主催は `sponsor.ts` の VENUES / HOST から作る（画面と食い違わせない）。
+ * ⚠️ 名古屋の会場は資料上「（予定）」なので、その但し書きごと入れている。
+ */
+const EVENTS_JSONLD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": `${APP_URL}/sponsor#event-miyazaki`,
+    name: `${SUMMIT_TITLE} 宮崎`,
+    startDate: "2026-11-17",
+    endDate: "2026-11-18",
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: VENUES.miyazaki.venue,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "宮崎市",
+        addressRegion: "宮崎県",
+        addressCountry: "JP",
+      },
+    },
+    organizer: { "@type": "Organization", name: HOST, url: NAKAMA_URL },
+    description:
+      "生産者、食品メーカー、流通・小売、飲食、行政などが集まる食の事業者サミット。登壇、試食・試飲、展示、ネットワーキングを通じて商談と共創を進める。協賛企業を募集中。",
+    image: [`${APP_URL}/sponsor/og-sponsor.jpg`],
+    url: `${APP_URL}/sponsor`,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": `${APP_URL}/sponsor#event-nagoya`,
+    name: `${SUMMIT_TITLE} 名古屋（TechGALA連携）`,
+    startDate: "2026-12-15",
+    endDate: "2026-12-16",
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: `${VENUES.nagoya.venue}（予定）`,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "名古屋市",
+        addressRegion: "愛知県",
+        addressCountry: "JP",
+      },
+    },
+    organizer: { "@type": "Organization", name: HOST, url: NAKAMA_URL },
+    description:
+      "食の事業者サミットの名古屋開催。TechGALA と連携し、登壇、試食・試飲、展示、商談の機会を提供する。協賛企業を募集中。",
+    image: [`${APP_URL}/sponsor/og-sponsor.jpg`],
+    url: `${APP_URL}/sponsor`,
+  },
+];
 
 /**
  * ヒーロー直下の判断材料（2026-08-18 改訂指示書1。出典＝2026_マスターJapanFoodSummit(5).pptx）。
@@ -143,6 +218,10 @@ const STEPS = [
 export default function SponsorLandingPage() {
   return (
     <div className={s.page}>
+      {/* 検索・AI検索向けの開催情報（表示はしない） */}
+      {EVENTS_JSONLD.map((e) => (
+        <JsonLd key={e["@id"]} data={e} />
+      ))}
       {/* ⚠️ (event)/layout.tsx が既に <main id="main"> を持っているので、ここでは main を使わない。 */}
         <section className={s.hero}>
           <div className={`${s.wrap} ${s.nav}`}>

@@ -14,7 +14,7 @@ export const revalidate = 3600;
  * 検索結果に残り続ける（2026-08-11に実際に発生）。
  * 料金・サービス説明を変更したら必ずこの日付を更新すること。
  */
-const CONTENT_UPDATED_AT = new Date("2026-08-17T12:00:00+09:00");
+const CONTENT_UPDATED_AT = new Date("2026-08-19T12:00:00+09:00");
 
 // 公開静的ページ（middleware の PUBLIC_PATHS と対応）
 const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }[] = [
@@ -26,6 +26,9 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   { path: "/crowdfunding", priority: 0.9, changeFrequency: "weekly" },
   { path: "/food-loss", priority: 0.9, changeFrequency: "weekly" },
   { path: "/cases", priority: 0.9, changeFrequency: "weekly" },
+  // Food Japan Summit の協賛募集（2026-08-19 に検索対象へ。ユーザー指示「/sponsor のみ単独の SEO と AIO」）。
+  // ⚠️ 申込・相談フォーム（/sponsor/apply・/sponsor/contact）は noindex のままなので**ここに足さない**。
+  { path: "/sponsor", priority: 0.9, changeFrequency: "weekly" },
   { path: "/learn", priority: 0.8, changeFrequency: "weekly" },
   { path: "/flow", priority: 0.7, changeFrequency: "monthly" },
   { path: "/faq", priority: 0.7, changeFrequency: "monthly" },
