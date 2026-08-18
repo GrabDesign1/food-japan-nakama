@@ -154,7 +154,7 @@ export default function SponsorLandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               className={s.heroLogo}
-              src="/sponsor/teaser/fjs-logo-hero-2026-hd.png"
+              src="/sponsor/teaser/fjs-logo-hero-2026-alpha.png"
               alt="食のリーダーが集う Food Japan Summit フードジャパンサミット"
               width={980}
               height={345}
