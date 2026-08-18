@@ -844,10 +844,25 @@ export const BENEFIT_LINKS: Record<string, { text: string; href: string }> = {
  *  （SponsorForm / actions.ts の両方がこの定数を見て判定するので、文言を変えるときは
  *  LOGO_SUBMISSION_UPLOAD も一緒に直すこと）。 */
 export const LOGO_SUBMISSION_UPLOAD = "こちらから提出する（Illustratorデータ／PDF）";
-/** 添付できる最大サイズ。⚠️ next.config.ts の serverActions.bodySizeLimit(8mb) より
- *  十分小さくすること。他の入力値もリクエストに乗るため、上限いっぱいにしない。 */
-export const LOGO_MAX_BYTES = 4 * 1024 * 1024;
+/** 添付できる最大サイズ。
+ *  ⚠️ ファイルは **Server Action を通さず、ブラウザから Supabase Storage へ直接**送る。
+ *     Vercel の関数はリクエストボディが 4.5MB を超えると 413 を返し、これは
+ *     next.config.ts の serverActions.bodySizeLimit では回避できない**インフラ側の制限**
+ *     （2026-08-18 に確認）。ここを 4.5MB 超にできているのは直アップロードだから。
+ *     もし Server Action 経由に戻すなら、この値を 4MB 以下に下げること。
+ *  ⚠️ Supabase 側のバケット `sponsor-logos` にも同じ 20MB の上限を設定してある。
+ *     片方だけ変えても実際の上限は変わらない。 */
+export const LOGO_MAX_BYTES = 20 * 1024 * 1024;
 export const LOGO_ACCEPT = ".ai,.pdf,.eps";
+export const LOGO_BUCKET = "sponsor-logos";
+/** 事務局が受け取るダウンロードリンクの有効期間。 */
+export const LOGO_LINK_TTL_SEC = 60 * 60 * 24 * 30;
+
+/** アップロード先パスの妥当性。⚠️ 受け取ったパスをそのまま署名するので、
+ *  ここを緩めるとバケット内の任意ファイルを読める口になる。 */
+export function isLogoPath(path: string): boolean {
+  return /^[0-9]{6}\/[0-9a-f-]{36}\.(ai|pdf|eps)$/i.test(path);
+}
 
 /** ラジオの初期選択。⚠️ 先頭（＝添付）を初期値にしないこと。
  *  初期状態でファイル添付が必須になり、ロゴをまだ用意していない人が進めなくなる。 */

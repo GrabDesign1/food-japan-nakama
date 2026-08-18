@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { submitSponsorApplication, type SponsorState } from "./actions";
+import { createLogoUploadTicket } from "./logo-upload";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { btn, input, inputBare } from "@/lib/ui";
 import { formatJpDate } from "@/lib/invoice";
 import {
@@ -10,6 +12,7 @@ import {
   LOCAL_DISCOUNT_COURSE, LOCAL_DISCOUNT_LABEL,
   CO_CREATION_THEMES, DESIRED_BENEFITS, DESIRED_BENEFITS_NOTE, BENEFIT_LINKS, LOGO_SUBMISSION, CONSENTS,
   LOGO_SUBMISSION_UPLOAD, LOGO_SUBMISSION_DEFAULT, LOGO_MAX_BYTES, LOGO_ACCEPT,
+  LOGO_BUCKET,
   APPLY_STEPS, COURSE_SHORT, isCourseOpen, COURSE_CLOSED_LABEL,
   isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
   PLAN_TAGLINE, planBadge, PLAN_CTA_CONSULT, PLAN_CARD_FEATURES,
@@ -112,9 +115,49 @@ export function SponsorForm() {
   const [themes, setThemes] = useState<string[]>([]);
   const [benefits, setBenefits] = useState<string[]>([]);
   const [logoSubmission, setLogoSubmission] = useState(LOGO_SUBMISSION_DEFAULT);
-  // 添付ファイルの表示名。input[type=file] は React で値を制御できないので、
-  // 選ばれたファイル名だけを持って画面に出す。
+  // アップロード済みロゴ。ファイル本体は Server Action を通さず Storage へ直接送るので、
+  // フォームが送るのは **保存先パスと表示名だけ**（Vercelの4.5MB制限を避けるため）。
   const [logoFileName, setLogoFileName] = useState("");
+  const [logoPath, setLogoPath] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  /** 選ばれたロゴを Storage へ直接送る。
+   *  ⚠️ Server Action には**渡さない**（Vercelはボディ4.5MB超で413を返すため）。
+   *     ここで発行した署名付きURLに対してブラウザが直接アップロードする。 */
+  async function uploadLogo(file?: File) {
+    if (!file) return;
+    setErrors((x) => ({ ...x, logoFile: "" }));
+    setLogoFileName(file.name);
+    setLogoPath("");
+    if (file.size > LOGO_MAX_BYTES) {
+      setErrors((x) => ({
+        ...x,
+        logoFile: `ファイルが大きすぎます（${Math.round(LOGO_MAX_BYTES / 1024 / 1024)}MBまで）。`,
+      }));
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const ticket = await createLogoUploadTicket(file.name, file.size);
+      if (!ticket.ok) {
+        setErrors((x) => ({ ...x, logoFile: ticket.error }));
+        return;
+      }
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.storage
+        .from(LOGO_BUCKET)
+        .uploadToSignedUrl(ticket.path, ticket.token, file);
+      if (error) {
+        setErrors((x) => ({ ...x, logoFile: `アップロードに失敗しました：${error.message}` }));
+        return;
+      }
+      setLogoPath(ticket.path);
+    } catch {
+      setErrors((x) => ({ ...x, logoFile: "アップロードに失敗しました。通信環境をご確認ください。" }));
+    } finally {
+      setLogoUploading(false);
+    }
+  }
   const [consent, setConsent] = useState<boolean[]>(CONSENTS.map(() => false));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [openPlan, setOpenPlan] = useState<string | null>(null);
@@ -1150,25 +1193,35 @@ export function SponsorForm() {
                   {logoSubmission === LOGO_SUBMISSION_UPLOAD ? (
                     <div className="mt-2.5 flex flex-col gap-1.5" data-field="logoFile">
                       <div className="flex flex-wrap items-center gap-3">
-                        <label className={`${btn("secondary", "sm")} cursor-pointer`}>
-                          ファイルを添付
+                        <label
+                          className={`${btn("secondary", "sm")} ${
+                            logoUploading ? "pointer-events-none opacity-60" : "cursor-pointer"
+                          }`}
+                        >
+                          {logoUploading ? "アップロード中…" : "ファイルを添付"}
                           <input
-                            type="file" name="logoFile" accept={LOGO_ACCEPT}
+                            type="file" accept={LOGO_ACCEPT}
                             className="hidden"
-                            onChange={(e) => {
-                              setLogoFileName(e.target.files?.[0]?.name ?? "");
-                              setErrors((x) => ({ ...x, logoFile: "" }));
-                            }}
+                            disabled={logoUploading}
+                            onChange={(e) => uploadLogo(e.target.files?.[0])}
                           />
                         </label>
                         <span className="min-w-0 break-all text-[13px] text-[var(--ink-2)]">
-                          {logoFileName || "選択されていません"}
+                          {logoPath ? (
+                            <span className="font-semibold text-[var(--green-d)]">
+                              {logoFileName}（添付済み）
+                            </span>
+                          ) : (
+                            logoFileName || "選択されていません"
+                          )}
                         </span>
                       </div>
+                      {/* パスと表示名だけを送る（ファイル本体はここを通らない） */}
+                      <input type="hidden" name="logoPath" value={logoPath} />
+                      <input type="hidden" name="logoName" value={logoFileName} />
                       <span className={hintCls}>
-                        Illustratorデータ（.ai）またはPDFをお送りください（
+                        Illustratorデータ（.ai）・PDF・EPS をお送りください（
                         {Math.round(LOGO_MAX_BYTES / 1024 / 1024)}MBまで）。
-                        これより大きい場合は「メールで提出する」をお選びください。
                       </span>
                       <FieldError msg={errors.logoFile} />
                     </div>

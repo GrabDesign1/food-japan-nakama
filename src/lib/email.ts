@@ -573,24 +573,13 @@ export async function sendAdminMessageEmail(params: {
 //    全滅した場合はフォーム側で「直接メールしてください」と案内する。
 
 /** 1通送って、成功したかどうかを返す（送信基盤が無い開発時は false ではなく true 扱いにしない）。 */
-/** メール添付。content は Buffer（Resend がそのまま base64 にする）。 */
-export type MailAttachment = { filename: string; content: Buffer };
-
-async function sendOne(
-  to: string,
-  subject: string,
-  html: string,
-  attachments?: MailAttachment[]
-): Promise<boolean> {
+async function sendOne(to: string, subject: string, html: string): Promise<boolean> {
   if (!resend) {
     console.log(`[email] RESEND_API_KEY 未設定のため送信スキップ: ${subject} -> ${to}`);
     return false;
   }
   try {
-    const { error } = await resend.emails.send({
-      from: FROM, to: [to], subject, html,
-      ...(attachments?.length ? { attachments } : {}),
-    });
+    const { error } = await resend.emails.send({ from: FROM, to: [to], subject, html });
     if (error) {
       console.error(`[email] 協賛申込の送信失敗(${to}):`, error);
       return false;
@@ -626,9 +615,12 @@ export type SponsorMailInput = {
   invoiceName: string;
   invoiceNote: string;
   logoSubmission: string;
-  /** ロゴの添付（任意）。⚠️ **事務局宛にだけ付ける**。申込者への控えには付けない
-   *  （送り返す必要がないうえ、控えのサイズが無駄に膨らむため）。 */
-  logoFile?: MailAttachment;
+  /** アップロードされたロゴのダウンロードリンク（任意）。
+   *  ⚠️ **事務局宛にだけ出す**。申込者へ送り返す必要がないうえ、控えのメールが
+   *     転送されるとリンクごと渡ってしまうため。
+   *  ⚠️ URLには期限がある（sponsor.ts の LOGO_LINK_TTL_SEC）。期限を過ぎたら
+   *     Supabase の sponsor-logos バケットから直接取り出すこと。 */
+  logoLink?: { name: string; url: string };
   message: string;
 };
 
@@ -645,6 +637,11 @@ export async function sendSponsorApplicationEmails(
       ? `<tr><th align="left" style="padding:6px 10px;background:#F4F5F2;border:1px solid #E3E6E1;font-size:13px;white-space:nowrap;vertical-align:top">${esc(label)}</th>
            <td style="padding:6px 10px;border:1px solid #E3E6E1;font-size:13px;white-space:pre-wrap">${esc(value)}</td></tr>`
       : "";
+
+  // row() は値をエスケープするので、リンクを入れたい行はこちらを使う。
+  const row2 = (label: string, valueHtml: string) =>
+    `<tr><th align="left" style="padding:6px 10px;background:#F4F5F2;border:1px solid #E3E6E1;font-size:13px;white-space:nowrap;vertical-align:top">${esc(label)}</th>
+         <td style="padding:6px 10px;border:1px solid #E3E6E1;font-size:13px">${valueHtml}</td></tr>`;
 
   const adminHtml = `
   <div style="font-family:'Hiragino Sans',sans-serif;max-width:640px;margin:0 auto;color:#141414">
@@ -674,7 +671,14 @@ export async function sendSponsorApplicationEmails(
       ${row("請求書の宛名", a.invoiceName)}
       ${row("請求書に関する希望", a.invoiceNote)}
       ${row("ロゴデータの提出方法", a.logoSubmission)}
-      ${row("添付されたロゴデータ", a.logoFile ? a.logoFile.filename : "")}
+      ${
+        a.logoLink
+          ? row2(
+              "提出されたロゴデータ",
+              `<a href="${esc(a.logoLink.url)}">${esc(a.logoLink.name)}</a>（ダウンロード：30日間有効）`
+            )
+          : ""
+      }
       ${row("備考", a.message)}
     </table>
     <p style="font-size:12px;color:#7C8899;margin-top:14px">
@@ -684,12 +688,7 @@ export async function sendSponsorApplicationEmails(
 
   const results = await Promise.all(
     inbox.map((to) =>
-      sendOne(
-        to,
-        `【協賛申込】${a.company}／${a.plan}（${a.refNo}）`,
-        adminHtml,
-        a.logoFile ? [a.logoFile] : undefined
-      )
+      sendOne(to, `【協賛申込】${a.company}／${a.plan}（${a.refNo}）`, adminHtml)
     )
   );
 

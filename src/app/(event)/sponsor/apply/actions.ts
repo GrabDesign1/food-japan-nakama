@@ -5,9 +5,9 @@ import {
   SPONSOR_INBOX, PLAN_CONSULT, findCourse, planLabel, plansFor, LOCAL_DISCOUNT_COURSE, isCourseOpen,
   isApplicationClosed, APPLICATION_CLOSED_TITLE, APPLICATION_CLOSED_BODY,
   CO_CREATION_THEMES, DESIRED_BENEFITS, LOGO_SUBMISSION, CONSENTS,
-  LOGO_SUBMISSION_UPLOAD, LOGO_MAX_BYTES,
+  LOGO_SUBMISSION_UPLOAD, LOGO_BUCKET, LOGO_LINK_TTL_SEC, isLogoPath,
 } from "@/lib/sponsor";
-import type { MailAttachment } from "@/lib/email";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /**
  * fields＝項目ごとのエラー（キーは input の name）。
@@ -112,23 +112,28 @@ export async function submitSponsorApplication(
   //    キーの順序は画面の並び順＝ステップ順にしておくと、戻す先を先頭から探せる。
   const fields: Record<string, string> = {};
 
-  // ロゴの添付。「こちらから提出する」を選んだときだけ受け取る。
-  // ⚠️ 拡張子は自己申告なので中身の検証はしていない。**事務局宛にしか送らない**ことと、
-  //    どこにも保存しないことで影響を閉じている。保存先を足すならここで型検査を足すこと。
-  let logoFile: MailAttachment | undefined;
+  // ロゴ。「こちらから提出する」を選んだときだけ扱う。
+  // ⚠️ ここに来るのは**アップロード済みファイルのパス**で、ファイル本体は通らない
+  //    （Vercelの4.5MB制限を避けるため、ブラウザから Storage へ直接上げている）。
+  // ⚠️ パスは isLogoPath で形を必ず確かめること。受け取った文字列をそのまま署名すると、
+  //    バケット内の別ファイルを読み出す口になる。
+  let logoLink: { name: string; url: string } | undefined;
   if (logoSubmission === LOGO_SUBMISSION_UPLOAD) {
-    const f = formData.get("logoFile");
-    if (!(f instanceof File) || f.size === 0) {
+    const path = g("logoPath", 200);
+    const uploadedName = g("logoName", 160);
+    if (!path || !isLogoPath(path)) {
       fields.logoFile = "ロゴデータのファイルを選択してください。";
-    } else if (f.size > LOGO_MAX_BYTES) {
-      fields.logoFile = `ファイルが大きすぎます（${Math.round(LOGO_MAX_BYTES / 1024 / 1024)}MBまで）。メールでの提出をお選びください。`;
-    } else if (!/\.(ai|pdf|eps)$/i.test(f.name)) {
-      fields.logoFile = "Illustrator（.ai）・PDF・EPS のいずれかを選択してください。";
     } else {
-      logoFile = {
-        filename: f.name.slice(0, 120),
-        content: Buffer.from(await f.arrayBuffer()),
-      };
+      const admin = createSupabaseAdminClient();
+      const { data, error } = await admin.storage
+        .from(LOGO_BUCKET)
+        .createSignedUrl(path, LOGO_LINK_TTL_SEC, { download: uploadedName || true });
+      if (error || !data?.signedUrl) {
+        console.error("[sponsor] ロゴのダウンロードURL発行に失敗:", error);
+        fields.logoFile = "ロゴデータを読み取れませんでした。もう一度添付してください。";
+      } else {
+        logoLink = { name: uploadedName || path, url: data.signedUrl };
+      }
     }
   }
 
@@ -164,7 +169,7 @@ export async function submitSponsorApplication(
       purpose,
       themes: many("themes", THEMES),
       benefits: many("benefits", BENEFITS),
-      presentation, invoiceName, invoiceNote, logoSubmission, logoFile, message,
+      presentation, invoiceName, invoiceNote, logoSubmission, logoLink, message,
     },
     SPONSOR_INBOX
   );
