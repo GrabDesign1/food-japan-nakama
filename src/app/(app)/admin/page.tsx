@@ -12,7 +12,8 @@ import { AdminAccountForm } from "./_components/AdminAccountForm";
 import { AdminNav } from "./_components/AdminNav";
 import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
-import { deleteArticle, toggleArticle, toggleArticleSummit } from "./article-actions";
+import { deleteArticle } from "./article-actions";
+import { ArticleEditButton } from "./_components/ArticleEditButton";
 import { ArticleManager } from "./_components/ArticleManager";
 import { btn, input } from "@/lib/ui";
 import { aBadge, aCard, aCardBody, aCardHead, aEyebrow, aH1, aH2, aLink, aNote } from "./_components/adminUi";
@@ -371,16 +372,22 @@ export default async function AdminPage() {
                     </div>
                   ) : null}
                 </div>
-                <form action={toggleArticleSummit.bind(null, a.id, !a.fromSummit)}>
-                  <button className={btn("secondary", "sm")}>
-                    {a.fromSummit ? "共創タグを外す" : "共創タグを付ける"}
-                  </button>
-                </form>
-                <form action={toggleArticle.bind(null, a.id, !a.active)}>
-                  <button className={btn("secondary", "sm")}>
-                    {a.active ? "非表示にする" : "表示する"}
-                  </button>
-                </form>
+                {/* 表示・非表示と共創タグは編集モーダルの中に入れて、行のボタンを2つに絞った */}
+                <ArticleEditButton
+                  id={a.id}
+                  title={a.title}
+                  active={a.active}
+                  defaults={{
+                    source: a.source,
+                    url: a.url,
+                    title: a.title,
+                    imageUrl: a.imageUrl,
+                    excerpt: a.excerpt,
+                    fromSummit: a.fromSummit,
+                    publishStart: toDateInput(a.publishStart),
+                    publishEnd: toDateInput(a.publishEnd),
+                  }}
+                />
                 <ConfirmDeleteButton
                   action={deleteArticle.bind(null, a.id)}
                   buttonLabel="削除"
@@ -485,6 +492,23 @@ export default async function AdminPage() {
       </section>
     </div>
   );
+}
+
+/**
+ * <input type="date"> に渡す YYYY-MM-DD。未設定は空文字。
+ *
+ * ⚠️ **必ずJSTで出す**。保存時は `new Date("YYYY-MM-DDT00:00:00")`（サーバーのローカル時刻）で
+ *    入れているが、サーバーはUTCで動くので素の toISOString() を使うと日付が1日前にずれる。
+ *    ずれたまま保存し直すと掲載開始日が毎回1日ずつ早まっていく。
+ */
+function toDateInput(d: Date | null): string {
+  if (!d) return "";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
 }
 
 // 掲載期間の日付表示（未設定は「—」）

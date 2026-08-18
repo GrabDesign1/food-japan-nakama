@@ -6,7 +6,18 @@ import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { fetchOgMeta } from "@/lib/og";
 
-export type ArticleState = { ok?: boolean; error?: string; message?: string };
+export type ArticleState = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  /**
+   * エラー時に返す入力値。
+   * ⚠️ React 19 はサーバーアクション完了時に form をリセットするので、
+   *    これを返して画面側で入れ直さないと**入力中の内容が消える**
+   *    （認証フォームで踏んで commit c08dcb7 で直した件と同じ罠）。
+   */
+  values?: Record<string, string | boolean>;
+};
 
 function normalizeUrl(raw: string): string | null {
   const v = raw.trim();
@@ -91,26 +102,65 @@ export async function deleteArticle(id: string): Promise<void> {
   revalidatePath("/");
 }
 
-/** 表示/非表示を切り替える。 */
-/** 既存記事の「FoodJapanSummit共創」タグを切り替える。 */
-export async function toggleArticleSummit(id: string, fromSummit: boolean): Promise<void> {
+/**
+ * 記事を更新する（編集モーダルから呼ぶ）。
+ *
+ * ⚠️ 追加時と違い、**空欄をURLからの自動取得で埋めない**。編集では「消したい」意図で
+ *    空にすることがあり、勝手に埋め戻すと消せなくなるため。
+ * ⚠️ tenantId を where に必ず入れる（他テナントの記事を書き換えられないように）。
+ */
+export async function updateArticle(
+  id: string,
+  _prev: ArticleState,
+  formData: FormData
+): Promise<ArticleState> {
   const su = await requireAdmin();
-  await prisma.curatedArticle.updateMany({
+
+  const title = String(formData.get("title") ?? "").trim();
+  const source = String(formData.get("source") ?? "").trim();
+  const url = normalizeUrl(String(formData.get("url") ?? ""));
+  const imageUrl = normalizeUrl(String(formData.get("imageUrl") ?? ""));
+  const excerpt = String(formData.get("excerpt") ?? "").trim();
+  const fromSummit = formData.get("fromSummit") === "on";
+  const active = formData.get("active") === "on";
+  const startRaw = String(formData.get("publishStart") ?? "").trim();
+  const endRaw = String(formData.get("publishEnd") ?? "").trim();
+  const publishStart = startRaw ? new Date(`${startRaw}T00:00:00`) : null;
+  const publishEnd = endRaw ? new Date(`${endRaw}T23:59:59`) : null;
+
+  // ⚠️ エラーで返すときは必ず values も返す（返さないと入力が消える）。
+  const values = {
+    title, source, url: url ?? "", imageUrl: imageUrl ?? "", excerpt,
+    fromSummit, active, publishStart: startRaw, publishEnd: endRaw,
+  };
+  const fail = (error: string): ArticleState => ({ error, values });
+
+  if (!title) return fail("記事タイトルを入力してください。");
+  if (!source) return fail("出典（PR TIMES / note / 新聞名など）を入力してください。");
+  if (!url) return fail("記事URLを入力してください。");
+  if (publishStart && publishEnd && publishEnd < publishStart) {
+    return fail("掲載終了日は掲載開始日より後にしてください。");
+  }
+
+  const res = await prisma.curatedArticle.updateMany({
     where: { id, tenantId: su.app.tenantId },
-    data: { fromSummit },
+    data: {
+      title,
+      source,
+      url,
+      imageUrl: imageUrl || null,
+      excerpt: excerpt || null,
+      fromSummit,
+      active,
+      publishStart,
+      publishEnd,
+    },
   });
-  await writeAudit(su, "article.toggleSummit", { targetType: "article", targetId: id });
+  if (res.count === 0) return fail("記事が見つかりませんでした。");
+
+  await writeAudit(su, "article.update", { targetType: "article", targetId: id });
   revalidatePath("/admin");
   revalidatePath("/");
+  return { ok: true, message: "記事を更新しました。" };
 }
 
-export async function toggleArticle(id: string, active: boolean): Promise<void> {
-  const su = await requireAdmin();
-  await prisma.curatedArticle.updateMany({
-    where: { id, tenantId: su.app.tenantId },
-    data: { active },
-  });
-  await writeAudit(su, "article.toggle", { targetType: "article", targetId: id });
-  revalidatePath("/admin");
-  revalidatePath("/");
-}
