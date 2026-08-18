@@ -63,6 +63,7 @@ export async function submitSponsorApplication(
   const phone = g("phone", 40);
   const address = g("address", 300);
   const website = g("website", 300);
+  const referrer = g("referrer", 200);
   const purpose = g("purpose");
   const presentation = g("presentation");
   const invoiceName = g("invoiceName", 200);
@@ -136,6 +137,7 @@ export async function submitSponsorApplication(
       annualMember,
       boothOption,
       company, companyKana, name, department, email, phone, address, website,
+      referrer,
       purpose,
       themes: many("themes", THEMES),
       benefits: many("benefits", BENEFITS),

@@ -37,13 +37,13 @@ const FIELD_STEP: Record<string, number> = {
   course: 0, isLocalCorp: 0,
   plan: 1,
   company: 2, companyKana: 2, name: 2, department: 2, email: 2, phone: 2,
-  address: 2, website: 2, purpose: 2, invoiceName: 2, logoSubmission: 2,
+  address: 2, website: 2, referrer: 2, purpose: 2, invoiceName: 2, logoSubmission: 2,
   consent: 3,
 };
 
 const EMPTY_TEXT = {
   company: "", companyKana: "", name: "", department: "", email: "", phone: "",
-  address: "", website: "", purpose: "", presentation: "",
+  address: "", website: "", referrer: "", purpose: "", presentation: "",
   invoiceName: "", invoiceNote: "", message: "",
 };
 type TextKey = keyof typeof EMPTY_TEXT;
@@ -959,6 +959,15 @@ export function SponsorForm() {
                   <input
                     name="website" value={text.website}
                     onChange={(e) => setField("website", e.target.value)}
+                    className={fieldCls()}
+                  />
+                </label>
+                {/* ⚠️ 任意項目。ここを必須にしないこと（紹介者がいない申込を止めてしまう）。 */}
+                <label className={labelCls} data-field="referrer">
+                  ご紹介者（ご紹介者がいる場合）{opt}
+                  <input
+                    name="referrer" value={text.referrer}
+                    onChange={(e) => setField("referrer", e.target.value)}
                     className={fieldCls()}
                   />
                 </label>

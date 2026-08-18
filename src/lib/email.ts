@@ -606,6 +606,8 @@ export type SponsorMailInput = {
   phone: string;
   address: string;
   website: string;
+  /** ご紹介者（任意）。未入力なら row() が行ごと出さない。 */
+  referrer: string;
   purpose: string;
   themes: string[];
   benefits: string[];
@@ -650,6 +652,7 @@ export async function sendSponsorApplicationEmails(
       ${row("電話番号", a.phone)}
       ${row("所在地", a.address)}
       ${row("ウェブサイト", a.website)}
+      ${row("ご紹介者", a.referrer)}
       ${row("実現したいこと", a.purpose)}
       ${row("関心のある共創テーマ", a.themes.join("／"))}
       ${row("希望する協賛特典", a.benefits.join("／"))}
