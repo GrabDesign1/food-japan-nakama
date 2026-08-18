@@ -72,6 +72,8 @@ const FIGURES = [
 const HAPPENS = [
   {
     no: "01 / SPEAK",
+    image: "/sponsor/teaser/happen-01-speak.jpg",
+    alt: "会場のステージで登壇者が食材を前に話し、着席した参加者が聞いている様子",
     title: ["ブランドを伝える。", "次の相手を見つける。"],
     lead: "60分と30分のスポンサーセッション",
     body: "を協賛企業様にご用意。貴社のブランドの考え方と、新商品・地域連携・サステナビリティへの取り組みを発信。経営者、商品開発責任者、バイヤー、シェフ、行政担当者との次の対話をつくります。",
@@ -82,6 +84,8 @@ const HAPPENS = [
   },
   {
     no: "02 / TASTE",
+    image: "/sponsor/teaser/happen-02-taste.jpg",
+    alt: "試食・試飲ブースで、担当者が来場者に試飲を手渡している様子",
     title: ["試食・試飲・資料で、", "反応を得る。"],
     lead: "展示・試食・試飲",
     body: "に加え、資料を通じて商品や取り組みを具体的に伝えます。バイヤーや飲食店、食品メーカーからの率直な反応を、商品改善、販売提案、次の商談に生かせます。",
@@ -90,12 +94,16 @@ const HAPPENS = [
   },
   {
     no: "03 / MEET",
+    image: "/sponsor/teaser/happen-03-meet.jpg",
+    alt: "商談テーブルで、参加者同士が握手を交わしている様子",
     title: ["会うべき相手と、", "次の話を始める。"],
     lead: "事務局",
     body: "が、貴社の目的やテーマに応じて商談候補者を選定します。参加者の同意を得た範囲で紹介・面談調整を行い、名刺交換で終わらない商談、共同開発、地域連携の入口をつくります。",
   },
   {
     no: "04 / CONTINUE",
+    image: "/sponsor/teaser/happen-04-continue.jpg",
+    alt: "FOOD JAPAN NAKAMA のバナー。食の出会い・学び・共創をつくる会員制ネットワーク",
     title: ["イベント後も、", "事業を進め続ける。"],
     lead: "FOOD JAPAN NAKAMA",
     body: "に協賛企業として紹介情報を掲載。出会いを一日で終わらせず、実証、販路開拓、共創プロジェクトへ進むための接点を継続します。",
@@ -194,7 +202,7 @@ export default function SponsorLandingPage() {
                 これがFood Japan Summitの協賛です。
               </p>
               <p>
-                目指すのはその場の露出ではなく、商品開発、販路開拓、地域連携など、次に動き出す具体的な仕事です。
+                目指すのはその場の露出ではなく、商品開発、販路開拓、地域連携など、次の一手につながる仕事です。
               </p>
             </div>
           </div>
@@ -231,6 +239,18 @@ export default function SponsorLandingPage() {
                       <span className={s.itemNote}>※ {h.note}</span>
                     ) : null}
                   </p>
+                  {/* ⚠️ 4枚とも 1200x675（16:9）に揃えてある。比率の違う画像を足すと
+                      行ごとに高さが変わって段が崩れるので、差し替えるときも16:9にすること。 */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className={s.happenImg}
+                    src={h.image}
+                    alt={h.alt}
+                    width={1200}
+                    height={675}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </article>
               ))}
             </div>
@@ -283,21 +303,6 @@ export default function SponsorLandingPage() {
                 200万円）でお申し込みいただけます。各プランの価格と詳しい特典は申込フォームでご確認いただけます。
               </p>
             </div>
-
-            <dl className={s.venues}>
-              {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
-                <div key={v.label}>
-                  <dt>{v.label}</dt>
-                  <dd>
-                    {v.dates}／{v.venue}
-                  </dd>
-                </div>
-              ))}
-              <div>
-                <dt>主催</dt>
-                <dd>{HOST}</dd>
-              </div>
-            </dl>
           </div>
         </section>
 
@@ -404,6 +409,29 @@ export default function SponsorLandingPage() {
             </div>
           </div>
         </section>
+        {/* ── 開催概要 ──
+            ⚠️ ここはユーザー指示（2026-08-18）で**フッター直前**に置いている。
+               以前は価格ブロックの直後にあったが、申込判断の流れを止めるため末尾へ移した。
+               上へ戻さないこと。日付・会場は sponsor.ts の VENUES が正。 */}
+        <section className={s.outline}>
+          <div className={s.wrap}>
+            <dl className={s.venues}>
+              {[VENUES.miyazaki, VENUES.nagoya].map((v) => (
+                <div key={v.label}>
+                  <dt>{v.label}</dt>
+                  <dd>
+                    {v.dates}／{v.venue}
+                  </dd>
+                </div>
+              ))}
+              <div>
+                <dt>主催</dt>
+                <dd>{HOST}</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
       {/* ⚠️ フッターは「フードジャパンサミット実行委員会」だけにする（ユーザー指定 2026-08-18）。
           運営会社と連絡先は、上の「主催」と申込・相談フォーム側で示している。 */}
       <footer className={s.foot}>

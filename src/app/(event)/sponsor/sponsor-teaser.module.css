@@ -110,14 +110,22 @@
 .whatHead p { margin: 0; color: #c4c4be; font-size: 16px; }
 
 .happen { margin-top: 58px; border-top: 1px solid var(--l); }
+/* ⚠️ 4列＝番号／見出し／本文／画像（画像はユーザー提供 2026-08-18）。
+   納品時は3列（105px 1.1fr .9fr / gap 38px）だったが、画像列を足すぶん
+   番号列とgapを詰めて本文の幅を確保している。列を増やすときは 1280px で
+   見出しが単語の途中で折り返らないか必ず確認すること。 */
 .happen article {
-  display: grid; grid-template-columns: 105px 1.1fr .9fr; gap: 38px;
+  display: grid; grid-template-columns: 84px 1.05fr .95fr 300px; gap: 32px;
+  align-items: start;
   padding: 37px 0; border-bottom: 1px solid var(--l);
 }
 .happen b { font-size: 12px; letter-spacing: .12em; color: var(--o); }
 .happen h3 { margin: -2px 0 0; font-size: clamp(1.3rem, 2vw, 1.9rem); line-height: 1.35; letter-spacing: -.04em; }
 .happen p { margin: 0; color: var(--m); font-size: 15px; }
 .happen p strong { color: var(--w); }
+/* ⚠️ 画像は 16:9 固定。素材の比率が違っても cover で切って段の高さを揃える。 */
+.happenImg { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+
 .itemNote { display: block; margin-top: 8px; font-size: 12px; line-height: 1.8; color: #8f8f89; }
 
 .cities { padding: 142px 0; }
@@ -163,7 +171,10 @@
 .notes { margin: 32px 0 0; color: #8f8f89; font-size: 12px; line-height: 1.9; }
 .notes p { margin: 0 0 8px; }
 .detail .actions { margin-top: 38px; }
-.venues { margin: 46px 0 0; padding-top: 26px; border-top: 1px solid var(--l); display: grid; gap: 10px; }
+/* ⚠️ 開催概要はフッター直前に置いている（ユーザー指示 2026-08-18）。
+   .final は上下150pxの余白を持つので、ここは下側だけ空ければ足りる。 */
+.outline { padding: 0 0 52px; }
+.venues { margin: 0; padding-top: 26px; border-top: 1px solid var(--l); display: grid; gap: 10px; }
 .venues div { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; }
 .venues dt { width: 86px; flex-shrink: 0; font-weight: 800; color: var(--w); }
 .venues dd { margin: 0; color: #b7b7b1; }
@@ -208,6 +219,8 @@
   .what, .after { padding: 83px 0; }
   .happen article { grid-template-columns: 68px 1fr; gap: 18px; }
   .happen p { grid-column: 2; }
+  /* 狭い画面では画像を段の全幅に敷く（68pxの番号列に押し込むと潰れるため） */
+  .happenImg { grid-column: 1 / -1; margin-top: 4px; }
   .cityGrid { grid-template-columns: 1fr; }
   .city { min-height: 470px; }
   .cityContent { inset: auto 23px 24px; }
