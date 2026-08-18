@@ -287,7 +287,7 @@ export default async function PublicHome() {
         {/* 食の注目記事（キュレーション） */}
         {articles.length > 0 ? (
           <section>
-            <SectionHead title="食の共創 注目記事" sub="PR TIMES・note・新聞などから、事務局がピックアップ" />
+            <SectionHead title="食の共創 注目記事" sub="PR TIMES・note・新聞などから、事務局がピックアップ。FoodJapanSummitで生まれた共創やサービスなどの記事をキュレーションしています。" />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               {articles.map((a) => (
                 <a
@@ -300,8 +300,16 @@ export default async function PublicHome() {
                   {/* 上段：タイトル（左）＋サムネイル（右） */}
                   <div className="flex gap-4">
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <span className="w-fit rounded bg-[var(--green-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--green-d)]">
-                        {a.source}
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded bg-[var(--green-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--green-d)]">
+                          {a.source}
+                        </span>
+                        {/* Food Japan Summit がきっかけの取り組みだけに付くタグ（管理画面で設定） */}
+                        {a.fromSummit ? (
+                          <span className="rounded bg-[var(--amber-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--amber-ink)]">
+                            FoodJapanSummit共創
+                          </span>
+                        ) : null}
                       </span>
                       <h3 className="line-clamp-3 text-[16px] font-bold leading-6 text-[var(--ink)] group-hover:text-[var(--green-d)]">
                         {a.title}

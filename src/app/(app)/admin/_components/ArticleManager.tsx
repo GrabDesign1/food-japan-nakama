@@ -70,6 +70,17 @@ export function ArticleManager() {
         </label>
       </div>
 
+      {/* Food Japan Summit がきっかけの取り組みなら、トップでタグを出す */}
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-[var(--line)] bg-white px-3 py-2.5">
+        <input type="checkbox" name="fromSummit" className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--green)]" />
+        <span className="text-[12px] leading-6 text-[var(--ink-2)]">
+          <b className="text-[var(--ink)]">FoodJapanSummit共創</b>
+          <span className="mt-0.5 block">
+            Food Japan Summit がきっかけで生まれた取り組みの記事にチェックします。公開トップの記事カードにタグが付きます。
+          </span>
+        </span>
+      </label>
+
       <div className="flex items-center gap-3">
         <button disabled={pending} className={`${btn("primary", "sm")} ml-auto`}>
           {pending ? "追加中…" : "記事を追加"}

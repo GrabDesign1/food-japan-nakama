@@ -12,7 +12,7 @@ import { AdminAccountForm } from "./_components/AdminAccountForm";
 import { AdminNav } from "./_components/AdminNav";
 import { deleteBanner, toggleBanner } from "./banner-actions";
 import { BannerManager } from "./_components/BannerManager";
-import { deleteArticle, toggleArticle } from "./article-actions";
+import { deleteArticle, toggleArticle, toggleArticleSummit } from "./article-actions";
 import { ArticleManager } from "./_components/ArticleManager";
 import { btn, input } from "@/lib/ui";
 import { aBadge, aCard, aCardBody, aCardHead, aEyebrow, aH1, aH2, aLink, aNote } from "./_components/adminUi";
@@ -360,12 +360,22 @@ export default async function AdminPage() {
                   <div className="truncate text-[11px] text-[var(--muted)]">
                     {a.source} ・ {a.url}
                   </div>
+                  {a.fromSummit ? (
+                    <span className="mt-0.5 inline-block rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--amber-ink)]">
+                      FoodJapanSummit共創
+                    </span>
+                  ) : null}
                   {a.publishStart || a.publishEnd ? (
                     <div className="text-[11px] text-[var(--muted)]">
                       掲載期間：{fmtDate(a.publishStart)} 〜 {fmtDate(a.publishEnd)}
                     </div>
                   ) : null}
                 </div>
+                <form action={toggleArticleSummit.bind(null, a.id, !a.fromSummit)}>
+                  <button className={btn("secondary", "sm")}>
+                    {a.fromSummit ? "共創タグを外す" : "共創タグを付ける"}
+                  </button>
+                </form>
                 <form action={toggleArticle.bind(null, a.id, !a.active)}>
                   <button className={btn("secondary", "sm")}>
                     {a.active ? "非表示にする" : "表示する"}

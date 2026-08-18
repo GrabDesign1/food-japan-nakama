@@ -28,6 +28,8 @@ export async function createArticle(
   const imageIn = normalizeUrl(String(formData.get("imageUrl") ?? ""));
   const excerptIn = String(formData.get("excerpt") ?? "").trim();
   // 掲載期間（date入力 "YYYY-MM-DD"）。開始は0時、終了はその日の23:59:59まで含める。
+  // Food Japan Summit がきっかけの取り組みか（トップでタグを出す）
+  const fromSummit = formData.get("fromSummit") === "on";
   const startRaw = String(formData.get("publishStart") ?? "").trim();
   const endRaw = String(formData.get("publishEnd") ?? "").trim();
   const publishStart = startRaw ? new Date(`${startRaw}T00:00:00`) : null;
@@ -68,6 +70,7 @@ export async function createArticle(
       url,
       imageUrl: imageUrl || null,
       excerpt: excerpt || null,
+      fromSummit,
       publishStart,
       publishEnd,
       sortOrder: (last?.sortOrder ?? 0) + 1,
@@ -89,6 +92,18 @@ export async function deleteArticle(id: string): Promise<void> {
 }
 
 /** 表示/非表示を切り替える。 */
+/** 既存記事の「FoodJapanSummit共創」タグを切り替える。 */
+export async function toggleArticleSummit(id: string, fromSummit: boolean): Promise<void> {
+  const su = await requireAdmin();
+  await prisma.curatedArticle.updateMany({
+    where: { id, tenantId: su.app.tenantId },
+    data: { fromSummit },
+  });
+  await writeAudit(su, "article.toggleSummit", { targetType: "article", targetId: id });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
 export async function toggleArticle(id: string, active: boolean): Promise<void> {
   const su = await requireAdmin();
   await prisma.curatedArticle.updateMany({
