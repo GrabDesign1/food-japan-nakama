@@ -379,6 +379,7 @@ export default async function AdminPage() {
                   active={a.active}
                   defaults={{
                     source: a.source,
+                    author: a.author,
                     url: a.url,
                     title: a.title,
                     imageUrl: a.imageUrl,

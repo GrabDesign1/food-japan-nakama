@@ -1,7 +1,7 @@
 // 外部記事URLから OGP メタ情報（タイトル・概要・画像）を取得する。
 // キュレーション記事の登録時、未入力の項目を自動補完するために使う。
 
-export type OgMeta = { title?: string; description?: string; image?: string };
+export type OgMeta = { title?: string; description?: string; image?: string; author?: string };
 
 function decodeEntities(s: string): string {
   return s
@@ -62,6 +62,16 @@ export async function fetchOgMeta(url: string): Promise<OgMeta> {
       "twitter:description",
       "description",
     ]);
+
+    // 著作権者（発表元）。引用の出所明示に使う。
+    // ⚠️ og:site_name は媒体名（PR TIMES 等）になりがちなので**使わない**。
+    //    記事側が名乗っている author 系だけを拾い、取れなければ空のままにする
+    //    （推測で埋めると出所を誤って表示することになる）。
+    const author = metaContent(html, [
+      "article:author",
+      "author",
+      "twitter:data1",
+    ]);
     let image = metaContent(html, ["og:image", "twitter:image", "twitter:image:src"]);
 
     // 相対URLの画像は絶対URLへ
@@ -77,6 +87,7 @@ export async function fetchOgMeta(url: string): Promise<OgMeta> {
       title: title ? decodeEntities(title) : undefined,
       description,
       image,
+      author: author ? decodeEntities(author) : undefined,
     };
   } catch {
     return {};

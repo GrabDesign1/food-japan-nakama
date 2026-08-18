@@ -324,11 +324,24 @@ export default async function PublicHome() {
                       )}
                     </div>
                   </div>
-                  {/* 下段：概要（全幅） */}
+                  {/* 下段：引用（全幅）
+                      ⚠️ ここは**元記事の文章**なので、自分で書いた文と見分けが付くようにする
+                      （引用の明瞭区分性）。左の罫線と鉤括弧を外さないこと。 */}
                   {a.excerpt ? (
-                    <p className="mt-3 line-clamp-3 text-[13px] leading-6 text-[var(--ink-2)]">{a.excerpt}</p>
+                    <blockquote
+                      cite={a.url}
+                      className="mt-3 border-l-2 border-[var(--line)] pl-3 text-[13px] leading-6 text-[var(--ink-2)]"
+                    >
+                      <span className="line-clamp-3">「{a.excerpt}」</span>
+                    </blockquote>
                   ) : null}
-                  <span className="mt-2 text-[11px] text-[var(--green-d)]">記事を読む ↗</span>
+                  {/* ⚠️ 出所明示。著作権者（author）・媒体（source）・リンク先URLの3つを示す。
+                      author は未入力のことがあるので、その場合は媒体だけ出す。 */}
+                  <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
+                    出典：{a.author ? `${a.author}／` : ""}
+                    {a.source}
+                  </p>
+                  <span className="mt-1 text-[11px] text-[var(--green-d)]">記事を読む ↗</span>
                 </a>
               ))}
             </div>

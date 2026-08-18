@@ -38,6 +38,7 @@ export async function createArticle(
   const url = normalizeUrl(String(formData.get("url") ?? ""));
   const imageIn = normalizeUrl(String(formData.get("imageUrl") ?? ""));
   const excerptIn = String(formData.get("excerpt") ?? "").trim();
+  const authorIn = String(formData.get("author") ?? "").trim();
   // 掲載期間（date入力 "YYYY-MM-DD"）。開始は0時、終了はその日の23:59:59まで含める。
   // Food Japan Summit がきっかけの取り組みか（トップでタグを出す）
   const fromSummit = formData.get("fromSummit") === "on";
@@ -56,11 +57,14 @@ export async function createArticle(
   let title = titleIn;
   let imageUrl = imageIn;
   let excerpt = excerptIn;
-  if (!title || !imageUrl || !excerpt) {
+  let author = authorIn;
+  if (!title || !imageUrl || !excerpt || !author) {
     const og = await fetchOgMeta(url);
     if (!title && og.title) title = og.title;
     if (!imageUrl && og.image) imageUrl = og.image;
     if (!excerpt && og.description) excerpt = og.description;
+    // ⚠️ 取れなければ空のままにする（推測で埋めると出所を誤って表示することになる）。
+    if (!author && og.author) author = og.author;
   }
 
   if (!title) {
@@ -81,6 +85,7 @@ export async function createArticle(
       url,
       imageUrl: imageUrl || null,
       excerpt: excerpt || null,
+      author: author || null,
       fromSummit,
       publishStart,
       publishEnd,
@@ -121,6 +126,7 @@ export async function updateArticle(
   const url = normalizeUrl(String(formData.get("url") ?? ""));
   const imageUrl = normalizeUrl(String(formData.get("imageUrl") ?? ""));
   const excerpt = String(formData.get("excerpt") ?? "").trim();
+  const author = String(formData.get("author") ?? "").trim();
   const fromSummit = formData.get("fromSummit") === "on";
   const active = formData.get("active") === "on";
   const startRaw = String(formData.get("publishStart") ?? "").trim();
@@ -130,7 +136,7 @@ export async function updateArticle(
 
   // ⚠️ エラーで返すときは必ず values も返す（返さないと入力が消える）。
   const values = {
-    title, source, url: url ?? "", imageUrl: imageUrl ?? "", excerpt,
+    title, source, url: url ?? "", imageUrl: imageUrl ?? "", excerpt, author,
     fromSummit, active, publishStart: startRaw, publishEnd: endRaw,
   };
   const fail = (error: string): ArticleState => ({ error, values });
@@ -150,6 +156,7 @@ export async function updateArticle(
       url,
       imageUrl: imageUrl || null,
       excerpt: excerpt || null,
+      author: author || null,
       fromSummit,
       active,
       publishStart,

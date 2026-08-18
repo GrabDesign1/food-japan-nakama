@@ -73,6 +73,7 @@ function ArticleEditModal({
   const d: ArticleDefaults = v
     ? {
         source: String(v.source ?? ""),
+        author: String(v.author ?? ""),
         url: String(v.url ?? ""),
         title: String(v.title ?? ""),
         imageUrl: String(v.imageUrl ?? ""),

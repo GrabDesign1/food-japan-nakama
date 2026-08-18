@@ -13,6 +13,7 @@ const labelCls = "flex flex-col gap-1 text-[12px] text-[var(--ink-2)]";
 
 export type ArticleDefaults = {
   source?: string;
+  author?: string | null;
   url?: string;
   title?: string;
   imageUrl?: string | null;
@@ -56,6 +57,22 @@ export function ArticleFields({
           <input name="url" required defaultValue={d.url} placeholder="https://prtimes.jp/..." className={inputCls} />
         </label>
       </div>
+
+      {/* ⚠️ 引用の出所明示には「著作権者」が要る。source は媒体名（PR TIMES 等）で、
+          プレスリリースの発表元とは別物なので欄を分けている。 */}
+      <label className={labelCls}>
+        著作権者（発表元の企業・個人）
+        <input
+          name="author"
+          defaultValue={d.author ?? ""}
+          placeholder="例：Too Good To Go Japan株式会社"
+          className={inputCls}
+        />
+        <span className="text-[11px] text-[var(--muted)]">
+          記事を書いた・発表した主体です。出典（PR TIMES など）は配信媒体なので別に書きます。
+          {mode === "add" ? "空欄ならURLから自動取得を試みます。" : ""}
+        </span>
+      </label>
 
       <label className={labelCls}>
         記事タイトル{mode === "add" ? auto : ""}
