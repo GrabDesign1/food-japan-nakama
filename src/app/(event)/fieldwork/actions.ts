@@ -16,6 +16,7 @@ import {
   FIELDWORK_FIELD_MAX,
   allBodyFields,
   answersToPrompt,
+  briefsFor,
   COMPARE_ROWS,
   COVER_FIELDS,
   type FieldworkAnswers,
@@ -126,10 +127,16 @@ export async function generateFieldworkReport(
   }
 
   const answersText = answersToPrompt(answers);
+  // 視察先の基礎情報（主催者の進行スライド由来）。出典を明示して渡す＝
+  // 参加者が現地で聞いたこととAIが混ぜないようにするため。
+  const partnerBrief = briefsFor(answers.chosen_partner ?? "")
+    .map((b) => [`【${b.name}】`, ...b.lines.map((l) => `・${l}`)].join("\n"))
+    .join("\n\n");
   const result = await draftFieldworkReport({
     partner: answers.chosen_partner ?? "",
     company: answers.company ?? "",
     answersText,
+    partnerBrief,
   });
   if ("error" in result) return { ok: false, error: result.error };
 

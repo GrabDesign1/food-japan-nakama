@@ -19,6 +19,7 @@ import {
   FIELDWORK_EVENT_DATE,
   FIELDWORK_FIELD_MAX,
   GATES,
+  PARTNER_BRIEFS,
   SECTIONS,
   TIMETABLE,
   allBodyFields,
@@ -268,6 +269,11 @@ export default function FieldworkApp() {
           </h1>
           <p className="mt-2.5 text-[13px] leading-6 text-[var(--muted)]">{section.lead}</p>
 
+          {/* 視察先の基礎情報。バスではスライドが手元にないので、ここから読めるようにする */}
+          {section.key === "nishi" || section.key === "kurozu" ? (
+            <PartnerBriefBox which={section.key} />
+          ) : null}
+
           {/* §5は比較表を先に出す（点数をつけてから1案を選ぶ順にするため） */}
           {section.key === "choose" ? <CompareTable answers={answers} set={set} /> : null}
 
@@ -509,6 +515,31 @@ function FieldInput({
         className={`${inputCls()} w-full resize-y leading-[1.9]`}
       />
     </label>
+  );
+}
+
+/** 視察先の基礎情報（進行スライド由来）。畳んでおき、読みたい人だけ開く。 */
+function PartnerBriefBox({ which }: { which: "nishi" | "kurozu" }) {
+  const b = PARTNER_BRIEFS[which];
+  return (
+    <details className="mt-5 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb]">
+      <summary className={`cursor-pointer px-4 py-3 text-[14px] font-bold text-[var(--ink)] ${tap}`}>
+        {b.name}について（主催者資料）
+      </summary>
+      <div className="border-t border-[var(--line-soft)] px-4 py-3.5">
+        <ul className="flex flex-col gap-2 text-[13px] leading-[1.85] text-[var(--ink-2)]">
+          {b.lines.map((l) => (
+            <li key={l} className="flex gap-2">
+              <span className="shrink-0 text-[var(--green)]">・</span>
+              <span>{l}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
+          出典：当日の進行スライド。現地で見聞きしたことと取り違えないようご注意ください。
+        </p>
+      </div>
+    </details>
   );
 }
 
