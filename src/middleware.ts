@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   "/produce", "/crowdfunding", "/consultation", "/learn", "/food-loss", "/hanro", "/cases", "/listings", "/suspended",
   // Food Japan Summit の協賛申込フォーム（NAKAMAからはリンクせず、URLを直接案内する）
   "/sponsor",
+  // 共創フィールドワークの記入ページ（当日の参加者向け。参加コードで入口を守る・noindex）
+  "/fieldwork",
   // SEO/AIO: クローラ向けファイル（要公開）
   "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
 ];

@@ -794,3 +794,33 @@ export async function sendSponsorInquiryEmails(
 
   return { adminDelivered: results.some(Boolean) };
 }
+
+// 共創フィールドワークの企画書の控え（2026-11-14）。
+//
+// なぜ送るか: 当日は帰路のバスで作って、その場で発表する。帰社後の社内説明は数日後になる。
+//   端末の localStorage だけだと、機種変更やキャッシュ削除で消える。本人の手元に1通残す。
+// ⚠️ 本人が自分で入力した宛先にだけ送る。事務局や第三者へは送らない。
+// ⚠️ 本文は本人が書いた内容とAIの下書き。esc() を通してから埋め込む。
+export async function sendFieldworkReportEmail(params: {
+  to: string;
+  projectName: string;
+  partner: string;
+  /** 「見出し\n本文」を並べた素のテキスト */
+  body: string;
+}): Promise<void> {
+  const title = params.projectName || "共創事業 企画書";
+  const html = `
+    <div style="font-family:sans-serif;line-height:1.9;color:#141414">
+      <p style="font-size:12px;color:#7c8899;margin:0 0 4px">共創事業 企画書</p>
+      <h1 style="font-size:20px;margin:0 0 8px">${esc(title)}</h1>
+      ${params.partner ? `<p style="margin:0 0 16px;color:#0b5c2e;font-weight:bold">共創先：${esc(params.partner)}</p>` : ""}
+      <p style="font-size:13px;color:#7c8899;margin:0 0 20px">
+        FOOD JAPAN SUMMIT 2026 in MIYAZAKI 共創フィールドワーク（2026年11月18日）でお作りいただいた企画書の控えです。
+      </p>
+      <div style="border-top:2px solid #141414;padding-top:16px;white-space:pre-wrap;font-size:14px">${esc(params.body)}</div>
+      <p style="margin-top:28px;padding-top:12px;border-top:1px solid #dbe1d9;font-size:12px;color:#7c8899">
+        この企画書はAIが作成した下書きです。事実をご確認のうえ、社内と視察先へお出しください。
+      </p>
+    </div>`;
+  await send({ to: [params.to], subject: `【共創フィールドワーク】企画書の控え：${title}`, html });
+}

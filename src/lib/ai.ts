@@ -480,3 +480,211 @@ ${memo}`,
     return { error: "下書きを作れませんでした。時間をおいてお試しください。" };
   }
 }
+
+// ── 共創フィールドワークの企画書（2026-11-14・11/18のバスフィールドワーク用） ──────
+//
+// 紙のワークブック§8に「AIへの入力文」が既に書かれている。当日はそれを手で打ち込む前提だった。
+// ここでやるのは**その手打ちをなくすこと**だけで、出力の構成（①〜⑫）とルール
+// （わからない情報は推測で断定せず『要確認』と書く）は紙のまま変えない。
+//
+// ⚠️ 入力は「提出する前提で本人が書いた共創案」だけ。価格・個人情報・契約情報・営業秘密は
+//    入力しないよう画面で明示する（紙の注意書きと同じ）。規約17条の非公開メッセージには触れない。
+// ⚠️ 上限トークンを大きめに取っている（項目が14・それぞれ段落で返るため）。
+//    1回あたりの目安: 入力3,000 / 出力2,500トークン ≒ 4円。
+
+const FIELDWORK_SCHEMA = {
+  type: "object",
+  properties: {
+    projectName: {
+      type: "string",
+      description:
+        "企画名。一言で内容が伝わる名前。参加者が『企画名』を書いていればそれを尊重し、整えるだけにする。",
+    },
+    summary: {
+      type: "string",
+      description:
+        "企画書の冒頭に置く要約。2〜3文。誰のどの課題を、誰と組んで、どう解決して、何で稼ぐのかが分かること。",
+    },
+    problem: { type: "string", description: "②解決する課題。顧客の課題と、視察先の課題の両方に触れる。" },
+    customer: { type: "string", description: "③顧客。最初に買う人・使う人を具体的に。" },
+    proposal: {
+      type: "string",
+      description: "④提案内容。何を、誰と、どのように実施するか。箇条書きではなく文章で。",
+    },
+    partnerBenefit: {
+      type: "string",
+      description: "⑤視察先（西製茶・福山黒酢）のメリット。売上・販路・顧客・発信・地域価値のうち何が残るか。",
+    },
+    ownBenefit: { type: "string", description: "⑥当社のメリット。自社に何が残るか。" },
+    revenue: {
+      type: "string",
+      description:
+        "⑦収益の仕組み。誰が何にいくら払うか。金額が入力されていなければ推測で書かず『要確認』と明記する。",
+    },
+    collaborators: { type: "string", description: "⑧必要な協力者。社内・社外・会場の参加者に求めることを分けて。" },
+    risks: {
+      type: "string",
+      description:
+        "⑨想定リスクと対応。品質・法務・表示・調達・物流・収益・ブランドの観点。各リスクに対応策を必ず添える。",
+    },
+    plan90: {
+      type: "string",
+      description:
+        "⑩90日以内の実証計画とKPI。48時間以内／7日以内／30日以内／90日以内の4段階で、担当と期限とKPIを書く。入力にあればその値を使う。",
+    },
+    approval: {
+      type: "string",
+      description: "⑪社内で承認してほしいこと。決裁者が『はい』『いいえ』で答えられる形にする。",
+    },
+    firstMessage: {
+      type: "string",
+      description:
+        "⑫視察先へ送る最初の相談文。そのまま送れる敬体の文面。視察のお礼から入り、何を一緒に試したいかと、次の打ち合わせの依頼で終える。200〜400字。署名欄は入れない。",
+    },
+    pitch: {
+      type: "string",
+      description:
+        "2分発表の台本。『20秒 私たちと視察先の紹介』『30秒 顧客・地域の課題』『40秒 共創事業の内容』『20秒 双方に生まれる利益』『10秒 90日以内の最初の一歩』の5つに分け、各見出しのあとに実際に話す言葉を書く。",
+    },
+  },
+  required: [
+    "projectName",
+    "summary",
+    "problem",
+    "customer",
+    "proposal",
+    "partnerBenefit",
+    "ownBenefit",
+    "revenue",
+    "collaborators",
+    "risks",
+    "plan90",
+    "approval",
+    "firstMessage",
+    "pitch",
+  ],
+  additionalProperties: false,
+} as const;
+
+const FIELDWORK_SYSTEM = `あなたは、地域資源を活用した新規事業の共創ファシリテーターです。
+視察先と参加企業の双方に利益が生まれる共創事業案を、日本語で1枚の企画書にまとめます。
+
+守ること:
+- わからない情報は推測で断定せず「要確認」と書く。特に金額・数量・期日・社名は作らない。
+- 参加者が書いた言葉を尊重する。言い換えて意味を変えない。整えるだけにする。
+- 現地で見た事実と、参加者の推測を混ぜない。根拠が入力に無い主張は書かない。
+- 相手の伝統・製法・品質を尊重する。「絶対に守るもの」に書かれたことを変える案は出さない。
+- 大きな構想より、90日以内に試せる小さな実験として書く。
+- 敬体（です・ます）で書く。誇大な表現、断定的な売上予測、根拠のない「日本初」「唯一」は使わない。
+- 入力が空の項目が多いときは、埋めるために話を作らず、その項目に「要確認」と書く。`;
+
+export type FieldworkResult = { report: FieldworkReportDraft } | { error: string };
+
+/** ai.ts の中だけで使う型（画面側は fieldwork-core.ts の FieldworkReport を使う）。 */
+type FieldworkReportDraft = {
+  projectName: string;
+  summary: string;
+  problem: string;
+  customer: string;
+  proposal: string;
+  partnerBenefit: string;
+  ownBenefit: string;
+  revenue: string;
+  collaborators: string;
+  risks: string;
+  plan90: string;
+  approval: string;
+  firstMessage: string;
+  pitch: string;
+};
+
+/**
+ * フィールドワークの回答から共創企画書を作る。
+ * 本人が直す前提の下書きなので、画面には「事実と現場の声を確認してから使う」旨を必ず出す。
+ */
+export async function draftFieldworkReport(params: {
+  /** 選んだ共創先（西製茶 / 福山黒酢 / 両社をつなぐ） */
+  partner: string;
+  /** 記入者の会社・団体 */
+  company: string;
+  /** fieldwork-core.ts の answersToPrompt() が組み立てたテキスト */
+  answersText: string;
+}): Promise<FieldworkResult> {
+  if (!client) return { error: "この機能は現在ご利用いただけません。" };
+
+  const answersText = params.answersText.trim().slice(0, 20_000);
+  if (answersText.length < 80) {
+    return {
+      error: "企画書を作るには入力が足りません。まず「2 自社を棚卸しする」と、視察後の「共創アイデア」を書いてください。",
+    };
+  }
+
+  try {
+    const res = await client.responses.create({
+      model: MODEL,
+      max_output_tokens: 8000,
+      text: {
+        format: { type: "json_schema", name: "fieldwork_report", schema: FIELDWORK_SCHEMA, strict: true },
+      },
+      input: [
+        { role: "system", content: FIELDWORK_SYSTEM },
+        {
+          role: "user",
+          content: `次の情報をもとに、視察先と当社の双方に利益が生まれる共創事業案を1枚の企画書にまとめてください。
+
+【共創する相手】
+${params.partner || "（未選択。入力内容から判断できなければ「要確認」と書く）"}
+
+【当社】
+${params.company || "（未記入）"}
+
+【フィールドワークの記入内容】
+${answersText}`,
+        },
+      ],
+    });
+
+    const message = res.output.find((o) => o.type === "message");
+    if (message?.content?.some((c) => c.type === "refusal")) {
+      return { error: "この内容では企画書を作れませんでした。表現を変えてお試しください。" };
+    }
+    const text = res.output_text;
+    if (!text) return { error: "企画書を作れませんでした。時間をおいてお試しください。" };
+
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    const pick = (k: keyof FieldworkReportDraft) =>
+      typeof parsed[k] === "string" ? (parsed[k] as string).trim() : "";
+    return {
+      report: {
+        projectName: pick("projectName"),
+        summary: pick("summary"),
+        problem: pick("problem"),
+        customer: pick("customer"),
+        proposal: pick("proposal"),
+        partnerBenefit: pick("partnerBenefit"),
+        ownBenefit: pick("ownBenefit"),
+        revenue: pick("revenue"),
+        collaborators: pick("collaborators"),
+        risks: pick("risks"),
+        plan90: pick("plan90"),
+        approval: pick("approval"),
+        firstMessage: pick("firstMessage"),
+        pitch: pick("pitch"),
+      },
+    };
+  } catch (e) {
+    console.error("[ai] 共創企画書の生成に失敗:", e);
+    if (e instanceof RateLimitError) {
+      const code = (e as { code?: string }).code;
+      if (code === "insufficient_quota" || code === "credit_balance_exhausted") {
+        console.error("[ai] ⚠️ APIの残高切れです。OpenAIのBillingでクレジットを追加してください。");
+        return {
+          error:
+            "ただいま企画書の作成はご利用いただけません。入力は端末に残っていますので、記入した内容をコピーしてお使いください。",
+        };
+      }
+      return { error: "混み合っています。少し時間をおいてお試しください。" };
+    }
+    return { error: "企画書を作れませんでした。電波の良いところで、もう一度お試しください。" };
+  }
+}

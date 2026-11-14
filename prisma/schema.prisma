@@ -1150,3 +1150,51 @@ model CardExchange {
   @@index([memberBId])
   @@map("card_exchanges")
 }
+
+/// 共創フィールドワークの回答と、AIが作った共創レポート（2026-11-18 都城・霧島バスフィールドワーク）。
+///
+/// なぜ保存するか: 当日40人分の「自社の資源」「視察先への共創案」「90日の最初の一歩」が集まる。
+///   会期後にこのサイトへ力を入れるときの素材になる（ユーザー判断 2026-11-14）。
+///
+/// ⚠️ ログイン不要の公開ページから書き込む。会員テーブルとは結びつけない
+///    （参加者の多くはNAKAMA会員ではない。バスの中で会員登録はさせられない）。
+/// ⚠️ ipHash は不正利用の回数制限のためだけに持つ。生のIPは保存しない。
+/// ⚠️ answers には本人が「提出する前提で」書いた内容だけが入る。
+///    価格・個人情報・契約情報・営業秘密は入力しないよう画面で明示する。
+model FieldworkReport {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// どのフィールドワークか（例: miyazaki-2026-1118）
+  eventKey String @map("event_key")
+
+  /// 記入者（ワークブック表紙の3項目）
+  name    String?
+  company String?
+  team    String?
+
+  /// 本人がレポートの控えを受け取るための任意入力
+  email String?
+
+  /// 選んだ共創先（西製茶 / 福山黒酢 / 両社をつなぐ）
+  partner String?
+
+  /// 企画名（一覧で見分けるために列として持つ。answers 内にも入っている）
+  projectName String? @map("project_name")
+
+  /// ワークブック§2〜§7の回答すべて（項目キー→文字列）
+  answers Json
+
+  /// AIが出した共創レポート（①企画名〜⑫相手への最初の相談文）
+  report Json?
+
+  /// 回数制限用。sha256(IP + FIELDWORK_IP_SALT)。生のIPは持たない
+  ipHash String? @map("ip_hash")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, eventKey, createdAt])
+  @@index([ipHash, createdAt])
+  @@map("fieldwork_reports")
+}
