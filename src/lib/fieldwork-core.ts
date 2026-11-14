@@ -1,14 +1,18 @@
-// 共創フィールドワークの入力項目（2026-11-18 都城・霧島バスフィールドワーク）。
+// 共創フィールドワークの入力項目（2026-11-18 霧島・都城バスフィールドワーク）。
 //
-// 紙のワークブック「FOOD JAPAN SUMMIT 2026 in MIYAZAKI 共創フィールドワーク ワークブック」
-// をそのまま写した定義。**紙とデジタルの両方を当日配る**ので、見出し番号・項目名・説明文は
+// 出典は配布資料「FOOD JAPAN SUMMIT 2026 in MIYAZAKI 旅のしおり ＋ 共創メソッド」
+// （WORK 1〜7／ワークブック p.1〜p.11）。
+// **紙とデジタルの両方を当日配る**ので、見出し番号（WORK 1〜7）・項目名・説明文は
 // 紙と一字一句そろえる（参加者が紙とスマホを行き来するため、言葉が違うと迷う）。
 //
+// 2026-11-14 変更: 西製茶の視察が中止になり、霧島酒造へ差し替わった。
+//   共創の相手は**福山黒酢の1社だけ**（霧島神宮は参拝・散策、霧島酒造は視察のみで、
+//   どちらも共創案の対象にしない）。西製茶の項目・比較表・基礎情報はすべて削除した。
+//
 // ⚠️ ここはクライアントからも読み込む。サーバー専用のもの（prisma, 環境変数）を入れない。
-// ⚠️ 紙の§8「AIで共創レポートを作る」はデジタルには無い。
-//    §8は「§2〜§6に書いたことをAI欄へ書き写す」工程で、紙だからデータが動かないせいで
-//    存在する。デジタルでは §2〜§7 がそのままAIへ渡るので、二度書きさせない
-//    （代わりに「AIへ渡す内容の確認」画面を出す。項目は落としていない）。
+// ⚠️ 紙の WORK 7「AIで1枚の共創レポートを作る」は、紙では WORK 1〜6 に書いたことを
+//    AI欄へ書き写す工程。デジタルでは WORK 1〜6 がそのままAIへ渡るので二度書きさせない
+//    （代わりに「AIへ渡す内容の確認」画面を WORK 7 として出す。項目は落としていない）。
 
 /** 当日の共通コード。参加者に口頭＋紙で配る。 */
 export const FIELDWORK_CODE = "FW1118";
@@ -16,7 +20,13 @@ export const FIELDWORK_CODE = "FW1118";
 /** どのフィールドワークか。 */
 export const FIELDWORK_EVENT_KEY = "miyazaki-2026-1118";
 export const FIELDWORK_EVENT_NAME = "FOOD JAPAN SUMMIT 2026 in MIYAZAKI 共創フィールドワーク";
-export const FIELDWORK_EVENT_DATE = "2026年11月18日（水）都城・霧島バスフィールドワーク";
+export const FIELDWORK_EVENT_DATE = "2026年11月18日（水）霧島・都城バスフィールドワーク";
+
+/** 共創の相手。今回は1社だけなので定数で持つ（選択させない）。 */
+export const FIELDWORK_PARTNER = "福山黒酢（桷志田）";
+
+/** 表紙のタイトル。 */
+export const FIELDWORK_TITLE = ["福山黒酢の現場から", "自社との新しい事業をつくる"];
 
 export type FieldType = "text" | "textarea" | "score5" | "choice" | "check";
 
@@ -33,14 +43,14 @@ export type Field = {
 
 export type Section = {
   key: string;
-  /** 紙の見出し番号 */
+  /** 紙の見出し番号（WORK n） */
   no: string;
   title: string;
   lead: string;
   /** いつ書くか。画面で「いま書くところ」を示すために使う */
   when: string;
   fields: Field[];
-  /** 紙の「現地で見るポイント」など、入力ではない補助文 */
+  /** 紙の「観察の焦点」など、入力ではない補助文 */
   tips?: { title: string; items: string[] };
 };
 
@@ -51,65 +61,83 @@ export const COVER_FIELDS: Field[] = [
   { key: "team", label: "チーム", type: "text" },
 ];
 
-const SCORE_ROWS = [
-  { key: "score_partner_issue", label: "相手の課題を解決できるか" },
-  { key: "score_own_strength", label: "自社の強みを生かせるか" },
-  { key: "score_profit", label: "お互いに売上・利益が生まれるか" },
-  { key: "score_customer", label: "顧客が欲しいと思うか" },
-  { key: "score_90days", label: "90日以内に試せるか" },
-  { key: "score_fun", label: "自分たちが楽しんで続けられるか" },
+/** 共創を実行に変える7ステップ（しおり METHOD / ワークブック p.3）。 */
+export const METHOD_STEPS: { no: string; title: string; note: string }[] = [
+  { no: "1", title: "自社を知る", note: "強みと課題" },
+  { no: "2", title: "相手を観察", note: "現場の事実" },
+  { no: "3", title: "課題を確認", note: "本人の言葉" },
+  { no: "4", title: "相互利益か？", note: "双方に価値が残るか？" },
+  { no: "5", title: "小さく試す", note: "90日テスト" },
+  { no: "6", title: "合意形成", note: "懸念を条件へ" },
+  { no: "7", title: "判断", note: "継続・修正・中止" },
 ];
 
-/** §5の比較表。西製茶案と福山黒酢案で同じ6項目を5段階でつける。 */
-export const COMPARE_ROWS = SCORE_ROWS;
+/**
+ * WORK 4 の比較表（ワークブック p.7）。共創案A・共創案Bに同じ6項目を5段階でつける。
+ * 項目名は紙のまま。
+ */
+export const COMPARE_ROWS = [
+  { key: "score_customer_issue", label: "福山黒酢を購入する方の課題解決度" },
+  { key: "score_partner_profit", label: "福山黒酢の利益" },
+  { key: "score_own_profit", label: "自社の利益" },
+  { key: "score_demand", label: "顧客の需要・ニーズを満足させられるか？" },
+  { key: "score_90days", label: "90日で小さくテストができるか？" },
+  { key: "score_execution", label: "実行力：社内の体制づくりが可能か？" },
+];
+
+/** 比較表の列（紙は「共創案A」「共創案B」の2列）。 */
+export const COMPARE_COLS = [
+  { side: "a", label: "共創案A" },
+  { side: "b", label: "共創案B" },
+] as const;
 
 export const SECTIONS: Section[] = [
   {
     key: "own",
-    no: "2",
-    title: "自社を棚卸しする",
-    lead: "相手を知る前に、自分たちが提供できるものと実現したいことを整理します。",
+    no: "1",
+    title: "自社の棚卸し",
+    lead: "まず、自社の強み・持っているもの・実現したいことを整理します。",
     when: "バス内 8:10–8:45",
     fields: [
       {
         key: "own_business",
         label: "事業の特徴",
-        hint: "誰に、何を、どのような方法で提供していますか",
+        hint: "誰に何を提供しているか",
         type: "textarea",
         rows: 2,
       },
       {
         key: "own_customers",
         label: "主な顧客",
-        hint: "現在のお客様と、これから増やしたいお客様",
+        hint: "現在の顧客と、今後付き合いたい顧客",
         type: "textarea",
         rows: 1,
       },
       {
         key: "own_strengths",
         label: "強み・資源",
-        hint: "商品、技術、人材、設備、販路、ブランド、データ、地域との関係など",
+        hint: "商品・技術・人材・販路・設備・データ",
         type: "textarea",
         rows: 2,
       },
       {
         key: "own_issues",
         label: "現在の課題",
-        hint: "売上、認知、販路、人手、商品開発、物流、原料、地域課題など",
+        hint: "売上・認知・人手・物流・商品開発",
         type: "textarea",
         rows: 2,
       },
       {
         key: "own_ambition",
         label: "やりたいこと",
-        hint: "今後3年で実現したいこと。まだ言葉になっていない希望でも構いません",
+        hint: "今後3年で実現したいこと",
         type: "textarea",
         rows: 2,
       },
       {
         key: "own_offer",
         label: "提供できるもの",
-        hint: "西製茶や福山黒酢に対して、自社が無理なく提供できるもの",
+        hint: "福山黒酢へ無理なく提供できるもの",
         type: "textarea",
         rows: 2,
       },
@@ -117,7 +145,7 @@ export const SECTIONS: Section[] = [
     tips: {
       title: "共創を考えるときの基本",
       items: [
-        "自社に何ができるかだけでなく、相手にどのような利益が生まれるかを考える",
+        "自社に何ができるかだけでなく、福山黒酢と顧客にどのような利益が残るかを考える",
         "商品を一度つくって終わりではなく、継続して売れる仕組みを考える",
         "大きな構想より、90日以内に試せる小さな実験から始める",
         "相手の伝統や品質を尊重し、変えてはいけないものを先に確認する",
@@ -125,142 +153,115 @@ export const SECTIONS: Section[] = [
     },
   },
   {
-    key: "nishi",
-    no: "3",
-    title: "西製茶との共創を考える",
-    lead: "有機栽培、生産・加工、霧島茶のブランド、販路、体験価値に注目して観察します。",
-    when: "視察前はバス内 8:45–9:25／視察後は移動中 11:00–11:30",
-    fields: [
-      {
-        key: "nishi_hypothesis",
-        label: "視察前の仮説",
-        hint: "あなたの事業と西製茶は、どのような点で組めそうですか",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "nishi_questions",
-        label: "聞きたいこと",
-        hint: "現地で確認したい質問を3つ書いてください",
-        type: "textarea",
-        rows: 3,
-      },
-      {
-        key: "nishi_resources",
-        label: "発見した資源",
-        hint: "茶葉、栽培、土、設備、人、物語、地域、技術、販路など（視察後）",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "nishi_issues",
-        label: "感じた課題",
-        hint: "現地の話から見えた課題や、まだ活用しきれていない可能性（視察後）",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "nishi_fit",
-        label: "自社との接点",
-        hint: "自社の商品、技術、顧客、販路、発信力などと接続できる点（視察後）",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "nishi_idea",
-        label: "共創アイデア",
-        hint: "組んだら、お互いにビジネスになり、楽しそうだと思うこと（視察後）",
-        type: "textarea",
-        rows: 3,
-      },
-    ],
-    tips: {
-      title: "現地で見るポイント",
-      items: [
-        "有機栽培や土づくりを、どのような商品価値として伝えているか",
-        "生産・加工・販売のどこに強みがあり、どこに課題があるか",
-        "食品、飲食、観光、教育、健康、海外販路とどう組み合わせられるか",
-      ],
-    },
-  },
-  {
-    key: "kurozu",
-    no: "4",
-    title: "福山黒酢との共創を考える",
-    lead: "伝統製法、壺畑、発酵、熟成、健康、料理、観光、ブランドの若返りに注目して観察します。",
-    when: "視察前はバス内 12:00–12:50／視察後は帰路 14:40–15:00",
+    key: "hypothesis",
+    no: "2",
+    title: "福山黒酢への仮説と質問",
+    lead: "視察前に、組める可能性と現地で聞くことを決めておきます。",
+    when: "バス内 8:45–9:10（視察前）",
     fields: [
       {
         key: "kurozu_hypothesis",
-        label: "視察前の仮説",
+        label: "自社と組めそうな点",
         hint: "あなたの事業と福山黒酢は、どのような点で組めそうですか",
         type: "textarea",
         rows: 2,
       },
       {
         key: "kurozu_questions",
-        label: "聞きたいこと",
-        hint: "現地で確認したい質問を3つ書いてください",
-        type: "textarea",
-        rows: 3,
-      },
-      {
-        key: "kurozu_keep",
-        label: "絶対に守るもの",
-        hint: "製法、品質、味、地域性、信頼など、変えてはいけない価値（視察後）",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "kurozu_change",
-        label: "変えられるもの",
-        hint: "商品、用途、顧客、デザイン、売り方、体験、伝え方など（視察後）",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "kurozu_resources",
-        label: "発見した資源",
-        hint: "壺、時間、発酵、職人、景観、料理、健康価値、歴史など（視察後）",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "kurozu_issues",
-        label: "感じた課題",
-        hint: "現地の話から見えた課題や、まだ活用しきれていない可能性（視察後）",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "kurozu_idea",
-        label: "共創アイデア",
-        hint: "組んだら、お互いにビジネスになり、楽しそうだと思うこと（視察後）",
+        label: "現地で確認する質問 3つ",
+        hint: "聞かずに帰ると、提案が推測だけになります",
         type: "textarea",
         rows: 3,
       },
     ],
     tips: {
-      title: "現地で見るポイント",
+      title: "観察の焦点",
       items: [
-        "伝統を守りながら、新しい顧客に選ばれるために何を変えてきたか",
-        "黒酢を調味料以外の商品・サービス・体験へ広げられるか",
-        "健康、スポーツ、観光、飲食、教育、ギフトとの接点はあるか",
+        "伝統製法と壺畑",
+        "守りたい価値と課題",
+        "未活用の資源",
+        "顧客・販路・体験との接点",
+      ],
+    },
+  },
+  {
+    key: "material",
+    no: "3",
+    title: "福山黒酢で集めた材料",
+    lead: "視察で見たこと・聞いたことを、提案の材料として書き留めます。",
+    when: "移動中 11:00–11:40 ／ 視察後 13:40–14:25",
+    fields: [
+      {
+        key: "kurozu_facts",
+        label: "現地で見つけた事実",
+        hint: "壺畑、発酵・熟成、職人、商品、料理、売場、顧客体験。見たこと・聞いたことだけを書く",
+        type: "textarea",
+        rows: 3,
+      },
+      {
+        key: "kurozu_issues",
+        label: "福山黒酢の悩み・課題",
+        hint: "できるだけ本人の言葉で",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "kurozu_keep",
+        label: "絶対に守らなければならない価値",
+        hint: "製法、品質、味、地域性、信頼など、変えてはいけないもの",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "kurozu_change",
+        label: "変えられる部分",
+        hint: "商品、用途、顧客、デザイン、売り方、体験、伝え方",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "kurozu_fit",
+        label: "自社の資源との接点",
+        hint: "自社の商品、技術、顧客、販路、発信力などと接続できる点",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "kurozu_ideas",
+        label: "共創アイデア 3案",
+        hint: "課題解決・新しい用途・顧客・体験の切り口で3つ出す",
+        type: "textarea",
+        rows: 4,
+      },
+    ],
+    tips: {
+      title: "観察の焦点",
+      items: [
+        "伝統製法と壺畑（発酵・熟成・職人）",
+        "商品・料理・健康",
+        "売場・観光・顧客体験",
+        "守る価値と、変えられる部分",
       ],
     },
   },
   {
     key: "choose",
-    no: "5",
-    title: "共創案を比べて一つに絞る",
-    lead: "西製茶案と福山黒酢案を比較し、チームで最も実現可能性の高い案を選びます。",
-    when: "帰路バス内 15:00–15:25",
+    no: "4",
+    title: "共創案の比較と選定",
+    lead: "点数と対話から1案を選び、企画名と選定理由を決めます。",
+    when: "帰路バス内 15:25–15:45",
     fields: [
       {
-        key: "chosen_partner",
-        label: "選んだ共創先",
-        type: "choice",
-        choices: ["西製茶", "福山黒酢", "両社をつなぐ"],
+        key: "idea_a",
+        label: "共創案A",
+        hint: "一言で（比較表のA列はこの案です）",
+        type: "text",
+      },
+      {
+        key: "idea_b",
+        label: "共創案B",
+        hint: "一言で（比較表のB列はこの案です）",
+        type: "text",
       },
       {
         key: "project_name",
@@ -270,15 +271,8 @@ export const SECTIONS: Section[] = [
       },
       {
         key: "chosen_reason",
-        label: "選んだ理由",
-        hint: "誰のどの課題を、なぜこの組み合わせで解決するのか",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "kirishima_insight",
-        label: "霧島神宮での気づき",
-        hint: "地域の歴史や文化のうち、守りながら未来へつなぎたいもの",
+        label: "選定理由",
+        hint: "誰のどの課題を、なぜこの案で解決するのか",
         type: "textarea",
         rows: 2,
       },
@@ -286,64 +280,64 @@ export const SECTIONS: Section[] = [
   },
   {
     key: "business",
-    no: "6",
-    title: "お互いに利益が生まれる事業にする",
-    lead: "良い話で終わらせず、顧客・役割・収益・検証方法まで具体化します。",
-    when: "帰路バス内 15:00–15:25",
+    no: "5",
+    title: "三者に利益が残る事業設計",
+    lead: "顧客・福山黒酢・自社の三者に価値が残るかを確認します。",
+    when: "帰路バス内 15:25–15:45",
     fields: [
       {
         key: "biz_customer",
         label: "顧客",
-        hint: "最初に買う人・利用する人は誰ですか",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "biz_customer_issue",
-        label: "顧客の課題",
-        hint: "その人は何に困り、何を求めていますか",
+        hint: "誰の、どの課題を解決するか",
         type: "textarea",
         rows: 2,
       },
       {
         key: "biz_value",
-        label: "提供する価値",
-        hint: "商品・サービス・体験によって、何がどう良くなりますか",
+        label: "提供価値",
+        hint: "何がどう良くなるか",
         type: "textarea",
         rows: 2,
       },
       {
         key: "biz_partner_gain",
-        label: "西製茶・黒酢の利益",
-        hint: "売上、販路、顧客、発信、地域価値など、相手に何が残りますか",
+        label: "福山黒酢の利益",
+        hint: "売上・顧客・販路・ブランド",
         type: "textarea",
         rows: 2,
       },
       {
         key: "biz_own_gain",
         label: "自社の利益",
-        hint: "売上、商品、顧客、ブランド、学びなど、自社に何が残りますか",
+        hint: "強みが生き、事業として何が残るか",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "biz_revenue",
+        label: "収益",
+        hint: "誰が何に払うか",
         type: "textarea",
         rows: 2,
       },
       {
         key: "biz_roles",
         label: "役割分担",
-        hint: "誰が、何を担当しますか。他に必要な協力者は誰ですか",
-        type: "textarea",
-        rows: 2,
-      },
-      {
-        key: "biz_revenue",
-        label: "収益のつくり方",
-        hint: "誰が、何に、いくら払いますか。継続して売れる理由は何ですか",
+        hint: "誰が何を担うか",
         type: "textarea",
         rows: 2,
       },
       {
         key: "biz_experiment",
         label: "最小実験",
-        hint: "90日以内に、低コストで何を試しますか",
+        hint: "90日以内に何を試すか",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "biz_criteria",
+        label: "判断基準",
+        hint: "継続・修正・中止を何で決めるか",
         type: "textarea",
         rows: 2,
       },
@@ -351,11 +345,32 @@ export const SECTIONS: Section[] = [
   },
   {
     key: "internal",
-    no: "7",
-    title: "帰社後の社内合意を設計する",
-    lead: "社内の懸念を「やらない理由」ではなく、「安全に試す条件」に変えます。",
-    when: "帰路バス内 16:05–16:10／帰社後",
+    no: "6",
+    title: "社内の合意形成",
+    lead: "承認を得るために、相手ごとに必要な説明を分けておきます。",
+    when: "帰路バス内 15:25–15:45 ／ 帰社後",
     fields: [
+      {
+        key: "map_decider",
+        label: "決める人：最終決裁者",
+        hint: "必要な根拠と承認事項",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "map_doer",
+        label: "動かす人：実行責任者",
+        hint: "担当・時間・予算",
+        type: "textarea",
+        rows: 2,
+      },
+      {
+        key: "map_skeptic",
+        label: "話しを聞く人：慎重な部門",
+        hint: "品質・法務・調達・物流・収益の懸念",
+        type: "textarea",
+        rows: 2,
+      },
       {
         key: "approval_ask",
         label: "承認してほしいこと",
@@ -378,69 +393,33 @@ export const SECTIONS: Section[] = [
         rows: 2,
       },
       {
-        key: "approval_strategy",
-        label: "自社戦略との接続",
-        hint: "既存事業、中期計画、顧客、ブランドとどうつながるか",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "approval_resources",
-        label: "必要な資源",
-        hint: "予算、人、時間、設備、対外調整。上限も書く",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "approval_concerns",
-        label: "主な懸念と対応",
-        hint: "品質、法務、表示、調達、物流、収益、ブランドの懸念と対応策",
+        key: "approval_conditions",
+        label: "懸念を置き換える「安全に試す条件」",
+        hint: "反対意見は、実証を安全に進めるための条件に置き換えます",
         type: "textarea",
         rows: 2,
       },
       {
-        key: "map_decider",
-        label: "決める人：最終決裁者",
-        hint: "その人が必要とする根拠もあわせて書いてください",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "map_doer",
-        label: "動かす人：実行責任者",
-        hint: "協力が必要な部門もあわせて書いてください",
-        type: "textarea",
-        rows: 1,
-      },
-      {
-        key: "map_skeptic",
-        label: "先に聞く人：反対・慎重になりそうな人",
-        hint: "その懸念もあわせて書いてください",
-        type: "textarea",
-        rows: 1,
-      },
-      {
         key: "road_48h",
-        label: "48時間以内：視察レポートを社内共有",
+        label: "48時間：現地レポートを社内共有",
         hint: "担当・期限",
         type: "text",
       },
       {
         key: "road_7d",
-        // 進行スライド p17 は、社内会議のあと「企画書にまとめてアポイントメントを取得」まで求めている
-        label: "7日以内：関係者ヒアリング・社内会議",
-        hint: "日時。企画書にまとめ、視察先へのアポイントメントを取るところまで",
+        label: "7日：関係者へ個別相談／社内会議で実証条件を整理",
+        hint: "日時。企画書にまとめ、福山黒酢へのアポイントメントを取るところまで",
         type: "text",
       },
       {
         key: "road_30d",
-        label: "30日以内：視察先と実証条件を確認",
+        label: "30日：福山黒酢と実証条件を確認",
         hint: "予算上限",
         type: "text",
       },
       {
         key: "road_90d",
-        label: "90日以内：実証完了",
+        label: "90日：実証を終えて判断",
         hint: "KPI／継続・修正・中止の判断日",
         type: "text",
       },
@@ -449,35 +428,35 @@ export const SECTIONS: Section[] = [
       title: "社内合意の考え方",
       items: [
         "合意形成とは、全員の賛成を待つことではありません。懸念を早く見つけ、「どの条件なら小さく試せるか」に変えることです。",
+        "社内担当者・期限・予算上限・KPI・判断日を一枚にします。",
       ],
     },
   },
 ];
 
-/** §1の「次のステップへ進む前の3つの関門」。企画書を作る前の自己点検。 */
+/** 共創を企画・実行するための3つの関門（しおり THREE GATES / ワークブック p.3）。 */
 export const GATES: Field[] = [
   {
     key: "gate_fact",
     label: "事実の関門",
-    hint: "現地で見たこと・聞いたことに基づいているか",
+    hint: "現地で見たこと、聞いたことに基づいているか",
     type: "check",
   },
   {
     key: "gate_mutual",
     label: "相互利益の関門",
-    // 進行スライド p6 にだけある問い（紙のワークブックには無い）。当日その言葉で問われるので合わせる
-    hint: "相手と自社の両方に、継続できる利益があるか。ギバーやテイカーに偏っていないか",
+    hint: "福山黒酢、顧客、自社に継続できる利益が出来上がるか？",
     type: "check",
   },
   {
     key: "gate_action",
     label: "実行の関門",
-    hint: "担当者・期限・費用・次の行動が決まっているか",
+    hint: "担当者、期限、費用、次の行動が定まっているか",
     type: "check",
   },
 ];
 
-/** §9の発表後の記録。企画書ができたあとに書く。 */
+/** 発表後の記録。企画書ができたあとに書く。 */
 export const AFTER_FIELDS: Field[] = [
   {
     key: "after_feedback",
@@ -495,84 +474,64 @@ export const AFTER_FIELDS: Field[] = [
   { key: "after_first_day", label: "私が最初に動く日", hint: "日付・担当", type: "text" },
 ];
 
-/** 当日のタイムテーブル（紙と同じ。入力ではなく手元の確認用）。 */
+/** 当日のタイムテーブル（しおり FIELD ROUTE / BUS WORK と同じ）。入力ではなく手元の確認用。 */
 export const TIMETABLE: { time: string; place: string; work: string }[] = [
   { time: "7:50", place: "宮崎観光ホテル 配車・受付", work: "乗車・チーム確認" },
   { time: "8:00", place: "宮崎観光ホテル 出発", work: "目的共有・役割決定" },
-  { time: "8:10–8:45", place: "バス内", work: "自社の特徴・資源・課題・やりたいことを整理" },
-  { time: "8:45–9:25", place: "バス内", work: "西製茶との共創仮説を作成" },
-  { time: "9:25–9:50", place: "バス内・休憩", work: "チーム共有・現地で聞く質問を決める" },
-  { time: "10:00–11:00", place: "西製茶 視察", work: "観察・試飲・質問・共創の材料集め" },
-  { time: "11:00–11:30", place: "移動", work: "発見を記録し、仮説を修正" },
-  { time: "11:30–12:00", place: "霧島神宮", work: "地域資源と『守るもの・変えるもの』を考える" },
-  { time: "12:00–12:50", place: "移動", work: "福山黒酢との共創仮説・質問を整理" },
-  { time: "12:50–14:40", place: "福山黒酢『桷志田』", work: "壺畑視察・昼食・交流・共創の材料集め" },
-  { time: "14:40–15:00", place: "帰路バス内", work: "個人で2つの共創案を整理" },
-  { time: "15:00–15:25", place: "帰路バス内", work: "チームで提案1案を選定・具体化" },
-  { time: "15:25–15:45", place: "帰路バス内", work: "AIで共創レポートを作成" },
-  { time: "15:45–16:05", place: "帰路バス内", work: "2分発表・協力者募集" },
-  { time: "16:05–16:10", place: "帰路バス内", work: "帰社後の社内合意と90日実証を宣言" },
+  { time: "8:10–8:45", place: "バス内", work: "WORK 1 自社の棚卸し（特徴・資源・課題・やりたいこと）" },
+  { time: "8:45–9:10", place: "バス内", work: "WORK 2 福山黒酢の仮説（組める可能性と現地で聞く質問）" },
+  { time: "9:20–11:00", place: "霧島神宮", work: "参拝・境内散策" },
+  { time: "11:00–11:40", place: "移動", work: "観察ポイントの確認（守る価値・課題・未活用資源）" },
+  { time: "11:40–13:40", place: "福山黒酢「黒酢ガーデン壺畑／桷志田」", work: "壺畑視察・昼食・交流・共創の材料集め" },
+  { time: "13:40–14:25", place: "移動", work: "WORK 3 発見の共有と共創案を3つ出す" },
+  { time: "14:25–15:25", place: "霧島酒造 志比田工場（霧島ファクトリーガーデン）", work: "視察・庭園散策・買い物" },
+  { time: "15:25–15:45", place: "帰路バス内", work: "WORK 4・5・6 案を比較し1案に絞る／事業設計／社内合意" },
+  { time: "15:45–16:10", place: "帰路バス内", work: "WORK 7 AIレポートと2分発表・90日テストの宣言" },
   { time: "16:10", place: "宮崎空港 到着", work: "空港降車者 解散" },
   { time: "17:00", place: "宮崎観光ホテル 到着", work: "解散" },
 ];
 
-/** 2分発表の組み立て（紙と同じ）。 */
+/** 2分発表の組み立て（しおり FINAL / ワークブック p.11）。 */
 export const PITCH_PLAN: { sec: string; what: string }[] = [
-  { sec: "20秒", what: "私たちと、視察先の紹介" },
-  { sec: "30秒", what: "解決したい顧客・地域の課題" },
-  { sec: "40秒", what: "共創事業の内容" },
-  { sec: "20秒", what: "双方に生まれる利益" },
-  { sec: "10秒", what: "90日以内に行う最初の一歩" },
+  { sec: "20秒", what: "自社と現地で見つけた事実" },
+  { sec: "30秒", what: "解決したい顧客・事業の課題" },
+  { sec: "40秒", what: "共創案と三者のメリット" },
+  { sec: "20秒", what: "90日以内の実験" },
+  { sec: "10秒", what: "協力してほしいこと" },
+];
+
+/** 帰社後のロードマップ（しおり ACTION PLAN / ワークブック p.9）。 */
+export const ROADMAP: { when: string; what: string }[] = [
+  { when: "48時間", what: "現地レポートを社内共有" },
+  { when: "7日", what: "関係者へ個別相談／社内会議で実証条件を整理" },
+  { when: "30日", what: "福山黒酢と実証条件を確認" },
+  { when: "90日", what: "実証を終えて判断" },
 ];
 
 // ── 視察先の基礎情報 ────────────────────────────────
 //
-// 出典は当日の進行スライド「FOOD JAPAN SUMMIT 2026 共創フィールドワーク 進行スライド」
-// （西製茶 p8〜p10／福山黒酢 p12）。紙のワークブックには載っていない。
+// 出典は配布資料「旅のしおり ＋ 共創メソッド」および当日の進行スライド。
+// 紙のワークブックの記入欄には載っていない。
 //
-// なぜ入れるか: この情報が無いと、AIは「有機栽培のお茶」程度の抽象度でしか書けない。
-//   碾茶・レインフォレスト・アライアンス認証・壺畑・シラス台地まで渡すと、
-//   提案内容が具体的になる。参加者が現地で聞いたことと取り違えないよう、
-//   企画書を作るときは**主催者資料として出典を明示して**渡す。
+// なぜ入れるか: この情報が無いと、AIは「黒酢」程度の抽象度でしか書けない。
+//   壺畑・酢酸菌・シラス台地・霧島火山帯の地熱まで渡すと、提案内容が具体的になる。
+//   参加者が現地で聞いたことと取り違えないよう、企画書を作るときは
+//   **主催者資料として出典を明示して**渡す。
 //
 // ⚠️ ここに書いてよいのは主催者資料に載っている事実だけ。推測を足さない。
 //    記載が古くなった場合は11/18までに主催者資料と突き合わせて直すこと。
 
 export type PartnerBrief = { name: string; lines: string[] };
 
-export const PARTNER_BRIEFS: Record<"nishi" | "kurozu", PartnerBrief> = {
-  nishi: {
-    name: "西製茶（霧島茶）",
-    lines: [
-      "1954年に西弘志が買葉業者として創業。1979年に有限会社 西製茶工場を設立。",
-      "1994年に有機栽培の取り組みを開始し、2000年に有機JAS認証を取得。2004年から海外の有機認定取得に取り組む。",
-      "2005年に碾茶（てんちゃ・抹茶の原料）工場を建設し、碾茶へのチャレンジを開始。",
-      "レインフォレスト・アライアンス認証の製茶メーカー。環境保護、森林保全、労働者の適正な賃金と安全な労働環境といった持続可能性の基準を満たす。早い段階から海外へ輸出しやすい環境を整えてきた。",
-      "経営理念は、霧島の自然との共存を大切にし、環境にやさしい農業を軸に、誰もが安心して飲めるお茶とより良いお茶づくりを目指すこと。三方良しの精神を掲げる。",
-      "市場環境：世界で MATCHA の需要が拡大。農林水産省によると2025年の緑茶輸出額は721億円で前年から大きく増加し、有機栽培茶の輸出も過去最高。日本のスターバックスコーヒーの抹茶シェアは100%。",
-      "課題：抹茶の原料となる碾茶は短期間では増産できず、有機栽培には病害虫への対応や収量の確保など多くの労力と技術が必要。世界では製法や原料の異なる商品も MATCHA として流通し、品質の違いや生産者の努力が価格へ反映されにくい。",
-    ],
-  },
-  kurozu: {
-    name: "福山黒酢（桷志田）",
-    lines: [
-      "代表・津曲泰作が50歳を迎えるのをきっかけに健康を深く考え、さまざまな健康法を試す中でたどり着いたのが、200年に及ぶ伝統製法により黒酢に不可欠な酢酸菌の保存を続けていた赤池力の造った黒酢だった。",
-      "200年という年月が育んだ福山町の空気、夏は涼しく冬は暖かい気候、シラス台地が生み出す良質な水、霧島火山帯の地熱といった自然条件と、こだわりの原材料、長期熟成。すべてに手間と時間をかけて造り上げている。",
-    ],
-  },
+export const PARTNER_BRIEF: PartnerBrief = {
+  name: "福山黒酢（桷志田）",
+  lines: [
+    "福山町では、壺を屋外に並べ、太陽と風、微生物、時間の力で黒酢を発酵・熟成させる伝統製法が受け継がれている。良質な水と温暖な気候、職人の管理が品質を支えている。",
+    "代表・津曲泰作が50歳を迎えるのをきっかけに健康を深く考え、さまざまな健康法を試す中でたどり着いたのが、200年に及ぶ伝統製法により黒酢に不可欠な酢酸菌の保存を続けていた赤池力の造った黒酢だった。",
+    "200年という年月が育んだ福山町の空気、夏は涼しく冬は暖かい気候、シラス台地が生み出す良質な水、霧島火山帯の地熱といった自然条件と、こだわりの原材料、長期熟成。すべてに手間と時間をかけて造り上げている。",
+    "視察では、製造工程だけでなく、壺畑の景観、食事、商品説明、売場づくりを通して、地域の技術を顧客体験へ変える方法を観察する。",
+  ],
 };
-
-/** 選んだ共創先に対応する基礎情報（「両社をつなぐ」なら両方）。 */
-export function briefsFor(partner: string): PartnerBrief[] {
-  if (partner.includes("西製茶") && partner.includes("黒酢")) {
-    return [PARTNER_BRIEFS.nishi, PARTNER_BRIEFS.kurozu];
-  }
-  if (partner.includes("両社")) return [PARTNER_BRIEFS.nishi, PARTNER_BRIEFS.kurozu];
-  if (partner.includes("西製茶")) return [PARTNER_BRIEFS.nishi];
-  if (partner.includes("黒酢")) return [PARTNER_BRIEFS.kurozu];
-  // 未選択なら渡さない（両方渡すと、選んでいない方の話が混ざる）
-  return [];
-}
 
 /** 1項目の最大文字数。長文を貼られてAIの費用が跳ねるのを防ぐ。 */
 export const FIELDWORK_FIELD_MAX = 1200;
@@ -590,68 +549,72 @@ export function allBodyFields(): Field[] {
   return SECTIONS.flatMap((s) => s.fields);
 }
 
+/** 比較表のキー（`score_xxx_a` / `score_xxx_b`）。 */
+export function compareKeys(): string[] {
+  return COMPARE_ROWS.flatMap((r) => COMPARE_COLS.map((c) => `${r.key}_${c.side}`));
+}
+
 // ── AIが作る共創企画書 ────────────────────────────────────
-// 構成は紙の§8「AIへの入力文」が指定している①〜⑫をそのまま使う。
-// 変えていないのは、当日その順で発表・社内説明する前提で紙が組まれているため。
-// summary（リード文）と pitch（2分発表の台本）だけ足した。
+// 構成は紙の WORK 7「AIで1枚の共創レポートを作る」が指定している
+//   企画名／顧客と課題／提案内容／三者のメリット／役割分担と収益／
+//   リスクと対応／90日実証とKPI／社内承認事項
+// をそのまま使う。「三者のメリット」は読みやすさのため顧客・福山黒酢・自社の3節に分けた。
+// summary（リード文）と firstMessage（相談文）と pitch（2分発表の台本）を足している。
 //   summary: 企画書の1枚目に要約が無いと、決裁者が読む前に置かれる。
-//   pitch:   当日15:45から2分発表がある。紙の「2分発表の順番」に沿った台本を出す。
+//   firstMessage: 7日以内に福山黒酢へアポイントメントを取るところまでが宿題なので、送れる文面を出す。
+//   pitch: 当日15:45から2分発表がある。しおり FINAL の秒数配分に沿った台本を出す。
 
 export type FieldworkReport = {
-  /** ①企画名 */
+  /** 企画名 */
   projectName: string;
   /** 企画書の冒頭に置く2〜3行の要約 */
   summary: string;
-  /** ②解決する課題 */
-  problem: string;
-  /** ③顧客 */
-  customer: string;
-  /** ④提案内容 */
+  /** 1 顧客と課題 */
+  customerProblem: string;
+  /** 2 提案内容 */
   proposal: string;
-  /** ⑤視察先のメリット */
-  partnerBenefit: string;
-  /** ⑥当社のメリット */
-  ownBenefit: string;
-  /** ⑦収益の仕組み */
-  revenue: string;
-  /** ⑧必要な協力者 */
-  collaborators: string;
-  /** ⑨想定リスクと対応 */
+  /** 3 顧客のメリット */
+  benefitCustomer: string;
+  /** 4 福山黒酢のメリット */
+  benefitPartner: string;
+  /** 5 自社のメリット */
+  benefitOwn: string;
+  /** 6 役割分担と収益 */
+  rolesRevenue: string;
+  /** 7 リスクと対応 */
   risks: string;
-  /** ⑩90日以内の実証計画とKPI */
+  /** 8 90日実証とKPI */
   plan90: string;
-  /** ⑪社内で承認してほしいこと */
+  /** 9 社内承認事項 */
   approval: string;
-  /** ⑫相手への最初の相談文（そのまま送れる文面） */
+  /** 付録1 福山黒酢への最初の相談文（そのまま送れる文面） */
   firstMessage: string;
-  /** 2分発表の台本 */
+  /** 付録2 2分発表の台本 */
   pitch: string;
 };
 
 /** 企画書の見出し（画面と印刷で同じ順・同じ言葉を使う）。 */
 export const REPORT_SECTIONS: { key: keyof FieldworkReport; no: string; label: string }[] = [
-  { key: "problem", no: "1", label: "解決する課題" },
-  { key: "customer", no: "2", label: "顧客" },
-  { key: "proposal", no: "3", label: "提案内容" },
-  { key: "partnerBenefit", no: "4", label: "視察先のメリット" },
-  { key: "ownBenefit", no: "5", label: "当社のメリット" },
-  { key: "revenue", no: "6", label: "収益の仕組み" },
-  { key: "collaborators", no: "7", label: "必要な協力者" },
-  { key: "risks", no: "8", label: "想定リスクと対応" },
-  { key: "plan90", no: "9", label: "90日以内の実証計画とKPI" },
-  { key: "approval", no: "10", label: "社内で承認してほしいこと" },
+  { key: "customerProblem", no: "1", label: "顧客と課題" },
+  { key: "proposal", no: "2", label: "提案内容" },
+  { key: "benefitCustomer", no: "3", label: "顧客のメリット" },
+  { key: "benefitPartner", no: "4", label: "福山黒酢のメリット" },
+  { key: "benefitOwn", no: "5", label: "自社のメリット" },
+  { key: "rolesRevenue", no: "6", label: "役割分担と収益" },
+  { key: "risks", no: "7", label: "リスクと対応" },
+  { key: "plan90", no: "8", label: "90日実証とKPI" },
+  { key: "approval", no: "9", label: "社内承認事項" },
 ];
 
 export const EMPTY_REPORT_KEYS: (keyof FieldworkReport)[] = [
   "projectName",
   "summary",
-  "problem",
-  "customer",
+  "customerProblem",
   "proposal",
-  "partnerBenefit",
-  "ownBenefit",
-  "revenue",
-  "collaborators",
+  "benefitCustomer",
+  "benefitPartner",
+  "benefitOwn",
+  "rolesRevenue",
   "risks",
   "plan90",
   "approval",
@@ -670,15 +633,25 @@ export function answersToPrompt(answers: FieldworkAnswers): string {
       })
       .filter(Boolean);
     if (lines.length === 0) continue;
-    out.push(`【${s.no} ${s.title}】`, ...(lines as string[]), "");
+    out.push(`【WORK ${s.no} ${s.title}】`, ...(lines as string[]), "");
   }
-  // §5の比較点数（書かれていれば判断の根拠として渡す）
+  // WORK 4 の比較点数（書かれていれば判断の根拠として渡す）
+  const nameA = (answers.idea_a ?? "").trim();
+  const nameB = (answers.idea_b ?? "").trim();
   const scores = COMPARE_ROWS.map((r) => {
-    const a = (answers[`${r.key}_nishi`] ?? "").trim();
-    const b = (answers[`${r.key}_kurozu`] ?? "").trim();
+    const a = (answers[`${r.key}_a`] ?? "").trim();
+    const b = (answers[`${r.key}_b`] ?? "").trim();
     if (!a && !b) return null;
-    return `・${r.label}: 西製茶案 ${a || "-"} / 福山黒酢案 ${b || "-"}（5点満点）`;
+    return `・${r.label}: 共創案A ${a || "-"} / 共創案B ${b || "-"}（5点満点）`;
   }).filter(Boolean);
-  if (scores.length) out.push("【5 共創案の比較点数】", ...(scores as string[]), "");
+  if (scores.length) {
+    out.push(
+      "【WORK 4 共創案の比較点数】",
+      `・共創案A: ${nameA || "（未記入）"}`,
+      `・共創案B: ${nameB || "（未記入）"}`,
+      ...(scores as string[]),
+      "",
+    );
+  }
   return out.join("\n").trim();
 }

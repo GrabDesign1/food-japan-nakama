@@ -481,11 +481,15 @@ ${memo}`,
   }
 }
 
-// ── 共創フィールドワークの企画書（2026-11-14・11/18のバスフィールドワーク用） ──────
+// ── 共創フィールドワークの企画書（11/18 霧島・都城バスフィールドワーク用） ──────
 //
-// 紙のワークブック§8に「AIへの入力文」が既に書かれている。当日はそれを手で打ち込む前提だった。
-// ここでやるのは**その手打ちをなくすこと**だけで、出力の構成（①〜⑫）とルール
+// 紙のワークブック WORK 7「AIで1枚の共創レポートを作る」に入力文が書かれている。
+// 当日はそれを手で打ち込む前提だった。ここでやるのは**その手打ちをなくすこと**だけで、
+// 出力の構成（企画名／顧客と課題／提案内容／三者のメリット／役割分担と収益／
+// リスクと対応／90日実証とKPI／社内承認事項）とルール
 // （わからない情報は推測で断定せず『要確認』と書く）は紙のまま変えない。
+//
+// 2026-11-14: 西製茶の視察が中止になり、共創の相手は福山黒酢の1社だけになった。
 //
 // ⚠️ 入力は「提出する前提で本人が書いた共創案」だけ。価格・個人情報・契約情報・営業秘密は
 //    入力しないよう画面で明示する（紙の注意書きと同じ）。規約17条の非公開メッセージには触れない。
@@ -503,60 +507,69 @@ const FIELDWORK_SCHEMA = {
     summary: {
       type: "string",
       description:
-        "企画書の冒頭に置く要約。2〜3文。誰のどの課題を、誰と組んで、どう解決して、何で稼ぐのかが分かること。",
+        "企画書の冒頭に置く要約。2〜3文。誰のどの課題を、福山黒酢とどう組んで解決し、何で稼ぐのかが分かること。",
     },
-    problem: { type: "string", description: "②解決する課題。顧客の課題と、視察先の課題の両方に触れる。" },
-    customer: { type: "string", description: "③顧客。最初に買う人・使う人を具体的に。" },
-    proposal: {
-      type: "string",
-      description: "④提案内容。何を、誰と、どのように実施するか。箇条書きではなく文章で。",
-    },
-    partnerBenefit: {
-      type: "string",
-      description: "⑤視察先（西製茶・福山黒酢）のメリット。売上・販路・顧客・発信・地域価値のうち何が残るか。",
-    },
-    ownBenefit: { type: "string", description: "⑥当社のメリット。自社に何が残るか。" },
-    revenue: {
+    customerProblem: {
       type: "string",
       description:
-        "⑦収益の仕組み。誰が何にいくら払うか。金額が入力されていなければ推測で書かず『要確認』と明記する。",
+        "1 顧客と課題。最初に買う人・使う人を具体的に書き、その人が何に困っているかを続ける。福山黒酢側の課題にも触れる。",
     },
-    collaborators: { type: "string", description: "⑧必要な協力者。社内・社外・会場の参加者に求めることを分けて。" },
+    proposal: {
+      type: "string",
+      description: "2 提案内容。何を、誰と、どのように実施するか。箇条書きではなく文章で。",
+    },
+    benefitCustomer: {
+      type: "string",
+      description: "3 顧客のメリット。その商品・サービス・体験によって、顧客の何がどう良くなるか。",
+    },
+    benefitPartner: {
+      type: "string",
+      description: "4 福山黒酢のメリット。売上・顧客・販路・ブランド・地域価値のうち何が残るか。",
+    },
+    benefitOwn: {
+      type: "string",
+      description: "5 自社のメリット。自社の強みがどう生き、事業として何が残るか。",
+    },
+    rolesRevenue: {
+      type: "string",
+      description:
+        "6 役割分担と収益。誰が何を担うかと、誰が何にいくら払うかを両方書く。金額が入力されていなければ推測で書かず『要確認』と明記する。",
+    },
     risks: {
       type: "string",
       description:
-        "⑨想定リスクと対応。品質・法務・表示・調達・物流・収益・ブランドの観点。各リスクに対応策を必ず添える。",
+        "7 リスクと対応。品質・法務・表示・調達・物流・収益・ブランドの観点。各リスクに対応策を必ず添え、反対意見は『この条件なら安全に試せる』という条件に置き換える。",
     },
     plan90: {
       type: "string",
       description:
-        "⑩90日以内の実証計画とKPI。48時間以内／7日以内／30日以内／90日以内の4段階で、担当と期限とKPIを書く。入力にあればその値を使う。",
+        "8 90日実証とKPI。48時間／7日／30日／90日の4段階で、担当・期限・KPI・継続修正中止の判断基準を書く。入力にあればその値を使う。",
     },
     approval: {
       type: "string",
-      description: "⑪社内で承認してほしいこと。決裁者が『はい』『いいえ』で答えられる形にする。",
+      description:
+        "9 社内承認事項。決裁者が『はい』『いいえ』で答えられる形にする。決める人・動かす人・慎重な部門それぞれに必要な説明を分けて書く。",
     },
     firstMessage: {
       type: "string",
       description:
-        "⑫視察先へ送る最初の相談文。そのまま送れる敬体の文面。視察のお礼から入り、何を一緒に試したいかと、次の打ち合わせの依頼で終える。200〜400字。署名欄は入れない。",
+        "付録1 福山黒酢（桷志田）へ送る最初の相談文。そのまま送れる敬体の文面。視察のお礼から入り、何を一緒に試したいかと、次の打ち合わせの依頼で終える。200〜400字。署名欄は入れない。",
     },
     pitch: {
       type: "string",
       description:
-        "2分発表の台本。『20秒 私たちと視察先の紹介』『30秒 顧客・地域の課題』『40秒 共創事業の内容』『20秒 双方に生まれる利益』『10秒 90日以内の最初の一歩』の5つに分け、各見出しのあとに実際に話す言葉を書く。",
+        "付録2 2分発表の台本。『20秒 自社と現地で見つけた事実』『30秒 解決したい顧客・事業の課題』『40秒 共創案と三者のメリット』『20秒 90日以内の実験』『10秒 協力してほしいこと』の5つに分け、各見出しのあとに実際に話す言葉を書く。",
     },
   },
   required: [
     "projectName",
     "summary",
-    "problem",
-    "customer",
+    "customerProblem",
     "proposal",
-    "partnerBenefit",
-    "ownBenefit",
-    "revenue",
-    "collaborators",
+    "benefitCustomer",
+    "benefitPartner",
+    "benefitOwn",
+    "rolesRevenue",
     "risks",
     "plan90",
     "approval",
@@ -567,17 +580,21 @@ const FIELDWORK_SCHEMA = {
 } as const;
 
 const FIELDWORK_SYSTEM = `あなたは、地域資源を活用した新規事業の共創ファシリテーターです。
-視察先と参加企業の双方に利益が生まれる共創事業案を、日本語で1枚の企画書にまとめます。
+鹿児島県霧島市福山町の「福山黒酢（桷志田）」と参加企業が、顧客・福山黒酢・自社の三者に
+利益が残る共創事業案を、日本語で1枚の企画書にまとめます。
 
 守ること:
 - わからない情報は推測で断定せず「要確認」と書く。特に金額・数量・期日・社名は作らない。
 - 参加者が書いた言葉を尊重する。言い換えて意味を変えない。整えるだけにする。
 - 現地で見た事実と、参加者の推測を混ぜない。根拠が入力に無い主張は書かない。
-- 「視察先の基礎情報」は主催者資料の公開情報である。提案の裏づけとして使ってよいが、
+- 「福山黒酢の基礎情報」は主催者資料の公開情報である。提案の裏づけとして使ってよいが、
   参加者が現地で確かめたことのように書かない。そこに無い数値や認証を足さない。
-- 相手の伝統・製法・品質を尊重する。「絶対に守るもの」に書かれたことを変える案は出さない。
+- 福山黒酢の伝統・製法・品質を尊重する。「絶対に守らなければならない価値」に書かれたことを
+  変える案は出さない。
+- 顧客・福山黒酢・自社の三者すべてに何が残るかを必ず書く。一方だけが得をする案にしない。
 - 大きな構想より、90日以内に試せる小さな実験として書く。
 - 敬体（です・ます）で書く。誇大な表現、断定的な売上予測、根拠のない「日本初」「唯一」は使わない。
+- 黒酢の健康効果について、病気の予防・治療・改善を示す表現は書かない（景品表示法・健康増進法に触れるため）。
 - 入力が空の項目が多いときは、埋めるために話を作らず、その項目に「要確認」と書く。`;
 
 export type FieldworkResult = { report: FieldworkReportDraft } | { error: string };
@@ -586,13 +603,12 @@ export type FieldworkResult = { report: FieldworkReportDraft } | { error: string
 type FieldworkReportDraft = {
   projectName: string;
   summary: string;
-  problem: string;
-  customer: string;
+  customerProblem: string;
   proposal: string;
-  partnerBenefit: string;
-  ownBenefit: string;
-  revenue: string;
-  collaborators: string;
+  benefitCustomer: string;
+  benefitPartner: string;
+  benefitOwn: string;
+  rolesRevenue: string;
   risks: string;
   plan90: string;
   approval: string;
@@ -605,13 +621,13 @@ type FieldworkReportDraft = {
  * 本人が直す前提の下書きなので、画面には「事実と現場の声を確認してから使う」旨を必ず出す。
  */
 export async function draftFieldworkReport(params: {
-  /** 選んだ共創先（西製茶 / 福山黒酢 / 両社をつなぐ） */
+  /** 共創する相手（今回は福山黒酢の1社） */
   partner: string;
   /** 記入者の会社・団体 */
   company: string;
   /** fieldwork-core.ts の answersToPrompt() が組み立てたテキスト */
   answersText: string;
-  /** 視察先の基礎情報（主催者の進行スライド由来。無ければ空文字） */
+  /** 福山黒酢の基礎情報（主催者資料由来。無ければ空文字） */
   partnerBrief?: string;
 }): Promise<FieldworkResult> {
   if (!client) return { error: "この機能は現在ご利用いただけません。" };
@@ -619,7 +635,8 @@ export async function draftFieldworkReport(params: {
   const answersText = params.answersText.trim().slice(0, 20_000);
   if (answersText.length < 80) {
     return {
-      error: "企画書を作るには入力が足りません。まず「2 自社を棚卸しする」と、視察後の「共創アイデア」を書いてください。",
+      error:
+        "企画書を作るには入力が足りません。まず「WORK 1 自社の棚卸し」と、視察後の「共創アイデア 3案」を書いてください。",
     };
   }
 
@@ -634,17 +651,17 @@ export async function draftFieldworkReport(params: {
         { role: "system", content: FIELDWORK_SYSTEM },
         {
           role: "user",
-          content: `次の情報をもとに、視察先と当社の双方に利益が生まれる共創事業案を1枚の企画書にまとめてください。
+          content: `次の情報をもとに、顧客・福山黒酢・当社の三者に利益が残る共創事業案を1枚の企画書にまとめてください。
 
 【共創する相手】
-${params.partner || "（未選択。入力内容から判断できなければ「要確認」と書く）"}
+${params.partner || "福山黒酢（桷志田）"}
 
 【当社】
 ${params.company || "（未記入）"}
 ${
   params.partnerBrief
     ? `
-【視察先の基礎情報（主催者資料より。参加者が現地で見聞きしたものではない）】
+【福山黒酢の基礎情報（主催者資料より。参加者が現地で見聞きしたものではない）】
 ${params.partnerBrief}
 `
     : ""
@@ -669,13 +686,12 @@ ${answersText}`,
       report: {
         projectName: pick("projectName"),
         summary: pick("summary"),
-        problem: pick("problem"),
-        customer: pick("customer"),
+        customerProblem: pick("customerProblem"),
         proposal: pick("proposal"),
-        partnerBenefit: pick("partnerBenefit"),
-        ownBenefit: pick("ownBenefit"),
-        revenue: pick("revenue"),
-        collaborators: pick("collaborators"),
+        benefitCustomer: pick("benefitCustomer"),
+        benefitPartner: pick("benefitPartner"),
+        benefitOwn: pick("benefitOwn"),
+        rolesRevenue: pick("rolesRevenue"),
         risks: pick("risks"),
         plan90: pick("plan90"),
         approval: pick("approval"),

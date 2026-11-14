@@ -1,6 +1,8 @@
 "use server";
 
-// 共創フィールドワークの企画書づくり（2026-11-18 都城・霧島バスフィールドワーク）。
+// 共創フィールドワークの企画書づくり（2026-11-18 霧島・都城バスフィールドワーク）。
+//
+// 2026-11-14: 西製茶の視察が中止。共創の相手は福山黒酢の1社だけになった。
 //
 // ログイン不要の公開ページから呼ばれる。参加者の多くはNAKAMA会員ではないため
 // （バスの中で会員登録はさせられない）、会員向けの利用回数制限はそのまま使えない。
@@ -16,9 +18,10 @@ import {
   FIELDWORK_FIELD_MAX,
   allBodyFields,
   answersToPrompt,
-  briefsFor,
-  COMPARE_ROWS,
+  compareKeys,
   COVER_FIELDS,
+  FIELDWORK_PARTNER,
+  PARTNER_BRIEF,
   type FieldworkAnswers,
   type FieldworkReport,
 } from "@/lib/fieldwork-core";
@@ -85,7 +88,7 @@ export async function generateFieldworkReport(
       const known = new Set<string>([
         ...allBodyFields().map((f) => f.key),
         ...COVER_FIELDS.map((f) => f.key),
-        ...COMPARE_ROWS.flatMap((r) => [`${r.key}_nishi`, `${r.key}_kurozu`]),
+        ...compareKeys(),
         "email",
       ]);
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
@@ -127,13 +130,11 @@ export async function generateFieldworkReport(
   }
 
   const answersText = answersToPrompt(answers);
-  // 視察先の基礎情報（主催者の進行スライド由来）。出典を明示して渡す＝
+  // 福山黒酢の基礎情報（主催者資料由来）。出典を明示して渡す＝
   // 参加者が現地で聞いたこととAIが混ぜないようにするため。
-  const partnerBrief = briefsFor(answers.chosen_partner ?? "")
-    .map((b) => [`【${b.name}】`, ...b.lines.map((l) => `・${l}`)].join("\n"))
-    .join("\n\n");
+  const partnerBrief = [`【${PARTNER_BRIEF.name}】`, ...PARTNER_BRIEF.lines.map((l) => `・${l}`)].join("\n");
   const result = await draftFieldworkReport({
-    partner: answers.chosen_partner ?? "",
+    partner: FIELDWORK_PARTNER,
     company: answers.company ?? "",
     answersText,
     partnerBrief,
@@ -157,7 +158,7 @@ export async function generateFieldworkReport(
         company: answers.company || null,
         team: answers.team || null,
         email: answers.email || null,
-        partner: answers.chosen_partner || null,
+        partner: FIELDWORK_PARTNER,
         projectName: result.report.projectName || answers.project_name || null,
         answers,
         report: result.report,
@@ -180,14 +181,14 @@ export async function generateFieldworkReport(
         "",
         ...REPORT_SECTIONS.map((sec) => `■ ${sec.label}\n${r[sec.key]}`),
         "",
-        `■ 視察先への最初の相談文\n${r.firstMessage}`,
+        `■ 福山黒酢への最初の相談文\n${r.firstMessage}`,
         "",
         `■ 2分発表の台本\n${r.pitch}`,
       ].join("\n");
       await sendFieldworkReportEmail({
         to,
         projectName: r.projectName,
-        partner: answers.chosen_partner ?? "",
+        partner: FIELDWORK_PARTNER,
         body,
       });
     } catch (e) {

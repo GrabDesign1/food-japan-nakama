@@ -32,7 +32,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
     "",
     ...REPORT_SECTIONS.map((s) => `■ ${s.label}\n${report[s.key]}`),
     "",
-    `■ 視察先への最初の相談文\n${report.firstMessage}`,
+    `■ 福山黒酢への最初の相談文\n${report.firstMessage}`,
     "",
     `■ 2分発表の台本\n${report.pitch}`,
     "",
@@ -81,7 +81,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
         <strong className="font-bold">そのまま使わず、事実を確かめてから発表してください。</strong>
         <br />
         AIが書いた下書きです。現地で聞いていないことが混ざっていないか、「要確認」と書かれた箇所が
-        埋まっているかを見てから、社内と視察先へお出しください。
+        埋まっているかを見てから、社内と福山黒酢へお出しください。
       </div>
 
       {/* ── 企画書本体 ───────────────────────────── */}
@@ -133,7 +133,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
             </section>
           ) : null}
 
-          {/* ①〜⑩ */}
+          {/* 1〜9（ワークブック WORK 7 の構成） */}
           <div className="mt-8 flex flex-col gap-7">
             {REPORT_SECTIONS.map((s) => (
               <section key={s.key} className="fw-block">
@@ -154,7 +154,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
           <section className="fw-block">
             <h2 className="flex items-baseline gap-2.5 border-b border-[var(--line)] pb-2">
               <span className="font-serif text-[15px] text-[var(--green)]">付録1</span>
-              <span className="text-[15px] font-bold text-[var(--ink)]">視察先への最初の相談文</span>
+              <span className="text-[15px] font-bold text-[var(--ink)]">福山黒酢への最初の相談文</span>
             </h2>
             <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
               文面はそのまま送れる形になっています。社名・日付・署名をご自身のものに直してからお送りください。

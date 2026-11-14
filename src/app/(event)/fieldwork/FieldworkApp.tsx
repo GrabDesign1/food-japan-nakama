@@ -1,6 +1,9 @@
 "use client";
 
-// 共創フィールドワークの記入画面（2026-11-18 都城・霧島バスフィールドワーク）。
+// 共創フィールドワークの記入画面（2026-11-18 霧島・都城バスフィールドワーク）。
+//
+// 2026-11-14: 西製茶の視察が中止。共創の相手は福山黒酢の1社だけになり、
+//   見出しは配布資料「旅のしおり ＋ 共創メソッド」の WORK 1〜7 に合わせた。
 //
 // ⚠️ バスで山間部を移動しながら使う。**書いた内容が圏外で消えるのが最悪のシナリオ**なので、
 //    入力は一文字ごとに localStorage へ保存し、通信するのは「企画書を作る」を押した瞬間だけにする。
@@ -8,18 +11,22 @@
 // ⚠️ できた企画書も localStorage に残す。再読み込みしても消えない（発表前に消えたら取り返せない）。
 // ⚠️ 入力欄はすべて制御コンポーネントにする（React 19 はサーバーアクション完了時に form を
 //    リセットするため、defaultValue 方式だと送信エラーで入力が消える。協賛フォームで既に踏んだ件）。
-// ⚠️ 紙のワークブックと**同じ見出し番号・同じ項目名**を使う。参加者は紙とスマホを行き来するので、
-//    言葉がずれると迷う。
-import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
+// ⚠️ 紙のワークブックと**同じ見出し番号（WORK n）・同じ項目名**を使う。参加者は紙とスマホを
+//    行き来するので、言葉がずれると迷う。
+import { Fragment, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { btn, input as inputCls } from "@/lib/ui";
 import {
   AFTER_FIELDS,
+  COMPARE_COLS,
   COMPARE_ROWS,
   COVER_FIELDS,
   FIELDWORK_EVENT_DATE,
   FIELDWORK_FIELD_MAX,
+  FIELDWORK_PARTNER,
+  FIELDWORK_TITLE,
   GATES,
-  PARTNER_BRIEFS,
+  METHOD_STEPS,
+  PARTNER_BRIEF,
   SECTIONS,
   TIMETABLE,
   allBodyFields,
@@ -32,10 +39,11 @@ import {
 import { generateFieldworkReport, type GenerateState } from "./actions";
 import ProposalDoc from "./ProposalDoc";
 
-const STORE_KEY = "nakama-fieldwork-miyazaki-2026-1118";
+// v2 = 西製茶中止にともなう項目の作り直し（2026-11-14）。旧キーの下書きは読み込まない。
+const STORE_KEY = "nakama-fieldwork-miyazaki-2026-1118-v2";
 const STORE_REPORT_KEY = `${STORE_KEY}-report`;
 
-/** 画面の順番。0=はじめに、1〜6=§2〜§7、7=確認、8=企画書 */
+/** 画面の順番。0=はじめに、1〜6=WORK 1〜6、7=WORK 7（確認）、8=企画書 */
 const STEP_COVER = 0;
 const STEP_CONFIRM = SECTIONS.length + 1;
 const STEP_DONE = SECTIONS.length + 2;
@@ -141,7 +149,7 @@ export default function FieldworkApp() {
             name: answers.name ?? "",
             company: answers.company ?? "",
             team: answers.team ?? "",
-            partner: answers.chosen_partner ?? "",
+            partner: FIELDWORK_PARTNER,
           }}
           onBack={() => setStep(STEP_CONFIRM)}
         />
@@ -163,8 +171,8 @@ export default function FieldworkApp() {
             {step === STEP_COVER
               ? "はじめに"
               : step === STEP_CONFIRM
-                ? "確認して企画書を作る"
-                : `${section?.no} / 7`}
+                ? "WORK 7 AIで1枚の共創レポートを作る"
+                : `WORK ${section?.no} / ${SECTIONS.length}`}
           </p>
           <p className="text-[11px] text-[var(--muted)]">
             {saved ? (
@@ -189,19 +197,38 @@ export default function FieldworkApp() {
         <div className="pt-5">
           <p className="text-[11px] tracking-[0.18em] text-[var(--muted)]">共創フィールドワーク</p>
           <h1 className="mt-2 font-serif text-[22px] leading-[1.5] text-[var(--ink)] sm:text-[26px]">
-            西製茶と福山黒酢の現場から
+            {FIELDWORK_TITLE[0]}
             <br />
-            自社との新しい事業をつくる
+            {FIELDWORK_TITLE[1]}
           </h1>
           <p className="mt-3 text-[13px] leading-6 text-[var(--muted)]">{FIELDWORK_EVENT_DATE}</p>
 
           <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb] px-5 py-4">
             <h2 className="text-[14px] font-bold text-[var(--ink)]">この日のゴール</h2>
-            <ul className="mt-2 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
-              <li>・自社の特徴と、視察先が持つ資源・課題を言葉にする</li>
-              <li>・西製茶または福山黒酢と、お互いに利益が生まれる共創案をつくる</li>
-              <li>・AIで1枚の共創企画書にまとめ、90日以内の最初の一歩を発表する</li>
+            <p className="mt-1.5 text-[13px] leading-6 text-[var(--muted)]">
+              共創メソッドを学ぶ。コラボのつくり方を理解しよう。
+            </p>
+            <ul className="mt-2.5 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
+              <li>・まずは、自社を言語化する（強み・資源・課題・実現したいこと）</li>
+              <li>・福山黒酢と自社の双方にWIN-WINになる案を考える</li>
+              <li>・実証まで固める。最後にAIで1枚にまとめ、社内合意と90日実証へつなぐ</li>
             </ul>
+          </div>
+
+          <div className="mt-5 rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+            <h2 className="text-[14px] font-bold text-[var(--ink)]">共創を実行に変える7ステップ</h2>
+            <ol className="mt-3 flex flex-col gap-2">
+              {METHOD_STEPS.map((m) => (
+                <li key={m.no} className="flex items-baseline gap-2.5 text-[13px] leading-6">
+                  <span className="w-[18px] shrink-0 font-serif text-[14px] text-[var(--green)]">{m.no}</span>
+                  <span className="font-semibold text-[var(--ink)]">{m.title}</span>
+                  <span className="text-[var(--muted)]">{m.note}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-3 text-[12px] leading-5 text-[var(--muted)]">
+              現地で終わらせず、帰社後に社内で動かすところまでを共創と捉えます。
+            </p>
           </div>
 
           <div className="mt-5 rounded-[10px] border border-[var(--green-soft)] bg-[var(--green-soft)] px-5 py-4">
@@ -262,7 +289,9 @@ export default function FieldworkApp() {
         <div className="pt-5">
           <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">{section.when}</p>
           <h1 className="mt-2 flex items-baseline gap-2.5">
-            <span className="font-serif text-[20px] text-[var(--green)]">{section.no}</span>
+            <span className="shrink-0 font-serif text-[13px] tracking-[0.1em] text-[var(--green)]">
+              WORK {section.no}
+            </span>
             <span className="font-serif text-[20px] leading-[1.5] text-[var(--ink)] sm:text-[22px]">
               {section.title}
             </span>
@@ -270,16 +299,17 @@ export default function FieldworkApp() {
           <p className="mt-2.5 text-[13px] leading-6 text-[var(--muted)]">{section.lead}</p>
 
           {/* 視察先の基礎情報。バスではスライドが手元にないので、ここから読めるようにする */}
-          {section.key === "nishi" || section.key === "kurozu" ? (
-            <PartnerBriefBox which={section.key} />
-          ) : null}
+          {section.key === "hypothesis" || section.key === "material" ? <PartnerBriefBox /> : null}
 
-          {/* §5は比較表を先に出す（点数をつけてから1案を選ぶ順にするため） */}
-          {section.key === "choose" ? <CompareTable answers={answers} set={set} /> : null}
-
+          {/* WORK 4 は「案A・案Bに名前をつける → 点数で比べる → 1案に絞る」の順で並べる */}
           <div className="mt-6 flex flex-col gap-5">
             {section.fields.map((f) => (
-              <FieldInput key={f.key} field={f} value={answers[f.key] ?? ""} onChange={set} />
+              <Fragment key={f.key}>
+                <FieldInput field={f} value={answers[f.key] ?? ""} onChange={set} />
+                {section.key === "choose" && f.key === "idea_b" ? (
+                  <CompareTable answers={answers} set={set} />
+                ) : null}
+              </Fragment>
             ))}
           </div>
 
@@ -299,18 +329,21 @@ export default function FieldworkApp() {
       {/* ── 確認して企画書を作る ── */}
       {step === STEP_CONFIRM ? (
         <form action={formAction} className="pt-5" noValidate>
-          <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">帰路バス内 15:25–15:45</p>
-          <h1 className="mt-2 font-serif text-[20px] leading-[1.5] text-[var(--ink)] sm:text-[22px]">
-            確認して、企画書を作る
+          <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">帰路バス内 15:45–16:10</p>
+          <h1 className="mt-2 flex items-baseline gap-2.5">
+            <span className="shrink-0 font-serif text-[13px] tracking-[0.1em] text-[var(--green)]">WORK 7</span>
+            <span className="font-serif text-[20px] leading-[1.5] text-[var(--ink)] sm:text-[22px]">
+              AIで1枚の共創レポートを作る
+            </span>
           </h1>
           <p className="mt-2.5 text-[13px] leading-6 text-[var(--muted)]">
-            紙のワークブック§8「AIで共創レポートを作る」にあたる工程です。
-            書き写す必要はありません。これまでに記入した内容がそのまま渡ります。
+            紙のワークブック WORK 7 にあたる工程です。書き写す必要はありません。
+            WORK 1〜6 に記入した内容がそのまま渡ります。
           </p>
 
           {/* 3つの関門 */}
           <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
-            <h2 className="text-[14px] font-bold text-[var(--ink)]">次のステップへ進む前の3つの関門</h2>
+            <h2 className="text-[14px] font-bold text-[var(--ink)]">共創を企画・実行するための3つの関門</h2>
             <div className="mt-3 flex flex-col gap-3">
               {GATES.map((g) => (
                 <label key={g.key} className="flex cursor-pointer items-start gap-3">
@@ -518,9 +551,9 @@ function FieldInput({
   );
 }
 
-/** 視察先の基礎情報（進行スライド由来）。畳んでおき、読みたい人だけ開く。 */
-function PartnerBriefBox({ which }: { which: "nishi" | "kurozu" }) {
-  const b = PARTNER_BRIEFS[which];
+/** 福山黒酢の基礎情報（主催者資料由来）。畳んでおき、読みたい人だけ開く。 */
+function PartnerBriefBox() {
+  const b = PARTNER_BRIEF;
   return (
     <details className="mt-5 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb]">
       <summary className={`cursor-pointer px-4 py-3 text-[14px] font-bold text-[var(--ink)] ${tap}`}>
@@ -536,14 +569,14 @@ function PartnerBriefBox({ which }: { which: "nishi" | "kurozu" }) {
           ))}
         </ul>
         <p className="mt-3 text-[11px] leading-5 text-[var(--muted)]">
-          出典：当日の進行スライド。現地で見聞きしたことと取り違えないようご注意ください。
+          出典：主催者の配布資料。現地で見聞きしたことと取り違えないようご注意ください。
         </p>
       </div>
     </details>
   );
 }
 
-/** §5の比較表。西製茶案と福山黒酢案に同じ6項目で点数をつける。 */
+/** WORK 4 の比較表。共創案A・共創案Bに同じ6項目で点数をつける。 */
 function CompareTable({
   answers,
   set,
@@ -552,8 +585,8 @@ function CompareTable({
   set: (key: string, value: string) => void;
 }) {
   return (
-    <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-white px-4 py-4 sm:px-5">
-      <h2 className="text-[14px] font-bold text-[var(--ink)]">2案を5点満点で比べる</h2>
+    <div className="rounded-[10px] border border-[var(--line)] bg-white px-4 py-4 sm:px-5">
+      <h2 className="text-[14px] font-bold text-[var(--ink)]">共創案A・Bを5点満点で比べる</h2>
       <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
         つけた点数も企画書づくりの判断材料として渡ります。
       </p>
@@ -561,17 +594,12 @@ function CompareTable({
         {COMPARE_ROWS.map((r) => (
           <div key={r.key}>
             <p className="text-[13px] font-semibold leading-5 text-[var(--ink)]">{r.label}</p>
-            {(
-              [
-                ["nishi", "西製茶案"],
-                ["kurozu", "福山黒酢案"],
-              ] as const
-            ).map(([side, label]) => {
+            {COMPARE_COLS.map(({ side, label }) => {
               const key = `${r.key}_${side}`;
               const cur = answers[key] ?? "";
               return (
                 <div key={side} className="mt-2 flex items-center gap-2">
-                  <span className="w-[62px] shrink-0 text-[11px] leading-4 text-[var(--muted)] sm:w-[78px] sm:text-[12px]">
+                  <span className="w-[56px] shrink-0 text-[11px] leading-4 text-[var(--muted)] sm:w-[70px] sm:text-[12px]">
                     {label}
                   </span>
                   {/* 5つのボタンは幅いっぱいに割る。固定幅だと375pxで右端がはみ出す（2026-11-14に実機幅で確認） */}
@@ -619,7 +647,7 @@ function AfterSection({
       <div className="rounded-[10px] border border-[var(--line)] bg-[#fcfcfb] px-5 py-5 sm:px-7">
         <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">帰路バス内 15:45–16:10</p>
         <h2 className="mt-2 flex items-baseline gap-2.5">
-          <span className="font-serif text-[18px] text-[var(--green)]">9</span>
+          <span className="shrink-0 font-serif text-[12px] tracking-[0.1em] text-[var(--green)]">FINAL</span>
           <span className="font-serif text-[18px] text-[var(--ink)]">発表後の記録</span>
         </h2>
         <p className="mt-2 text-[13px] leading-6 text-[var(--muted)]">
