@@ -183,6 +183,9 @@ model Member {
   offerings Offering[]
   favorites Favorite[]
   crmNotes  MemberNote[]
+  card           MemberCard?
+  cardExchangesA CardExchange[] @relation("CardExchangeA")
+  cardExchangesB CardExchange[] @relation("CardExchangeB")
 
   @@index([tenantId])
   @@index([status])
@@ -1073,4 +1076,77 @@ model LeadUnlock {
   @@index([memberId])
   @@index([buyerMemberId])
   @@map("lead_unlocks")
+}
+
+/// 交換用カード（名刺の代わり）。会員1人につき1枚。
+///
+/// ⚠️ **他人の名刺を取り込む作りにはしない**。カードは「本人が自分で渡す」もので、
+///    交換そのものが本人同意になる（Eight型の「受け取った名刺をスキャンして登録」だと、
+///    名刺の持ち主の同意なく第三者の個人データを保有することになり、規約第13条の
+///    「名簿化・第三者提供」の禁止ともぶつかる）。この前提を崩さないこと。
+/// ⚠️ カードに出す中身は Member から引く。ここに氏名や連絡先を複製して持たない
+///    （プロフィールを直しても古い情報が残るため）。ここで持つのは「出す／出さない」の設定だけ。
+model MemberCard {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+  memberId String @unique @map("member_id")
+
+  /// 交換コード。QRと手入力の両方で使う短い文字列（紛らわしい文字は使わない）
+  code String @unique
+
+  /// カードに出す担当者の肩書き（Member.crmDepartment とは別に、会員が自分で出す用）
+  jobTitle String? @map("job_title")
+  /// カードの一言（「いま探しているもの」など）
+  headline String?
+
+  /// 出す／出さないの設定。既定は会社情報のみ公開で、個人の連絡先は出さない
+  showEmail Boolean @default(false) @map("show_email")
+  showPhone Boolean @default(false) @map("show_phone")
+
+  /// 交換を止めたいとき false にする（コードは残す）
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("member_cards")
+}
+
+/// カードの交換（＝双方がお互いのカードを持っている状態）。1組につき1行。
+///
+/// ⚠️ 方向を持たせない＝「AがBを持つ」「BがAを持つ」を別々に作らない。
+///    交換は一度の行為で双方に成立する。重複を防ぐため **memberAId < memberBId の順で必ず並べて** 保存する。
+///    並べ替えを飛ばすと同じ相手と2行できてしまう。
+/// ⚠️ メモは各自のもの。相手には見せない（noteA は A だけ、noteB は B だけが読み書きする）。
+model CardExchange {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// 必ず memberAId < memberBId（文字列比較）の順で入れる
+  memberAId String @map("member_a_id")
+  memberBId String @map("member_b_id")
+
+  /// コードを読み取った側（どちらから声をかけたかの記録）
+  initiatedByMemberId String @map("initiated_by_member_id")
+
+  /// 出会った場（例: FOOD JAPAN SUMMIT 2026 宮崎）
+  metAt String? @map("met_at")
+
+  /// 各自の非公開メモ
+  noteA String? @map("note_a")
+  noteB String? @map("note_b")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  memberA Member @relation("CardExchangeA", fields: [memberAId], references: [id], onDelete: Cascade)
+  memberB Member @relation("CardExchangeB", fields: [memberBId], references: [id], onDelete: Cascade)
+
+  @@unique([memberAId, memberBId])
+  @@index([tenantId])
+  @@index([memberAId])
+  @@index([memberBId])
+  @@map("card_exchanges")
 }

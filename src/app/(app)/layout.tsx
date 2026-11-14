@@ -18,6 +18,7 @@ const NAV: NavItem[] = [
   { label: "売りたい・探している", href: "/ledger", ready: true },
   { label: "進行中の活動", href: "/deals", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
+  { label: "交換カード", href: "/cards", ready: true, section: "その他" },
   { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },
   { label: "お気に入り", href: "/favorites", ready: true, section: "その他" },
   { label: "プロフィール", href: "/profile", ready: true, section: "アカウント" },
