@@ -1,9 +1,9 @@
 "use client";
 
-// 共創フィールドワークの記入画面（2026-11-18 霧島・都城バスフィールドワーク）。
+// 共創フィールドワークの記入画面（2026-11-18 DAY2 霧島フィールドワーク）。
 //
-// 2026-11-14: 西製茶の視察が中止。共創の相手は福山黒酢の1社だけになり、
-//   見出しは配布資料「旅のしおり ＋ 共創メソッド」の WORK 1〜7 に合わせた。
+// 当日配布の「車内ワーク」の①〜⑥と時刻にそろえている。
+// 発表（④）は桷志田で 12:45、AIレポート（⑥）は帰りの車内 15:50。順番を入れ替えない。
 //
 // ⚠️ バスで山間部を移動しながら使う。**書いた内容が圏外で消えるのが最悪のシナリオ**なので、
 //    入力は一文字ごとに localStorage へ保存し、通信するのは「企画書を作る」を押した瞬間だけにする。
@@ -17,18 +17,25 @@ import { Fragment, useActionState, useCallback, useEffect, useMemo, useRef, useS
 import { btn, input as inputCls } from "@/lib/ui";
 import {
   AFTER_FIELDS,
+  ATTENDEES,
   COMPARE_COLS,
   COMPARE_ROWS,
   COVER_FIELDS,
   FIELDWORK_EVENT_DATE,
   FIELDWORK_FIELD_MAX,
+  FIELDWORK_LEAD,
   FIELDWORK_PARTNER,
   FIELDWORK_TITLE,
   GATES,
   METHOD_STEPS,
   PARTNER_BRIEF,
+  ROADMAP_FIELDS,
   SECTIONS,
+  TAKEAWAYS,
   TIMETABLE,
+  TIMETABLE_NOTE,
+  WRAPUP_FIELDS,
+  attendeeKey,
   allBodyFields,
   answersToPrompt,
   filledCount,
@@ -39,11 +46,11 @@ import {
 import { generateFieldworkReport, type GenerateState } from "./actions";
 import ProposalDoc from "./ProposalDoc";
 
-// v2 = 西製茶中止にともなう項目の作り直し（2026-11-14）。旧キーの下書きは読み込まない。
-const STORE_KEY = "nakama-fieldwork-miyazaki-2026-1118-v2";
+// v3 = 当日配布の「車内ワーク」に合わせた作り直し（2026-11-18）。旧キーの下書きは読み込まない。
+const STORE_KEY = "nakama-fieldwork-miyazaki-2026-1118-v3";
 const STORE_REPORT_KEY = `${STORE_KEY}-report`;
 
-/** 画面の順番。0=はじめに、1〜6=WORK 1〜6、7=WORK 7（確認）、8=企画書 */
+/** 画面の順番。0=はじめに、1〜5=①〜⑤、6=⑥（確認）、7=レポート */
 const STEP_COVER = 0;
 const STEP_CONFIRM = SECTIONS.length + 1;
 const STEP_DONE = SECTIONS.length + 2;
@@ -171,8 +178,8 @@ export default function FieldworkApp() {
             {step === STEP_COVER
               ? "はじめに"
               : step === STEP_CONFIRM
-                ? "WORK 7 AIで1枚の共創レポートを作る"
-                : `WORK ${section?.no} / ${SECTIONS.length}`}
+                ? "⑥ AIレポート"
+                : `${section?.no} ${section?.title}`}
           </p>
           <p className="text-[11px] text-[var(--muted)]">
             {saved ? (
@@ -202,16 +209,14 @@ export default function FieldworkApp() {
             {FIELDWORK_TITLE[1]}
           </h1>
           <p className="mt-3 text-[13px] leading-6 text-[var(--muted)]">{FIELDWORK_EVENT_DATE}</p>
+          <p className="mt-2 text-[13px] leading-6 text-[var(--ink-2)]">{FIELDWORK_LEAD}</p>
 
           <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb] px-5 py-4">
-            <h2 className="text-[14px] font-bold text-[var(--ink)]">この日のゴール</h2>
-            <p className="mt-1.5 text-[13px] leading-6 text-[var(--muted)]">
-              共創メソッドを学ぶ。コラボのつくり方を理解しよう。
-            </p>
+            <h2 className="text-[14px] font-bold text-[var(--ink)]">お持ち帰りいただくもの</h2>
             <ul className="mt-2.5 flex flex-col gap-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
-              <li>・まずは、自社を言語化する（強み・資源・課題・実現したいこと）</li>
-              <li>・福山黒酢と自社の双方にWIN-WINになる案を考える</li>
-              <li>・実証まで固める。最後にAIで1枚にまとめ、社内合意と90日実証へつなぐ</li>
+              {TAKEAWAYS.map((t) => (
+                <li key={t}>・{t}</li>
+              ))}
             </ul>
           </div>
 
@@ -279,6 +284,9 @@ export default function FieldworkApp() {
                   </span>
                 </div>
               ))}
+              <p className="bg-white px-3.5 py-2.5 text-[11px] leading-5 text-[var(--muted)]">
+                {TIMETABLE_NOTE}
+              </p>
             </div>
           ) : null}
         </div>
@@ -299,14 +307,14 @@ export default function FieldworkApp() {
           <p className="mt-2.5 text-[13px] leading-6 text-[var(--muted)]">{section.lead}</p>
 
           {/* 視察先の基礎情報。バスではスライドが手元にないので、ここから読めるようにする */}
-          {section.key === "hypothesis" || section.key === "material" ? <PartnerBriefBox /> : null}
+          {section.key === "hypothesis" || section.key === "ideas" ? <PartnerBriefBox /> : null}
 
-          {/* WORK 4 は「案A・案Bに名前をつける → 点数で比べる → 1案に絞る」の順で並べる */}
+          {/* ③は「3案に名前をつける → 点数で比べる → 1案に絞る」の順で並べる */}
           <div className="mt-6 flex flex-col gap-5">
             {section.fields.map((f) => (
               <Fragment key={f.key}>
                 <FieldInput field={f} value={answers[f.key] ?? ""} onChange={set} />
-                {section.key === "choose" && f.key === "idea_b" ? (
+                {section.key === "ideas" && f.key === "idea_3" ? (
                   <CompareTable answers={answers} set={set} />
                 ) : null}
               </Fragment>
@@ -329,17 +337,69 @@ export default function FieldworkApp() {
       {/* ── 確認して企画書を作る ── */}
       {step === STEP_CONFIRM ? (
         <form action={formAction} className="pt-5" noValidate>
-          <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">帰路バス内 15:45–16:10</p>
+          <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">車内 15:50〜16:40</p>
           <h1 className="mt-2 flex items-baseline gap-2.5">
-            <span className="shrink-0 font-serif text-[13px] tracking-[0.1em] text-[var(--green)]">WORK 7</span>
+            <span className="shrink-0 font-serif text-[18px] text-[var(--green)]">⑥</span>
             <span className="font-serif text-[20px] leading-[1.5] text-[var(--ink)] sm:text-[22px]">
-              AIで1枚の共創レポートを作る
+              AIレポート
             </span>
           </h1>
           <p className="mt-2.5 text-[13px] leading-6 text-[var(--muted)]">
-            紙のワークブック WORK 7 にあたる工程です。書き写す必要はありません。
-            WORK 1〜6 に記入した内容がそのまま渡ります。
+            紙の⑥にあたる工程です。書き写す必要はありません。①〜⑤に記入した内容がそのまま渡ります。
           </p>
+
+          {/* 一緒に取り組みたい相手（紙の⑥でまとめる5つのうちの4番目） */}
+          <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
+            <h2 className="text-[14px] font-bold text-[var(--ink)]">一緒に取り組みたい相手</h2>
+            <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+              今日ご一緒した方から選んでください。選んだ方はレポートに載ります。
+            </p>
+            {ATTENDEES.map((g) => (
+              <div key={g.group} className="mt-4">
+                <p className="text-[11px] tracking-[0.14em] text-[var(--muted)]">{g.group}</p>
+                <div className="mt-2 flex flex-col gap-2.5">
+                  {g.people.map((person) => {
+                    const k = attendeeKey(person.name);
+                    return (
+                      <label key={k} className="flex cursor-pointer items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={(answers[k] ?? "") === "1"}
+                          onChange={(e) => set(k, e.target.checked ? "1" : "")}
+                          className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--green)]"
+                        />
+                        <span className="text-[13px] leading-5">
+                          <span className="font-semibold text-[var(--ink)]">{person.name}</span>
+                          <br />
+                          <span className="text-[var(--muted)]">
+                            {person.org}
+                            {person.role ? `　${person.role}` : ""}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="mt-5 flex flex-col gap-5">
+              {WRAPUP_FIELDS.map((f) => (
+                <FieldInput key={f.key} field={f} value={answers[f.key] ?? ""} onChange={set} />
+              ))}
+            </div>
+          </div>
+
+          {/* 帰社後の進め方（任意） */}
+          <details className="mt-5 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb]">
+            <summary className={`cursor-pointer px-5 py-3.5 text-[14px] font-bold text-[var(--ink)] ${tap}`}>
+              帰社後の進め方を決める（任意）
+            </summary>
+            <div className="flex flex-col gap-5 border-t border-[var(--line-soft)] px-5 py-4">
+              {ROADMAP_FIELDS.map((f) => (
+                <FieldInput key={f.key} field={f} value={answers[f.key] ?? ""} onChange={set} />
+              ))}
+            </div>
+          </details>
 
           {/* 3つの関門 */}
           <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
@@ -404,7 +464,7 @@ export default function FieldworkApp() {
           <label className={`mt-5 ${labelCls}`}>
             控えの受け取り先メールアドレス（任意）
             <span className={hintCls}>
-              帰社後の社内説明に使う場合にご記入ください。空欄でも企画書は作れます。
+              帰社後の社内説明に使う場合にご記入ください。空欄でもレポートは作れます。
             </span>
             <input
               type="email"
@@ -434,7 +494,7 @@ export default function FieldworkApp() {
           ) : null}
 
           <button type="submit" disabled={pending} className={`mt-6 w-full ${btn("action", "lg")} ${tap}`}>
-            {pending ? "企画書を作っています…（30秒ほどかかります）" : "企画書を作る"}
+            {pending ? "レポートを作っています…（30秒ほどかかります）" : "AIレポートを作る"}
           </button>
           <p className="mt-2.5 text-center text-[12px] leading-5 text-[var(--muted)]">
             電波の良いところで押してください。失敗しても記入した内容は残ります。
@@ -468,11 +528,11 @@ export default function FieldworkApp() {
                 onClick={() => setStep(STEP_DONE)}
                 className={`${btn("secondary", "md")} ${tap} flex-[2]`}
               >
-                できた企画書を見る
+                できたレポートを見る
               </button>
             ) : (
               <span className="flex-[2] text-center text-[12px] leading-5 text-[var(--muted)]">
-                上の「企画書を作る」を押してください
+                上の「AIレポートを作る」を押してください
               </span>
             )}
           </div>
@@ -576,7 +636,7 @@ function PartnerBriefBox() {
   );
 }
 
-/** WORK 4 の比較表。共創案A・共創案Bに同じ6項目で点数をつける。 */
+/** ③の比較表。案1〜3に同じ6項目で点数をつける。畳んでおき、使いたい人だけ開く。 */
 function CompareTable({
   answers,
   set,
@@ -585,12 +645,15 @@ function CompareTable({
   set: (key: string, value: string) => void;
 }) {
   return (
-    <div className="rounded-[10px] border border-[var(--line)] bg-white px-4 py-4 sm:px-5">
-      <h2 className="text-[14px] font-bold text-[var(--ink)]">共創案A・Bを5点満点で比べる</h2>
-      <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
-        つけた点数も企画書づくりの判断材料として渡ります。
-      </p>
-      <div className="mt-4 flex flex-col gap-5">
+    <details className="rounded-[10px] border border-[var(--line)] bg-white">
+      <summary className="cursor-pointer px-4 py-3.5 text-[14px] font-bold text-[var(--ink)] sm:px-5">
+        3案を5点満点で比べる（迷ったときに）
+      </summary>
+      <div className="border-t border-[var(--line-soft)] px-4 py-4 sm:px-5">
+        <p className="text-[12px] leading-5 text-[var(--muted)]">
+          つけた点数もレポートづくりの判断材料として渡ります。
+        </p>
+        <div className="mt-4 flex flex-col gap-5">
         {COMPARE_ROWS.map((r) => (
           <div key={r.key}>
             <p className="text-[13px] font-semibold leading-5 text-[var(--ink)]">{r.label}</p>
@@ -629,12 +692,13 @@ function CompareTable({
             })}
           </div>
         ))}
+        </div>
       </div>
-    </div>
+    </details>
   );
 }
 
-/** §9 発表後の記録。企画書ができたあとに書く。 */
+/** 帰りの車内で書き足す記録。レポートができたあとに書く。 */
 function AfterSection({
   answers,
   set,
@@ -645,13 +709,10 @@ function AfterSection({
   return (
     <div className="fw-noprint mx-auto w-full max-w-[860px] px-4 pb-24 sm:px-6">
       <div className="rounded-[10px] border border-[var(--line)] bg-[#fcfcfb] px-5 py-5 sm:px-7">
-        <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">帰路バス内 15:45–16:10</p>
-        <h2 className="mt-2 flex items-baseline gap-2.5">
-          <span className="shrink-0 font-serif text-[12px] tracking-[0.1em] text-[var(--green)]">FINAL</span>
-          <span className="font-serif text-[18px] text-[var(--ink)]">発表後の記録</span>
-        </h2>
+        <p className="text-[11px] tracking-[0.18em] text-[var(--green)]">車内 15:50〜16:40</p>
+        <h2 className="mt-2 font-serif text-[18px] text-[var(--ink)]">帰りの車内で書き足す</h2>
         <p className="mt-2 text-[13px] leading-6 text-[var(--muted)]">
-          2分発表のあとに書いてください。ここも端末に自動保存されます。
+          レポートを見ながら書いてください。ここも端末に自動保存されます。
         </p>
         <div className="mt-5 flex flex-col gap-5">
           {AFTER_FIELDS.map((f) => (

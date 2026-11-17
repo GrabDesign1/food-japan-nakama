@@ -1,6 +1,6 @@
 "use client";
 
-// できあがった共創企画書。A4縦1枚＋付録として組む。
+// できあがった共創レポート。A4縦1枚＋付録として組む。
 //
 // ⚠️ 印刷用のCSSはこのファイルの <style> に閉じている（globals.css を触らないため）。
 //    このページを開いているときだけ有効になる。
@@ -34,7 +34,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
     "",
     `■ 福山黒酢への最初の相談文\n${report.firstMessage}`,
     "",
-    `■ 2分発表の台本\n${report.pitch}`,
+    `■ 2分で説明するときの台本\n${report.pitch}`,
     "",
     `${FIELDWORK_EVENT_NAME}／${FIELDWORK_EVENT_DATE}`,
     [cover.company, cover.team, cover.name].filter(Boolean).join("　"),
@@ -89,7 +89,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
         <div className="fw-page">
           {/* 表紙部 */}
           <header className="fw-block border-b-2 border-[var(--ink)] pb-6">
-            <p className="text-[11px] tracking-[0.18em] text-[var(--muted)]">共創事業 企画書</p>
+            <p className="text-[11px] tracking-[0.18em] text-[var(--muted)]">共創レポート</p>
             <h1 className="mt-3 font-serif text-[26px] leading-[1.4] text-[var(--ink)] sm:text-[32px]">
               {report.projectName || "（企画名 要確認）"}
             </h1>
@@ -110,7 +110,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
               ) : null}
               {cover.team ? (
                 <>
-                  <dt className="text-[var(--muted)]">チーム</dt>
+                  <dt className="text-[var(--muted)]">役職</dt>
                   <dd className="text-[var(--ink)]">{cover.team}</dd>
                 </>
               ) : null}
@@ -133,7 +133,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
             </section>
           ) : null}
 
-          {/* 1〜9（ワークブック WORK 7 の構成） */}
+          {/* 1〜10（紙の⑥「AIレポートでまとめる5つ」＋持ち帰り用） */}
           <div className="mt-8 flex flex-col gap-7">
             {REPORT_SECTIONS.map((s) => (
               <section key={s.key} className="fw-block">
@@ -176,9 +176,10 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
           <section className="fw-block mt-9">
             <h2 className="flex items-baseline gap-2.5 border-b border-[var(--line)] pb-2">
               <span className="font-serif text-[15px] text-[var(--green)]">付録2</span>
-              <span className="text-[15px] font-bold text-[var(--ink)]">2分発表の台本</span>
+              <span className="text-[15px] font-bold text-[var(--ink)]">2分で説明するときの台本</span>
             </h2>
             <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+              帰社後の社内説明や、次の商談でお使いください。{"　"}
               {PITCH_PLAN.map((p) => `${p.sec} ${p.what}`).join("／")}
             </p>
             <p className="mt-3 whitespace-pre-wrap text-[14px] leading-[2] text-[var(--ink-2)]">
@@ -187,7 +188,7 @@ export default function ProposalDoc({ report, cover, onBack }: Props) {
           </section>
 
           <p className="mt-10 border-t border-[var(--line)] pt-4 text-[11px] leading-6 text-[var(--muted)]">
-            この企画書は、{FIELDWORK_EVENT_NAME}の記入内容をもとにAIが作成した下書きです。
+            このレポートは、{FIELDWORK_EVENT_NAME}の記入内容をもとにAIが作成した下書きです。
             記載内容の確認と判断は提案者が行っています。
           </p>
         </div>

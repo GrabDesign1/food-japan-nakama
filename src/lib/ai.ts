@@ -483,13 +483,14 @@ ${memo}`,
 
 // ── 共創フィールドワークの企画書（11/18 霧島・都城バスフィールドワーク用） ──────
 //
-// 紙のワークブック WORK 7「AIで1枚の共創レポートを作る」に入力文が書かれている。
+// 紙の⑥「AIレポートでまとめる5つ」に入力文が書かれている。
 // 当日はそれを手で打ち込む前提だった。ここでやるのは**その手打ちをなくすこと**だけで、
-// 出力の構成（企画名／顧客と課題／提案内容／三者のメリット／役割分担と収益／
-// リスクと対応／90日実証とKPI／社内承認事項）とルール
+// 出力の1〜5（解決したい課題／活用したい地域資源／自社が提供できるもの／
+// 一緒に取り組みたい相手／90日以内に実行する最初の一歩）とルール
 // （わからない情報は推測で断定せず『要確認』と書く）は紙のまま変えない。
+// 6以降は、持ち帰って社内で使えるように足した。
 //
-// 2026-11-14: 西製茶の視察が中止になり、共創の相手は福山黒酢の1社だけになった。
+// 2026-11-18: 当日配布の「車内ワーク」に合わせて作り直し。発表（④）はAIレポートより前。
 //
 // ⚠️ 入力は「提出する前提で本人が書いた共創案」だけ。価格・個人情報・契約情報・営業秘密は
 //    入力しないよう画面で明示する（紙の注意書きと同じ）。規約17条の非公開メッセージには触れない。
@@ -501,78 +502,83 @@ const FIELDWORK_SCHEMA = {
   properties: {
     projectName: {
       type: "string",
-      description:
-        "企画名。一言で内容が伝わる名前。参加者が『企画名』を書いていればそれを尊重し、整えるだけにする。",
+      description: "企画名。一言で内容が伝わる名前。参加者の言葉があればそれを尊重し、整えるだけにする。",
     },
     summary: {
       type: "string",
       description:
-        "企画書の冒頭に置く要約。2〜3文。誰のどの課題を、福山黒酢とどう組んで解決し、何で稼ぐのかが分かること。",
+        "冒頭に置く要約。2〜3文。誰のどの課題を、福山黒酢とどう組んで解決し、何で稼ぐのかが分かること。",
     },
-    customerProblem: {
+    problem: {
+      type: "string",
+      description: "1 解決したい課題。顧客の課題と、福山黒酢の課題の両方に触れる。現地で聞いた言葉があれば引く。",
+    },
+    localResources: {
       type: "string",
       description:
-        "1 顧客と課題。最初に買う人・使う人を具体的に書き、その人が何に困っているかを続ける。福山黒酢側の課題にも触れる。",
+        "2 活用したい地域資源。壺畑、発酵・熟成、職人の技、景観、福山町の気候風土、料理、売場など、現地と主催者資料にあるものだけを書く。",
+    },
+    ownOffer: {
+      type: "string",
+      description: "3 自社が提供できるもの。参加者の会社が無理なく出せる商品・技術・人・販路・設備を具体的に。",
+    },
+    partners: {
+      type: "string",
+      description:
+        "4 一緒に取り組みたい相手。入力の【一緒に取り組みたい相手】に挙がっている人だけを書き、その人に何を期待するのかを一人ずつ添える。挙がっていない人物名を足さない。空なら「要確認」と書く。",
+    },
+    firstStep: {
+      type: "string",
+      description: "5 90日以内に実行する最初の一歩。いつ・誰が・何をするか。入力にあればその日付と担当を使う。",
     },
     proposal: {
       type: "string",
-      description: "2 提案内容。何を、誰と、どのように実施するか。箇条書きではなく文章で。",
+      description: "6 提案内容。何を、誰と、どのように実施するか。箇条書きではなく文章で。",
     },
-    benefitCustomer: {
+    threeBenefits: {
       type: "string",
-      description: "3 顧客のメリット。その商品・サービス・体験によって、顧客の何がどう良くなるか。",
-    },
-    benefitPartner: {
-      type: "string",
-      description: "4 福山黒酢のメリット。売上・顧客・販路・ブランド・地域価値のうち何が残るか。",
-    },
-    benefitOwn: {
-      type: "string",
-      description: "5 自社のメリット。自社の強みがどう生き、事業として何が残るか。",
+      description:
+        "7 三者のメリット。「顧客：」「福山黒酢：」「自社：」の3行立てで、それぞれに何が残るかを書く。一方だけが得をする書き方にしない。",
     },
     rolesRevenue: {
       type: "string",
       description:
-        "6 役割分担と収益。誰が何を担うかと、誰が何にいくら払うかを両方書く。金額が入力されていなければ推測で書かず『要確認』と明記する。",
+        "8 収益と役割分担。誰が何を担い、誰が何にいくら払うか。金額が入力されていなければ推測で書かず「要確認」と明記する。",
     },
     risks: {
       type: "string",
       description:
-        "7 リスクと対応。品質・法務・表示・調達・物流・収益・ブランドの観点。各リスクに対応策を必ず添え、反対意見は『この条件なら安全に試せる』という条件に置き換える。",
+        "9 リスクと対応。品質・法務・表示・調達・物流・収益・ブランドの観点。各リスクに対応策を必ず添え、反対意見は「この条件なら安全に試せる」という条件に置き換える。",
     },
     plan90: {
       type: "string",
       description:
-        "8 90日実証とKPI。48時間／7日／30日／90日の4段階で、担当・期限・KPI・継続修正中止の判断基準を書く。入力にあればその値を使う。",
-    },
-    approval: {
-      type: "string",
-      description:
-        "9 社内承認事項。決裁者が『はい』『いいえ』で答えられる形にする。決める人・動かす人・慎重な部門それぞれに必要な説明を分けて書く。",
+        "10 90日の実証計画と判断基準。何をどう試し、何の数字で継続・修正・中止を決めるか。帰社後の進め方が入力にあれば、48時間／7日／30日／90日の段取りも入れる。",
     },
     firstMessage: {
       type: "string",
       description:
-        "付録1 福山黒酢（桷志田）へ送る最初の相談文。そのまま送れる敬体の文面。視察のお礼から入り、何を一緒に試したいかと、次の打ち合わせの依頼で終える。200〜400字。署名欄は入れない。",
+        "付録1 福山黒酢（桷志田）へ送る最初の相談文。そのまま送れる敬体の文面。視察と講評のお礼から入り、いただいた講評をどう反映したか、何を一緒に試したいか、次の打ち合わせの依頼で終える。200〜400字。署名欄は入れない。",
     },
     pitch: {
       type: "string",
       description:
-        "付録2 2分発表の台本。『20秒 自社と現地で見つけた事実』『30秒 解決したい顧客・事業の課題』『40秒 共創案と三者のメリット』『20秒 90日以内の実験』『10秒 協力してほしいこと』の5つに分け、各見出しのあとに実際に話す言葉を書く。",
+        "付録2 帰社後に2分で説明するときの台本。『20秒 自社と現地で見つけた事実』『30秒 解決したい顧客・事業の課題』『40秒 共創案と三者のメリット』『20秒 90日以内の実験』『10秒 協力してほしいこと』の5つに分け、各見出しのあとに実際に話す言葉を書く。",
     },
   },
   required: [
     "projectName",
     "summary",
-    "customerProblem",
+    "problem",
+    "localResources",
+    "ownOffer",
+    "partners",
+    "firstStep",
     "proposal",
-    "benefitCustomer",
-    "benefitPartner",
-    "benefitOwn",
+    "threeBenefits",
     "rolesRevenue",
     "risks",
     "plan90",
-    "approval",
     "firstMessage",
     "pitch",
   ],
@@ -581,12 +587,14 @@ const FIELDWORK_SCHEMA = {
 
 const FIELDWORK_SYSTEM = `あなたは、地域資源を活用した新規事業の共創ファシリテーターです。
 鹿児島県霧島市福山町の「福山黒酢（桷志田）」と参加企業が、顧客・福山黒酢・自社の三者に
-利益が残る共創事業案を、日本語で1枚の企画書にまとめます。
+利益が残る共創事業案を、日本語で1枚のレポートにまとめます。
 
 守ること:
-- わからない情報は推測で断定せず「要確認」と書く。特に金額・数量・期日・社名は作らない。
+- わからない情報は推測で断定せず「要確認」と書く。特に金額・数量・期日・社名・人名は作らない。
 - 参加者が書いた言葉を尊重する。言い換えて意味を変えない。整えるだけにする。
 - 現地で見た事実と、参加者の推測を混ぜない。根拠が入力に無い主張は書かない。
+- 福山黒酢さまからいただいた講評が入力にあるときは、それをどう反映したかが分かるように書く。
+  講評に反する案を、そのまま通さない。
 - 「福山黒酢の基礎情報」は主催者資料の公開情報である。提案の裏づけとして使ってよいが、
   参加者が現地で確かめたことのように書かない。そこに無い数値や認証を足さない。
 - 福山黒酢の伝統・製法・品質を尊重する。「絶対に守らなければならない価値」に書かれたことを
@@ -603,15 +611,16 @@ export type FieldworkResult = { report: FieldworkReportDraft } | { error: string
 type FieldworkReportDraft = {
   projectName: string;
   summary: string;
-  customerProblem: string;
+  problem: string;
+  localResources: string;
+  ownOffer: string;
+  partners: string;
+  firstStep: string;
   proposal: string;
-  benefitCustomer: string;
-  benefitPartner: string;
-  benefitOwn: string;
+  threeBenefits: string;
   rolesRevenue: string;
   risks: string;
   plan90: string;
-  approval: string;
   firstMessage: string;
   pitch: string;
 };
@@ -636,7 +645,7 @@ export async function draftFieldworkReport(params: {
   if (answersText.length < 80) {
     return {
       error:
-        "企画書を作るには入力が足りません。まず「WORK 1 自社の棚卸し」と、視察後の「共創アイデア 3案」を書いてください。",
+        "レポートを作るには入力が足りません。まず「① 自社の棚卸し」と「③ 共創案づくり」を書いてください。",
     };
   }
 
@@ -651,7 +660,7 @@ export async function draftFieldworkReport(params: {
         { role: "system", content: FIELDWORK_SYSTEM },
         {
           role: "user",
-          content: `次の情報をもとに、顧客・福山黒酢・当社の三者に利益が残る共創事業案を1枚の企画書にまとめてください。
+          content: `次の情報をもとに、顧客・福山黒酢・当社の三者に利益が残る共創事業案を1枚のレポートにまとめてください。
 
 【共創する相手】
 ${params.partner || "福山黒酢（桷志田）"}
@@ -686,15 +695,16 @@ ${answersText}`,
       report: {
         projectName: pick("projectName"),
         summary: pick("summary"),
-        customerProblem: pick("customerProblem"),
+        problem: pick("problem"),
+        localResources: pick("localResources"),
+        ownOffer: pick("ownOffer"),
+        partners: pick("partners"),
+        firstStep: pick("firstStep"),
         proposal: pick("proposal"),
-        benefitCustomer: pick("benefitCustomer"),
-        benefitPartner: pick("benefitPartner"),
-        benefitOwn: pick("benefitOwn"),
+        threeBenefits: pick("threeBenefits"),
         rolesRevenue: pick("rolesRevenue"),
         risks: pick("risks"),
         plan90: pick("plan90"),
-        approval: pick("approval"),
         firstMessage: pick("firstMessage"),
         pitch: pick("pitch"),
       },

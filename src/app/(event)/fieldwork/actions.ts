@@ -18,6 +18,7 @@ import {
   FIELDWORK_FIELD_MAX,
   allBodyFields,
   answersToPrompt,
+  attendeeKeys,
   compareKeys,
   COVER_FIELDS,
   FIELDWORK_PARTNER,
@@ -89,6 +90,7 @@ export async function generateFieldworkReport(
         ...allBodyFields().map((f) => f.key),
         ...COVER_FIELDS.map((f) => f.key),
         ...compareKeys(),
+        ...attendeeKeys(),
         "email",
       ]);
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
@@ -183,7 +185,7 @@ export async function generateFieldworkReport(
         "",
         `■ 福山黒酢への最初の相談文\n${r.firstMessage}`,
         "",
-        `■ 2分発表の台本\n${r.pitch}`,
+        `■ 2分で説明するときの台本\n${r.pitch}`,
       ].join("\n");
       await sendFieldworkReportEmail({
         to,
