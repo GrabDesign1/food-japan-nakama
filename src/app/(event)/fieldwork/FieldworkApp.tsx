@@ -239,8 +239,8 @@ export default function FieldworkApp() {
           <div className="mt-5 rounded-[10px] border border-[var(--green-soft)] bg-[var(--green-soft)] px-5 py-4">
             <h2 className="text-[13px] font-bold text-[var(--green-d)]">書いた内容は端末に自動保存されます</h2>
             <p className="mt-1.5 text-[13px] leading-6 text-[var(--ink-2)]">
-              通信するのは最後に「企画書を作る」を押したときだけです。山の中で電波が切れても、
-              書いたものは消えません。紙のワークブックと同じ順番・同じ項目名なので、
+              通信するのは最後に「AIレポートを作る」を押したときだけです。山の中で電波が切れても、
+              書いたものは消えません。紙の車内ワークと同じ順番・同じ項目名なので、
               書きやすい方でお書きください。
             </p>
           </div>
