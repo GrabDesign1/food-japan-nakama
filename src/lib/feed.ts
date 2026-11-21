@@ -97,6 +97,15 @@ export async function canSeePost(memberId: string, postId: string): Promise<bool
   return ids.includes(post.authorMemberId);
 }
 
+/** 投稿を書いた人。接触の記録に使う（消された投稿は null） */
+export async function postAuthorId(postId: string): Promise<string | null> {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorMemberId: true, deletedAt: true },
+  });
+  return post && !post.deletedAt ? post.authorMemberId : null;
+}
+
 export type CreatePostInput = {
   body: string;
   linkUrl?: string | null;

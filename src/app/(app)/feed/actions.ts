@@ -10,9 +10,10 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
-  addComment, createPost, deleteMyPost, toggleLike,
+  addComment, createPost, deleteMyPost, toggleLike, postAuthorId,
   POST_IMAGE_MAX, POST_BODY_MAX,
 } from "@/lib/feed";
+import { recordContact } from "@/lib/relationship";
 
 const BUCKET = "post-images";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -74,7 +75,19 @@ export async function like(formData: FormData): Promise<void> {
   const su = await getSessionUser();
   if (!su) return;
   const me = await getOrCreateMemberForUser(su);
-  await toggleLike(me.id, String(formData.get("postId") ?? ""));
+  const postId = String(formData.get("postId") ?? "");
+  const nowLiked = await toggleLike(me.id, postId);
+
+  // ⚠️ 付けたときだけ接触として数える。外したときに減点はしない
+  //    （押し直しで強さが上下すると、数字が行動の記録でなくなる）。
+  if (nowLiked === true) {
+    const author = await postAuthorId(postId);
+    if (author) {
+      await recordContact({
+        tenantId: me.tenantId, actorMemberId: me.id, otherMemberId: author, kind: "post_like",
+      });
+    }
+  }
   revalidatePath("/feed");
 }
 
@@ -82,7 +95,17 @@ export async function comment(formData: FormData): Promise<void> {
   const su = await getSessionUser();
   if (!su) return;
   const me = await getOrCreateMemberForUser(su);
-  await addComment(me.id, String(formData.get("postId") ?? ""), String(formData.get("body") ?? ""));
+  const postId = String(formData.get("postId") ?? "");
+  const result = await addComment(me.id, postId, String(formData.get("body") ?? ""));
+
+  if (result.ok) {
+    const author = await postAuthorId(postId);
+    if (author) {
+      await recordContact({
+        tenantId: me.tenantId, actorMemberId: me.id, otherMemberId: author, kind: "post_comment",
+      });
+    }
+  }
   revalidatePath("/feed");
 }
 

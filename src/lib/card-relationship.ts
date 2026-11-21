@@ -45,7 +45,9 @@ export type ContactKind =
   | "message"      // NAKAMA内でメッセージをやり取りした
   | "reunion"      // 別の会で再会して、もう一度読み取った
   | "link_click"   // カードから相手のSNS・メールへ移動した（＝連絡を取ろうとした）
-  | "self_report"; // 「最近やり取りした」と本人が記録した
+  | "self_report"  // 「最近やり取りした」と本人が記録した
+  | "post_like"    // 相手の投稿にいいねした（2026-11-21 追加）
+  | "post_comment";// 相手の投稿にコメントした（2026-11-21 追加）
 
 /**
  * 接触ごとの回復量。
@@ -57,6 +59,12 @@ export const CONTACT_GAIN: Record<ContactKind, number> = {
   deal: 100,
   message: 45,
   reunion: 60,
+  // 投稿への反応（2026-11-21 追加）。これが**日常的に起きる唯一の接触**になる。
+  // ⚠️ コメントは言葉のやり取りなのでメッセージに近いが、公開の場で一言なので少し低く取る。
+  //    いいねは押すだけなので、リンク移動よりわずかに上。ここを上げすぎると
+  //    連打で関係を維持できてしまう（self_report を 12 に抑えているのと同じ理由）。
+  post_comment: 35,
+  post_like: 15,
   link_click: 12,
   self_report: 12,
 };

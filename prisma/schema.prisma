@@ -1350,3 +1350,65 @@ model PostComment {
   @@index([authorMemberId])
   @@map("post_comments")
 }
+
+// ── 関係性（2026-11-21） ──────────────────────────────────
+//
+// card-relationship.ts の計算を、実際に保存する場所。
+// それまで計算式だけが書かれていて、状態を置く表が無かった（2026-11-06〜11-21）。
+//
+// ⚠️ 強さは**その都度計算する**。保存するのは「最後に接触したときの強さ」と「その時刻」だけ。
+//    いまの強さは currentStrength(strengthAtLastContact, lastContactAt) で求める。
+//    現在値を保存すると、毎日バッチで全行を書き換える羽目になる（そして必ずズレる）。
+//
+// ⚠️ 1組につき1行。**memberAId < memberBId の順で必ず並べて**保存する（CardExchange と同じ作法）。
+model Relationship {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// 必ず memberAId < memberBId（文字列比較）の順
+  memberAId String @map("member_a_id")
+  memberBId String @map("member_b_id")
+
+  /// 最後に接触したときの強さ（0〜100）と、その時刻
+  strengthAtLastContact Float    @default(0) @map("strength_at_last_contact")
+  lastContactAt         DateTime @map("last_contact_at")
+  /// 最後の接触の種類（card-relationship.ts の ContactKind）
+  lastKind String @map("last_kind")
+
+  /// 出会った文脈（card-context.ts の MeetContext.code）。複数持てる＝重なりが効く
+  contextCodes String[] @map("context_codes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([memberAId, memberBId])
+  @@index([tenantId])
+  @@index([memberAId])
+  @@index([memberBId])
+  @@map("relationships")
+}
+
+/// 接触の記録。較正のために残す。
+///
+/// ⚠️ card-relationship.ts は「半減期180日に研究上の裏付けは無い。仮置きである。
+///    **自社のデータが溜まったら必ず較正すること**」と明記している。
+///    較正するには、いつ・どんな接触が起きたかの生データが要る。だからこの表がある。
+/// ⚠️ 本文は保存しない。何が起きたかの種類と時刻だけ（通信の秘密と、無用な個人情報を増やさないため）。
+model ContactEvent {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  memberAId String @map("member_a_id")
+  memberBId String @map("member_b_id")
+
+  /// 誰の行動か（どちらが動いたか）
+  actorMemberId String @map("actor_member_id")
+
+  kind String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([memberAId, memberBId, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("contact_events")
+}

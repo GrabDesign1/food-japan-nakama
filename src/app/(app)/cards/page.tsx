@@ -11,6 +11,10 @@ import { prisma } from "@/lib/db";
 import { getOrCreateMyCard, listMyExchanges } from "@/lib/cards";
 import { exchangeQrSvg, exchangeUrl } from "@/lib/card-qr";
 import { defaultMetAt, isDuringSummit } from "@/lib/card-summit";
+import { listMyContactCards } from "@/lib/contact-cards";
+import { fadingPartners, listMyRelationships, myEffectiveCount } from "@/lib/relationship";
+import { isAlive } from "@/lib/card-relationship";
+import { removeCard } from "./scan/actions";
 import { EmptyState } from "@/components/EmptyState";
 import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 import { ExchangeForm } from "./ExchangeForm";
@@ -32,12 +36,23 @@ export default async function CardsPage({
 
   const card = await getOrCreateMyCard({ id: me.id, tenantId: me.tenantId });
   const url = exchangeUrl(card.code);
-  const [qr, exchanges] = await Promise.all([exchangeQrSvg(url), listMyExchanges(me.id)]);
+  const [qr, exchanges, contactCards, relationships, fading, effective] = await Promise.all([
+    exchangeQrSvg(url),
+    listMyExchanges(me.id),
+    listMyContactCards(me.id),
+    listMyRelationships(me.id),
+    fadingPartners(me.id),
+    myEffectiveCount(me.id),
+  ]);
+  const stateByPartner = new Map(relationships.map((r) => [r.partnerMemberId, r]));
 
   // 相手の表示内容は Member から都度引く（カードに複製していないため）
-  const partners = exchanges.length
+  const partnerIds = [
+    ...new Set([...exchanges.map((e) => e.partnerMemberId), ...fading.map((f) => f.partnerMemberId)]),
+  ];
+  const partners = partnerIds.length
     ? await prisma.member.findMany({
-        where: { id: { in: exchanges.map((e) => e.partnerMemberId) } },
+        where: { id: { in: partnerIds } },
         select: {
           id: true, name: true, avatarUrl: true, companyLogoUrl: true,
           categoryL1: true, prefecture: true, contactName: true,
@@ -82,6 +97,55 @@ export default async function CardsPage({
         </div>
         <CardSettings jobTitle={card.jobTitle} headline={card.headline} isActive={card.isActive} />
       </section>
+
+      {/* 生きている関係 ──「枚数」ではなく「生きている数」を前に出す */}
+      {relationships.length > 0 ? (
+        <section className="mt-5 rounded-xl border border-[var(--line)] bg-white p-5">
+          <div className="flex items-baseline justify-between">
+            <h2 className={h2Cls}>生きている関係</h2>
+            <span className="text-[13px] text-[var(--ink-2)]">
+              <strong className="text-[20px] font-bold text-[var(--green-d)]">{effective}</strong>
+              <span className="ml-1 text-[var(--muted)]">/ {relationships.length}</span>
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+            やり取りが無いまま時間が経つと、関係は薄れていきます。
+            枚数ではなく、いま生きている関係の数がその人の人脈です。
+          </p>
+
+          {fading.length > 0 ? (
+            <>
+              <h3 className="mt-4 text-[13px] font-bold text-[var(--ink)]">そろそろ、ご連絡を</h3>
+              <ul className="mt-2 flex flex-col gap-2">
+                {fading.map((f) => {
+                  const p = byId.get(f.partnerMemberId);
+                  if (!p) return null;
+                  return (
+                    <li
+                      key={f.partnerMemberId}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-[var(--line)] px-3.5 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <Link href={`/producers/${p.id}`} className="text-[13px] font-semibold text-[var(--ink)] hover:underline">
+                          {p.name}
+                        </Link>
+                        <div className="text-[11px] text-[var(--muted)]">{f.state.hint}</div>
+                      </div>
+                      <Link href="/feed" className="shrink-0 text-[12px] text-[var(--green-d)] underline">
+                        取り組みを見る
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
+            <p className="mt-3 text-[13px] text-[var(--ink-2)]">
+              いまのところ、薄れかけている関係はありません。
+            </p>
+          )}
+        </section>
+      ) : null}
 
       {/* 相手のコードを入れる */}
       <section className="mt-5 rounded-xl border border-[var(--line)] bg-white p-5">
@@ -138,8 +202,23 @@ export default async function CardsPage({
                   <div className="mt-0.5 text-[12px] text-[var(--ink-2)]">
                     {[p.categoryL1, p.prefecture].filter(Boolean).join("・")}
                   </div>
+                  {(() => {
+                    const rel = stateByPartner.get(p.id);
+                    if (!rel) return null;
+                    return (
+                      <div
+                        className={`mt-2 inline-block rounded px-2 py-0.5 text-[11px] ${
+                          isAlive(rel.strength)
+                            ? "bg-[var(--green-soft)] text-[var(--green-d)]"
+                            : "bg-[var(--amber-bg)] text-[var(--amber-ink)]"
+                        }`}
+                      >
+                        {rel.state.label}
+                      </div>
+                    );
+                  })()}
                   {e.metAt ? (
-                    <div className="mt-2 inline-block rounded bg-[var(--green-soft)] px-2 py-0.5 text-[11px] text-[var(--green-d)]">
+                    <div className="mt-2 inline-block rounded bg-[#f3f3f1] px-2 py-0.5 text-[11px] text-[var(--ink-2)] sm:ml-2">
                       {e.metAt}
                     </div>
                   ) : null}
@@ -147,6 +226,81 @@ export default async function CardsPage({
                     <p className="mt-2 whitespace-pre-wrap text-[12px] text-[var(--ink-2)]">{e.myNote}</p>
                   ) : null}
                   <CardNote exchangeId={e.exchangeId} note={e.myNote} />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* 取り込んだ名刺（持ち主にしか見えない） */}
+      <section className="mt-10">
+        <div className="flex items-baseline justify-between">
+          <h2 className={h2Cls}>取り込んだ名刺</h2>
+          <Link href="/cards/scan" className="text-[13px] text-[var(--green-d)] underline">
+            名刺を取り込む
+          </Link>
+        </div>
+        <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
+          いただいた紙の名刺です。<strong className="font-bold">あなたにしか見えません。</strong>
+        </p>
+
+        {contactCards.length === 0 ? (
+          <div className="mt-3">
+            <EmptyState
+              title="まだ取り込んだ名刺はありません"
+              description="いただいた名刺を撮ると、お名前と連絡先を読み取って残せます。"
+              actions={[{ label: "名刺を取り込む", href: "/cards/scan", variant: "primary" as const }]}
+            />
+          </div>
+        ) : (
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {contactCards.map((c) => {
+              if (needle) {
+                const hay = [c.name, c.company, c.jobTitle, c.metAt, c.note, ...c.tags]
+                  .filter(Boolean).join(" ").toLowerCase();
+                if (!hay.includes(needle)) return null;
+              }
+              return (
+                <li key={c.id} className="rounded-xl border border-[var(--line)] bg-white p-4">
+                  <div className="flex items-start gap-3">
+                    {c.hasImage ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={`/api/card-images/${c.id}`}
+                        alt=""
+                        loading="lazy"
+                        className="h-14 w-24 shrink-0 rounded border border-[var(--line)] object-cover"
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[14px] font-semibold text-[var(--ink)]">{c.name}</div>
+                      <div className="mt-0.5 text-[12px] text-[var(--ink-2)]">
+                        {[c.company, c.jobTitle].filter(Boolean).join("　")}
+                      </div>
+                    </div>
+                  </div>
+                  {c.tags.length ? (
+                    <ul className="mt-2 flex flex-wrap gap-1.5">
+                      {c.tags.map((t) => (
+                        <li key={t} className="rounded bg-[#f3f3f1] px-2 py-0.5 text-[11px] text-[var(--ink-2)]">
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {c.metAt ? (
+                    <div className="mt-2 text-[11px] text-[var(--muted)]">{c.metAt}</div>
+                  ) : null}
+                  {c.note ? (
+                    <p className="mt-2 whitespace-pre-wrap text-[12px] text-[var(--ink-2)]">{c.note}</p>
+                  ) : null}
+                  <form action={removeCard} className="mt-3">
+                    <input type="hidden" name="id" value={c.id} />
+                    <button type="submit" className="text-[11px] text-[var(--muted)] hover:underline">
+                      この名刺を削除する
+                    </button>
+                  </form>
                 </li>
               );
             })}

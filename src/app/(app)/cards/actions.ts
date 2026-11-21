@@ -6,6 +6,7 @@ import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { exchangeByCode, getOrCreateMyCard, updateMyNote } from "@/lib/cards";
 import { defaultMetAt } from "@/lib/card-summit";
+import { recordContact } from "@/lib/relationship";
 
 export type ExchangeState = { ok?: boolean; already?: boolean; error?: string };
 
@@ -26,6 +27,15 @@ export async function exchange(_prev: ExchangeState, formData: FormData): Promis
 
   const result = await exchangeByCode({ id: me.id, tenantId: me.tenantId }, code, metAt);
   if (!result.ok) return { error: result.error };
+
+  // 交換そのものが関係の始まり。再会（二度目の読み取り）は reunion として加点し直す
+  await recordContact({
+    tenantId: me.tenantId,
+    actorMemberId: me.id,
+    otherMemberId: result.partnerMemberId,
+    kind: result.already ? "reunion" : "exchange",
+    addContext: "event",
+  });
 
   revalidatePath("/cards");
   return { ok: true, already: result.already };

@@ -750,7 +750,7 @@ const CARD_SCAN_SCHEMA = {
     phone: { type: "string", description: "代表・固定電話。名刺の表記のまま。無ければ空文字。" },
     mobile: { type: "string", description: "携帯電話。名刺の表記のまま。無ければ空文字。" },
     website: { type: "string", description: "ウェブサイトのURL。無ければ空文字。" },
-    postalCode: { type: "string", description: "郵便番号。ハイフンありの7桁。無ければ空文字。" },
+    postalCode: { type: "string", description: "郵便番号。ハイフンありの7桁（例: 880-0805）。〒の記号は含めない。無ければ空文字。" },
     address: { type: "string", description: "住所。郵便番号を除いた部分。無ければ空文字。" },
     confidence: {
       type: "string",
