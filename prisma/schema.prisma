@@ -92,6 +92,11 @@ model User {
   /// 案内メール（案件・イベント・共創支援等）への同意日時（特定電子メール法の同意記録。null=未同意）
   marketingOptInAt DateTime? @map("marketing_opt_in_at")
 
+  /// 「みんなの取り組み」の通知メールを止めた日時（2026-11-21 追加。null=受け取る）
+  /// ⚠️ これは広告ではなく**自分宛の反応のお知らせ**なので、既定は受け取る側にする。
+  ///    ただし**止める手段を必ず用意する**（/feed の下に切り替えを置いた）。
+  feedEmailOptOutAt DateTime? @map("feed_email_opt_out_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1295,6 +1300,20 @@ model Post {
   /// 外部記事を紹介するときのURLと見出し（本文だけの投稿では空）
   linkUrl   String? @map("link_url")
   linkTitle String? @map("link_title")
+  /// リンク先のページから自動で読んだ見出し画像と媒体名（OGP。2026-11-21 追加）
+  /// ⚠️ linkImageUrl は**外部のURLをそのまま画面に出さない**。/api/link-image/[postId] 経由で配る
+  ///    （img-src 'self' を崩さないため。CSPは next.config.ts）
+  linkImageUrl String? @map("link_image_url")
+  linkSiteName String? @map("link_site_name")
+
+  /// 他の人の投稿を紹介する（シェア）ときの、元の投稿のid（2026-11-21 追加）
+  /// ⚠️ リレーションは張らず参照のみ。元投稿が消えたときは「削除された投稿」と出す
+  /// ⚠️ シェアを読める範囲は、**元投稿の作者ともつながっているか**で必ず再判定する
+  ///    （つながっていない人の投稿が、シェア経由で漏れないようにする）
+  sharedPostId String? @map("shared_post_id")
+
+  /// 本文を直した時刻（直していなければ空）。直したことを画面に出すため残す
+  editedAt DateTime? @map("edited_at")
 
   /// 非公開バケット post-images 内の保存パス（公開URLは作らない）
   imagePaths String[] @map("image_paths")
@@ -1311,6 +1330,7 @@ model Post {
 
   @@index([tenantId, createdAt])
   @@index([authorMemberId, createdAt])
+  @@index([sharedPostId])
   @@map("posts")
 }
 
@@ -1338,6 +1358,11 @@ model PostComment {
   postId         String @map("post_id")
   authorMemberId String @map("author_member_id")
 
+  /// 返信先のコメントid（2026-11-21 追加）。空なら投稿への直のコメント
+  /// ⚠️ 枝は**1段だけ**。返信への返信も、同じ親にぶら下げる（際限なく深くしない）
+  /// ⚠️ 親は**同じ投稿のコメント**であることを必ず確かめる（他の投稿の枝に混ぜられないように）
+  parentId String? @map("parent_id")
+
   body String
 
   deletedAt DateTime? @map("deleted_at")
@@ -1348,6 +1373,7 @@ model PostComment {
 
   @@index([postId, createdAt])
   @@index([authorMemberId])
+  @@index([parentId])
   @@map("post_comments")
 }
 

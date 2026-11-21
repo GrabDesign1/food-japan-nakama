@@ -6,53 +6,53 @@
 // ⚠️ **ここが関係性を維持する唯一の装置**。card-relationship.ts の計算では、交換しただけの関係は
 //    約93日で「そろそろご連絡を」、約418日で「切れている」に落ちる。投稿への反応が接触として
 //    数えられて初めて、名刺の枚数が「生きている関係」になる。
-//    ⚠️ 接触としての加点はまだ入っていない（ContactLog の実装が先。2026-11-21時点では未着手）。
+//    加点は actions.ts から relationship.ts の recordContact() を呼んで記録する
+//    （いいね +15 / コメント +35。2026-11-21 実装済み）。
 //
 // ⚠️ 公開範囲は**カードを交換した相手＋自分**だけ（ユーザー判断「参加者同士だけで十分」）。
 //    判定は feed.ts（サーバー）で行う。
+//
+// ⚠️ 「もっと読む」は**件数を増やして読み直す**作り（?shown=40）。
+//    クライアント側で継ぎ足すと、いいねを押したあとの作り直しで継ぎ足した分が古いまま残る。
+//    URLに出しておけば、戻ってきても同じところが開く。
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
-import { prisma } from "@/lib/db";
-import { listFeed, listComments, connectionIds } from "@/lib/feed";
+import {
+  loadFeedPage, connectionIds, normalizeShown, FEED_PAGE_SIZE, FEED_MAX_SHOWN,
+} from "@/lib/feed";
+import { feedEmailEnabled } from "@/lib/feed-notify";
 import { EmptyState } from "@/components/EmptyState";
-import { eyebrowCls, h1Cls } from "@/lib/ui";
+import { eyebrowCls, h1Cls, btn } from "@/lib/ui";
 import { Composer } from "./_components/Composer";
 import { PostCard, type Author } from "./_components/PostCard";
+import { toggleFeedEmail } from "./actions";
 
 export const metadata = { title: "みんなの取り組み" };
 
-export default async function FeedPage() {
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ shown?: string }>;
+}) {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su);
 
-  const [posts, connections] = await Promise.all([listFeed(me.id), connectionIds(me.id)]);
+  const { shown: shownRaw } = await searchParams;
+  const shown = normalizeShown(shownRaw);
 
-  // コメントは表示する投稿のぶんだけ読む
-  const commentsByPost = new Map(
-    await Promise.all(
-      posts.map(async (p) => [p.id, await listComments(me.id, p.id)] as const)
-    )
-  );
+  const [page, connections, mailOn] = await Promise.all([
+    loadFeedPage(me.id, { take: shown }),
+    connectionIds(me.id),
+    feedEmailEnabled(su.app.id),
+  ]);
 
-  // 書いた人の表示内容は Member から都度引く（投稿に複製していないため）
-  const authorIds = [
-    ...new Set([
-      ...posts.map((p) => p.authorMemberId),
-      ...[...commentsByPost.values()].flat().map((c) => c.authorMemberId),
-    ]),
-  ];
-  const authors: Author[] = authorIds.length
-    ? await prisma.member.findMany({
-        where: { id: { in: authorIds } },
-        select: {
-          id: true, name: true, avatarUrl: true,
-          categoryL1: true, prefecture: true, contactName: true,
-        },
-      })
-    : [];
-  const byId = new Map(authors.map((a) => [a.id, a]));
+  const byId: Record<string, Author> = {};
+  for (const a of page.authors) byId[a.id] = a;
+
+  const lastId = page.posts[page.posts.length - 1]?.id;
 
   return (
     <div className="mx-auto max-w-[680px] px-4 py-8">
@@ -67,7 +67,7 @@ export default async function FeedPage() {
         <Composer myName={me.contactName || me.name} />
       </div>
 
-      {posts.length === 0 ? (
+      {page.posts.length === 0 ? (
         <div className="mt-6">
           <EmptyState
             title={connections.length === 0 ? "まだつながっている方がいません" : "まだ投稿がありません"}
@@ -84,19 +84,58 @@ export default async function FeedPage() {
           />
         </div>
       ) : (
-        <ul className="mt-6 flex flex-col gap-4">
-          {posts.map((p) => (
-            <li key={p.id}>
-              <PostCard
-                post={p}
-                author={byId.get(p.authorMemberId)}
-                comments={commentsByPost.get(p.id) ?? []}
-                isMine={p.authorMemberId === me.id}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-6 flex flex-col gap-4">
+            {page.posts.map((p) => (
+              <li key={p.id}>
+                <PostCard
+                  post={p}
+                  author={byId[p.authorMemberId]}
+                  comments={page.comments[p.id] ?? []}
+                  authorsById={byId}
+                  isMine={p.authorMemberId === me.id}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {page.hasMore ? (
+            <div className="mt-6 text-center">
+              {/* 読み込んだ最後の投稿に戻るので、押しても見ていた場所を失わない */}
+              <Link
+                href={`/feed?shown=${shown + FEED_PAGE_SIZE}${lastId ? `#p-${lastId}` : ""}`}
+                className={btn("secondary", "md")}
+                scroll={false}
+              >
+                もっと読む
+              </Link>
+            </div>
+          ) : shown >= FEED_MAX_SHOWN ? (
+            <p className="mt-6 text-center text-[12px] text-[var(--muted)]">
+              ここまでが直近{FEED_MAX_SHOWN}件です。
+            </p>
+          ) : null}
+        </>
       )}
+
+      {/* 通知メールの受け取り（ユーザー指示 2026-11-21「書き込んだらメールが飛ぶようにしてよ」）。
+          ⚠️ 止める手段を必ず画面に置く。止められないお知らせは、やがて迷惑メール扱いになる。 */}
+      <form
+        action={toggleFeedEmail}
+        className="mt-10 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb] px-4 py-4"
+      >
+        <p className="text-[13px] font-semibold text-[var(--ink)]">お知らせメール</p>
+        <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+          自分の投稿へのコメント・いいね・紹介と、自分のコメントへの返信を
+          {mailOn ? "メールでお知らせしています。" : "いまはお知らせしていません。"}
+          <br />
+          いいねは、同じ投稿について1日1通までにしています。
+        </p>
+        <input type="hidden" name="enabled" value={mailOn ? "0" : "1"} />
+        <button type="submit" className={`${btn("secondary", "sm")} mt-3`}>
+          {mailOn ? "お知らせメールを止める" : "お知らせメールを受け取る"}
+        </button>
+      </form>
     </div>
   );
 }

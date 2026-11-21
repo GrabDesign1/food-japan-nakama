@@ -9,6 +9,8 @@ import { toggleFavoriteMember } from "../actions";
 import { startConversation } from "../../messages/actions";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 import { safeInternalPath } from "@/lib/security";
+import { loadMemberWall } from "@/lib/feed";
+import { PostCard, type Author } from "../../feed/_components/PostCard";
 
 export default async function ProducerDetailPage({
   params,
@@ -39,6 +41,15 @@ export default async function ProducerDetailPage({
 
   const isOwner = m.id === su.app.memberId;
   if (m.status !== "APPROVED" && !isOwner) notFound();
+
+  // この事業者の「取り組み」（＝投稿）。
+  // ⚠️ カードを交換していない相手の投稿は空が返る（判定は feed.ts）。
+  //    プロフィールは承認済みなら誰でも開けるので、ここに投稿を出す判定を足さない。
+  const wall = su.app.memberId
+    ? await loadMemberWall(su.app.memberId, m.id, 5)
+    : { posts: [], comments: {}, authors: [], hasMore: false, total: 0 };
+  const wallAuthors: Record<string, Author> = {};
+  for (const a of wall.authors) wallAuthors[a.id] = a;
 
   // 閲覧数マップ・お気に入り・スレッド有無は互いに独立なので並列で取得（直列3往復→1往復）
   const [viewMap, favorite, existingThread] = await Promise.all([
@@ -224,6 +235,39 @@ export default async function ProducerDetailPage({
               className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
             />
           ))}
+        </div>
+      ) : null}
+
+      {/* この事業者の取り組み（みんなの取り組みへの投稿）。
+          ⚠️ カードを交換している相手にだけ出る。交換していない人には節そのものを出さない。 */}
+      {wall.posts.length ? (
+        <div>
+          <h2 className={`${h2Cls} mb-3`}>
+            {isOwner ? "自分の取り組み" : "この事業者の取り組み"}
+            <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">
+              全{wall.total}件
+            </span>
+          </h2>
+          <ul className="flex max-w-[680px] flex-col gap-4">
+            {wall.posts.map((p) => (
+              <li key={p.id}>
+                <PostCard
+                  post={p}
+                  author={wallAuthors[p.authorMemberId]}
+                  comments={wall.comments[p.id] ?? []}
+                  authorsById={wallAuthors}
+                  isMine={p.authorMemberId === su.app.memberId}
+                />
+              </li>
+            ))}
+          </ul>
+          {wall.hasMore ? (
+            <p className="mt-3">
+              <Link href="/feed" className="text-[13px] text-[var(--green-d)] hover:underline">
+                みんなの取り組みで、続きを読む →
+              </Link>
+            </p>
+          ) : null}
         </div>
       ) : null}
 

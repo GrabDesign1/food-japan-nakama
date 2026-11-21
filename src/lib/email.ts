@@ -824,3 +824,125 @@ export async function sendFieldworkReportEmail(params: {
     </div>`;
   await send({ to: [params.to], subject: `【共創フィールドワーク】レポートの控え：${title}`, html });
 }
+
+// ── みんなの取り組み（コミュニティ投稿）の通知（2026-11-21） ───────────────
+//
+// なぜ送るか（ユーザー指示 2026-11-21）:
+//   「書き込んだらメールが飛ぶようにしてよ」「自分のところにメッセージがきたりすると」
+//   3ヶ月に1回しか会わない相手同士では、自分で見に来る人はいない。
+//   反応が本人に届いて初めて、投稿が会話になる。
+//
+// ⚠️ 送るのは「**自分宛の反応**」だけ（自分の投稿へのコメント・いいね・シェア、自分のコメントへの返信）。
+//    誰かが新しく投稿したことを、つながっている全員に知らせる作りにはしていない
+//    （30人が全員つながると1投稿で29通になり、読まれなくなる）。
+// ⚠️ 本文の引用は80字まで。メールに全文を載せると、受け取る側の鍵で守られていない場所に
+//    会員の書いたものが丸ごと残る。
+// ⚠️ 宛先の選定と停止設定の確認は feed-notify.ts で行う。ここは文面だけ。
+
+/** 共通の体裁。見出し・導入・引用・飛び先ボタン */
+function feedNoticeHtml(params: {
+  heading: string;
+  lead: string;
+  quote?: string | null;
+  postId: string;
+  buttonLabel: string;
+}): string {
+  const { heading, lead, quote, postId, buttonLabel } = params;
+  return `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">${heading}</h2>
+    <p style="font-size:14px;color:#3C4A62">${lead}</p>
+    ${
+      quote
+        ? `<p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${esc(
+            quote
+          )}</p>`
+        : ""
+    }
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/feed#p-${esc(postId)}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">${buttonLabel}</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">
+      このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
+      この種類のお知らせは、<a href="${APP_URL}/feed" style="color:#7C8899">みんなの取り組み</a>の画面いちばん下で止められます。
+    </p>
+  </div>`;
+}
+
+/** 自分の投稿にコメントが付いた／自分のコメントに返信が付いた */
+export async function notifyPostComment(params: {
+  to: string[];
+  fromMemberName: string;
+  preview: string;
+  postId: string;
+  isReply: boolean;
+}): Promise<void> {
+  const { to, fromMemberName, preview, postId, isReply } = params;
+  if (to.length === 0) return;
+  const short = preview.length > 80 ? `${preview.slice(0, 80)}…` : preview;
+  await send({
+    to,
+    subject: isReply
+      ? `【FOOD JAPAN NAKAMA】${fromMemberName}さんから返信がありました`
+      : `【FOOD JAPAN NAKAMA】${fromMemberName}さんがコメントしました`,
+    html: feedNoticeHtml({
+      heading: isReply ? "コメントに返信がありました" : "投稿にコメントがつきました",
+      lead: isReply
+        ? `あなたのコメントに、<b>${esc(fromMemberName)}</b> さんが返信しました。`
+        : `あなたの投稿に、<b>${esc(fromMemberName)}</b> さんがコメントしました。`,
+      quote: short,
+      postId,
+      buttonLabel: "コメントを読む",
+    }),
+  });
+}
+
+/**
+ * 自分の投稿にいいねが付いた。
+ * ⚠️ 1投稿につき1日1通まで（送るかどうかの判定は feed-notify.ts）。
+ *    1件ごとに送ると、人気の投稿で通知が洪水になる。
+ */
+export async function notifyPostLike(params: {
+  to: string[];
+  fromMemberName: string;
+  postPreview: string;
+  postId: string;
+}): Promise<void> {
+  const { to, fromMemberName, postPreview, postId } = params;
+  if (to.length === 0) return;
+  const short = postPreview.length > 80 ? `${postPreview.slice(0, 80)}…` : postPreview;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】${fromMemberName}さんがいいねしました`,
+    html: feedNoticeHtml({
+      heading: "投稿にいいねがつきました",
+      lead: `あなたの投稿に、<b>${esc(fromMemberName)}</b> さんがいいねしました。`,
+      quote: short || null,
+      postId,
+      buttonLabel: "投稿を見る",
+    }),
+  });
+}
+
+/** 自分の投稿が紹介（シェア）された */
+export async function notifyPostShared(params: {
+  to: string[];
+  fromMemberName: string;
+  comment: string;
+  postId: string;
+}): Promise<void> {
+  const { to, fromMemberName, comment, postId } = params;
+  if (to.length === 0) return;
+  const short = comment.length > 80 ? `${comment.slice(0, 80)}…` : comment;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】${fromMemberName}さんがあなたの投稿を紹介しました`,
+    html: feedNoticeHtml({
+      heading: "投稿が紹介されました",
+      lead: `<b>${esc(fromMemberName)}</b> さんが、あなたの投稿を自分のつながりに紹介しました。`,
+      quote: short || null,
+      postId,
+      buttonLabel: "紹介された投稿を見る",
+    }),
+  });
+}

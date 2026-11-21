@@ -3,23 +3,34 @@
 // コミュニティの投稿（2026-11-21）。
 // ⚠️ 見える範囲・書ける範囲の判定は、すべて feed.ts（サーバー）で行う。
 //    画面から渡された id を信じない。
+// ⚠️ 通知メールは after() で応答のあとに送る。送信に失敗しても操作は成功のままにする
+//    （いいねが保存されたのにエラー表示、が一番困る）。判定は feed-notify.ts。
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { randomUUID } from "node:crypto";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
-  addComment, createPost, deleteMyPost, toggleLike, postAuthorId,
-  POST_IMAGE_MAX, POST_BODY_MAX,
+  addComment, createPost, deleteMyPost, deleteComment, editMyPost, sharePost,
+  toggleLike, postAuthorId, POST_IMAGE_MAX, POST_BODY_MAX,
 } from "@/lib/feed";
 import { recordContact } from "@/lib/relationship";
+import { notifyOnComment, notifyOnLike, notifyOnShare, setFeedEmailEnabled } from "@/lib/feed-notify";
+import { fetchLinkPreview } from "@/lib/link-preview";
 
 const BUCKET = "post-images";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const OK_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export type PostState = { ok?: boolean; error?: string };
+
+/** 投稿した本人のプロフィール（取り組み欄）も作り直す */
+function revalidateFeed(memberId?: string | null): void {
+  revalidatePath("/feed");
+  if (memberId) revalidatePath(`/producers/${memberId}`);
+}
 
 export async function submitPost(_prev: PostState, formData: FormData): Promise<PostState> {
   const su = await getSessionUser();
@@ -31,7 +42,9 @@ export async function submitPost(_prev: PostState, formData: FormData): Promise<
 
   const body = String(formData.get("body") ?? "").slice(0, POST_BODY_MAX);
   const linkUrl = String(formData.get("linkUrl") ?? "");
-  const linkTitle = String(formData.get("linkTitle") ?? "");
+  let linkTitle = String(formData.get("linkTitle") ?? "");
+  let linkImageUrl = "";
+  let linkSiteName = "";
 
   // 画像を非公開バケットへ。失敗した画像は黙って捨てず、その場で知らせる
   const files = formData.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
@@ -61,14 +74,45 @@ export async function submitPost(_prev: PostState, formData: FormData): Promise<
     }
   }
 
+  // リンクが貼られていたら、見出し・画像・媒体名を読む。
+  // ⚠️ 読めなくても投稿は通す（相手のサイトが落ちていても書けないのは困る）。
+  if (linkUrl.trim()) {
+    const preview = await fetchLinkPreview(linkUrl.trim()).catch(() => null);
+    if (preview) {
+      if (!linkTitle.trim() && preview.title) linkTitle = preview.title;
+      linkImageUrl = preview.imageUrl ?? "";
+      linkSiteName = preview.siteName ?? "";
+    }
+  }
+
   const result = await createPost(
     { id: me.id, tenantId: me.tenantId },
-    { body, linkUrl, linkTitle, imagePaths }
+    { body, linkUrl, linkTitle, linkImageUrl, linkSiteName, imagePaths }
   );
   if (!result.ok) return { error: result.error };
 
-  revalidatePath("/feed");
+  revalidateFeed(me.id);
   return { ok: true };
+}
+
+export type PeekState = {
+  title?: string | null;
+  siteName?: string | null;
+  imageUrl?: string | null;
+  error?: string;
+};
+
+/**
+ * 投稿する前に、貼ったURLの見出しを読んでみる（投稿欄のプレビュー用）。
+ * ⚠️ 返すのは見出しと媒体名だけ。画像URLは「あるかどうか」の判断に使うだけで、
+ *    そのまま <img src> に書かせない（CSP img-src 'self' を崩さないため）。
+ */
+export async function peekLink(url: string): Promise<PeekState> {
+  const su = await getSessionUser();
+  if (!su) return { error: "ログインしてからお試しください。" };
+  const preview = await fetchLinkPreview(url).catch(() => null);
+  if (!preview) return { error: "このURLからは見出しを読めませんでした。手で入れてください。" };
+  return { title: preview.title, siteName: preview.siteName, imageUrl: preview.imageUrl };
 }
 
 export async function like(formData: FormData): Promise<void> {
@@ -86,9 +130,11 @@ export async function like(formData: FormData): Promise<void> {
       await recordContact({
         tenantId: me.tenantId, actorMemberId: me.id, otherMemberId: author, kind: "post_like",
       });
+      after(() => notifyOnLike({ postId, actorMemberId: me.id }));
+      revalidatePath(`/producers/${author}`);
     }
   }
-  revalidatePath("/feed");
+  revalidateFeed(me.id);
 }
 
 export async function comment(formData: FormData): Promise<void> {
@@ -96,7 +142,9 @@ export async function comment(formData: FormData): Promise<void> {
   if (!su) return;
   const me = await getOrCreateMemberForUser(su);
   const postId = String(formData.get("postId") ?? "");
-  const result = await addComment(me.id, postId, String(formData.get("body") ?? ""));
+  const body = String(formData.get("body") ?? "");
+  const parentId = String(formData.get("parentId") ?? "") || null;
+  const result = await addComment(me.id, postId, body, parentId);
 
   if (result.ok) {
     const author = await postAuthorId(postId);
@@ -104,9 +152,61 @@ export async function comment(formData: FormData): Promise<void> {
       await recordContact({
         tenantId: me.tenantId, actorMemberId: me.id, otherMemberId: author, kind: "post_comment",
       });
+      revalidatePath(`/producers/${author}`);
     }
+    after(() =>
+      notifyOnComment({ postId, actorMemberId: me.id, body, parentId: result.parentId })
+    );
   }
+  // コメントはプロフィールの取り組み欄には出ないので、流れだけ作り直す
   revalidatePath("/feed");
+}
+
+export async function removeComment(formData: FormData): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  const me = await getOrCreateMemberForUser(su);
+  await deleteComment(me.id, String(formData.get("commentId") ?? ""));
+  revalidatePath("/feed");
+}
+
+export async function editPost(formData: FormData): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  const me = await getOrCreateMemberForUser(su);
+  await editMyPost(me.id, String(formData.get("postId") ?? ""), {
+    body: String(formData.get("body") ?? ""),
+    linkTitle: String(formData.get("linkTitle") ?? ""),
+  });
+  revalidateFeed(me.id);
+}
+
+/** 他の人の投稿を、ひとこと添えて自分のつながりに紹介する */
+export async function sharePostAction(formData: FormData): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  const me = await getOrCreateMemberForUser(su);
+  const originalPostId = String(formData.get("postId") ?? "");
+  const body = String(formData.get("body") ?? "");
+
+  const result = await sharePost({ id: me.id, tenantId: me.tenantId }, originalPostId, body);
+  if (result.ok) {
+    const author = await postAuthorId(result.originalId);
+    if (author) {
+      await recordContact({
+        tenantId: me.tenantId, actorMemberId: me.id, otherMemberId: author, kind: "post_comment",
+      });
+    }
+    after(() =>
+      notifyOnShare({
+        originalPostId: result.originalId,
+        sharePostId: result.id,
+        actorMemberId: me.id,
+        comment: body,
+      })
+    );
+  }
+  revalidateFeed(me.id);
 }
 
 export async function removePost(formData: FormData): Promise<void> {
@@ -114,5 +214,13 @@ export async function removePost(formData: FormData): Promise<void> {
   if (!su) return;
   const me = await getOrCreateMemberForUser(su);
   await deleteMyPost(me.id, String(formData.get("postId") ?? ""));
+  revalidateFeed(me.id);
+}
+
+/** 通知メールの受け取りを切り替える（/feed の下の切り替え） */
+export async function toggleFeedEmail(formData: FormData): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) return;
+  await setFeedEmailEnabled(su.app.id, String(formData.get("enabled") ?? "") === "1");
   revalidatePath("/feed");
 }

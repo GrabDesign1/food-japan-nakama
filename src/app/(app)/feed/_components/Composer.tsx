@@ -3,10 +3,10 @@
 // 投稿する欄。
 // ⚠️ 入力は制御コンポーネントにする（React 19 はサーバーアクション完了時に form をリセットするため、
 //    defaultValue 方式だと送信エラーで書いた文が消える。協賛フォームで踏んだ件）。
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { btn, input as inputCls } from "@/lib/ui";
 import { POST_BODY_MAX, POST_IMAGE_MAX } from "@/lib/feed-core";
-import { submitPost, type PostState } from "../actions";
+import { submitPost, peekLink, type PostState } from "../actions";
 
 export function Composer({ myName }: { myName: string }) {
   const [body, setBody] = useState("");
@@ -16,12 +16,33 @@ export function Composer({ myName }: { myName: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
+  // 貼ったURLから読んだ見出し（⑥リンクの見た目。2026-11-21）
+  // ⚠️ 画像は外部URLをそのまま出さず「ありそう」の表示だけにする。
+  //    実際の配信は投稿後に /api/link-image/[postId] を通す（CSP img-src 'self'）。
+  const [peek, setPeek] = useState<{ siteName?: string | null; hasImage?: boolean; error?: string } | null>(null);
+  const [peeking, startPeek] = useTransition();
+  const peekedFor = useRef("");
+
+  function readHeadline(url: string): void {
+    const u = url.trim();
+    if (!u || peekedFor.current === u) return;
+    peekedFor.current = u;
+    startPeek(async () => {
+      const r = await peekLink(u);
+      if (r.error) { setPeek({ error: r.error }); return; }
+      setPeek({ siteName: r.siteName, hasImage: Boolean(r.imageUrl) });
+      // 見出しを手で入れていなければ、読んだものを入れる
+      setLinkTitle((prev) => (prev.trim() ? prev : r.title ?? ""));
+    });
+  }
+
   const [state, formAction, pending] = useActionState<PostState, FormData>(submitPost, {});
 
   // 送信に成功したときだけ空にする（失敗時は書いたものを残す）
   useEffect(() => {
     if (state?.ok) {
       setBody(""); setLinkUrl(""); setLinkTitle(""); setShowLink(false); setFiles([]);
+      setPeek(null); peekedFor.current = "";
       if (fileRef.current) fileRef.current.value = "";
     }
   }, [state]);
@@ -54,7 +75,8 @@ export function Composer({ myName }: { myName: string }) {
             type="url"
             name="linkUrl"
             value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
+            onChange={(e) => { setLinkUrl(e.target.value); setPeek(null); }}
+            onBlur={(e) => readHeadline(e.target.value)}
             placeholder="https://… 記事やページのURL"
             className={`${inputCls("sm")} w-full`}
             inputMode="url"
@@ -65,10 +87,32 @@ export function Composer({ myName }: { myName: string }) {
             name="linkTitle"
             value={linkTitle}
             onChange={(e) => setLinkTitle(e.target.value)}
-            placeholder="リンクの見出し（任意）"
+            placeholder="リンクの見出し（空のままでもページから読みます）"
             className={`${inputCls("sm")} w-full`}
             autoComplete="off"
           />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { peekedFor.current = ""; readHeadline(linkUrl); }}
+              disabled={peeking || !linkUrl.trim()}
+              className={btn("secondary", "sm")}
+            >
+              {peeking ? "読んでいます…" : "ページから見出しを読む"}
+            </button>
+            {peek?.error ? (
+              <span className="text-[11px] leading-5 text-[var(--red)]">{peek.error}</span>
+            ) : peek ? (
+              <span className="text-[11px] leading-5 text-[var(--muted)]">
+                {peek.siteName ? `${peek.siteName} から読みました。` : "読み取りました。"}
+                {peek.hasImage ? "見出し画像つきで表示されます。" : "画像は見つかりませんでした。"}
+              </span>
+            ) : (
+              <span className="text-[11px] leading-5 text-[var(--muted)]">
+                URLを入れて欄の外を押すと、見出しを自動で読みます。
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <>
