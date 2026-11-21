@@ -725,3 +725,141 @@ ${answersText}`,
     return { error: "企画書を作れませんでした。電波の良いところで、もう一度お試しください。" };
   }
 }
+
+// ── 名刺の読み取り（2026-11-21） ───────────────────────────────
+//
+// なぜ入れるか: 会場で受け取った紙の名刺は、手で打ち直す手間のせいで机の引き出しに消える。
+//   撮って読み取れば、「あの時会った人」が検索できる形で残る（ユーザー指示 2026-11-21）。
+//
+// ⚠️⚠️ **外部へ送るのは他人の個人情報である。** これまでの用途（本人が掲載するつもりで書いた文）
+//    とは性質が違う。プライバシーポリシーに「会員が取り込んだ名刺の画像をAI事業者へ送って
+//    読み取る」旨を書いてから本番に出すこと（2026-11-21時点で未記載）。
+// ⚠️ 読み取りは必ず間違える。出てくるのは**下書き**で、本人が確認して保存する前提にする。
+//    読めなかった項目は、推測で埋めずに空のままにさせる（勝手に会社名を創作されると質が悪い）。
+// ⚠️ 1回あたりの目安: 画像1枚 + 出力300トークン ≒ 3円。
+
+const CARD_SCAN_SCHEMA = {
+  type: "object",
+  properties: {
+    name: { type: "string", description: "氏名。姓と名の間は全角スペース1つ。読めなければ空文字。" },
+    nameKana: { type: "string", description: "氏名のふりがな。名刺に書かれている場合だけ。ひらがな。無ければ空文字。" },
+    company: { type: "string", description: "会社・団体名。法人格（株式会社など）も名刺のとおりに含める。" },
+    department: { type: "string", description: "部署名。無ければ空文字。" },
+    jobTitle: { type: "string", description: "役職。無ければ空文字。" },
+    email: { type: "string", description: "メールアドレス。無ければ空文字。推測しない。" },
+    phone: { type: "string", description: "代表・固定電話。名刺の表記のまま。無ければ空文字。" },
+    mobile: { type: "string", description: "携帯電話。名刺の表記のまま。無ければ空文字。" },
+    website: { type: "string", description: "ウェブサイトのURL。無ければ空文字。" },
+    postalCode: { type: "string", description: "郵便番号。ハイフンありの7桁。無ければ空文字。" },
+    address: { type: "string", description: "住所。郵便番号を除いた部分。無ければ空文字。" },
+    confidence: {
+      type: "string",
+      enum: ["high", "medium", "low"],
+      description: "読み取りの自信。low のときは画面で「写真を撮り直してください」と促す。",
+    },
+  },
+  required: [
+    "name", "nameKana", "company", "department", "jobTitle",
+    "email", "phone", "mobile", "website", "postalCode", "address", "confidence",
+  ],
+  additionalProperties: false,
+} as const;
+
+const CARD_SCAN_SYSTEM = `あなたは名刺の文字起こしをする係です。画像に写っている名刺から、項目ごとに文字をそのまま書き出します。
+
+守ること:
+- 画像に**書かれている文字だけ**を書き出す。書かれていないものは空文字にする。
+- 推測して補わない。会社名の正式名称を知っていても、名刺の表記のまま書く。
+- 電話番号・郵便番号は、名刺のハイフンの位置をそのまま残す。
+- 肩書きが複数行にまたがるときは、1行にまとめる。
+- 裏面やロゴだけが写っていて読み取れないときは、すべて空文字にして confidence を low にする。
+- 名刺以外のもの（人物の写真、書類、風景）が写っているときも、すべて空文字にして confidence を low にする。`;
+
+export type CardScanDraft = {
+  name: string;
+  nameKana: string;
+  company: string;
+  department: string;
+  jobTitle: string;
+  email: string;
+  phone: string;
+  mobile: string;
+  website: string;
+  postalCode: string;
+  address: string;
+  confidence: "high" | "medium" | "low";
+};
+
+export type CardScanResult = { card: CardScanDraft } | { error: string };
+
+/**
+ * 名刺の画像から項目を読み取る。**下書きを返すだけ**で、保存は本人の確認後に行う。
+ *
+ * @param dataUrl `data:image/jpeg;base64,...` 形式。画面側で長辺1600px程度に縮めてから渡すこと
+ *                （そのままの写真を送ると費用と待ち時間が跳ねる）。
+ */
+export async function scanBusinessCard(dataUrl: string): Promise<CardScanResult> {
+  if (!client) return { error: "この機能は現在ご利用いただけません。" };
+  if (!/^data:image\/(jpeg|png|webp);base64,/.test(dataUrl)) {
+    return { error: "画像を読み取れませんでした。もう一度撮影してください。" };
+  }
+
+  try {
+    const res = await client.responses.create({
+      model: MODEL,
+      max_output_tokens: 1500,
+      text: {
+        format: { type: "json_schema", name: "business_card", schema: CARD_SCAN_SCHEMA, strict: true },
+      },
+      input: [
+        { role: "system", content: CARD_SCAN_SYSTEM },
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: "この名刺の内容を項目ごとに書き出してください。" },
+            { type: "input_image", image_url: dataUrl, detail: "high" },
+          ],
+        },
+      ],
+    });
+
+    const message = res.output.find((o) => o.type === "message");
+    if (message?.content?.some((c) => c.type === "refusal")) {
+      return { error: "この画像からは読み取れませんでした。名刺だけが写るように撮影してください。" };
+    }
+    const text = res.output_text;
+    if (!text) return { error: "読み取れませんでした。もう一度お試しください。" };
+
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    const pick = (k: keyof CardScanDraft) =>
+      typeof parsed[k] === "string" ? (parsed[k] as string).trim() : "";
+    const conf = parsed.confidence;
+    return {
+      card: {
+        name: pick("name"),
+        nameKana: pick("nameKana"),
+        company: pick("company"),
+        department: pick("department"),
+        jobTitle: pick("jobTitle"),
+        email: pick("email"),
+        phone: pick("phone"),
+        mobile: pick("mobile"),
+        website: pick("website"),
+        postalCode: pick("postalCode"),
+        address: pick("address"),
+        confidence: conf === "high" || conf === "medium" || conf === "low" ? conf : "low",
+      },
+    };
+  } catch (e) {
+    console.error("[ai] 名刺の読み取りに失敗:", e);
+    if (e instanceof RateLimitError) {
+      const code = (e as { code?: string }).code;
+      if (code === "insufficient_quota" || code === "credit_balance_exhausted") {
+        console.error("[ai] ⚠️ APIの残高切れです。OpenAIのBillingでクレジットを追加してください。");
+        return { error: "ただいま読み取りはご利用いただけません。手で入力してください。" };
+      }
+      return { error: "混み合っています。少し時間をおいてお試しください。" };
+    }
+    return { error: "読み取れませんでした。明るいところで、もう一度撮影してください。" };
+  }
+}

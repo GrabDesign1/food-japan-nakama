@@ -1198,3 +1198,155 @@ model FieldworkReport {
   @@index([ipHash, createdAt])
   @@map("fieldwork_reports")
 }
+
+/// 取り込んだ名刺（2026-11-21）。Eight のように、**紙の名刺を撮って残す**ための箱。
+///
+/// なぜ CardExchange と別に持つか:
+///   CardExchange は「双方がNAKAMA会員で、お互いにカードを出し合った」関係だけを表す。
+///   会場で受け取る紙の名刺の大半は、まだ会員ではない人のもの。会員になるのを待っていると
+///   「あの時会った人」が手元から消える。だから **相手が会員でなくても1枚として持てる**箱を分ける。
+///   相手が会員だと分かったら linkedMemberId で結び、CardExchange へ育てる。
+///
+/// ⚠️⚠️ **これは他人の個人情報である。** 会員が自分で入れた自社情報とは性質が違う。
+///    ・持ち主（ownerMemberId）以外は、同じテナントの会員でも**絶対に読めない**。
+///    ・名刺画像は非公開バケットに置き、配信は持ち主の検証を通したAPIからのみ行う。
+///    ・持ち主がいつでも1枚ずつ削除できる（削除したら画像も消す）。
+///    ・プライバシーポリシーに「会員が取り込んだ名刺情報」と「AIによる読み取り」の記載が要る。
+///      ※未記載のまま本番に出さないこと（2026-11-21時点で未記載）。
+///
+/// ⚠️ 読み取りの誤りは必ず起きる。AIが入れた値は**本人が確認して保存する**前提にし、
+///    確認前の値をそのまま検索や通知に使わない。
+model ContactCard {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// この名刺を持っている会員。これ以外の誰にも見せない
+  ownerMemberId String @map("owner_member_id")
+
+  /// 名刺の内容。AIが下書きし、本人が直して保存する
+  name       String
+  nameKana   String? @map("name_kana")
+  company    String?
+  department String?
+  jobTitle   String? @map("job_title")
+  email      String?
+  phone      String?
+  mobile     String?
+  website    String?
+  postalCode String? @map("postal_code")
+  address    String?
+
+  /// 非公開バケット card-images 内の保存パス（公開URLは作らない）
+  imagePath String? @map("image_path")
+
+  /// 出会った場と日（card-context の「文脈」に使う）
+  metAt String?   @map("met_at")
+  metOn DateTime? @map("met_on")
+
+  /// 持ち主だけの非公開メモとタグ
+  note String?
+  tags String[]
+
+  /// 相手がNAKAMA会員だと分かったら結ぶ
+  linkedMemberId String? @map("linked_member_id")
+
+  /// scan = 撮影して読み取った / manual = 手で入れた
+  source String @default("scan")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerMemberId, createdAt])
+  @@index([tenantId])
+  @@index([linkedMemberId])
+  @@map("contact_cards")
+}
+
+// ── コミュニティの投稿（2026-11-21） ─────────────────────────
+//
+// なぜ作るか（ユーザー指示 2026-11-21）:
+//   「ただ名刺交換だけじゃ終わらせない、共創事業を生み出す仕組みを作りたい」
+//   「自分たちがやってる取り組みとか記事とか書いていく」
+//
+// ⚠️⚠️ **これは関係性を維持する唯一の装置である。**
+//    card-relationship.ts の計算では、交換しただけの関係は約93日で「そろそろご連絡を」、
+//    約418日で「切れている」に落ちる。NAKAMA の中で日常的に起こりうる接触は
+//    いまメッセージ（商談・NDA・契約が絡む重い画面）しかなく、実質ゼロだった。
+//    投稿への反応が接触として数えられて初めて、名刺の枚数が「生きている関係」になる。
+//
+// ⚠️ 公開範囲は**つながっている人同士**（ユーザー判断 2026-11-21「参加者同士だけで十分」）。
+//    全会員に見せない。CardExchange でつながっている相手と自分の投稿だけが流れる。
+//    ⚠️ 範囲の判定を画面でやらないこと。必ずサーバー側の問い合わせで絞る。
+//
+// ⚠️ 規約17条（通信の秘密）が守るのは**会員間の非公開メッセージ**。
+//    投稿はつながっている相手に見せるものなので、メッセージとは別物。
+//    それでも AI の学習や分析には使わない（会員の取り組みを勝手に材料にしない）。
+
+/// コミュニティへの投稿。取り組み・記事・近況。
+model Post {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  authorMemberId String @map("author_member_id")
+
+  /// 本文
+  body String
+
+  /// 外部記事を紹介するときのURLと見出し（本文だけの投稿では空）
+  linkUrl   String? @map("link_url")
+  linkTitle String? @map("link_title")
+
+  /// 非公開バケット post-images 内の保存パス（公開URLは作らない）
+  imagePaths String[] @map("image_paths")
+
+  /// 削除は論理削除にする。通報への対応記録を残すため、行そのものは消さない
+  deletedAt     DateTime? @map("deleted_at")
+  deletedReason String?   @map("deleted_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@index([tenantId, createdAt])
+  @@index([authorMemberId, createdAt])
+  @@map("posts")
+}
+
+/// 投稿への「いいね」。1人1回。
+/// ⚠️ 取り消せるようにする（押し間違いを戻せないと、押すこと自体をためらう）。
+model PostLike {
+  id       String @id @default(cuid())
+  postId   String @map("post_id")
+  memberId String @map("member_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, memberId])
+  @@index([memberId])
+  @@map("post_likes")
+}
+
+/// 投稿へのコメント。
+/// ⚠️ コメントは投稿を見られる人（＝投稿者とつながっている人）だけが書ける。
+///    ⚠️ 書ける人の判定をサーバーで必ずやり直すこと。画面を信じない。
+model PostComment {
+  id             String @id @default(cuid())
+  postId         String @map("post_id")
+  authorMemberId String @map("author_member_id")
+
+  body String
+
+  deletedAt DateTime? @map("deleted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorMemberId])
+  @@map("post_comments")
+}
