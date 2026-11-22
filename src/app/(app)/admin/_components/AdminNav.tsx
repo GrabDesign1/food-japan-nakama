@@ -16,10 +16,13 @@ export type AdminNavKey =
   | "billing"
   | "reports"
   | "audit"
-  | "crm";
+  | "crm"
+  | "community";
 
 const PAGES: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "top", label: "事務局管理", href: "/admin" },
+  // コミュニティとお金を同じ画面で見る（2026-11-23）
+  { key: "community", label: "コミュニティとお金", href: "/admin/community" },
   { key: "members", label: "会員管理", href: "/admin/members" },
   { key: "listings", label: "掲載の監視", href: "/admin/listings" },
   { key: "inquiries", label: "問い合わせ・応募の状況", href: "/admin/inquiries" },
