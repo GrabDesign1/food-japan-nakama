@@ -10,7 +10,9 @@
 //    いいねが「保存されたのにエラー表示」になるのが一番困る。
 // ⚠️ いいねは**1投稿につき1日1通**まで。1件ごとに送ると人気の投稿で洪水になる。
 import { prisma } from "@/lib/db";
-import { notifyPostComment, notifyPostLike, notifyPostShared } from "@/lib/email";
+import {
+  notifyPostComment, notifyPostLike, notifyPostShared, notifyGatheringJoin,
+} from "@/lib/email";
 
 /** 通知を受け取る宛先（止めている人・停止中の人は外す） */
 async function recipients(memberId: string): Promise<string[]> {
@@ -161,4 +163,41 @@ export async function setFeedEmailEnabled(userId: string, enabled: boolean): Pro
     where: { id: userId },
     data: { feedEmailOptOutAt: enabled ? null : new Date() },
   });
+}
+
+/**
+ * 集まりに手が挙がったことを主催に知らせる（2026-11-23）。
+ * ⚠️ 初めて手を挙げたときだけ。種類を変えるたびには送らない（going⇄interested の往復で洪水になる）。
+ * ⚠️ 停止設定（feedEmailOptOutAt）はここでも効かせる。通知の止め場所を1つにするため。
+ */
+export async function notifyOnGatheringJoin(params: {
+  gatheringId: string;
+  hostMemberId: string;
+  actorMemberId: string;
+  kindLabel: string;
+  note: string | null;
+}): Promise<void> {
+  try {
+    if (params.hostMemberId === params.actorMemberId) return;
+    const g = await prisma.gathering.findUnique({
+      where: { id: params.gatheringId },
+      select: { title: true, deletedAt: true, joins: { select: { kind: true } } },
+    });
+    if (!g || g.deletedAt) return;
+
+    const to = await recipients(params.hostMemberId);
+    if (to.length === 0) return;
+
+    await notifyGatheringJoin({
+      to,
+      gatheringId: params.gatheringId,
+      gatheringTitle: g.title,
+      fromMemberName: await senderName(params.actorMemberId),
+      kindLabel: params.kindLabel,
+      note: params.note,
+      goingCount: g.joins.filter((j) => j.kind === "going").length,
+    });
+  } catch (e) {
+    console.error("[feed-notify] 集まりの通知に失敗:", e);
+  }
 }

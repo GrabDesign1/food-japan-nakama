@@ -946,3 +946,49 @@ export async function notifyPostShared(params: {
     }),
   });
 }
+
+// ── 集まりたい（2026-11-23） ───────────────────────────────
+//
+// ⚠️ 送るのは**主催者ひとり**に、手が挙がったことだけ。
+//    参加者全員への一斉連絡はここから出さない（主催が自分の言葉で出すもの）。
+
+/** 自分が立てた集まりに手が挙がった */
+export async function notifyGatheringJoin(params: {
+  to: string[];
+  gatheringId: string;
+  gatheringTitle: string;
+  fromMemberName: string;
+  kindLabel: string;
+  note: string | null;
+  goingCount: number;
+}): Promise<void> {
+  const { to, gatheringId, gatheringTitle, fromMemberName, kindLabel, note, goingCount } = params;
+  if (to.length === 0) return;
+  const short = note && note.length > 80 ? `${note.slice(0, 80)}…` : note;
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">手が挙がりました</h2>
+    <p style="font-size:14px;color:#3C4A62">
+      あなたの集まり「<b>${esc(gatheringTitle)}</b>」に、
+      <b>${esc(fromMemberName)}</b> さんが「${esc(kindLabel)}」と答えました。
+    </p>
+    ${
+      short
+        ? `<p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${esc(short)}</p>`
+        : ""
+    }
+    <p style="font-size:13px;color:#3C4A62">いま「行きます」は ${goingCount} 名です。</p>
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/gatherings/${esc(gatheringId)}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">集まりを開く</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">
+      このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
+      この種類のお知らせは、<a href="${APP_URL}/feed" style="color:#7C8899">みんなの取り組み</a>の画面いちばん下で止められます。
+    </p>
+  </div>`;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】「${gatheringTitle}」に${fromMemberName}さんが手を挙げました`,
+    html,
+  });
+}

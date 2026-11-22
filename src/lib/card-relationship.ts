@@ -47,7 +47,8 @@ export type ContactKind =
   | "link_click"   // カードから相手のSNS・メールへ移動した（＝連絡を取ろうとした）
   | "self_report"  // 「最近やり取りした」と本人が記録した
   | "post_like"    // 相手の投稿にいいねした（2026-11-21 追加）
-  | "post_comment";// 相手の投稿にコメントした（2026-11-21 追加）
+  | "post_comment" // 相手の投稿にコメントした（2026-11-21 追加）
+  | "gathering_join";// 相手が立てた集まりに手を挙げた（2026-11-23 追加）
 
 /**
  * 接触ごとの回復量。
@@ -64,6 +65,10 @@ export const CONTACT_GAIN: Record<ContactKind, number> = {
   //    いいねは押すだけなので、リンク移動よりわずかに上。ここを上げすぎると
   //    連打で関係を維持できてしまう（self_report を 12 に抑えているのと同じ理由）。
   post_comment: 35,
+  // 集まりに手を挙げる（2026-11-23 追加）。
+  // ⚠️ コメントより上、再会より下。実際に会う約束なので言葉のやり取りより重いが、
+  //    まだ会っていないので「再会(60)」には届かない。会ったら reunion が別に入る。
+  gathering_join: 45,
   post_like: 15,
   link_click: 12,
   self_report: 12,

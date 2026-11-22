@@ -1454,3 +1454,78 @@ model ContactEvent {
   @@index([tenantId, createdAt])
   @@map("contact_events")
 }
+
+// ── 集まりたい（2026-11-23） ──────────────────────────────
+//
+// なぜ作るか（ユーザー指示 2026-11-23）:
+//   「何かあるときには、探したい、売りたい、集まりたいを登録するようにすれば良い」
+//   「集まりたいも作ろう」
+//   助言（2026-11 振り返り）——「オンラインで温まった人が、次は巻き込む側になる。
+//   そこから小規模イベントをどんどんやれる」。四半期の大きな会と会のあいだを、
+//   会員自身が立てる小さな集まりで埋める。
+//
+// ⚠️ 「売りたい・探している」（Offering）とは**別に持つ**。
+//    あちらは取引（数量・価格・納期・商談）の器。集まりは取引ではない。
+//    同じ表に相乗りさせると、検索・課金・商談の筋がすべて濁る。
+// ⚠️ **軽く書けることを最優先**にする。日時も場所も未定で出せる
+//    （「5月ごろ、宮崎で田んぼ」で立てられないなら、誰も立てない）。
+// ⚠️ 見えるのは**公開されている承認済み会員すべて**（投稿＝つながった相手だけ、とは違う）。
+//    集まりは人を増やすための呼びかけなので、つながりの内側に閉じると意味がない。
+
+/// 会員が立てる小さな集まりの呼びかけ
+model Gathering {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// 呼びかけた人
+  hostMemberId String @map("host_member_id")
+
+  title String
+  body  String @db.Text
+
+  /// いつ。⚠️ 決まっていなくてよい（timeNote に「5月ごろ」と書ける）
+  startAt  DateTime? @map("start_at")
+  timeNote String?   @map("time_note")
+
+  /// どこ。⚠️ 都道府県は将来の県単位の運用に効くので、できるだけ入れてもらう
+  prefecture String?
+  place      String?
+
+  /// 何人くらい。⚠️ 上限を機械で止めない（主催が人を見て決める）
+  capacity Int?
+
+  /// open=募集中 / closed=締め切った / done=終わった
+  status String @default("open")
+
+  deletedAt DateTime? @map("deleted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  joins GatheringJoin[]
+
+  @@index([tenantId, status, startAt])
+  @@index([hostMemberId, createdAt])
+  @@map("gatherings")
+}
+
+/// 「行きます」「気になります」の表明。⚠️ 1人1回。取り消せる
+model GatheringJoin {
+  id          String @id @default(cuid())
+  gatheringId String @map("gathering_id")
+  memberId    String @map("member_id")
+
+  /// going=行きます / interested=気になります
+  kind String @default("going")
+
+  /// ひとこと（任意）。⚠️ 主催にだけでなく、参加者同士にも見える
+  note String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  gathering Gathering @relation(fields: [gatheringId], references: [id], onDelete: Cascade)
+
+  @@unique([gatheringId, memberId])
+  @@index([memberId])
+  @@map("gathering_joins")
+}
