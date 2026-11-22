@@ -992,3 +992,78 @@ export async function notifyGatheringJoin(params: {
     html,
   });
 }
+
+/**
+ * 「このサービス、使いますか？」のご案内（2026-11-23 ユーザー指示「メールを送付する」）。
+ *
+ * ⚠️⚠️ **送るのは1回だけ。** 返事が無い方に催促しない（同意なき勧誘になる）。
+ * ⚠️⚠️ **なぜ届いたのかを、冒頭に必ず書く。**
+ *    参加規定に「関連サービスのご案内」が無い場合でも、出所が明示してあれば筋が通る。
+ * ⚠️ 「いいえ」も同じ大きさで出す。押しにくくしない。
+ */
+export async function sendMemberInvite(params: {
+  to: string;
+  /** 事業者名 */
+  name: string;
+  /** 担当者名（あれば「○○ さま」と書く） */
+  contactName: string | null;
+  token: string;
+}): Promise<void> {
+  const url = `${APP_URL}/join/${encodeURIComponent(params.token)}`;
+  const greeting = params.contactName
+    ? `${esc(params.contactName)} さま`
+    : `${esc(params.name)} ご担当者さま`;
+
+  const html = `
+    <div style="font-family:sans-serif;line-height:1.9;color:#1a1a1a;max-width:560px">
+      <p style="font-size:12px;color:#666;margin:0 0 20px">
+        このメールは、FOOD JAPAN SUMMIT 2026 にご登壇・ご参加いただいた方にお送りしています。
+      </p>
+
+      <p>${greeting}</p>
+
+      <p>
+        FOOD JAPAN SUMMIT 事務局です。<br />
+        サミットでお会いした方々が、そのあともつながっていられる場として
+        <strong>FOOD JAPAN NAKAMA</strong> というサービスを作りました。
+      </p>
+
+      <p>
+        サミットでいただいたお名前・会社名・肩書を、<strong>すでにお預かりしています</strong>。<br />
+        ただし、<strong>まだ誰にも見えていません。</strong>
+        お使いになるかどうかは、${greeting}にお決めいただきたいと思っています。
+      </p>
+
+      <p style="margin:28px 0">
+        <a href="${url}"
+           style="display:inline-block;background:#1E6B4E;color:#fff;text-decoration:none;
+                  padding:14px 28px;border-radius:8px;font-weight:bold;font-size:15px">
+          使うかどうかを決める
+        </a>
+      </p>
+
+      <p style="font-size:13px;color:#555">
+        開くと、お預かりしている内容がそのまま出ます。<br />
+        <strong>「いいえ」を選ばれた場合、お預かりした情報はその場で削除します。</strong>
+        その後ご連絡することもありません。
+      </p>
+
+      <p style="font-size:13px;color:#555">
+        このご案内をお送りするのは、この1通かぎりです。
+        お返事がなくても、こちらから重ねてご連絡することはありません。
+      </p>
+
+      <hr style="border:none;border-top:1px solid #e3e6e8;margin:28px 0" />
+      <p style="font-size:12px;color:#888;margin:0">
+        FOOD JAPAN NAKAMA／FOOD JAPAN SUMMIT 事務局<br />
+        <a href="${APP_URL}" style="color:#1E6B4E">${APP_URL}</a>
+      </p>
+    </div>
+  `;
+
+  await send({
+    to: [params.to],
+    subject: "FOOD JAPAN NAKAMA のご案内（お使いになるか、お決めください）",
+    html,
+  });
+}

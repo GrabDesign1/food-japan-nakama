@@ -1,8 +1,12 @@
 "use server";
 
 // 事務局：登壇者などを先に会員として登録する（2026-11-23）。
-// ⚠️ ここからメールは一切送らない（本人の同意なく案内を送らない）。
+// ⚠️ 登録のときはメールを送らない（本人の同意なく案内を送らない）。
 // ⚠️ 作るときは必ず非公開。公開は別のボタン。
+//
+// 【招待メール】2026-11-23 ユーザー指示「メールを送付する」——
+//   預かった情報を使ってよいか、本人に1回だけ聞く。
+//   ⚠️⚠️ **送るのは1回だけ。催促しない。**（下の sendInvites は、送った人を必ず外す）
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
@@ -10,6 +14,8 @@ import {
   preregisterMember, publishMember, unpublishMember,
   parsePreregText, importPreregistered, PREREG_IMPORT_MAX_ROWS,
 } from "@/lib/member-prereg";
+import { listInvitable, issueInviteToken, markInviteSent, INVITE_BATCH } from "@/lib/member-invite";
+import { sendMemberInvite } from "@/lib/email";
 
 export type PreregState = { ok?: boolean; error?: string; message?: string };
 
@@ -102,4 +108,38 @@ export async function importPrereg(_prev: ImportState, fd: FormData): Promise<Im
     results,
     error: tooMany ? `1回に取り込めるのは${PREREG_IMPORT_MAX_ROWS}行までです。残りはもう一度貼ってください。` : undefined,
   };
+}
+
+/**
+ * 「このサービス、使いますか？」を、まだ聞いていない方に送る（2026-11-23）。
+ * ⚠️⚠️ 1回に送るのは INVITE_BATCH 件まで。全部を一度に送らない——
+ *    文面のまちがいに気づいたときに、途中で止められるようにしておく。
+ * ⚠️ 送った印は、送信を試みた時点で付ける。付けないと二重に届く恐れがあり、
+ *    「1回だけ」の約束を破るほうが、届かないことより重い。
+ */
+export async function sendInvites(): Promise<void> {
+  const su = await requireAdmin();
+  const targets = (await listInvitable(su.app.tenantId)).slice(0, INVITE_BATCH);
+
+  let done = 0;
+  for (const t of targets) {
+    const token = await issueInviteToken(su.app.tenantId, t.id);
+    if (!token) continue;
+    await sendMemberInvite({
+      to: t.email,
+      name: t.name,
+      contactName: t.contactName,
+      token,
+    });
+    await markInviteSent(t.id);
+    done++;
+  }
+
+  await writeAudit(su, "member.invite.send", {
+    targetType: "member",
+    targetId: "-",
+    detail: `「使いますか？」のご案内を${done}件送信（1人1回かぎり）`,
+  }).catch((e) => console.error("[prereg] 監査ログに失敗:", e));
+
+  revalidatePath("/admin/members/prereg");
 }

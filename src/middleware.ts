@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   "/sponsor",
   // 共創フィールドワークの記入ページ（当日の参加者向け。参加コードで入口を守る・noindex）
   "/fieldwork",
+  // 「このサービス、使いますか？」のご案内（合言葉つきの個人宛・noindex・2026-11-23）
+  "/join",
   // SEO/AIO: クローラ向けファイル（要公開）
   "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
 ];

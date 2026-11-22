@@ -178,6 +178,21 @@ model Member {
   preregBy    String?   @map("prereg_by")
   preregAt    DateTime? @map("prereg_at")
 
+  /// 【本人に「使いますか？」と聞く】2026-11-23 ユーザー指示——
+  ///   「移動させておいて、利用するかは、本人の承諾を得る方法が望ましい」
+  ///   「サービスが出来ました、利用しますか？ はい、入れる／いいえ、入れない」
+  ///
+  /// ⚠️⚠️ **預かるが、使わない。** 本人が「はい」と言うまで listed:false のまま。
+  ///    検索にも、プロフィールにも、メッセージの送り先にも、一切出ない。
+  /// ⚠️⚠️ **「いいえ」のときは、この行を消す。** 持ち続けない。
+  ///    消すからこそ「いったん預かる」が許される。残すなら最初から移さない。
+  /// ⚠️ 送るのは1回だけ。返事が無い人に催促しない（同意なき勧誘になる）。
+  inviteToken      String?   @unique @map("invite_token")
+  inviteSentAt     DateTime? @map("invite_sent_at")
+  /// "yes" | "no"
+  inviteAnswer     String?   @map("invite_answer")
+  inviteAnsweredAt DateTime? @map("invite_answered_at")
+
   completionRate Int           @default(0) @map("completion_rate") // 記入率
   level          Int           @default(0)
   status         MemberStatus  @default(DRAFT)

@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { listPreregistered } from "@/lib/member-prereg";
+import { inviteSummary, INVITE_BATCH } from "@/lib/member-invite";
 import { AdminNav } from "../../_components/AdminNav";
 import {
   aBadge, aCard, aCardBody, aCardHead, aEyebrow, aH1, aH2, aLink, aNote,
@@ -18,7 +19,7 @@ import {
 import { btn } from "@/lib/ui";
 import { PreregForm } from "./PreregForm";
 import { ImportForm } from "./ImportForm";
-import { publish, unpublish } from "../prereg-actions";
+import { publish, unpublish, sendInvites } from "../prereg-actions";
 
 export const metadata = { title: "登壇者の先行登録" };
 
@@ -28,7 +29,10 @@ function fmt(d: Date | null): string {
 
 export default async function PreregPage() {
   const su = await requireAdmin();
-  const rows = await listPreregistered(su.app.tenantId);
+  const [rows, invite] = await Promise.all([
+    listPreregistered(su.app.tenantId),
+    inviteSummary(su.app.tenantId),
+  ]);
 
   const hidden = rows.filter((r) => !r.listed);
   const published = rows.filter((r) => r.listed);
@@ -55,6 +59,66 @@ export default async function PreregPage() {
       </div>
 
       {/* 非公開のまま */}
+      {/* ── 本人に聞く（2026-11-23 ユーザー指示）────────────────────
+          「移動させておいて、利用するかは、本人の承諾を得る方法が望ましい」
+          ⚠️⚠️ **預かるが、使わない。** 本人が「はい」と言うまで誰にも見えない。
+          ⚠️⚠️ **「いいえ」のときは、その行を消す。** だから「いいえ」の数は出ない（残っていない）。
+          ⚠️ 送るのは1人1回かぎり。送った人は次から対象外になる。 */}
+      <div className={`${aCard} mt-6 border-[#D6DBDE]`}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>本人に「使いますか？」と聞く</h2>
+          <span className={`${aBadge(invite.invitable > 0 ? "green" : "neutral")} ml-auto`}>
+            未送信 {invite.invitable}
+          </span>
+        </div>
+        <div className={aCardBody}>
+          <p className={aNote}>
+            お預かりした情報を<strong>使ってよいか</strong>、ご本人に1通だけお送りします。
+            「はい」を選ばれた方だけが会員になります。
+            <strong>「いいえ」を選ばれた方の情報は、その場で削除されます</strong>
+            （ですので、ここに「いいえ」の数は出ません）。
+          </p>
+
+          <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-4">
+            <div>
+              <div className="text-[11px] text-[var(--muted)]">まだ送っていない</div>
+              <div className="text-[18px] font-bold text-[var(--ink)]">{invite.invitable}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[var(--muted)]">送った</div>
+              <div className="text-[18px] font-bold text-[var(--ink)]">{invite.sent}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[var(--muted)]">「はい」</div>
+              <div className="text-[18px] font-bold text-[var(--green-d)]">{invite.yes}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[var(--muted)]">メール未記入</div>
+              <div className="text-[18px] font-bold text-[var(--ink)]">{invite.noEmail}</div>
+            </div>
+          </div>
+
+          {invite.invitable > 0 ? (
+            <form action={sendInvites} className="mt-4">
+              <button type="submit" className={btn("primary")}>
+                {Math.min(invite.invitable, INVITE_BATCH)}名に送る
+              </button>
+              <p className="mt-2 text-[12px] leading-6 text-[var(--muted)]">
+                1回に{INVITE_BATCH}名までです。<strong>文面を間違えたときに途中で止められるよう</strong>、
+                わざと少しずつにしてあります。続きは、もう一度押してください。
+              </p>
+            </form>
+          ) : (
+            <p className={`${aNote} mt-3`}>
+              いま送れる方はいません。
+              {invite.noEmail > 0
+                ? `メールが未記入の方が${invite.noEmail}名います（その方には送れません）。`
+                : ""}
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className={`${aCard} mt-6`}>
         <div className={aCardHead}>
           <h2 className={aH2}>非公開のまま（{hidden.length}）</h2>
