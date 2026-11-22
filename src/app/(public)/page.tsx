@@ -9,12 +9,49 @@ import { btn, h2Cls } from "@/lib/ui";
 import { SERVICE_MENU, consultationHref, FJS_URL } from "@/lib/services";
 import { HeroMobileMenu } from "./_components/HeroMobileMenu";
 
+type Purpose = {
+  t: string;
+  n: number;
+  unit: string;
+  suffix: string;
+  href: string;
+  icon: string | null;
+  d: string;
+  cta: string;
+};
+
+/** 目的別の入口。4枚目「メンバーになりたい」は案件ではなく**人**で入る導線（2026-11-23） */
+function PURPOSES(
+  giveCount: number,
+  wantCount: number,
+  projectCount: number,
+  memberCount: number,
+  isLoggedIn: boolean
+): Purpose[] {
+  return [
+    { t: "売りたい", n: giveCount, unit: "掲載", suffix: "件", href: "/listings?type=give", icon: "/purpose/purpose-give.png", cta: "案件を見る →", d: "旬の農産物、業務用原料、加工品、規格外品、余剰品、設備、技術など。販路・買い手を探す" },
+    { t: "探している", n: wantCount, unit: "掲載", suffix: "件", href: "/listings?type=want", icon: "/purpose/purpose-want.png", cta: "案件を見る →", d: "必要な食材、原料、商品、技術、加工先、販売先。仕入れ先・調達先を探す" },
+    { t: "共創したい", n: projectCount, unit: "掲載", suffix: "件", href: "/listings?type=coproject", icon: "/purpose/purpose-coproject.png", cta: "案件を見る →", d: "新商品開発、食品ロス、地域課題、新規事業。商品・事業をつくる相手を探す" },
+    {
+      t: "メンバーになりたい",
+      n: memberCount,
+      unit: "",
+      suffix: "名",
+      // ログイン前は入会へ、ログイン後は会員一覧へ
+      href: isLoggedIn ? "/search?t=producers" : "/signup",
+      icon: null,
+      cta: isLoggedIn ? "メンバーを見る →" : "メンバーになる →",
+      d: "食の仲間とつながりたい。名刺を交換すると、その人のプロフィールと取り組み（タイムライン）が読めます",
+    },
+  ];
+}
+
 export default async function PublicHome() {
   // ログイン済みでも公開トップは閲覧可能（ナビは「マイページトップへ」に切り替える）
   const su = await getSessionUser();
   const isLoggedIn = !!su;
 
-  const { articles, projects, projNameMap, gives, wants, giveCount, wantCount, projectCount } =
+  const { articles, projects, projNameMap, gives, wants, giveCount, wantCount, projectCount, memberCount } =
     await getLandingContent();
 
   return (
@@ -104,31 +141,41 @@ export default async function PublicHome() {
             目的から、相手と案件を探せます。
           </p>
 
-          <div className="mt-7 grid gap-5 sm:grid-cols-3">
-            {[
-              { t: "売りたい", n: giveCount, href: "/listings?type=give", icon: "/purpose/purpose-give.png", d: "旬の農産物、業務用原料、加工品、規格外品、余剰品、設備、技術など。販路・買い手を探す" },
-              { t: "探している", n: wantCount, href: "/listings?type=want", icon: "/purpose/purpose-want.png", d: "必要な食材、原料、商品、技術、加工先、販売先。仕入れ先・調達先を探す" },
-              { t: "共創したい", n: projectCount, href: "/listings?type=coproject", icon: "/purpose/purpose-coproject.png", d: "新商品開発、食品ロス、地域課題、新規事業。商品・事業をつくる相手を探す" },
-            ].map((it) => (
+          {/* 4枚目「メンバーになりたい」（2026-11-23 ユーザー指示）。
+              案件（モノ）だけでなく、人で入る入口をつくる。名刺を交換して、
+              その人のプロフィールとタイムラインを読む、という導線の先頭。
+              ⚠️ purpose-member.png がまだ無いので、4枚目だけ丸い印で出している。
+                 絵が届いたら icon に差し替えること（他の3枚と体裁が揃う）。 */}
+          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {PURPOSES(giveCount, wantCount, projectCount, memberCount, isLoggedIn).map((it) => (
               <Link key={it.href} href={it.href} className="group border-t-2 border-[var(--green)] pt-3">
                 {/* 意味は見出しの文字で持たせているので alt は空にする */}
-                <Image
-                  src={it.icon}
-                  alt=""
-                  width={256}
-                  height={256}
-                  sizes="64px"
-                  className="mb-2 h-14 w-14"
-                />
+                {it.icon ? (
+                  <Image
+                    src={it.icon}
+                    alt=""
+                    width={256}
+                    height={256}
+                    sizes="64px"
+                    className="mb-2 h-14 w-14"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="mb-2 grid h-14 w-14 place-items-center rounded-full bg-[var(--green-soft)] text-[24px]"
+                  >
+                    👥
+                  </span>
+                )}
                 <h3 className={`${h2Cls} group-hover:text-[var(--green-d)] group-hover:underline`}>
                   {it.t}
                   {/* 実数がある場合だけ表示する（0件を大きく見せない） */}
                   {it.n > 0 ? (
-                    <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">掲載 {it.n}件</span>
+                    <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">{it.unit} {it.n}{it.suffix}</span>
                   ) : null}
                 </h3>
                 <p className="mt-1 text-[13px] leading-6 text-[var(--ink-2)]">{it.d}</p>
-                <span className="mt-2 inline-block text-[12px] text-[var(--green-d)]">案件を見る →</span>
+                <span className="mt-2 inline-block text-[12px] text-[var(--green-d)]">{it.cta}</span>
               </Link>
             ))}
           </div>

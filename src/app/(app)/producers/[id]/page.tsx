@@ -53,7 +53,7 @@ export default async function ProducerDetailPage({
   for (const a of wall.authors) wallAuthors[a.id] = a;
 
   // 閲覧数マップ・お気に入り・スレッド有無は互いに独立なので並列で取得（直列3往復→1往復）
-  const [viewMap, favorite, existingThread] = await Promise.all([
+  const [viewMap, favorite, existingThread, exchange] = await Promise.all([
     views24hMap(m.offerings.map((o) => o.id)),
     su.app.memberId
       ? prisma.favorite.findUnique({
@@ -78,8 +78,29 @@ export default async function ProducerDetailPage({
           },
         })
       : Promise.resolve(null),
+    // 名刺を交換しているか（2026-11-23）。タイムラインを出すかどうかの判定に使う。
+    // ⚠️ 「投稿が0件」と「交換していないから読めない」は別物。混ぜると誤解される
+    su.app.memberId && !isOwner
+      ? prisma.cardExchange.findFirst({
+          where: {
+            OR: [
+              { memberAId: su.app.memberId, memberBId: m.id },
+              { memberAId: m.id, memberBId: su.app.memberId },
+            ],
+          },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
   const isFavorited = !!favorite;
+  // 自分、または名刺を交換した相手だけ、タイムラインが読める
+  const canSeeWall = isOwner || !!exchange;
+
+  // 人を先に立てる（2026-11-23 ユーザー指示「担当者の紹介ができてないよ」）。
+  // ⚠️ 担当者名が未入力の既存会員は、これまでどおり事業者名を見出しにする（空白にしない）
+  const personName = m.contactName?.trim() || null;
+  const headline = personName ?? (m.name || "（未入力）");
+  const faceUrl = m.contactPhotoUrl ?? m.avatarUrl ?? null;
 
   const hero = m.imageUrls[0] ?? null;
   const gallery = m.imageUrls.slice(1);
@@ -113,42 +134,60 @@ export default async function ProducerDetailPage({
         {backLabel}
       </Link>
 
-      {/* ヘッダー */}
-      <div className="flex items-center gap-4">
-        <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[24px] text-[var(--green-d)]">
-          {m.avatarUrl ? (
+      {/* ヘッダー：人が先、会社はその下（2026-11-23 ユーザー指示）。
+          ⚠️ 会員は会社だが、会うのは人。最初に顔と名前と肩書を出す。 */}
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white font-serif text-[26px] text-[var(--green-d)]">
+          {faceUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+            <img src={faceUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            (m.name?.[0] ?? "?").toUpperCase()
+            (headline?.[0] ?? "?").toUpperCase()
           )}
         </div>
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className={h1Cls}>
-              {m.name || "（未入力）"}
-            </h1>
-            {m.companyLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={m.companyLogoUrl}
-                alt={`${m.name}の会社ロゴ`}
-                className="h-8 max-w-[160px] object-contain"
-              />
-            ) : null}
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--ink-2)]">
+        <div className="min-w-0 flex-1">
+          <h1 className={h1Cls}>{headline}</h1>
+          {m.contactRole ? (
+            <p className="mt-0.5 text-[14px] font-medium text-[var(--green-d)]">{m.contactRole}</p>
+          ) : null}
+          {/* 担当者名が入っているときだけ、会社名を下の行に出す（同じ名前を2回出さない） */}
+          {personName ? (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-[14px] text-[var(--ink)]">{m.name || "（事業者名 未入力）"}</span>
+              {m.companyLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={m.companyLogoUrl}
+                  alt={`${m.name}の会社ロゴ`}
+                  className="h-7 max-w-[140px] object-contain"
+                />
+              ) : null}
+            </div>
+          ) : m.companyLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={m.companyLogoUrl}
+              alt={`${m.name}の会社ロゴ`}
+              className="mt-1 h-8 max-w-[160px] object-contain"
+            />
+          ) : null}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--ink-2)]">
             {area ? <span>📍 {area}</span> : null}
             <span>💼 {INDUSTRY_LABEL[m.categoryL1] ?? m.categoryL1}</span>
             <span className="rounded bg-[var(--green-soft)] px-2 py-0.5 text-[11px] text-[var(--green-d)]">
               {m.categoryL1}
               {m.categoryL2 ? ` / ${m.categoryL2}` : ""}
             </span>
+            {canSeeWall && !isOwner ? (
+              <span className="rounded bg-[var(--green)] px-2 py-0.5 text-[11px] font-bold text-white">
+                名刺を交換済み
+              </span>
+            ) : null}
           </div>
         </div>
 
         {!isOwner ? (
-          <div className="flex shrink-0 flex-col gap-2">
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
             {!existingThread ? (
               <form action={startConversation.bind(null, m.id)}>
                 <button className={`${btn("primary")} w-full`}>
@@ -170,6 +209,13 @@ export default async function ProducerDetailPage({
           </div>
         ) : null}
       </div>
+
+      {/* 担当者のひとこと（本人の自己紹介）。事業紹介（description）とは別物 */}
+      {m.contactBio ? (
+        <p className="-mt-2 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink)]">
+          {m.contactBio}
+        </p>
+      ) : null}
 
       {hero ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -195,10 +241,78 @@ export default async function ProducerDetailPage({
         </div>
       ) : null}
 
+      {/* ── タイムライン（2026-11-23 ユーザー指示「Facebookみたいなタイムライン制にして」）
+          プロフィールの主役は、会社の仕様表ではなく、この人が何をしてきたか。
+          ⚠️ 読めるのは**名刺を交換した相手だけ**。交換していない人には、
+             投稿が0件なのか読めないのかを、はっきり書き分ける（黙って空にしない）。 */}
+      <section>
+        <h2 className={`${h2Cls} mb-3`}>
+          {isOwner ? "あなたのタイムライン" : `${headline} のタイムライン`}
+          {canSeeWall && wall.total > 0 ? (
+            <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">全{wall.total}件</span>
+          ) : null}
+        </h2>
+
+        {!canSeeWall ? (
+          <div className="rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] px-5 py-6 text-center">
+            <p className="text-[14px] font-medium text-[var(--ink)]">
+              名刺を交換すると、この方の取り組みが読めます。
+            </p>
+            <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-6 text-[var(--ink-2)]">
+              交換するまで、投稿・コメント・いいねは見えません。
+              会ったときに交換するか、こちらから問い合わせてください。
+            </p>
+            <Link href="/cards" className={`${btn("primary", "sm")} mt-4 inline-block`}>
+              名刺を交換する →
+            </Link>
+          </div>
+        ) : wall.posts.length === 0 ? (
+          <div className="rounded-[10px] border border-dashed border-[var(--line)] px-5 py-6 text-center">
+            <p className="text-[13px] text-[var(--muted)]">
+              {isOwner
+                ? "まだ何も書いていません。いま取り組んでいることを1本書くと、交換した相手に届きます。"
+                : "まだ投稿がありません。"}
+            </p>
+            {isOwner ? (
+              <Link href="/feed" className={`${btn("primary", "sm")} mt-4 inline-block`}>
+                取り組みを書く →
+              </Link>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <ul className="flex max-w-[680px] flex-col gap-4">
+              {wall.posts.map((pp) => (
+                <li key={pp.id}>
+                  <PostCard
+                    post={pp}
+                    author={wallAuthors[pp.authorMemberId]}
+                    comments={wall.comments[pp.id] ?? []}
+                    authorsById={wallAuthors}
+                    isMine={pp.authorMemberId === su.app.memberId}
+                  />
+                </li>
+              ))}
+            </ul>
+            {wall.hasMore ? (
+              <p className="mt-3">
+                <Link href="/feed" className="text-[13px] text-[var(--green-d)] hover:underline">
+                  みんなの取り組みで、続きを読む →
+                </Link>
+              </p>
+            ) : null}
+          </>
+        )}
+      </section>
+
+      {/* 事業紹介（会社の話。人の話は上の「ひとこと」） */}
       {m.description ? (
-        <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">
-          {m.description}
-        </p>
+        <div>
+          <h2 className={`${h2Cls} mb-2`}>事業紹介</h2>
+          <p className="whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">
+            {m.description}
+          </p>
+        </div>
       ) : null}
 
       {/* 事業の中身 */}
@@ -236,39 +350,6 @@ export default async function ProducerDetailPage({
               className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
             />
           ))}
-        </div>
-      ) : null}
-
-      {/* この事業者の取り組み（みんなの取り組みへの投稿）。
-          ⚠️ カードを交換している相手にだけ出る。交換していない人には節そのものを出さない。 */}
-      {wall.posts.length ? (
-        <div>
-          <h2 className={`${h2Cls} mb-3`}>
-            {isOwner ? "自分の取り組み" : "この事業者の取り組み"}
-            <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">
-              全{wall.total}件
-            </span>
-          </h2>
-          <ul className="flex max-w-[680px] flex-col gap-4">
-            {wall.posts.map((p) => (
-              <li key={p.id}>
-                <PostCard
-                  post={p}
-                  author={wallAuthors[p.authorMemberId]}
-                  comments={wall.comments[p.id] ?? []}
-                  authorsById={wallAuthors}
-                  isMine={p.authorMemberId === su.app.memberId}
-                />
-              </li>
-            ))}
-          </ul>
-          {wall.hasMore ? (
-            <p className="mt-3">
-              <Link href="/feed" className="text-[13px] text-[var(--green-d)] hover:underline">
-                みんなの取り組みで、続きを読む →
-              </Link>
-            </p>
-          ) : null}
         </div>
       ) : null}
 

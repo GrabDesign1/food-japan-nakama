@@ -485,6 +485,11 @@ async function searchProducers(f: {
       ? {
           OR: [
             { name: { contains: f.q, mode: "insensitive" as const } },
+            // 人の名前・肩書でも探せるようにする（2026-11-23）
+            { contactName: { contains: f.q, mode: "insensitive" as const } },
+            { contactKana: { contains: f.q, mode: "insensitive" as const } },
+            { contactRole: { contains: f.q, mode: "insensitive" as const } },
+            { contactBio: { contains: f.q, mode: "insensitive" as const } },
             { description: { contains: f.q, mode: "insensitive" as const } },
             { productItems: { contains: f.q, mode: "insensitive" as const } },
             { productVolume: { contains: f.q, mode: "insensitive" as const } },
@@ -504,6 +509,10 @@ async function searchProducers(f: {
         name: true,
         avatarUrl: true,
         companyLogoUrl: true,
+        // 担当者（人）を先に見せるため（2026-11-23）
+        contactName: true,
+        contactRole: true,
+        contactPhotoUrl: true,
         imageUrls: true,
         categoryL1: true,
         categoryL2: true,

@@ -99,6 +99,9 @@ export type ProfileInput = {
   name: string;
   contactName: string;
   contactKana: string;
+  /** 担当者ご本人の紹介（2026-11-23）。顔写真はアップロード側で別に持つ */
+  contactRole: string;
+  contactBio: string;
   categoryL1: string;
   categoryL2: string;
   prefecture: string;

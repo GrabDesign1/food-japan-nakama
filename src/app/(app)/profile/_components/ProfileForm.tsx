@@ -21,6 +21,9 @@ export type MemberData = {
   brandLogoUrl: string | null;
   contactName: string | null;
   contactKana: string | null;
+  contactRole: string | null;
+  contactBio: string | null;
+  contactPhotoUrl: string | null;
   categoryL1: string;
   categoryL2: string | null;
   prefecture: string | null;
@@ -62,6 +65,8 @@ const inputCls = `${inputBase} ${normalSkin}`;
 const GUIDE_FIELDS: { key: keyof MemberData; label: string; tab: number }[] = [
   { key: "name", label: "事業者名", tab: 0 },
   { key: "contactName", label: "担当者名", tab: 0 },
+  { key: "contactRole", label: "担当者の肩書", tab: 0 },
+  { key: "contactBio", label: "担当者のひとこと", tab: 0 },
   { key: "categoryL1", label: "会員種別（大分類）", tab: 0 },
   { key: "categoryL2", label: "会員種別（細分類）", tab: 0 },
   { key: "prefecture", label: "都道府県", tab: 0 },
@@ -363,6 +368,35 @@ export function ProfileForm({
           defaultValue={member.contactKana}
           placeholder="みやざき たろう"
         />
+
+        {/* 担当者ご本人の紹介（2026-11-23 ユーザー指示「担当者の紹介ができてないよ」）。
+            ⚠️ 会員は会社だが、相手が会うのは人。プロフィールの一番上に出るのはここ。 */}
+        <div className="col-span-2 mt-1 rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4">
+          <p className="text-[13px] font-bold text-[var(--ink)]">あなた（担当者）の紹介</p>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            相手が最初に見るのは、会社ではなく<strong>あなた</strong>です。
+            顔と肩書とひとことがあるだけで、名刺を交換してもらえる数が変わります。
+          </p>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <LogoUploader kind="face" label="顔写真" url={member.contactPhotoUrl} />
+            <Field
+              label="肩書"
+              name="contactRole"
+              defaultValue={member.contactRole}
+              placeholder="代表取締役 / 営業部長 など"
+              guide
+            />
+          </div>
+          <div className="mt-4">
+            <Area
+              label="ひとこと（自己紹介）"
+              name="contactBio"
+              defaultValue={member.contactBio}
+              placeholder="宮崎で30年、ピーマンをつくっています。業務用の引き合いを探しています。お気軽にお声がけください。"
+              guide
+            />
+          </div>
+        </div>
 
         <label className={labelCls}>
           <span>

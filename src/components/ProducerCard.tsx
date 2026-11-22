@@ -1,4 +1,9 @@
-// 生産者（会員）カード。サムネイル画像＋名前。クリックで詳細へ。
+// 会員カード。写真＋**担当者（人）**＋事業者名。クリックでプロフィールへ。
+//
+// 2026-11-23 ユーザー指示「担当者の紹介ができてないよ」:
+//   会員は会社だが、相手が会うのは人。顔と名前と肩書を先に出す。
+// ⚠️ 担当者名が未入力の会員は、これまでどおり事業者名だけが出る（空白にしない）。
+// ⚠️ 使っている画面：/search（登録事業者から探す）と /favorites。直すときは両方を見ること。
 import Link from "next/link";
 import Image from "next/image";
 
@@ -14,6 +19,10 @@ export type ProducerCardData = {
   city: string | null;
   productItems: string | null;
   description: string | null;
+  /** 担当者（人）。まだ渡していない画面があるので任意にしてある */
+  contactName?: string | null;
+  contactRole?: string | null;
+  contactPhotoUrl?: string | null;
 };
 
 // from＝事業者ページの「戻る」リンクの行き先。未指定なら事業者ページ側の既定（/search）に戻る。
@@ -26,9 +35,11 @@ export function ProducerCard({
   isOwn?: boolean;
   from?: string;
 }) {
-  const initial = (p.name?.[0] ?? "?").toUpperCase();
+  const person = p.contactName?.trim() || null;
+  const initial = ((person ?? p.name)?.[0] ?? "?").toUpperCase();
   const area = [p.prefecture, p.city].filter(Boolean).join(" ");
   const thumb = p.imageUrls?.[0] ?? p.avatarUrl ?? null;
+  const face = p.contactPhotoUrl ?? null;
   const href = from ? `/producers/${p.id}?from=${encodeURIComponent(from)}` : `/producers/${p.id}`;
 
   return (
@@ -69,6 +80,16 @@ export function ProducerCard({
             あなたの会社
           </span>
         ) : null}
+        {face ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={face}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute bottom-2 right-2 h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm"
+          />
+        ) : null}
         <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
           {area ? (
             <span className="rounded bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">
@@ -89,8 +110,15 @@ export function ProducerCard({
         </span>
       </div>
       <div className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-5 text-[var(--ink)] group-hover:text-[var(--green-d)]">
-        {p.name || "（未入力）"}
+        {person ?? (p.name || "（未入力）")}
       </div>
+      {/* 肩書は改行させる。名前のうしろに続けると、長い名前のとき名前の一部に見える */}
+      {person && p.contactRole ? (
+        <div className="line-clamp-1 text-[11px] text-[var(--muted)]">{p.contactRole}</div>
+      ) : null}
+      {person ? (
+        <div className="mt-0.5 line-clamp-1 text-[11px] text-[var(--ink-2)]">{p.name}</div>
+      ) : null}
       {p.productItems ? (
         <div className="mt-0.5 line-clamp-1 text-[11px] text-[var(--muted)]">
           {p.productItems}

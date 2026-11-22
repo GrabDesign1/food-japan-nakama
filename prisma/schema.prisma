@@ -118,6 +118,15 @@ model Member {
   brandLogoUrl   String?   @map("brand_logo_url")   // ブランドロゴ
   contactName String?      @map("contact_name") // 担当者名（姓名）
   contactKana String?      @map("contact_kana") // 担当者名（ひらがな）
+
+  /// 担当者ご本人の紹介（2026-11-23 追加。ユーザー指示「担当者の紹介ができてないよ」
+  /// 「リンクドインや、エイトや、Facebookのプロフィール、タイムラインのように」）。
+  /// ⚠️ 会員＝会社だが、会うのは人。相手に見えるのは**まず人**にする。
+  /// ⚠️ ここは本人が自分で書く欄。事務局のCRM欄（crmDepartment など）とは別物で、
+  ///    crm* は会員には一切見せない。混ぜないこと。
+  contactRole     String? @map("contact_role")      // 肩書（例：代表取締役／営業部長）
+  contactBio      String? @map("contact_bio")       // ひとこと（自己紹介）
+  contactPhotoUrl String? @map("contact_photo_url") // 顔写真
   categoryL1  String       @map("category_l1") // 大分類（HANDOVER 第5章）
   categoryL2  String?      @map("category_l2") // 細分類
   prefecture  String?

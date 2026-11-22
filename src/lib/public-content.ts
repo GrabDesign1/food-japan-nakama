@@ -38,11 +38,12 @@ export async function getLandingContent() {
       giveCount: 0,
       wantCount: 0,
       projectCount: 0,
+      memberCount: 0,
     };
   }
 
   const now = new Date();
-  const [articles, announcements, projects, gives, wants, giveCount, wantCount, projectCount] = await Promise.all([
+  const [articles, announcements, projects, gives, wants, giveCount, wantCount, projectCount, memberCount] = await Promise.all([
     prisma.curatedArticle.findMany({
       where: {
         tenantId,
@@ -86,6 +87,9 @@ export async function getLandingContent() {
       where: { isPublic: true, visibility: "public", title: { not: "" }, direction: "WANT", member: { tenantId, status: "APPROVED" } },
     }),
     prisma.project.count({ where: { tenantId, status: "published" } }),
+    // 公開されている会員の数（2026-11-23。トップの「メンバーになりたい」に出す）。
+    // ⚠️ listed:false（事務局が先に登録しただけで本人が受け取っていない人）は数えない
+    prisma.member.count({ where: { tenantId, status: "APPROVED", listed: true } }),
   ]);
 
   const projMemberIds = Array.from(new Set(projects.map((p) => p.memberId)));
@@ -103,7 +107,7 @@ export async function getLandingContent() {
     return true;
   });
 
-  return { articles: uniqueArticles, announcements, projects, projNameMap, gives, wants, giveCount, wantCount, projectCount };
+  return { articles: uniqueArticles, announcements, projects, projNameMap, gives, wants, giveCount, wantCount, projectCount, memberCount };
 }
 
 /** 公開プレビュー用：掲載中プロジェクト1件（Projectにmemberリレーションが無いため名前は別引き）。 */

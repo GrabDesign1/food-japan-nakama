@@ -9,7 +9,7 @@ export function LogoUploader({
   label,
   url,
 }: {
-  kind: "company" | "brand";
+  kind: "company" | "brand" | "face";
   label: string;
   url: string | null;
 }) {

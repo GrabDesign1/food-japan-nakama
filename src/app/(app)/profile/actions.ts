@@ -117,10 +117,12 @@ export async function removeMemberAvatar(): Promise<ProfileState> {
 }
 
 // 会社ロゴ／ブランドロゴ（1枚ずつ）
-type LogoKind = "company" | "brand";
-const LOGO_FIELD: Record<LogoKind, "companyLogoUrl" | "brandLogoUrl"> = {
+// face＝担当者の顔写真（2026-11-23）。ロゴと同じ置き場・同じ手順で扱う（別に作らない）
+type LogoKind = "company" | "brand" | "face";
+const LOGO_FIELD: Record<LogoKind, "companyLogoUrl" | "brandLogoUrl" | "contactPhotoUrl"> = {
   company: "companyLogoUrl",
   brand: "brandLogoUrl",
+  face: "contactPhotoUrl",
 };
 
 export async function uploadMemberLogo(
@@ -227,6 +229,8 @@ export async function saveProfile(
     name: g("name"),
     contactName: g("contactName"),
     contactKana: g("contactKana"),
+    contactRole: g("contactRole"),
+    contactBio: gl("contactBio"),
     categoryL1: g("categoryL1"),
     categoryL2: g("categoryL2"),
     prefecture: g("prefecture"),
