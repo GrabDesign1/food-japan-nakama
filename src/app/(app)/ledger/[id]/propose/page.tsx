@@ -71,7 +71,7 @@ export default async function ProposePage({
       title: { not: "" },
       // 非公開募集（有料オプション）は詳細ページと同じく存在ごと見せない
       visibility: { not: "private" },
-      member: { tenantId: su!.app.tenantId, status: "APPROVED" },
+      member: { tenantId: su!.app.tenantId, status: "APPROVED", listed: true },
     },
     include: {
       member: { select: { id: true, name: true } },

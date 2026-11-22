@@ -28,7 +28,7 @@ export default async function FavoritesPage() {
   const [members, offerings, projects] = await Promise.all([
     memberIds.length
       ? prisma.member.findMany({
-          where: { id: { in: memberIds }, status: "APPROVED" },
+          where: { id: { in: memberIds }, status: "APPROVED", listed: true },
           select: {
             id: true,
             name: true,

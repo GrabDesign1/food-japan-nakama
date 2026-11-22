@@ -154,6 +154,21 @@ model Member {
   collabStyle String? @map("collab_style") // 組みたい相手
   startTiming String? @map("start_timing")
 
+  /// 他の会員に見せるか（2026-11-23 追加。ユーザー指示「正会員として登録し、非公開の設定で」）。
+  /// false = **正会員だが、まだ誰にも見せない**。検索・プロフィール・メッセージの送り先・
+  /// 台帳の相手候補・お気に入りのどこにも出ない（＝承認前と同じ見え方）。
+  /// ⚠️ 既定は true。既存の会員の見え方を変えないため。
+  /// ⚠️ 絞り込みは status==="APPROVED" と**必ず一緒に**書く。片方だけだと漏れる。
+  listed Boolean @default(true)
+
+  /// 事務局が本人より先に登録したときの控え（2026-11-23 追加）。
+  /// ⚠️ 本人はまだログインを持っていない。**ここにメールを入れても自動送信はしない**
+  ///    （本人の同意なく案内を送らない）。本人が同じメールで登録したときに、この行へつなぐ。
+  preregEmail String?   @map("prereg_email")
+  preregNote  String?   @map("prereg_note")
+  preregBy    String?   @map("prereg_by")
+  preregAt    DateTime? @map("prereg_at")
+
   completionRate Int           @default(0) @map("completion_rate") // 記入率
   level          Int           @default(0)
   status         MemberStatus  @default(DRAFT)
@@ -196,6 +211,7 @@ model Member {
   @@index([status])
   @@index([stripeCustomerId])
   @@index([tenantId, crmNextActionDue])
+  @@index([tenantId, preregEmail])
   @@map("members")
 }
 

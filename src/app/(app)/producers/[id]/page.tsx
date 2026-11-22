@@ -40,7 +40,8 @@ export default async function ProducerDetailPage({
   if (!m) notFound();
 
   const isOwner = m.id === su.app.memberId;
-  if (m.status !== "APPROVED" && !isOwner) notFound();
+  // 非公開の会員（listed=false）は、本人以外には存在ごと見せない（2026-11-23）
+  if ((m.status !== "APPROVED" || !m.listed) && !isOwner) notFound();
 
   // この事業者の「取り組み」（＝投稿）。
   // ⚠️ カードを交換していない相手の投稿は空が返る（判定は feed.ts）。

@@ -129,7 +129,7 @@ export default async function DashboardPage() {
             isPublic: true,
             visibility: "public",
             title: { not: "" },
-            member: { tenantId, status: "APPROVED" },
+            member: { tenantId, status: "APPROVED", listed: true },
             ...(memberId ? { memberId: { not: memberId } } : {}),
           },
           orderBy: { createdAt: "desc" },

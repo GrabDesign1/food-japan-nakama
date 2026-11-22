@@ -53,6 +53,7 @@ export default async function OfferingDetailPage({
           id: true,
           name: true,
           status: true,
+          listed: true,
           prefecture: true,
           city: true,
           address: true,
@@ -71,7 +72,9 @@ export default async function OfferingDetailPage({
   const isAdmin = isAdminRole(su.app.role);
   if (!offering.isPublic && !isOwner && !isAdmin) notFound();
   // 停止・未承認会員の掲載は本人以外に見せない
-  if (offering.member.status !== "APPROVED" && !isOwner && !isAdmin) notFound();
+  // 非公開の会員の掲載も、本人と事務局以外には見せない（2026-11-23）
+  if ((offering.member.status !== "APPROVED" || !offering.member.listed) && !isOwner && !isAdmin)
+    notFound();
   // 非公開募集：所有者・事務局以外には存在ごと見せない（検索・OGP・APIにも出さない）
   if (offering.visibility === "private" && !isOwner && !isAdmin) notFound();
 

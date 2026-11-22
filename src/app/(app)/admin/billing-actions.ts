@@ -182,7 +182,7 @@ export async function adminSendMatchedNotice(noticeId: string, _formData: FormDa
       tenantId: su.app.tenantId,
       marketingOptInAt: { not: null },
       status: "ACTIVE",
-      member: { status: "APPROVED", id: { not: offering.memberId } },
+      member: { status: "APPROVED", listed: true, id: { not: offering.memberId } },
     },
     select: { email: true },
     take: limit,

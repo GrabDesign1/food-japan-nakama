@@ -1,4 +1,5 @@
 // 事務局：会員管理（/adminから分離。審査・停止・削除・手動でのビジネス会員化）。
+import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { listReviewMembers } from "@/lib/member";
 import { prisma } from "@/lib/db";
@@ -82,6 +83,13 @@ export default async function AdminMembersPage() {
             承認すると、その会員に紹介クレジット3件が自動付与されます（組織単位で一度だけ）。
           </p>
         </div>
+        {/* 登壇者を先に登録する画面への導線（2026-11-23） */}
+        <Link
+          href="/admin/members/prereg"
+          className="rounded-[6px] border border-[#E3E6E8] bg-white px-3 py-2 text-[12px] font-medium text-[var(--ink-2)] transition hover:text-[var(--green-d)]"
+        >
+          登壇者を先に登録する →
+        </Link>
       </div>
       <AdminNav current="members" />
       {withdrawals.length > 0 ? (

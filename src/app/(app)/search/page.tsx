@@ -402,6 +402,7 @@ async function searchOfferings(f: {
     member: {
       tenantId: f.tenantId,
       status: "APPROVED" as const, // 停止・未承認会員の掲載は出さない
+      listed: true, // 非公開の会員（事務局が先に登録した登壇者など）も出さない
       ...(f.category ? { categoryL1: f.category } : {}),
     },
     ...(f.direction ? { direction: f.direction as "GIVE" | "WANT" } : {}),
@@ -474,6 +475,7 @@ async function searchProducers(f: {
   const where = {
     tenantId: f.tenantId,
     status: "APPROVED" as const,
+    listed: true, // 非公開の会員は一覧に出さない（2026-11-23）
     // プロフィールがほとんど空の会員は一覧に出さない（「（未入力）」ばかりが並ぶため・2026-08-11 ユーザー指示）。
     // しきい値は記入率50%。自分の会社も同じ基準（他社から見えている状態をそのまま見せる）。
     completionRate: { gte: MIN_PRODUCER_COMPLETION },

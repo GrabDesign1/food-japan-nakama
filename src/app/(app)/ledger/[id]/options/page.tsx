@@ -78,7 +78,7 @@ export default async function ListingOptionsPage({
         tenantId: su!.app.tenantId,
         marketingOptInAt: { not: null },
         status: "ACTIVE",
-        member: { status: "APPROVED", id: { not: me.id } },
+        member: { status: "APPROVED", listed: true, id: { not: me.id } },
       },
     }),
   ]);

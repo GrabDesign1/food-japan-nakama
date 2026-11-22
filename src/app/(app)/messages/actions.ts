@@ -130,7 +130,7 @@ export async function sendInterest(
 
   // 相手が同一テナントの承認済み会員であることを確認
   const target = await prisma.member.findFirst({
-    where: { id: toMemberId, tenantId: su!.app.tenantId, status: "APPROVED" },
+    where: { id: toMemberId, tenantId: su!.app.tenantId, status: "APPROVED", listed: true },
     select: { id: true },
   });
   if (!target) return;
@@ -204,7 +204,7 @@ export async function startConversation(toMemberId: string): Promise<void> {
 
   // 相手が同一テナントの承認済み会員であることを確認
   const target = await prisma.member.findFirst({
-    where: { id: toMemberId, tenantId: su!.app.tenantId, status: "APPROVED" },
+    where: { id: toMemberId, tenantId: su!.app.tenantId, status: "APPROVED", listed: true },
     select: { id: true },
   });
   if (!target) return;

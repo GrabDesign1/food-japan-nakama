@@ -34,7 +34,7 @@ async function loadTarget(offeringId: string, meId: string, tenantId: string) {
       title: { not: "" },
       // 非公開募集（有料オプション）には提案できない
       visibility: { not: "private" },
-      member: { tenantId, status: "APPROVED" },
+      member: { tenantId, status: "APPROVED", listed: true },
     },
     include: { member: { select: { id: true, name: true } } },
   });

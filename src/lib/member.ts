@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db";
 import type { Member } from "@/generated/prisma/client";
 import type { SessionUser } from "@/lib/auth";
+import { claimPreregisteredMember } from "@/lib/member-prereg";
 
 // 記入率の対象とする項目（埋まっているほど検索で上位に出る＝入力促進）
 const RATE_FIELDS: (keyof Member)[] = [
@@ -64,6 +65,19 @@ export async function getOrCreateMemberForUser(su: SessionUser): Promise<Member>
       where: { id: memberId },
     });
     if (existing) return existing;
+  }
+
+  // 事務局が先に用意しておいた行があれば、そこへつなぐ（2026-11-23）。
+  // ⚠️ 新しい下書きを作る**前に**必ず試す。先に作ってしまうと、
+  //    登壇者として入れておいた会社名・都道府県が宙に浮いて、同じ人が2行になる。
+  const claimedId = await claimPreregisteredMember({
+    tenantId: su.app.tenantId,
+    userId: su.app.id,
+    email: su.email,
+  });
+  if (claimedId) {
+    const claimed = await prisma.member.findUnique({ where: { id: claimedId } });
+    if (claimed) return claimed;
   }
 
   const member = await prisma.member.create({

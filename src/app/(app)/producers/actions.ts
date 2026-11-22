@@ -13,7 +13,7 @@ export async function toggleFavoriteMember(targetMemberId: string): Promise<void
 
   // 対象が同一テナントの承認済み会員であることを確認
   const target = await prisma.member.findFirst({
-    where: { id: targetMemberId, tenantId: su.app.tenantId, status: "APPROVED" },
+    where: { id: targetMemberId, tenantId: su.app.tenantId, status: "APPROVED", listed: true },
     select: { id: true },
   });
   if (!target) return;
