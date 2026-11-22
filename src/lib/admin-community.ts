@@ -338,3 +338,192 @@ export async function byPrefecture(tenantId: string): Promise<{ prefecture: stri
 }
 
 export { ALIVE_THRESHOLD };
+
+// ───────────────────────────────────────────────────────────────
+// 今週の手当て（2026-11-23 ユーザー指示「今週の手当てをリストにまとめて」）
+//
+// ⚠️⚠️ 上の集計は「材料」でしかない。事務局長が毎週これを見て動くには、
+//    **順番の付いた1本のリスト**になっていないと動けない。
+//    だから、材料を全部混ぜて、緊急な順に並べ替えて、動詞で書く。
+// ⚠️ 1週間に人が動ける量には上限がある。多く出しすぎると全部やらなくなるので、
+//    WEEKLY_TASK_MAX 件で打ち切る（出しきらないことが、このリストの仕事）。
+// ───────────────────────────────────────────────────────────────
+
+/** 1週間に出す手当ての上限。これ以上は出さない */
+export const WEEKLY_TASK_MAX = 12;
+
+export type WeeklyTask = {
+  key: string;
+  kind: "churn" | "lonely" | "expiring" | "upsell" | "credit" | "field" | "silent" | "prereg" | "decay";
+  /** 何をするか。動詞で終わる一行 */
+  todo: string;
+  /** なぜ今それをするのか */
+  why: string;
+  /** 開く先（なければ null） */
+  href: string | null;
+  /** いつまでに */
+  when: "今日" | "今週";
+};
+
+const daysSince = (d: Date | null): number | null =>
+  d ? Math.max(0, Math.floor((Date.now() - d.getTime()) / DAY)) : null;
+
+/** 「3日前」「一度もありません」のような言い方にする */
+function lastSeen(d: Date | null): string {
+  const n = daysSince(d);
+  if (n === null) return "一度もありません";
+  if (n === 0) return "今日";
+  return `${n}日前`;
+}
+
+/**
+ * 今週の手当て。緊急な順に並べて返す。
+ * 上の集計で取った材料をそのまま受け取るので、DBは1回だけ追加で引く（先行登録の数）。
+ */
+export async function weeklyTasks(
+  tenantId: string,
+  rows: MemberRow[],
+  att: Attention,
+  pulse: Pulse,
+  money: MoneyPulse,
+  health: RelationHealth,
+): Promise<WeeklyTask[]> {
+  const t: WeeklyTask[] = [];
+
+  // ① 払っているのに交わっていない ＝ 解約がいちばん近い。ここから手を付ける
+  for (const m of att.payingButQuiet.slice(0, 5)) {
+    t.push({
+      key: `churn:${m.id}`,
+      kind: "churn",
+      todo: `${m.name} に、こちらから声をかける`,
+      why: `お金を払っているのに、直近${ACTIVE_WINDOW_DAYS}日なにもしていません（最後の動き：${lastSeen(m.lastActionAt)}）。このままだと次の更新で辞めます。`,
+      href: `/admin/crm/${m.id}`,
+      when: "今日",
+    });
+  }
+
+  // ② 誰も手を挙げていない集まり ＝ 立てた人がひとりで待っている
+  //    ここを放っておくと、次から誰も立てなくなる。場が死ぬ入口なので上に置く
+  for (const g of att.lonelyGatherings.slice(0, 3)) {
+    const n = daysSince(g.createdAt) ?? 0;
+    t.push({
+      key: `lonely:${g.id}`,
+      kind: "lonely",
+      todo: `「${g.title}」に、事務局からひとこと書く`,
+      why: `${g.hostName} さんが${n === 0 ? "今日" : `${n}日前に`}立てて、まだ誰も手を挙げていません。放っておくと、次から誰も立てなくなります。`,
+      href: `/gatherings/${g.id}`,
+      when: n >= 3 ? "今日" : "今週",
+    });
+  }
+
+  // ③ 場が止まっている ＝ 事務局が1本入れるしかない
+  if (pulse.posts7 === 0) {
+    t.push({
+      key: "field:dead",
+      kind: "field",
+      todo: "事務局から、壁に1本書く",
+      why: "この7日間、誰も投稿していません。場が止まっています。誰かが先に書かないと、誰も書きません。",
+      href: "/feed",
+      when: "今日",
+    });
+  } else if (pulse.posts7 <= 2) {
+    t.push({
+      key: "field:thin",
+      kind: "field",
+      todo: "事務局から、壁に1本書く",
+      why: `この7日間の投稿は${pulse.posts7}件だけです。事務局が先に書くと、続く人が出ます。`,
+      href: "/feed",
+      when: "今週",
+    });
+  }
+
+  // ④ まもなく失効するクレジット ＝ 黙って消えると、次は払ってもらえない
+  if (money.expiringSoon > 0) {
+    t.push({
+      key: "expiring",
+      kind: "expiring",
+      todo: `まもなく失効する ${money.expiringSoon} クレジットの持ち主に、先に知らせる`,
+      why: `${EXPIRING_SOON_DAYS}日以内に失効します。黙って消えると、次の更新で払ってもらえません。`,
+      href: "/admin/billing",
+      when: "今週",
+    });
+  }
+
+  // ⑤ 交わっているのに払っていない ＝ 価値は届いている。課金の話ができる
+  for (const m of att.activeButFree.slice(0, 3)) {
+    t.push({
+      key: `upsell:${m.id}`,
+      kind: "upsell",
+      todo: `${m.name} に、ビジネス会員の話をする`,
+      why: `無料のまま、直近${ACTIVE_WINDOW_DAYS}日で${m.actions30}回動いています。価値はもう届いています。`,
+      href: `/admin/crm/${m.id}`,
+      when: "今週",
+    });
+  }
+
+  // ⑥ クレジットが余ったまま ＝ 使い方が分からないか、使う相手がいない
+  for (const m of att.unusedCredits.slice(0, 2)) {
+    t.push({
+      key: `credit:${m.id}`,
+      kind: "credit",
+      todo: `${m.name} に、クレジットの使い方を1件つないで見せる`,
+      why: `${m.credits} クレジット持っているのに使っていません。使い方が分からないか、使う相手が見えていません。`,
+      href: `/admin/crm/${m.id}`,
+      when: "今週",
+    });
+  }
+
+  // ⑦ 先行登録のまま、本人にまだ渡していない
+  //    先に登録しておいて声をかける、という進め方なので、残り数が「次に声をかける数」になる
+  const preregLeft = await prisma.member.count({
+    where: { tenantId, status: "APPROVED", listed: false, users: { none: {} } },
+  });
+  if (preregLeft > 0) {
+    t.push({
+      key: "prereg",
+      kind: "prereg",
+      todo: `先行登録のままの ${preregLeft} 名に、一声かける`,
+      why: "登録はしてありますが、本人がまだ受け取っていません。本人が受け取るまで、名簿は名簿のままです。",
+      href: "/admin/members/prereg",
+      when: "今週",
+    });
+  }
+
+  // ⑧ 黙っている人 ＝ 3か月に1回の声かけの対象。人数が多いのでまとめて1件にする
+  if (att.silent.length > 0) {
+    t.push({
+      key: "silent",
+      kind: "silent",
+      todo: `${SILENT_DAYS}日以上黙っている ${att.silent.length} 名のうち、3名に声をかける`,
+      why: "まだ場に入れていない方です。3か月に1回、何か1つ動いてもらう。全員は無理なので、古い順に3名だけ。",
+      href: "/admin/community#silent",
+      when: "今週",
+    });
+  }
+
+  // ⑨ 関係が薄れてきている ＝ 集まりを1つ立てるのがいちばん効く
+  if (health.pairs >= 10 && health.alivePercent !== null && health.alivePercent < 50) {
+    t.push({
+      key: "decay",
+      kind: "decay",
+      todo: "集まりを1つ立てて、薄れている関係を呼び戻す",
+      why: `生きている関係が${health.alivePercent}%まで下がっています（${health.fading}組が薄れ、${health.cold}組が切れかけ）。顔を合わせる場が、いちばん効きます。`,
+      href: "/gatherings",
+      when: "今週",
+    });
+  }
+
+  // 会員が1人も動いていない立ち上げ直後は、上のどれも出ない。そのときの最初の一歩
+  if (t.length === 0 && rows.length === 0) {
+    t.push({
+      key: "empty",
+      kind: "prereg",
+      todo: "まず、登壇者の先行登録を取り込む",
+      why: "まだ会員がいません。名簿を入れるところから始まります。",
+      href: "/admin/members/prereg",
+      when: "今日",
+    });
+  }
+
+  return t.slice(0, WEEKLY_TASK_MAX);
+}

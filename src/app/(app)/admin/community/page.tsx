@@ -15,8 +15,10 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import {
   communityPulse, relationHealth, memberMatrix, attentionList, moneyPulse, byPrefecture,
-  ACTIVE_WINDOW_DAYS, SILENT_DAYS, EXPIRING_SOON_DAYS,
+  weeklyTasks,
+  ACTIVE_WINDOW_DAYS, SILENT_DAYS, EXPIRING_SOON_DAYS, WEEKLY_TASK_MAX,
 } from "@/lib/admin-community";
+import type { WeeklyTask } from "@/lib/admin-community";
 import { AdminNav } from "../_components/AdminNav";
 import {
   aBadge, aCard, aCardBody, aCardHead, aEyebrow, aH1, aH2, aLabel, aLink, aNote,
@@ -50,15 +52,18 @@ function MemberList({
   rows,
   tone,
   showCredits,
+  id,
 }: {
   title: string;
   why: string;
   rows: { id: string; name: string; prefecture: string | null; actions30: number; lastActionAt: Date | null; credits: number }[];
   tone: "red" | "green" | "neutral";
   showCredits?: boolean;
+  /** 「今週の手当て」から飛んでくるための見出しID */
+  id?: string;
 }) {
   return (
-    <div className={aCard}>
+    <div id={id} className={`${aCard} scroll-mt-4`}>
       <div className={aCardHead}>
         <h2 className={aH2}>{title}</h2>
         <span className={`${aBadge(tone)} ml-auto`}>{rows.length}</span>
@@ -90,6 +95,63 @@ function MemberList({
   );
 }
 
+/**
+ * 今週の手当て。
+ * ⚠️ 事務局長が毎週ここだけ見れば動ける、という形にする。
+ *    上から順にやる。全部やらなくてよい（上から3つで十分な週もある）。
+ */
+function WeeklyTasks({ tasks }: { tasks: WeeklyTask[] }) {
+  return (
+    <div className={`${aCard} mt-5 border-[#D6DBDE]`}>
+      <div className={aCardHead}>
+        <h2 className={aH2}>今週の手当て</h2>
+        <span className={`${aBadge(tasks.some((x) => x.when === "今日") ? "red" : "neutral")} ml-auto`}>
+          {tasks.length} 件
+        </span>
+      </div>
+      <div className={aCardBody}>
+        {tasks.length > 0 ? (
+          <p className={aNote}>
+            上から順にやってください。<strong>全部やらなくてよい</strong>——上の3つで足りる週もあります。
+            {tasks.length >= WEEKLY_TASK_MAX ? `多くても${WEEKLY_TASK_MAX}件しか出しません。` : ""}
+          </p>
+        ) : null}
+        {tasks.length === 0 ? (
+          <p className={aNote}>
+            今週、手当てが要るものはありません。<strong>これがいちばん良い状態です。</strong>
+          </p>
+        ) : (
+          <ol className="mt-3 flex flex-col divide-y divide-[#EDF0F2]">
+            {tasks.map((task, i) => (
+              <li key={task.key} className="flex gap-3 py-2.5 first:pt-0">
+                <span
+                  className="mt-[1px] inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F1F4F5] text-[11px] font-bold text-[var(--muted)]"
+                  aria-hidden
+                >
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    {task.href ? (
+                      <Link href={task.href} className={`${aLink} text-[13px] font-medium`}>
+                        {task.todo}
+                      </Link>
+                    ) : (
+                      <span className="text-[13px] font-medium text-[var(--ink)]">{task.todo}</span>
+                    )}
+                    <span className={aBadge(task.when === "今日" ? "red" : "neutral")}>{task.when}</span>
+                  </div>
+                  <p className="mt-0.5 text-[12px] leading-5 text-[var(--muted)]">{task.why}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function AdminCommunityPage() {
   const su = await requireAdmin();
   const tenantId = su.app.tenantId;
@@ -102,6 +164,7 @@ export default async function AdminCommunityPage() {
     byPrefecture(tenantId),
   ]);
   const att = await attentionList(tenantId, rows);
+  const tasks = await weeklyTasks(tenantId, rows, att, pulse, money, health);
 
   const activeMembers = rows.filter((m) => m.actions30 > 0).length;
 
@@ -118,7 +181,9 @@ export default async function AdminCommunityPage() {
         </p>
       </div>
 
-      {/* ── いちばん上：ズレ ───────────────────────── */}
+      <WeeklyTasks tasks={tasks} />
+
+      {/* ── 次に：ズレ ───────────────────────── */}
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <MemberList
           title="払っているのに、交わっていない"
@@ -212,6 +277,7 @@ export default async function AdminCommunityPage() {
           showCredits
         />
         <MemberList
+          id="silent"
           title={`${SILENT_DAYS}日以上、黙っている`}
           why="投稿もコメントも手挙げもありません。まだ場に入れていない方です。"
           rows={att.silent}
