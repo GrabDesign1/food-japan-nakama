@@ -172,3 +172,104 @@ export async function claimPreregisteredMember(params: {
   });
   return linked.count > 0 ? candidate.id : null;
 }
+
+// ── まとめて取り込む（2026-11-23） ────────────────────────────
+//
+// なぜ必要か: 登壇者は宮崎62名・名古屋46名（重複を除いて約97名）。
+//   1件ずつ画面から入れるのは現実的でない。
+//
+// ⚠️ 取り込んでも**送信は一切しない**（1件ずつと同じ）。作るのは Member の行だけ。
+// ⚠️ 1行でも駄目なら全部やめる、にはしない。**行ごとに結果を返す**
+//    （100行のうち3行が重複、で全部やり直しになると使えない）。
+// ⚠️ 重複は**飛ばす**。上書きしない（事務局が後から直した内容を、取り込みで消さない）。
+
+export const PREREG_IMPORT_MAX_ROWS = 300;
+
+/** 取り込みの1行 */
+export type PreregRow = {
+  line: number;
+  input: PreregInput;
+};
+
+export type PreregRowResult = {
+  line: number;
+  name: string;
+  status: "added" | "skipped" | "error";
+  message: string;
+};
+
+/**
+ * 貼り付けた表を行に分ける。
+ * 区切りはタブ（表計算から貼ると、こうなる）。タブが無ければカンマ。
+ * 列の順: 事業者名 / 登壇者名 / 業種 / 都道府県 / メール / ホームページ / 控え
+ */
+export function parsePreregText(text: string): { rows: PreregRow[]; tooMany: boolean } {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  const rows: PreregRow[] = [];
+  let tooMany = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    if (!raw.trim()) continue;
+    // 見出し行は飛ばす
+    if (i === 0 && /事業者名/.test(raw)) continue;
+
+    const cells = (raw.includes("\t") ? raw.split("\t") : raw.split(",")).map((c) =>
+      c.trim().replace(/^"(.*)"$/, "$1")
+    );
+    if (rows.length >= PREREG_IMPORT_MAX_ROWS) {
+      tooMany = true;
+      break;
+    }
+    rows.push({
+      line: i + 1,
+      input: {
+        name: cells[0] ?? "",
+        contactName: cells[1] ?? "",
+        categoryL1: cells[2] ?? "",
+        prefecture: cells[3] ?? "",
+        email: cells[4] ?? "",
+        website: cells[5] ?? "",
+        note: cells[6] ?? "",
+      },
+    });
+  }
+  return { rows, tooMany };
+}
+
+/**
+ * まとめて登録する。
+ * ⚠️ 1件ずつ preregisterMember を通す（重複の判定・形の確認を二重に書かないため）。
+ */
+export async function importPreregistered(
+  by: { tenantId: string; name: string },
+  rows: PreregRow[]
+): Promise<PreregRowResult[]> {
+  const out: PreregRowResult[] = [];
+  // 同じ貼り付けの中での重複も見る（DBに入る前なので preregisterMember では拾えない）
+  const seenEmail = new Set<string>();
+
+  for (const r of rows) {
+    const name = r.input.name.trim();
+    if (!name) {
+      out.push({ line: r.line, name: "", status: "error", message: "事業者名が空です。" });
+      continue;
+    }
+    const email = normalizeEmail(r.input.email);
+    if (email && seenEmail.has(email)) {
+      out.push({ line: r.line, name, status: "skipped", message: "同じメールがこの表の中で重複しています。" });
+      continue;
+    }
+
+    const res = await preregisterMember(by, r.input);
+    if (res.ok) {
+      if (email) seenEmail.add(email);
+      out.push({ line: r.line, name, status: "added", message: "非公開で登録しました。" });
+    } else {
+      // 「すでに登録済み」は失敗ではなく、飛ばしたものとして扱う
+      const skipped = res.error.includes("登録済み") || res.error.includes("すでに");
+      out.push({ line: r.line, name, status: skipped ? "skipped" : "error", message: res.error });
+    }
+  }
+  return out;
+}

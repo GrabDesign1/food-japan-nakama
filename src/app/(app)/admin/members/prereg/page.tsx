@@ -17,6 +17,7 @@ import {
 } from "../../_components/adminUi";
 import { btn } from "@/lib/ui";
 import { PreregForm } from "./PreregForm";
+import { ImportForm } from "./ImportForm";
 import { publish, unpublish } from "../prereg-actions";
 
 export const metadata = { title: "登壇者の先行登録" };
@@ -47,6 +48,10 @@ export default async function PreregPage() {
 
       <div className="mt-5">
         <PreregForm defaultNote="" />
+      </div>
+
+      <div className="mt-6">
+        <ImportForm />
       </div>
 
       {/* 非公開のまま */}

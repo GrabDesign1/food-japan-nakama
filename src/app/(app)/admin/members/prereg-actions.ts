@@ -6,7 +6,10 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
-import { preregisterMember, publishMember, unpublishMember } from "@/lib/member-prereg";
+import {
+  preregisterMember, publishMember, unpublishMember,
+  parsePreregText, importPreregistered, PREREG_IMPORT_MAX_ROWS,
+} from "@/lib/member-prereg";
 
 export type PreregState = { ok?: boolean; error?: string; message?: string };
 
@@ -58,4 +61,45 @@ export async function unpublish(fd: FormData): Promise<void> {
     }).catch((e) => console.error("[prereg] 監査ログに失敗:", e));
   }
   revalidatePath("/admin/members/prereg");
+}
+
+export type ImportState = {
+  done?: boolean;
+  added?: number;
+  skipped?: number;
+  failed?: number;
+  results?: { line: number; name: string; status: string; message: string }[];
+  error?: string;
+};
+
+/**
+ * 表を貼り付けてまとめて登録する。
+ * ⚠️ ここでもメールは一切送らない。
+ */
+export async function importPrereg(_prev: ImportState, fd: FormData): Promise<ImportState> {
+  const su = await requireAdmin();
+  const text = String(fd.get("text") ?? "");
+  if (!text.trim()) return { error: "表を貼り付けてください。" };
+
+  const { rows, tooMany } = parsePreregText(text);
+  if (rows.length === 0) return { error: "読み取れる行がありませんでした。" };
+
+  const results = await importPreregistered({ tenantId: su.app.tenantId, name: su.app.name }, rows);
+  const added = results.filter((r) => r.status === "added").length;
+  const skipped = results.filter((r) => r.status === "skipped").length;
+  const failed = results.filter((r) => r.status === "error").length;
+
+  await writeAudit(su, "member.prereg.import", {
+    detail: `まとめて先行登録（非公開・メール未送信）: 登録${added} / 飛ばし${skipped} / 失敗${failed}`,
+  }).catch((e) => console.error("[prereg] 監査ログに失敗:", e));
+
+  revalidatePath("/admin/members/prereg");
+  return {
+    done: true,
+    added,
+    skipped,
+    failed,
+    results,
+    error: tooMany ? `1回に取り込めるのは${PREREG_IMPORT_MAX_ROWS}行までです。残りはもう一度貼ってください。` : undefined,
+  };
 }
