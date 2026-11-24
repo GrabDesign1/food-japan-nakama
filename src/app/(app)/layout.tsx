@@ -20,6 +20,8 @@ const NAV: NavItem[] = [
   { label: "メッセージ", href: "/messages", ready: true },
   { label: "みんなの取り組み", href: "/feed", ready: true },
   { label: "集まりたい", href: "/gatherings", ready: true },
+  // サミットで会った方の一覧（2026-11-25 ユーザー指示「参加した人のページをつくりたい」）
+  { label: "サミットで会った人", href: "/summit", ready: true },
   { label: "交換カード", href: "/cards", ready: true, section: "その他" },
   { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },
   { label: "お気に入り", href: "/favorites", ready: true, section: "その他" },

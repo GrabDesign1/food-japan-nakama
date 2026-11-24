@@ -16,6 +16,7 @@ import {
 } from "@/lib/member-prereg";
 import { listInvitable, issueInviteToken, markInviteSent, INVITE_BATCH } from "@/lib/member-invite";
 import { sendMemberInvite } from "@/lib/email";
+import { syncFromOnegaizar } from "@/lib/onegaizar-sync";
 
 export type PreregState = { ok?: boolean; error?: string; message?: string };
 
@@ -142,4 +143,32 @@ export async function sendInvites(): Promise<void> {
   }).catch((e) => console.error("[prereg] 監査ログに失敗:", e));
 
   revalidatePath("/admin/members/prereg");
+}
+
+/**
+ * Onegaizar から登壇者・参加者を取り込む（2026-11-25）。
+ * ⚠️⚠️ 取り込んでも誰にも見えません（必ず非公開）。メールも送りません。
+ *    本人に聞くのは、上の「◯名に送る」を押したときだけ。
+ */
+export async function syncOnegaizar(_prev: PreregState, _fd: FormData): Promise<PreregState> {
+  const su = await requireAdmin();
+  const r = await syncFromOnegaizar(su.app.tenantId, su.app.name);
+  if (!r.ok) return { error: r.error ?? "取り込めませんでした。" };
+
+  await writeAudit(su, "member.sync.onegaizar", {
+    targetType: "member",
+    targetId: "-",
+    detail: `イベントから取り込み：新規${r.created}／更新${r.updated}／既存会員に追記${r.linked}／メール無し${r.skippedNoEmail}`,
+  }).catch((e) => console.error("[prereg] 監査ログに失敗:", e));
+
+  revalidatePath("/admin/members/prereg");
+  return {
+    ok: true,
+    message:
+      `取り込みました（ご登壇${r.speaker}／ご参加${r.attendee}）。` +
+      `新しく預かった ${r.created}名・すでに預かっていた ${r.updated}名・` +
+      `すでに会員の方 ${r.linked}名。` +
+      (r.skippedNoEmail > 0 ? `メールが無くて取り込めなかった方が ${r.skippedNoEmail}名います。` : "") +
+      "まだ誰にも見えていません。",
+  };
 }

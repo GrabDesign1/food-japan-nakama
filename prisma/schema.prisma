@@ -187,6 +187,15 @@ model Member {
   /// ⚠️⚠️ **「いいえ」のときは、この行を消す。** 持ち続けない。
   ///    消すからこそ「いったん預かる」が許される。残すなら最初から移さない。
   /// ⚠️ 送るのは1回だけ。返事が無い人に催促しない（同意なき勧誘になる）。
+  /// 【Onegaizar から来た人】2026-11-25 ユーザー指示「保守　１をすすめて」。
+  /// ⚠️ 同じ人を同じ行につなぐための印（例：onegaizar:person:xxx / onegaizar:attendee:xxx）。
+  ///    2回取り込んでも増えないのは、これがあるから。
+  sourceKey String? @unique @map("source_key")
+  /// どの開催に関わったか（例：FOOD JAPAN SUMMIT 2026 in MIYAZAKI）
+  summitEvents String[] @default([]) @map("summit_events")
+  /// "speaker"（ご登壇）か "attendee"（ご参加）か
+  summitRole String? @map("summit_role")
+
   inviteToken      String?   @unique @map("invite_token")
   inviteSentAt     DateTime? @map("invite_sent_at")
   /// "yes" | "no"
@@ -236,6 +245,7 @@ model Member {
   @@index([stripeCustomerId])
   @@index([tenantId, crmNextActionDue])
   @@index([tenantId, preregEmail])
+  @@index([tenantId, summitRole])
   @@map("members")
 }
 

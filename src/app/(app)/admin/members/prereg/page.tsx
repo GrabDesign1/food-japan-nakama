@@ -11,6 +11,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { listPreregistered } from "@/lib/member-prereg";
 import { inviteSummary, INVITE_BATCH } from "@/lib/member-invite";
+import { syncConfigured } from "@/lib/onegaizar-sync";
 import { AdminNav } from "../../_components/AdminNav";
 import {
   aBadge, aCard, aCardBody, aCardHead, aEyebrow, aH1, aH2, aLink, aNote,
@@ -19,6 +20,7 @@ import {
 import { btn } from "@/lib/ui";
 import { PreregForm } from "./PreregForm";
 import { ImportForm } from "./ImportForm";
+import { SyncForm } from "./SyncForm";
 import { publish, unpublish, sendInvites } from "../prereg-actions";
 
 export const metadata = { title: "登壇者の先行登録" };
@@ -59,6 +61,27 @@ export default async function PreregPage() {
       </div>
 
       {/* 非公開のまま */}
+      {/* ── イベントから取り込む（2026-11-25 ユーザー指示「保守　１をすすめて」）──
+          手で表を貼る代わりに、Onegaizar から直接もらう。
+          ⚠️⚠️ 取り込んでも誰にも見えない（必ず非公開）。メールも送らない。 */}
+      <div className={`${aCard} mt-6`}>
+        <div className={aCardHead}>
+          <h2 className={aH2}>イベント（Onegaizar）から取り込む</h2>
+        </div>
+        <div className={aCardBody}>
+          <p className={aNote}>
+            公開済みのご登壇者と、ご参加者を取り込みます。
+            <strong>取り込んでも誰にも見えません</strong>し、メールも送りません。
+            同じ人を2回作らないよう、イベント側の印で突き合わせます。
+            <strong>電話番号と事業内容は入ってきません</strong>
+            （事業内容は、ご本人がNAKAMAで書くものです）。
+          </p>
+          <div className="mt-3">
+            <SyncForm configured={syncConfigured()} />
+          </div>
+        </div>
+      </div>
+
       {/* ── 本人に聞く（2026-11-23 ユーザー指示）────────────────────
           「移動させておいて、利用するかは、本人の承諾を得る方法が望ましい」
           ⚠️⚠️ **預かるが、使わない。** 本人が「はい」と言うまで誰にも見えない。
