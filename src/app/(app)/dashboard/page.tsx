@@ -22,7 +22,10 @@ import {
   nextActionDueState,
   isMeetingSoon,
 } from "@/lib/project-taxonomy";
-import { btn, eyebrowCls, h1Cls, h2Cls, h3Cls } from "@/lib/ui";
+import { MyProfileHeader } from "@/components/MyProfileHeader";
+import { loadHomeTimeline } from "@/lib/home-timeline";
+import { PostCard, type Author } from "../feed/_components/PostCard";
+import { btn, eyebrowCls, h2Cls, h3Cls } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "マイページ｜FOOD JAPAN NAKAMA" };
 
@@ -103,7 +106,7 @@ export default async function DashboardPage() {
   const tenantId = su?.app.tenantId;
   const memberId = member?.id;
 
-  const [announcements, banners, dealsWithOther, myProjects, recommended, myProjectApps, nextBillingTs] = await Promise.all([
+  const [announcements, banners, dealsWithOther, myProjects, timeline, myProjectApps, nextBillingTs] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
           where: { tenantId },
@@ -121,22 +124,9 @@ export default async function DashboardPage() {
     memberId
       ? prisma.project.findMany({ where: { memberId }, orderBy: { updatedAt: "desc" }, take: 5 })
       : Promise.resolve([]),
-    // おすすめ案件：おすすめ条件（希望地域・業種・目的タグ）のロジックは未実装のため、暫定で新着を表示。
-    // TODO: 会員のprefecture/categoryL1/検索タグに基づくスコアリングに置き換える（仕様書5章）。
-    tenantId
-      ? prisma.offering.findMany({
-          where: {
-            isPublic: true,
-            visibility: "public",
-            title: { not: "" },
-            member: { tenantId, status: "APPROVED", listed: true },
-            ...(memberId ? { memberId: { not: memberId } } : {}),
-          },
-          orderBy: { createdAt: "desc" },
-          take: 4,
-          include: { member: { select: { name: true, companyLogoUrl: true } } },
-        })
-      : Promise.resolve([]),
+    // ホームの「まとめた流れ」＝仲間の投稿＋売りたい・探している（2026-11-26 ユーザー指示）。
+    // ⚠️ 見える範囲は home-timeline.ts に任せる。ここで where を足さない。
+    loadHomeTimeline({ memberId, tenantId }),
     // 自分が主催する共創プロジェクトの進行中の応募（次の行動・期限を「進行中の活動」に反映）
     memberId
       ? prisma.projectApplication.findMany({
@@ -178,8 +168,8 @@ export default async function DashboardPage() {
     appMemberIds.length
       ? prisma.member.findMany({ where: { id: { in: appMemberIds } }, select: { id: true, name: true } })
       : Promise.resolve([]),
-    // 24時間以内の閲覧数（おすすめ＋自分の公開中案件のカード表示用）
-    views24hMap(recommended.map((o) => o.id)),
+    // 24時間以内の閲覧数（流れに出す案件のカード表示用）
+    views24hMap(timeline.offeringIds),
     // 商談のスレッドが「どの案件のものか」（進行中の活動をカードで出すため）
     dealThreadIds.length
       ? prisma.thread.findMany({
@@ -342,6 +332,10 @@ export default async function DashboardPage() {
   // viewMap は2段目の並列取得で取得済み
   const [newest, ...restAnnouncements] = announcements;
 
+  // 流れに出す投稿の、書いた人・コメントした人の表示名
+  const authorsById: Record<string, Author> = {};
+  for (const a of timeline.feed.authors) authorsById[a.id] = a;
+
   return (
     <div className="flex flex-col gap-6">
       {/* あいさつ */}
@@ -364,9 +358,10 @@ export default async function DashboardPage() {
             </span>
           ) : null}
         </div>
-        <h1 className={h1Cls}>{su?.app.name} さん、こんにちは</h1>
-        <p className="mt-1 text-[13px] text-[var(--ink-2)]">今日も新しい食のつながりを見つけましょう。</p>
       </div>
+
+      {/* 自分の登録情報（サミットで登録した内容。2026-11-26 ユーザー指示） */}
+      <MyProfileHeader member={member} fallbackName={su?.app.name} />
 
       {/* 状態アラート（必要なときだけ） */}
       {alerts.length > 0 ? (
@@ -462,6 +457,57 @@ export default async function DashboardPage() {
       {/* 本文2カラム（モバイルは相談カードを主操作の直後へ） */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_310px]">
         <div className="order-2 flex min-w-0 flex-col gap-6 lg:order-1">
+          {/* 仲間の動き＝投稿と「売りたい・探している」を1本にまとめた流れ（2026-11-26 ユーザー指示）。
+              ⚠️ 見える範囲は home-timeline.ts の判定のまま。ここは並べるだけ。 */}
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className={h2Cls}>仲間の動き</h2>
+              <div className="flex gap-4">
+                <Link href="/feed" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
+                  取り組みを書く →
+                </Link>
+                <Link href="/search" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
+                  案件を探す →
+                </Link>
+              </div>
+            </div>
+            {timeline.items.length === 0 ? (
+              <EmptyState
+                compact
+                title="まだ流れるものがありません"
+                description="名刺を交換すると、その方の取り組みがここに流れます。案件も新しいものから並びます。"
+                actions={[{ label: "サミットで会った人を見る", href: "/summit", variant: "primary" }]}
+              />
+            ) : (
+              <ul className="flex flex-col gap-4">
+                {timeline.items.map((it) =>
+                  it.kind === "post" ? (
+                    <li key={`p-${it.post.id}`}>
+                      <PostCard
+                        post={it.post}
+                        author={authorsById[it.post.authorMemberId]}
+                        comments={timeline.feed.comments[it.post.id] ?? []}
+                        authorsById={authorsById}
+                        isMine={it.post.authorMemberId === memberId}
+                      />
+                    </li>
+                  ) : (
+                    <li key={`o-${it.offering.id}`}>
+                      <OfferingCard
+                        o={{
+                          ...it.offering,
+                          memberName: it.offering.member?.name ?? null,
+                          memberLogoUrl: it.offering.member?.companyLogoUrl ?? null,
+                          views24h: viewMap.get(it.offering.id) ?? 0,
+                        }}
+                      />
+                    </li>
+                  )
+                )}
+              </ul>
+            )}
+          </section>
+
           {/* 進行中の活動（商談＋共創プロジェクト統合） */}
           <section>
             <div className="mb-3 flex items-center justify-between">
@@ -532,33 +578,6 @@ export default async function DashboardPage() {
               <MyListingsTable rows={myListingRows.slice(0, 5)} now={new Date()} layout="cards" />
             </section>
           ) : null}
-
-          {/* おすすめ案件 */}
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className={h2Cls}>あなたへのおすすめ案件</h2>
-              <Link href="/search" className="text-[13px] font-bold text-[var(--green-d)]">
-                条件を絞って探す →
-              </Link>
-            </div>
-            {recommended.length === 0 ? (
-              <EmptyState
-                compact
-                title="表示できる案件はまだありません"
-                description="あなたの1件が最初の出会いになります。案件を登録してみましょう。"
-                actions={[{ label: "＋ 案件を登録する", href: "/ledger", variant: "primary" }]}
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {recommended.map((o) => (
-                  <OfferingCard
-                    key={o.id}
-                    o={{ ...o, memberName: o.member.name, memberLogoUrl: o.member.companyLogoUrl, views24h: viewMap.get(o.id) ?? 0 }}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
 
           {/* お知らせ（コンパクト） */}
           {newest ? (
