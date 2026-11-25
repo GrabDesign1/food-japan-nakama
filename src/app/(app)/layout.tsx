@@ -24,6 +24,8 @@ const NAV: NavItem[] = [
   { label: "集まりたい", href: "/gatherings", ready: true },
   // サミットで会った方の一覧（2026-11-25 ユーザー指示「参加した人のページをつくりたい」）
   { label: "サミットで会った人", href: "/summit", ready: true },
+  // 開催報告（セッションごとの記事）。会員だけが読む（2026-11-25）
+  { label: "開催報告を読む", href: "/summit/reports", ready: true },
   { label: "交換カード", href: "/cards", ready: true, section: "その他" },
   { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },
   { label: "お気に入り", href: "/favorites", ready: true, section: "その他" },
