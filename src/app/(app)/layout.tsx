@@ -22,6 +22,8 @@ const NAV: NavItem[] = [
   { label: "メッセージ", href: "/messages", ready: true },
   { label: "みんなの取り組み", href: "/feed", ready: true },
   { label: "集まりたい", href: "/gatherings", ready: true },
+  // 仲間が共有した記事＋事務局ピック（2026-11-25）
+  { label: "食のキュレーション", href: "/curation", ready: true },
   // サミットで会った方の一覧（2026-11-25 ユーザー指示「参加した人のページをつくりたい」）
   { label: "サミットで会った人", href: "/summit", ready: true },
   // 開催報告（セッションごとの記事）。会員だけが読む（2026-11-25）
