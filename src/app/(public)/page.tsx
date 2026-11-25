@@ -89,11 +89,13 @@ export default async function PublicHome() {
         <div className="fjn-hero__body">
           <div className="fjn-hero__copy">
             <h1 id="fjn-hero-title">
-              食の「売りたい」「探している」「あったらいいな」を共創でつなぐ
+              食のコミュニティ、共創事業を生み出す仲間をつくろう。
             </h1>
             <p className="fjn-hero__lead">
-              全国の食品メーカー・飲食店・卸・小売と、新しい取引や共創のきっかけをつくる。
-              あなたの食材・原料・商品・サービスを求めている方と出会い、直接提案できます。
+              食の「売りたい」「探している」「あったらいいな」を共創でつなぐ。
+              <strong>つくる人と、届ける人を直接つなぐ場所です。</strong>
+              生産者・食品メーカーと、飲食店・卸・小売・バイヤーが、仲介をはさまずに出会い、
+              そのまま提案・試食・取引へ進めます。
             </p>
             <a
               className="fjn-hero__tag"
