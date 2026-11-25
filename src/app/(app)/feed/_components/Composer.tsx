@@ -8,6 +8,26 @@ import { btn, input as inputCls } from "@/lib/ui";
 import { POST_BODY_MAX, POST_IMAGE_MAX } from "@/lib/feed-core";
 import { submitPost, peekLink, type PostState } from "../actions";
 
+type AutoLink = {
+  url: string;
+  title: string;
+  siteName: string;
+  /** data: URL（外部URLではない。actions.ts の peekLink を読むこと） */
+  image: string | null;
+};
+
+/** カードに出す媒体名（OGPに無いときはドメインを大文字で） */
+function hostOf(url: string): string {
+  try { return new URL(url).host.toUpperCase(); } catch { return ""; }
+}
+
+/** 本文の中から最初のURLを取り出す。⚠️ 末尾の句読点・閉じ括弧は URL に含めない */
+function findUrl(text: string): string | null {
+  const m = text.match(/https?:\/\/[^\s<>"'）】」]+/);
+  if (!m) return null;
+  return m[0].replace(/[.,、。）)\]】」]+$/, "");
+}
+
 export function Composer({
   myName,
   avatarUrl,
@@ -32,6 +52,14 @@ export function Composer({
   const [showLink, setShowLink] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // ── 本文に貼られたURLを自動で読む（2026-11-26 ユーザー指示
+  //    「URLをはったら添付のように、OGPとタイトルが下記に表示されるようにして」）──
+  // ⚠️ 「記事のリンクを付ける」を押さなくても出す。Facebook と同じ振る舞い。
+  const [auto, setAuto] = useState<AutoLink | null>(null);
+  const [autoLoading, setAutoLoading] = useState(false);
+  /** ×で消したURL・読めなかったURL。⚠️ ここに入れないと、打つたびに同じURLを読みに行く */
+  const skipped = useRef<Set<string>>(new Set());
 
   // 貼ったURLから読んだ見出し（⑥リンクの見た目。2026-11-21）
   // ⚠️ 画像は外部URLをそのまま出さず「ありそう」の表示だけにする。
@@ -60,10 +88,43 @@ export function Composer({
     if (state?.ok) {
       setBody(""); setLinkUrl(""); setLinkTitle(""); setShowLink(false); setFiles([]);
       setPeek(null); peekedFor.current = "";
+      setAuto(null); skipped.current.clear();
       if (fileRef.current) fileRef.current.value = "";
       if (collapsible) setOpen(false); // 書き終わったら、また1行のバーに戻る
     }
   }, [state, collapsible]);
+
+  /** 同じURLをもう一度読む。⚠️ 相手のサイトが一瞬だけ画像を返さないことがある（実際に遭遇） */
+  async function reread(url: string): Promise<void> {
+    setAutoLoading(true);
+    const r = await peekLink(url);
+    setAutoLoading(false);
+    if (r.error) return;
+    setAuto({ url, title: r.title ?? "", siteName: r.siteName ?? "", image: r.imageDataUrl ?? null });
+  }
+
+  // 本文のURLを、打ち終わってから読みに行く（打つたびに叩かない）
+  useEffect(() => {
+    if (showLink) return; // 手で付けているときは触らない
+    const found = findUrl(body);
+    if (!found) { setAuto(null); return; }
+    if (auto?.url === found || skipped.current.has(found)) return;
+
+    const t = setTimeout(async () => {
+      setAutoLoading(true);
+      const r = await peekLink(found);
+      setAutoLoading(false);
+      // ⚠️ 読めなかったURLは覚えておく。覚えないと、打つたびに読みに行ってしまう
+      if (r.error) { skipped.current.add(found); return; }
+      setAuto({
+        url: found,
+        title: r.title ?? "",
+        siteName: r.siteName ?? "",
+        image: r.imageDataUrl ?? null,
+      });
+    }, 700);
+    return () => clearTimeout(t);
+  }, [body, showLink, auto?.url]);
 
   // たたんだ状態で「写真」を押したら、開いた直後にファイル選択を出す
   useEffect(() => {
@@ -202,10 +263,50 @@ export function Composer({
         </div>
       ) : (
         <>
-          <input type="hidden" name="linkUrl" value="" />
-          <input type="hidden" name="linkTitle" value="" />
+          {/* ⚠️ 自動で読んだURLは、ここから送る（押さずに投稿してもカードが付く） */}
+          <input type="hidden" name="linkUrl" value={auto?.url ?? ""} />
+          <input type="hidden" name="linkTitle" value={auto?.title ?? ""} />
         </>
       )}
+
+      {/* 自動で読んだリンクのカード（OGP） */}
+      {!showLink && autoLoading && !auto ? (
+        <p className="mt-3 text-[12px] text-[var(--muted)]">リンクを読んでいます…</p>
+      ) : null}
+      {!showLink && auto ? (
+        <div className="relative mt-3 overflow-hidden rounded-[10px] border border-[var(--line)]">
+          <button
+            type="button"
+            onClick={() => { skipped.current.add(auto.url); setAuto(null); }}
+            className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-[var(--line)] bg-white/90 text-[14px] leading-none text-[var(--ink-2)] hover:bg-white"
+            aria-label="リンクのカードを外す"
+          >
+            ×
+          </button>
+          {auto.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={auto.image} alt="" className="block max-h-[320px] w-full object-cover" />
+          ) : null}
+          <div className="bg-[var(--line-soft)] px-4 py-3">
+            <p className="truncate text-[11px] tracking-[0.06em] text-[var(--muted)]">
+              {auto.siteName || hostOf(auto.url)}
+            </p>
+            <p className="mt-1 line-clamp-2 text-[15px] font-bold leading-6 text-[var(--ink)]">
+              {auto.title || auto.url}
+            </p>
+            {!auto.image ? (
+              <button
+                type="button"
+                onClick={() => reread(auto.url)}
+                disabled={autoLoading}
+                className="mt-2 text-[12px] font-semibold text-[var(--green-d)] disabled:opacity-60"
+              >
+                {autoLoading ? "読んでいます…" : "画像を読み直す"}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {previews.length ? (
         <ul className="mt-3 flex flex-wrap gap-2">

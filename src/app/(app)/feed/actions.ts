@@ -18,7 +18,7 @@ import {
 } from "@/lib/feed";
 import { recordContact } from "@/lib/relationship";
 import { notifyOnComment, notifyOnLike, notifyOnShare, setFeedEmailEnabled } from "@/lib/feed-notify";
-import { fetchLinkPreview } from "@/lib/link-preview";
+import { fetchLinkPreview, fetchLinkImage } from "@/lib/link-preview";
 
 const BUCKET = "post-images";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -102,20 +102,46 @@ export type PeekState = {
   title?: string | null;
   siteName?: string | null;
   imageUrl?: string | null;
+  /** 投稿前の下見に出す画像（data: URL）。⚠️ 外部URLではない。下の説明を読むこと */
+  imageDataUrl?: string | null;
   error?: string;
 };
 
 /**
+ * 投稿前の下見に出す画像の上限。
+ * ⚠️ data: URL は本文としてブラウザまで運ばれる（base64 で約1.33倍になる）。
+ *    大きいものは画像なしで出す。投稿後は /api/link-image/[postId] から普通に配るので、
+ *    「下見では出ないが、投稿すると出る」ことはある。
+ */
+const PEEK_IMAGE_MAX_BYTES = 600 * 1024;
+
+/**
  * 投稿する前に、貼ったURLの見出しを読んでみる（投稿欄のプレビュー用）。
- * ⚠️ 返すのは見出しと媒体名だけ。画像URLは「あるかどうか」の判断に使うだけで、
- *    そのまま <img src> に書かせない（CSP img-src 'self' を崩さないため）。
+ *
+ * ⚠️⚠️ **外部の画像URLを <img src> に書かせない。** CSP は img-src 'self' data: blob: なので、
+ *    外部URLを直接書くと表示できないうえ、会員が下書き中であることが相手のサイトに伝わる。
+ *    そこでサーバーが取りに行き、**中身を data: URL にして返す**（取得口を外に作らずに済む）。
+ * ⚠️ 取りに行く先の点検（私用アドレス・転送・大きさ・形式）は fetchLinkImage が行う。
  */
 export async function peekLink(url: string): Promise<PeekState> {
   const su = await getSessionUser();
   if (!su) return { error: "ログインしてからお試しください。" };
   const preview = await fetchLinkPreview(url).catch(() => null);
   if (!preview) return { error: "このURLからは見出しを読めませんでした。手で入れてください。" };
-  return { title: preview.title, siteName: preview.siteName, imageUrl: preview.imageUrl };
+
+  let imageDataUrl: string | null = null;
+  if (preview.imageUrl) {
+    const img = await fetchLinkImage(preview.imageUrl).catch(() => null);
+    if (img && img.body.byteLength <= PEEK_IMAGE_MAX_BYTES) {
+      imageDataUrl = `data:${img.contentType};base64,${Buffer.from(img.body).toString("base64")}`;
+    }
+  }
+  return {
+    title: preview.title,
+    siteName: preview.siteName,
+    imageUrl: preview.imageUrl,
+    imageDataUrl,
+  };
 }
 
 export async function like(formData: FormData): Promise<void> {
