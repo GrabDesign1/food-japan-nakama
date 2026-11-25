@@ -10,14 +10,17 @@ type Variant = "primary" | "action" | "amber" | "secondary" | "danger" | "ghost"
 type Size = "sm" | "md" | "lg";
 
 // 共通の土台
+// ⚠️ fjn-btn / fjn-btn-xx は**目印のクラス**（それ自体は何もしない）。
+//    globals.css の `.app-tone .fjn-btn{...}` が、ログイン後だけボタンをピル型にする。
+//    公開LPは .app-tone の外なので、これまでどおり角丸のままになる。
 const base =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg font-bold whitespace-nowrap transition disabled:cursor-not-allowed disabled:opacity-60";
+  "fjn-btn inline-flex items-center justify-center gap-1.5 rounded-lg font-bold whitespace-nowrap transition disabled:cursor-not-allowed disabled:opacity-60";
 
 // サイズ（余白・文字サイズ）
 const sizes: Record<Size, string> = {
-  sm: "px-4 py-2 text-[13px]",
-  md: "px-5 py-2.5 text-[14px]",
-  lg: "px-6 py-3 text-[15px]",
+  sm: "fjn-btn-sm px-4 py-2 text-[13px]",
+  md: "fjn-btn-md px-5 py-2.5 text-[14px]",
+  lg: "fjn-btn-lg px-6 py-3 text-[15px]",
 };
 
 // 種類（配色）

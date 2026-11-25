@@ -78,7 +78,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     // minmax(0,1fr)：中身が広くても列を押し広げない＝ページ全体の横スクロールを防ぐ
-    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[238px_minmax(0,1fr)]">
+    // ⚠️ app-tone＝ログイン後だけのトーン（globals.css）。外すと会員画面が元の緑に戻る
+    <div className="app-tone grid min-h-screen grid-cols-1 md:grid-cols-[238px_minmax(0,1fr)]">
       {/* キーボードでナビを飛ばして本文へ（普段は見えない） */}
       <a href="#main" className="skip-link">
         本文へスキップ

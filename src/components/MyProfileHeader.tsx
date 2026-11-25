@@ -78,7 +78,7 @@ export function MyProfileHeader({
             {events.map((e) => (
               <span
                 key={e}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--green)] bg-[var(--green-soft)] px-3 py-1 text-[11px] font-bold text-[var(--green-d)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ink)] px-3 py-1 text-[11px] font-bold text-[var(--ink)]"
               >
                 {e}
                 <span className="font-normal">{isSpeaker ? "ご登壇" : "ご参加"}</span>

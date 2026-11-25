@@ -366,3 +366,42 @@ a.fjn-hero__tag:hover { background: rgba(0, 47, 34, 0.06); }
 @media (prefers-reduced-motion: reduce) {
   .fjn-button { transition: none; }
 }
+
+/* ── ログイン後（会員画面）のトーン＆マナー（2026-11-26 ユーザー指示）───────────
+   名古屋サイト（nagoya.food-japan-summit.jp）に合わせる。実測値は CLAUDE.md に記載。
+
+   ⚠️⚠️ **公開LPには効かせない。** (app)/layout.tsx の一番外側に .app-tone を付け、
+      その中だけで変数を上書きしている。:root を直接書き換えると公開側まで変わる。
+   ⚠️⚠️ **変数名は --green のまま色だけ赤に替えている。**
+      会員画面133ファイルすべてが --green を参照しており、名前を変えると全部を書き換えることになる。
+      「--green が赤」は気持ち悪いが、1か所で戻せる状態を優先した。
+      ここを消せば、会員画面は元の緑に戻る（他は何も変わらない）。 */
+.app-tone {
+  --ink: #111111;        /* 名古屋 --site-ink */
+  --ink-2: #454545;      /* 名古屋 --site-ink-2 */
+  --muted: #78828f;
+  --line: #e2e4e6;       /* 名古屋 --site-line（寒色の薄いグレー） */
+  --line-soft: #eeeeee;  /* 名古屋 --site-surface */
+
+  --green: #ff3131;      /* 主アクション＝赤（ユーザー決定 2026-11-26） */
+  --green-d: #b8272d;    /* ホバーと文字リンク（名古屋 --site-link） */
+  --green-soft: #f4f5f6; /* ⚠️ 淡い地に赤みを付けない。面積が広いので画面が騒がしくなる */
+
+  --action: #111111;     /* 最重要CTA（提案・問い合わせ）は黒。赤と competing させない */
+  --action-d: #333333;
+}
+
+/* ボタンはピル型（名古屋は高さ48px・左右32px・15px/600） */
+.app-tone .fjn-btn {
+  border-radius: 9999px;
+  font-weight: 600;
+  box-shadow: none !important; /* 名古屋は影を使わない。変種側の shadow-sm を打ち消す */
+}
+.app-tone .fjn-btn-sm { min-height: 38px; padding-inline: 20px; }
+.app-tone .fjn-btn-md { min-height: 44px; padding-inline: 28px; }
+.app-tone .fjn-btn-lg { min-height: 48px; padding-inline: 32px; }
+
+/* 見出しの字間（名古屋は広め） */
+.app-tone h1,
+.app-tone h2,
+.app-tone h3 { letter-spacing: 0.02em; }
