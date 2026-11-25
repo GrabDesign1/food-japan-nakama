@@ -38,7 +38,8 @@ function PURPOSES(
       unit: "",
       suffix: "名",
       // ログイン前は入会へ、ログイン後は会員一覧へ
-      href: isLoggedIn ? "/search?t=producers" : "/signup",
+      // ログイン後はメンバー紹介へ（2026-11-25。前は検索の事業者タブで、見つけにくかった）
+      href: isLoggedIn ? "/members" : "/signup",
       icon: null,
       cta: isLoggedIn ? "メンバーを見る →" : "メンバーになる →",
       d: "食の仲間とつながりたい。名刺を交換すると、その人のプロフィールと取り組み（タイムライン）が読めます",
