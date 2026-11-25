@@ -13,6 +13,9 @@ import {
   START_TIMINGS,
 } from "@/lib/member-taxonomy";
 import { btn, inputBare } from "@/lib/ui";
+import { FIXED_KINDS, MEMBER_LINK_FREE_SLOTS } from "@/lib/member-links-shared";
+
+export type LinkValue = { kind: string; label: string; url: string };
 
 export type MemberData = {
   name: string;
@@ -23,6 +26,8 @@ export type MemberData = {
   contactKana: string | null;
   contactRole: string | null;
   contactBio: string | null;
+  /** 発信しているところ（2026-11-25）。決まった種類＋自由欄 */
+  links?: LinkValue[];
   contactPhotoUrl: string | null;
   categoryL1: string;
   categoryL2: string | null;
@@ -200,6 +205,10 @@ export function ProfileForm({
   aiEnabled?: boolean;
 }) {
   const [tab, setTab] = useState(0);
+  // 発信しているところ。決まった種類は kind で引き、「管理しているページ」は other を順に並べる
+  const savedLinks = member.links ?? [];
+  const linkUrl = (kind: string) => savedLinks.find((x) => x.kind === kind)?.url ?? "";
+  const others = savedLinks.filter((x) => x.kind === "other");
   const [l1, setL1] = useState(member.categoryL1 ?? "");
   // 細分類は大分類に依存するため制御コンポーネントにし、大分類変更時に整合を取る
   const [l2, setL2] = useState(member.categoryL2 ?? "");
@@ -395,6 +404,50 @@ export function ProfileForm({
               placeholder="宮崎で30年、ピーマンをつくっています。業務用の引き合いを探しています。お気軽にお声がけください。"
               guide
             />
+          </div>
+        </div>
+
+        {/* 発信しているところ（2026-11-25 ユーザー指示「自分の記事をキュレーションできるようにして」）。
+            ⚠️ URL の安全確認はサーバー側（member-links.ts の safeUrl）。ここは入力欄だけ。 */}
+        <div className="rounded-lg border border-[var(--green-d)] bg-white p-4">
+          <p className="text-[13px] font-bold text-[var(--ink)]">発信しているところ</p>
+          <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+            書いているもの・載せているものがあれば、ここにまとめてください。
+            あなたのページから、仲間がそのまま読みにいけます。
+            <strong>空欄のものは出ません。</strong>
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {FIXED_KINDS.map((f) => (
+              <Field
+                key={f.kind}
+                label={f.label}
+                name={`link_${f.kind}`}
+                defaultValue={linkUrl(f.kind)}
+                placeholder={f.placeholder}
+              />
+            ))}
+          </div>
+          <p className="mt-5 text-[12px] font-bold text-[var(--ink)]">管理しているページ</p>
+          <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">
+            オウンドメディア、ECサイト、ブログ、プレスリリースの置き場など。
+          </p>
+          <div className="mt-3 flex flex-col gap-3">
+            {Array.from({ length: MEMBER_LINK_FREE_SLOTS }, (_, i) => (
+              <div key={i} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                <Field
+                  label={`名前 ${i + 1}`}
+                  name={`link_other_label_${i}`}
+                  defaultValue={others[i]?.label ?? ""}
+                  placeholder="自社のオンラインショップ"
+                />
+                <Field
+                  label={`URL ${i + 1}`}
+                  name={`link_other_url_${i}`}
+                  defaultValue={others[i]?.url ?? ""}
+                  placeholder="https://shop.example.co.jp"
+                />
+              </div>
+            ))}
           </div>
         </div>
 

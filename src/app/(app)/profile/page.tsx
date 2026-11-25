@@ -7,12 +7,22 @@ import { WithdrawalSection } from "./_components/WithdrawalSection";
 import { MailPreference } from "./_components/MailPreference";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { AI_ENABLED } from "@/lib/ai";
+import { prisma } from "@/lib/db";
+import Link from "next/link";
+import { btn } from "@/lib/ui";
 
 export default async function ProfilePage() {
   const su = await getSessionUser();
   if (!su) redirect("/login");
 
   const member = await getOrCreateMemberForUser(su);
+
+  // 発信しているところ（保存済み）。フォームの初期値に渡す
+  const linkRows = await prisma.memberLink.findMany({
+    where: { memberId: member.id },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: { kind: true, label: true, url: true },
+  });
 
   const data: MemberData = {
     name: member.name,
@@ -24,6 +34,7 @@ export default async function ProfilePage() {
     contactRole: member.contactRole,
     contactBio: member.contactBio,
     contactPhotoUrl: member.contactPhotoUrl,
+    links: linkRows.map((r) => ({ kind: r.kind, label: r.label ?? "", url: r.url })),
     categoryL1: member.categoryL1,
     categoryL2: member.categoryL2,
     prefecture: member.prefecture,
@@ -69,6 +80,18 @@ export default async function ProfilePage() {
             <span className="text-[13px]">%</span>
           </div>
         </div>
+      </div>
+
+      {/* 自分のページ（仲間から見える姿）への入口。
+          ⚠️ 2026-11-25 ユーザー指示「自分のプロフィール＋タイムラインを書いてよ」。
+             編集画面しか無かったので、見える側への道をここに置く。 */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--line)] bg-[var(--canvas)] p-4">
+        <p className="text-[12.5px] leading-6 text-[var(--ink-2)]">
+          仲間からは、こう見えています。顔写真・ひとこと・発信しているところ・あなたの投稿が並びます。
+        </p>
+        <Link className={btn("ghost")} href={`/producers/${member.id}?from=/profile`}>
+          自分のページを見る
+        </Link>
       </div>
 
       <ReviewStatus status={member.status} />

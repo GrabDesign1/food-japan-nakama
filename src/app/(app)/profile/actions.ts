@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
+import {
+  replaceMemberLinks, FIXED_KINDS, MEMBER_LINK_FREE_SLOTS, type LinkInput,
+} from "@/lib/member-links";
 import { trimTo, PROFILE_SHORT_MAX, PROFILE_LONG_MAX } from "@/lib/security";
 import { writeAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
@@ -261,7 +264,21 @@ export async function saveProfile(
   if (!input.contactName) return { error: "担当者名は必須です。" };
 
   await updateMemberProfile(member.id, input);
+
+  // 発信しているところ（FB / Instagram / X / note / 管理しているページ…）。
+  // ⚠️ URL の関所は replaceMemberLinks の中（safeUrl）。ここでは素通し。
+  const links: LinkInput[] = [
+    ...FIXED_KINDS.map((f) => ({ kind: f.kind, url: g(`link_${f.kind}`, 500) })),
+    ...Array.from({ length: MEMBER_LINK_FREE_SLOTS }, (_, i) => ({
+      kind: "other",
+      label: g(`link_other_label_${i}`, 40),
+      url: g(`link_other_url_${i}`, 500),
+    })),
+  ];
+  await replaceMemberLinks(member.id, links);
+
   revalidatePath("/profile");
+  revalidatePath(`/producers/${member.id}`);
   return { ok: true };
 }
 

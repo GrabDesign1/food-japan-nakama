@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
+import { listMemberLinks } from "@/lib/member-links";
 import { prisma } from "@/lib/db";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
@@ -53,7 +54,7 @@ export default async function ProducerDetailPage({
   for (const a of wall.authors) wallAuthors[a.id] = a;
 
   // 閲覧数マップ・お気に入り・スレッド有無は互いに独立なので並列で取得（直列3往復→1往復）
-  const [viewMap, favorite, existingThread, exchange] = await Promise.all([
+  const [viewMap, favorite, existingThread, exchange, links] = await Promise.all([
     views24hMap(m.offerings.map((o) => o.id)),
     su.app.memberId
       ? prisma.favorite.findUnique({
@@ -91,6 +92,7 @@ export default async function ProducerDetailPage({
           select: { id: true },
         })
       : Promise.resolve(null),
+    listMemberLinks(m.id),
   ]);
   const isFavorited = !!favorite;
   // 自分、または名刺を交換した相手だけ、タイムラインが読める
@@ -215,6 +217,30 @@ export default async function ProducerDetailPage({
         <p className="-mt-2 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink)]">
           {m.contactBio}
         </p>
+      ) : null}
+
+      {/* 発信しているところ（2026-11-25）。本人が登録したものだけ。
+          ⚠️ 外部サイトへ出すので rel="noreferrer" を必ず付ける（どこから来たかを渡さない）。
+          ⚠️ URL は member-links.ts の safeUrl を通ったものだけが来る。 */}
+      {links.length > 0 ? (
+        <div className="rounded-lg border border-[var(--line)] bg-[var(--canvas)] p-4">
+          <p className="text-[11px] tracking-wider text-[var(--muted)]">発信しているところ</p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {links.map((l) => (
+              <li key={l.id}>
+                <a
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-baseline gap-1.5 rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] text-[var(--ink)] hover:border-[var(--green-d)]"
+                >
+                  <span>{l.label}</span>
+                  <span className="text-[10px] text-[var(--muted)]">{l.host}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {hero ? (

@@ -239,6 +239,7 @@ model Member {
   card           MemberCard?
   cardExchangesA CardExchange[] @relation("CardExchangeA")
   cardExchangesB CardExchange[] @relation("CardExchangeB")
+  links          MemberLink[]
 
   @@index([tenantId])
   @@index([status])
@@ -1562,4 +1563,36 @@ model GatheringJoin {
   @@unique([gatheringId, memberId])
   @@index([memberId])
   @@map("gathering_joins")
+}
+
+/// 会員が「発信しているところ」。Facebook・Instagram・X・note・自社サイト・
+/// 管理しているページなどを、本人がまとめて登録する（2026-11-25 ユーザー指示
+/// 「自分の記事をキュレーションできるようにして、FB,Instagram、X、管理しているページ、NOTEなど」）。
+///
+/// ⚠️ URL は本人が入れたものをそのまま画面に出す。**必ず http(s) だけに限る**
+///    （javascript: や data: を弾く。判定は member-links.ts のサーバー側で行う）。
+/// ⚠️ 外部サイトへ出す a タグには rel="noreferrer" を付ける（どこから来たかを渡さない）。
+/// ⚠️ 1人あたりの上限を決めて、際限なく増やさない（MEMBER_LINK_MAX）。
+model MemberLink {
+  id       String @id @default(cuid())
+  memberId String @map("member_id")
+
+  /// 種類。facebook / instagram / x / note / youtube / linkedin / site / other
+  /// ⚠️ other 以外は1人1つ。other（管理しているページ）だけ複数持てる
+  kind String
+
+  /// 表示名。other のときだけ本人が付ける（例「社のオウンドメディア」）
+  label String?
+
+  url String
+
+  sortOrder Int @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, sortOrder])
+  @@map("member_links")
 }
