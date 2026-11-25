@@ -339,15 +339,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* いちばん上は投稿欄（2026-11-26 ユーザー指示
-          「これを Facebook のように作り込んで　一番TOPにでるようにして」）。
-          ⚠️ たたんだ1行のバーで置く。開いた状態で置くと、見るために来た人の邪魔になる。 */}
-      <Composer
-        myName={member?.contactName || su?.app.name || "あなた"}
-        avatarUrl={member?.contactPhotoUrl ?? member?.avatarUrl ?? null}
-        collapsible
-      />
-
       {/* あいさつ */}
       <div>
         <p className={eyebrowCls}>MY PAGE</p>
@@ -370,8 +361,17 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* 自分の登録情報（サミットで登録した内容。2026-11-26 ユーザー指示） */}
+      {/* 自分の登録情報。⚠️ 既定はたたんだ1行（2026-11-26 ユーザー指示「普段は、畳んでおいて」） */}
       <MyProfileHeader member={member} fallbackName={su?.app.name} />
+
+      {/* 投稿欄（2026-11-26 ユーザー指示「これを Facebook のように作り込んで」）。
+          ⚠️ はじめは登録情報より上に置いたが、同日「これ逆にして」で下に移した。
+          ⚠️ たたんだ1行のバーで置く。開いた状態で置くと、見るために来た人の邪魔になる。 */}
+      <Composer
+        myName={member?.contactName || su?.app.name || "あなた"}
+        avatarUrl={member?.contactPhotoUrl ?? member?.avatarUrl ?? null}
+        collapsible
+      />
 
       {/* 状態アラート（必要なときだけ） */}
       {alerts.length > 0 ? (

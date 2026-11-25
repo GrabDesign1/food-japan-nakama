@@ -1,6 +1,10 @@
-// ホームのいちばん上に出す「自分の登録情報」（2026-11-26 ユーザー指示
-//   「ホームは、自分の登壇時に登録した登録情報がでるようにして」）。
+// ホームに出す「自分の登録情報」（2026-11-26 ユーザー指示
+//   「ホームは、自分の登壇時に登録した登録情報がでるようにして」
+//    → 同日「プロフィールは広げたり畳んだりできるようにして普段は、畳んでおいて」）。
 //
+// ⚠️⚠️ **既定はたたんだ状態。** ホームの主役は投稿と仲間の動きで、自分の情報ではない。
+// ⚠️ 開け閉めは <details> で行う（JSなし）。useState にすると、この1か所のために
+//    ホームへクライアント部品が増える。開いたかどうかはブラウザが覚える必要もない。
 // ⚠️⚠️ **ここは自分だけが見る画面**（マイページ）。他の会員には出ない。
 //    掲載するかどうかとは別の話なので、未公開の方の情報もここには出してよい。
 // ⚠️ サミットの記録（summitEvents / summitRole）は、イベントから取り込んだ控え。
@@ -25,10 +29,13 @@ export type MyProfileHeaderMember = {
 export function MyProfileHeader({
   member,
   fallbackName,
+  defaultOpen = false,
 }: {
   member: MyProfileHeaderMember | null;
   /** 会員の行がまだ無いとき（登録直後）に出す名前 */
   fallbackName?: string | null;
+  /** 最初から開いておくか。⚠️ ホームでは false（たたんでおく） */
+  defaultOpen?: boolean;
 }) {
   const photo = member?.contactPhotoUrl || member?.avatarUrl || null;
   const personName = member?.contactName || fallbackName || "";
@@ -36,45 +43,41 @@ export function MyProfileHeader({
   const role = member?.contactRole ?? "";
   const events = member?.summitEvents ?? [];
   const isSpeaker = member?.summitRole === "speaker";
-
   const meta = [member?.categoryL1, member?.prefecture].filter(Boolean).join("・");
+  const sub = [role, company].filter(Boolean).join("　/　");
 
   return (
-    <section className="overflow-hidden rounded-[14px] border border-[var(--line)] bg-white">
-      {/* 帯（写真のカバーは持っていないので、無地の帯で受ける） */}
-      <div className="h-[72px] bg-[var(--green-soft)]" />
-
-      <div className="px-5 pb-5 sm:px-7 sm:pb-6">
-        {/* ⚠️ 狭い画面ではボタンを下の行へ送る。同じ行に並べると名前が「見…」まで潰れる（2026-11-26） */}
-        <div className="-mt-10 flex flex-wrap items-end gap-x-4 gap-y-3">
-          <div className="flex min-w-[220px] flex-1 items-end gap-4">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[#fcfcfb] shadow-sm">
-              {photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photo} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="grid h-full w-full place-items-center text-[22px] text-[var(--muted)]">👤</div>
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1 pb-1">
-              <h1 className="truncate text-[20px] font-bold leading-tight text-[var(--ink)] sm:text-[22px]">
-                {personName || company || "（お名前が未登録です）"}
-              </h1>
-              <p className="mt-1 truncate text-[13px] text-[var(--ink-2)]">
-                {[role, company].filter(Boolean).join("　/　") || "　"}
-              </p>
-            </div>
-          </div>
-
-          <Link href="/profile" className={`${btn("secondary", "sm")} shrink-0`}>
-            プロフィールを編集
-          </Link>
+    <details
+      open={defaultOpen}
+      className="group overflow-hidden rounded-[14px] border border-[var(--line)] bg-white"
+    >
+      {/* たたんだ1行。押すと開く */}
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 marker:hidden hover:bg-[var(--line-soft)]/60 sm:px-5">
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--line-soft)]">
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt="" className="h-full w-full object-cover" />
+          ) : null}
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-bold text-[var(--ink)]">
+            {personName || company || "（お名前が未登録です）"}
+          </p>
+          {sub ? <p className="truncate text-[12px] text-[var(--muted)]">{sub}</p> : null}
+        </div>
+        <span className="shrink-0 text-[12px] font-semibold text-[var(--muted)]">
+          <span className="group-open:hidden">自分の登録情報</span>
+          <span className="hidden group-open:inline">とじる</span>
+          <span className="ml-1.5 inline-block transition group-open:rotate-90" aria-hidden>
+            ›
+          </span>
+        </span>
+      </summary>
 
-        {/* サミットの記録（取り込んだ控え。空なら出さない） */}
+      {/* 開いた中身 */}
+      <div className="border-t border-[var(--line)] px-4 py-5 sm:px-5">
         {events.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {events.map((e) => (
               <span
                 key={e}
@@ -88,18 +91,25 @@ export function MyProfileHeader({
         ) : null}
 
         {member?.contactBio ? (
-          <p className="mt-4 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink-2)]">
+          <p
+            className={`${events.length ? "mt-4" : ""} max-w-[46em] whitespace-pre-wrap text-[14px] leading-[1.9] text-[var(--ink-2)]`}
+          >
             {member.contactBio}
           </p>
         ) : (
-          <p className="mt-4 text-[13px] leading-6 text-[var(--muted)]">
+          <p className={`${events.length ? "mt-4" : ""} text-[13px] leading-6 text-[var(--muted)]`}>
             ひとこと紹介がまだありません。どんな取り組みをしているか1〜2行書いておくと、
             会った方が思い出しやすくなります。
           </p>
         )}
 
-        {meta ? <p className="mt-3 text-[12px] text-[var(--muted)]">{meta}</p> : null}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+          {meta ? <p className="text-[12px] text-[var(--muted)]">{meta}</p> : null}
+          <Link href="/profile" className={`${btn("secondary", "sm")} ml-auto`}>
+            プロフィールを編集
+          </Link>
+        </div>
       </div>
-    </section>
+    </details>
   );
 }
