@@ -78,6 +78,22 @@ export function syncConfigured(): boolean {
  * Onegaizar から名簿を取り、預かる。
  * ⚠️ 合言葉は環境変数。URLも環境変数（本番とローカルで向き先が変わる）。
  */
+/**
+ * イベント側が返す "/api/media/xxx" のような相対パスを、絶対URLに直す。
+ * ⚠️ これをしないと NAKAMA 自身の /api/media を見にいって写真が出ない（2026-11-25）。
+ */
+function absolutize(u: string | null | undefined): string | null {
+  const t = (u ?? "").trim();
+  if (!t) return null;
+  if (/^https?:\/\//i.test(t)) return t;
+  if (!t.startsWith("/")) return t;
+  try {
+    return new URL(t, new URL(process.env.ONEGAIZAR_SYNC_URL ?? "").origin).toString();
+  } catch {
+    return null;
+  }
+}
+
 export async function syncFromOnegaizar(
   tenantId: string,
   actorName: string
@@ -123,7 +139,12 @@ export async function syncFromOnegaizar(
   const bySource = new Map(known.map((m) => [m.sourceKey as string, m]));
 
   const emails = [...new Set(people.map((p) => normalizeEmail(p.email)).filter(Boolean))];
-  const byEmail = new Map<string, { id: string; summitEvents: string[]; sourceKey: string | null; listed: boolean }>();
+  type EmailHit = {
+    id: string; summitEvents: string[]; sourceKey: string | null; listed: boolean;
+    contactName: string | null; contactKana: string | null; contactRole: string | null;
+    contactPhotoUrl: string | null; contactBio: string | null; website: string | null;
+  };
+  const byEmail = new Map<string, EmailHit>();
   // ⚠️ メールの数だけ IN 句に入れると長くなりすぎるので、小分けにする
   for (let i = 0; i < emails.length; i += 300) {
     const chunk = emails.slice(i, i + 300);
@@ -134,6 +155,8 @@ export async function syncFromOnegaizar(
       },
       select: {
         id: true, summitEvents: true, sourceKey: true, listed: true,
+        contactName: true, contactKana: true, contactRole: true,
+        contactPhotoUrl: true, contactBio: true, website: true,
         preregEmail: true, users: { select: { email: true } },
       },
     });
@@ -171,15 +194,36 @@ export async function syncFromOnegaizar(
     // ② すでに本人が使っている会員か（メールで突き合わせる）。
     //    ⚠️⚠️ いたら作らない。開催の記録だけ足す（本人の書いたものを上書きしない）
     const ex = byEmail.get(email);
+    if (ex && !ex.id) {
+      // 同じメールの方がこの回ですでに作られている（まだDBのidを持たない仮の印）。
+      // ⚠️ id が空のまま update すると落ちるので、ここで打ち切る。次回の取り込みで拾われる。
+      out.updated++;
+      continue;
+    }
     if (ex) {
+      // ⚠️⚠️ **本人が書いたものは絶対に上書きしない。**
+      //    空欄のときだけ、イベント側の情報で埋める（登壇者の顔写真・肩書が入らない、を直す / 2026-11-25）
+      const fill: Record<string, string> = {};
+      const put = (k: keyof EmailHit, v: string | null, max: number) => {
+        const t = clean(v, max);
+        if (t && !ex[k]) fill[k] = t;
+      };
+      put("contactName", p.name, 80);
+      put("contactKana", p.nameKana, 80);
+      put("contactRole", p.title, 80);
+      put("contactPhotoUrl", absolutize(p.photoUrl), 500);
+      put("contactBio", p.bio, 2000);
+      put("website", absolutize(p.websiteUrl), 300);
       await prisma.member.update({
         where: { id: ex.id },
         data: {
           summitEvents: mergeEvents(ex.summitEvents, p.events),
           summitRole: role,
           ...(ex.sourceKey ? {} : { sourceKey }),
+          ...fill,
         },
       });
+      Object.assign(ex, fill);
       if (!ex.sourceKey) bySource.set(sourceKey, { ...ex, summitRole: role });
       if (ex.listed) out.linked++;
       else out.updated++;
@@ -196,9 +240,9 @@ export async function syncFromOnegaizar(
         contactName: clean(p.name, 80) || null,
         contactKana: clean(p.nameKana, 80) || null,
         contactRole: clean(p.title, 80) || null,
-        contactPhotoUrl: clean(p.photoUrl, 500) || null,
+        contactPhotoUrl: clean(absolutize(p.photoUrl), 500) || null,
         contactBio: clean(p.bio, 2000) || null,
-        website: clean(p.websiteUrl, 300) || null,
+        website: clean(absolutize(p.websiteUrl), 300) || null,
         categoryL1: "その他",
         status: "APPROVED",
         listed: false,
@@ -212,7 +256,11 @@ export async function syncFromOnegaizar(
       },
     });
     out.created++;
-    byEmail.set(email, { id: "", summitEvents: p.events, sourceKey, listed: false });
+    byEmail.set(email, {
+      id: "", summitEvents: p.events, sourceKey, listed: false,
+      contactName: p.name, contactKana: p.nameKana, contactRole: p.title,
+      contactPhotoUrl: p.photoUrl, contactBio: p.bio, website: p.websiteUrl,
+    });
   }
 
   return out;
