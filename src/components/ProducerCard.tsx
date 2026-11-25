@@ -23,6 +23,9 @@ export type ProducerCardData = {
   contactName?: string | null;
   contactRole?: string | null;
   contactPhotoUrl?: string | null;
+  /** サミットのご登壇者として事務局が預かっているだけで、ご本人の登録はまだ（2026-11-25）。
+      ⚠️ 会員として誤解させないため、カードに必ず印を出す */
+  pendingSpeaker?: boolean;
 };
 
 // from＝事業者ページの「戻る」リンクの行き先。未指定なら事業者ページ側の既定（/search）に戻る。
@@ -113,6 +116,11 @@ export function ProducerCard({
         {person ?? (p.name || "（未入力）")}
       </div>
       {/* 肩書は改行させる。名前のうしろに続けると、長い名前のとき名前の一部に見える */}
+      {p.pendingSpeaker ? (
+        <div className="mt-1 inline-block rounded bg-[var(--canvas)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">
+          サミット登壇者・ご本人の登録はこれから
+        </div>
+      ) : null}
       {person && p.contactRole ? (
         <div className="line-clamp-1 text-[11px] text-[var(--muted)]">{p.contactRole}</div>
       ) : null}

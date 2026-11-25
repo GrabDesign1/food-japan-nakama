@@ -89,7 +89,12 @@ export async function getLandingContent() {
     prisma.project.count({ where: { tenantId, status: "published" } }),
     // 公開されている会員の数（2026-11-23。トップの「メンバーになりたい」に出す）。
     // ⚠️ listed:false（事務局が先に登録しただけで本人が受け取っていない人）は数えない
-    prisma.member.count({ where: { tenantId, status: "APPROVED", listed: true } }),
+    // ⚠️⚠️ **ご自身で登録された方だけを数える。**
+    //    サミットのご登壇者は事務局が預かって一覧に出しているだけで、会員ではない。
+    //    公開トップの数字に混ぜると、会員数を水増しして見せることになる（2026-11-25）。
+    prisma.member.count({
+      where: { tenantId, status: "APPROVED", listed: true, users: { some: {} } },
+    }),
   ]);
 
   const projMemberIds = Array.from(new Set(projects.map((p) => p.memberId)));

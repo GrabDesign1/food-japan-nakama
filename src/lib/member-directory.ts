@@ -30,6 +30,9 @@ export type DirectoryMember = {
   contactName: string | null;
   contactRole: string | null;
   contactPhotoUrl: string | null;
+  /// サミットのご登壇者として事務局が預かっているだけで、ご本人の登録はまだ（2026-11-25）
+  /// ⚠️ 画面では必ず「登録はこれから」と分かるように出す。会員として誤解させない。
+  pendingSpeaker: boolean;
 };
 
 export type DirectoryPage = {
@@ -97,10 +100,15 @@ export async function listDirectory(args: {
         categoryL1: true, categoryL2: true, prefecture: true, city: true,
         productItems: true, description: true,
         contactName: true, contactRole: true, contactPhotoUrl: true,
+        summitRole: true, preregAt: true, _count: { select: { users: true } },
       },
     }),
     prisma.member.count({ where }),
   ]);
 
-  return { members, total, page, pages: Math.max(1, Math.ceil(total / PER_PAGE)) };
+  const shaped: DirectoryMember[] = members.map(({ summitRole, preregAt, _count, ...m }) => ({
+    ...m,
+    pendingSpeaker: summitRole === "speaker" && _count.users === 0 && preregAt !== null,
+  }));
+  return { members: shaped, total, page, pages: Math.max(1, Math.ceil(total / PER_PAGE)) };
 }
