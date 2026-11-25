@@ -1,13 +1,16 @@
-// 「サービスが出来ました、利用しますか？」（2026-11-23 ユーザー指示）。
+// 「サービスが出来ました、利用しますか？」（2026-11-23／文面は 2026-11-26 にユーザー指定で差し替え）。
 //
 // ⚠️⚠️ **この画面の役目は、本人に決めてもらうこと。** 誘導しない。
 //    「はい」と「いいえ」を同じ大きさで並べる。「いいえ」を小さくしない。
-// ⚠️⚠️ **お預かりしている中身を、そのまま見せる。**
-//    何を持たれているか分からないまま「はい」を押させない。
+// ⚠️⚠️ **「はい」以外を押されたら、お預かりした情報を全部消す**（2026-11-26 ユーザー指示）。
+//    「いいえ」も「新規登録」も削除する。だから、どちらもフォーム（POST）にする。
+// ⚠️⚠️ **本人の同意なく掲載しない**（2026-11-26 ユーザー指示）。
+//    2026-11-25 に出した登壇者45名は、この指示を受けて非公開へ戻した。
+//    したがってこの画面に「掲載しています」とは書かない（書けば嘘になる日が来る）。
 // ⚠️ ログインしていない方が開く画面（middleware の PUBLIC_PATHS に /join を入れてある）。
 import type { Metadata } from "next";
 import { findByInviteToken } from "@/lib/member-invite";
-import { answerYes, answerNo } from "./actions";
+import { answerYes, answerNo, answerFresh } from "./actions";
 import { btn } from "@/lib/ui";
 
 export const metadata: Metadata = {
@@ -20,6 +23,15 @@ export const metadata: Metadata = {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">{children}</div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3">
+      <dt className="w-[72px] shrink-0 text-[var(--muted)]">{label}</dt>
+      <dd className="text-[var(--ink)]">{value}</dd>
+    </div>
   );
 }
 
@@ -63,62 +75,13 @@ export default async function JoinPage({
       <h1 className="mt-2 text-[20px] font-bold leading-snug text-[var(--ink)]">
         サービスができました。
         <br />
-        お使いになりますか？
+        NAKAMA をお使いいただけます。
       </h1>
 
-      <p className="mt-4 text-[14px] leading-7 text-[var(--ink-2)]">
-        FOOD JAPAN SUMMIT でお会いした方々が、そのあともつながっていられる場です。
-        名刺を交換すると、その方の取り組みが読めます。
+      <p className="mt-5 text-[15px] font-bold leading-7 text-[var(--ink)]">
+        FOOD JAPAN SUMMIT の登録情報を使いますか？
       </p>
-
-      {/* ⚠️ 何を持たれているかを、押す前に見せる */}
-      <div className="mt-6 rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4">
-        <p className="text-[12px] font-bold text-[var(--ink)]">お預かりしている内容</p>
-        <dl className="mt-2 flex flex-col gap-1.5 text-[13px]">
-          <div className="flex gap-3">
-            <dt className="w-[72px] shrink-0 text-[var(--muted)]">事業者名</dt>
-            <dd className="text-[var(--ink)]">{view.name || "—"}</dd>
-          </div>
-          <div className="flex gap-3">
-            <dt className="w-[72px] shrink-0 text-[var(--muted)]">お名前</dt>
-            <dd className="text-[var(--ink)]">{view.contactName || "—"}</dd>
-          </div>
-          {view.contactRole ? (
-            <div className="flex gap-3">
-              <dt className="w-[72px] shrink-0 text-[var(--muted)]">肩書</dt>
-              <dd className="text-[var(--ink)]">{view.contactRole}</dd>
-            </div>
-          ) : null}
-          {view.prefecture ? (
-            <div className="flex gap-3">
-              <dt className="w-[72px] shrink-0 text-[var(--muted)]">都道府県</dt>
-              <dd className="text-[var(--ink)]">{view.prefecture}</dd>
-            </div>
-          ) : null}
-          <div className="flex gap-3">
-            <dt className="w-[72px] shrink-0 text-[var(--muted)]">メール</dt>
-            <dd className="text-[var(--ink)]">{view.maskedEmail}</dd>
-          </div>
-        </dl>
-        <p className="mt-3 border-t border-[var(--green)] pt-2.5 text-[12px] leading-6 text-[var(--ink-2)]">
-          {/* ⚠️⚠️ 事実と違うことを書かない。一覧に出した方には「出している」と書く（2026-11-25）。
-              登壇者45名を一覧へ出したのに、ここが「誰にも見えていません」のままだった。 */}
-          {view.listed ? (
-            <>
-              <strong>いまは、会員だけが見られる登壇者一覧に出しています。</strong>
-              一般には公開しておらず、検索にも出ません。
-              「いいえ」を選ばれた場合、掲載はその場で取り下げ、お預かりした情報も削除します。
-              電話番号はお預かりしていません。
-            </>
-          ) : (
-            <>
-              <strong>いまは、誰にも見えていません。</strong>
-              「はい」を選ばれてはじめて、ほかの会員に見えるようになります。
-              電話番号はお預かりしていません。
-            </>
-          )}
-        </p>
-      </div>
+      <p className="mt-1 text-[13px] leading-6 text-[var(--ink-2)]">入力の手間が省けます。</p>
 
       {sp.e ? (
         <p className="mt-4 text-[13px] text-[var(--red)]">
@@ -127,22 +90,44 @@ export default async function JoinPage({
       ) : null}
 
       {/* ⚠️ 2つを同じ大きさで並べる。「いいえ」を押しにくくしない */}
-      <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <form action={answerYes} className="flex-1">
           <input type="hidden" name="token" value={token} />
-          <button className={`${btn("primary", "lg")} w-full`}>はい、使います</button>
+          <button className={`${btn("primary", "lg")} w-full`}>はい</button>
         </form>
         <form action={answerNo} className="flex-1">
           <input type="hidden" name="token" value={token} />
-          <button className={`${btn("secondary", "lg")} w-full`}>いいえ、使いません</button>
+          <button className={`${btn("secondary", "lg")} w-full`}>いいえ</button>
         </form>
       </div>
 
-      <p className="mt-4 text-[12px] leading-6 text-[var(--muted)]">
-        「はい」を選ぶと、続けてアカウントを作る画面に進みます。<br />
-        <strong>「いいえ」を選ぶと、お預かりしている情報はその場で削除します。</strong>
-        その後ご連絡することもありません。
+      {/* ⚠️ 新規登録も「はい以外」なので、押された時点でお預かりした情報を消す。
+          消す操作なので、リンク（GET）ではなくフォーム（POST）にする */}
+      <form action={answerFresh} className="mt-2">
+        <input type="hidden" name="token" value={token} />
+        <button className={`${btn("ghost", "md")} w-full`}>新規登録</button>
+      </form>
+
+      <p className="mt-6 text-[14px] leading-7 text-[var(--ink-2)]">
+        FOOD JAPAN SUMMIT でお会いした方々が、そのあともつながっていられる場です。
+        新規に名刺を交換すると、その方の取り組みが読めます。
       </p>
+
+      {/* ⚠️ 何を持たれているかを、押す前に見せる（見出しは付けない＝ユーザー指示 2026-11-26） */}
+      <div className="mt-5 rounded-[10px] border border-[var(--line)] bg-[var(--green-soft)] p-4">
+        <dl className="flex flex-col gap-1.5 text-[13px]">
+          <Row label="事業者名" value={view.name || "—"} />
+          <Row label="お名前" value={view.contactName || "—"} />
+          {view.contactRole ? <Row label="肩書" value={view.contactRole} /> : null}
+          {view.prefecture ? <Row label="都道府県" value={view.prefecture} /> : null}
+          <Row label="メール" value={view.maskedEmail} />
+        </dl>
+        <p className="mt-3 border-t border-[var(--green)] pt-2.5 text-[12px] leading-6 text-[var(--ink-2)]">
+          <strong>「いいえ」を選ばれた場合、お預かりした情報も削除します。</strong>
+          <br />
+          電話番号はお預かりしていません。
+        </p>
+      </div>
     </Shell>
   );
 }
