@@ -24,28 +24,45 @@ export type InviteTarget = {
   name: string;
   contactName: string | null;
   email: string;
+  /** すでに会員向けの一覧に出しているか。⚠️ 文面の出し分けに使う（事実と違うことを書かない） */
+  listed: boolean;
 };
 
 /**
  * まだ招待していない先行登録の会員を取り出す。
  * ⚠️ メールが無い人・すでに送った人・すでに答えた人・本人がログインを持っている人は外す。
  */
+/**
+ * まだ「はい／いいえ」を答えていない方の条件。
+ *
+ * ⚠️⚠️ **listed（一覧に出しているか）を条件に入れないこと。**
+ *    一覧に出したのは事務局の判断であって、ご本人の同意ではない。
+ *    2026-11-25 に登壇者45名を一覧へ出したとき、ここに listed:false が入っていたせいで
+ *    その45名が招待の対象から丸ごと外れ、「いいえ」を押しても消えない状態になっていた。
+ *    判定は「預かった（preregAt）」「ご本人の登録がまだ（users なし）」「まだ答えていない」の3つだけ。
+ */
+const NOT_ANSWERED = {
+  preregAt: { not: null },
+  users: { none: {} },
+  inviteAnswer: null,
+} as const;
+
 export async function listInvitable(tenantId: string, take = 500): Promise<InviteTarget[]> {
   const rows = await prisma.member.findMany({
     where: {
       tenantId,
-      listed: false,
+      ...NOT_ANSWERED,
       preregEmail: { not: null },
       inviteSentAt: null,
-      inviteAnswer: null,
-      users: { none: {} },
     },
-    select: { id: true, name: true, contactName: true, preregEmail: true },
+    select: { id: true, name: true, contactName: true, preregEmail: true, listed: true },
     orderBy: { preregAt: "asc" },
     take,
   });
   return rows.flatMap((r) =>
-    r.preregEmail ? [{ id: r.id, name: r.name, contactName: r.contactName, email: r.preregEmail }] : []
+    r.preregEmail
+      ? [{ id: r.id, name: r.name, contactName: r.contactName, email: r.preregEmail, listed: r.listed }]
+      : []
   );
 }
 
@@ -81,6 +98,8 @@ export type InviteView = {
   /** 伏せたメール（本人確認のため。全部は出さない） */
   maskedEmail: string;
   answered: "yes" | "no" | null;
+  /** すでに会員向けの一覧に出しているか。⚠️ 画面の文言を事実に合わせるために使う */
+  listed: boolean;
 };
 
 /** メールの「お名前 ○○ さま」に出す程度に伏せる（a***@example.com） */
@@ -100,7 +119,7 @@ export async function findByInviteToken(token: string): Promise<InviteView | nul
     where: { inviteToken: token },
     select: {
       id: true, name: true, contactName: true, contactRole: true,
-      prefecture: true, categoryL1: true, preregEmail: true, inviteAnswer: true,
+      prefecture: true, categoryL1: true, preregEmail: true, inviteAnswer: true, listed: true,
     },
   });
   if (!m || !m.preregEmail) return null;
@@ -113,6 +132,7 @@ export async function findByInviteToken(token: string): Promise<InviteView | nul
     categoryL1: m.categoryL1,
     maskedEmail: maskEmail(m.preregEmail),
     answered: m.inviteAnswer === "yes" ? "yes" : m.inviteAnswer === "no" ? "no" : null,
+    listed: m.listed,
   };
 }
 
@@ -148,7 +168,8 @@ export async function declineInvite(token: string): Promise<boolean> {
     select: { id: true, preregAt: true, listed: true, _count: { select: { users: true } } },
   });
   if (!m) return false;
-  if (m.listed || m._count.users > 0 || !m.preregAt) return false;
+  // ⚠️ listed は見ない。一覧に出していても、ご本人が「いいえ」と言えば消す（消えれば一覧からも消える）
+  if (m._count.users > 0 || !m.preregAt) return false;
 
   await prisma.member.delete({ where: { id: m.id } });
   return true;
@@ -166,14 +187,14 @@ export type InviteSummary = {
 };
 
 export async function inviteSummary(tenantId: string): Promise<InviteSummary> {
-  const base = { tenantId, listed: false, users: { none: {} } } as const;
+  const base = { tenantId, preregAt: { not: null }, users: { none: {} } } as const;
   const [invitable, sent, yes, noEmail] = await Promise.all([
     prisma.member.count({
-      where: { ...base, preregEmail: { not: null }, inviteSentAt: null, inviteAnswer: null },
+      where: { ...base, inviteAnswer: null, preregEmail: { not: null }, inviteSentAt: null },
     }),
     prisma.member.count({ where: { ...base, inviteSentAt: { not: null } } }),
     prisma.member.count({ where: { ...base, inviteAnswer: "yes" } }),
-    prisma.member.count({ where: { ...base, preregEmail: null, preregAt: { not: null } } }),
+    prisma.member.count({ where: { ...base, preregEmail: null } }),
   ]);
   // ⚠️ 「いいえ」は数えない。行ごと消しているので、そもそも残っていない
   return { invitable, sent, yes, noEmail };

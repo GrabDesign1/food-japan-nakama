@@ -1008,6 +1008,13 @@ export async function sendMemberInvite(params: {
   /** 担当者名（あれば「○○ さま」と書く） */
   contactName: string | null;
   token: string;
+  /**
+   * すでに会員向けの一覧に掲載しているか。
+   * ⚠️⚠️ **ここを間違えると、事実と違うことを書いて送ることになる。**
+   *    2026-11-25 に登壇者45名を一覧へ出したのに、文面は「まだ誰にも見えていません」のままだった。
+   *    掲載済みの方には、掲載していると正直に書き、消し方を先に示す。
+   */
+  listed: boolean;
 }): Promise<void> {
   const url = `${APP_URL}/join/${encodeURIComponent(params.token)}`;
   const greeting = params.contactName
@@ -1028,11 +1035,21 @@ export async function sendMemberInvite(params: {
         <strong>FOOD JAPAN NAKAMA</strong> というサービスを作りました。
       </p>
 
-      <p>
+      ${
+        params.listed
+          ? `<p>
+        サミットでいただいたお名前・会社名・肩書・ご登壇の記録を、
+        <strong>会員だけが見られる登壇者一覧に掲載しています</strong>。
+        一般には公開しておらず、検索にも出ません。<br />
+        お使いになるかどうかは、${greeting}にお決めいただきたいと思っています。
+        <strong>「いいえ」を選ばれた場合、掲載はその場で取り下げ、お預かりした情報も削除します。</strong>
+      </p>`
+          : `<p>
         サミットでいただいたお名前・会社名・肩書を、<strong>すでにお預かりしています</strong>。<br />
         ただし、<strong>まだ誰にも見えていません。</strong>
         お使いになるかどうかは、${greeting}にお決めいただきたいと思っています。
-      </p>
+      </p>`
+      }
 
       <p style="margin:28px 0">
         <a href="${url}"
@@ -1044,7 +1061,7 @@ export async function sendMemberInvite(params: {
 
       <p style="font-size:13px;color:#555">
         開くと、お預かりしている内容がそのまま出ます。<br />
-        <strong>「いいえ」を選ばれた場合、お預かりした情報はその場で削除します。</strong>
+        <strong>「いいえ」を選ばれた場合、${params.listed ? "掲載を取り下げ、" : ""}お預かりした情報はその場で削除します。</strong>
         その後ご連絡することもありません。
       </p>
 
@@ -1063,7 +1080,9 @@ export async function sendMemberInvite(params: {
 
   await send({
     to: [params.to],
-    subject: "FOOD JAPAN NAKAMA のご案内（お使いになるか、お決めください）",
+    subject: params.listed
+      ? "FOOD JAPAN NAKAMA 登壇者一覧への掲載について（お使いになるか、お決めください）"
+      : "FOOD JAPAN NAKAMA のご案内（お使いになるか、お決めください）",
     html,
   });
 }

@@ -131,6 +131,7 @@ export async function sendInvites(): Promise<void> {
       name: t.name,
       contactName: t.contactName,
       token,
+      listed: t.listed,
     });
     await markInviteSent(t.id);
     done++;
