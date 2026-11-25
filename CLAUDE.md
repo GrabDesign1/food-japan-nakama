@@ -34,6 +34,10 @@ Food Japan Summit の参加者を会員とする、通年運用の食の共創�
 ## 開発・運用の作法（重要）
 - **指示されていない変更をしない（最重要・ユーザー指示 2026-08-09）**: 依頼された箇所以外のコード・文言・デザイン・CSSに手を加えない。「ついで」の改善や整理は実装せず、提案として報告だけする。共通CSS・共通コンポーネントなど影響が波及する変更は、事前に影響範囲を伝えてから行い、変更後は複数の画面幅（1520/1200/1120/1000/375px 目安）で表示確認する。レイアウト崩れの実害が出たことがある。
 - **コマンド実行の許可（2026-08-16 設定）**: 毎回の確認を減らすため、ClaudeCODE 側の `.claude/settings.local.json` で **`permissions.defaultMode = "auto"`**（安全なコマンドは自動実行）にしてある。あわせて**禁止リスト（deny）**を置き、`rm -rf /`・`sudo`・`git push --force`・`git reset --hard`・`git clean -fd`・**`npx prisma migrate reset`**・**`npx prisma db push`**・`cat .env*`・`cat ~/.ssh/*` は auto でも実行できない。**本番DBを壊す2つ（migrate reset / db push）を禁止しているのは、このプロジェクトが本番DB1本で動いているため**。設定を変えたら Claude Code の再起動（または `/hooks` を一度開く）で反映される。
+- **作業のたびに CLAUDE.md へ書く（ユーザー指示 2026-11-26「CLAUDE.md への書き込みは　作業するたびに書いてね」）**:
+  まとめて後から書かない。**1つの作業＝1つの追記**を、その作業の commit に**同梱**する。
+  書くのは「何を・なぜ・踏んだ落とし穴」。とくに**事故ったこと**は必ず残す（同じ穴に二度落ちないため）。
+  コードを読めば分かることは書かない。⚠️で始めるのは「次に触る人が壊しやすいところ」だけ。
 - 開発はこのフォルダ **`~/Development/food-japan-connect`**（OneDrive外）。
 - コマンド前に必ず: `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"`
 - push: `GIT_TERMINAL_PROMPT=0 git push origin main`（osxkeychain に認証あり）
