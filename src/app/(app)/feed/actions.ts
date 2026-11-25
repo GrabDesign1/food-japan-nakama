@@ -26,9 +26,12 @@ const OK_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export type PostState = { ok?: boolean; error?: string };
 
-/** 投稿した本人のプロフィール（取り組み欄）も作り直す */
+/** 投稿した本人のプロフィール（取り組み欄）も作り直す。
+ *  ⚠️ ホーム（/dashboard）にも同じ流れが出ている（2026-11-26〜）。
+ *     ここに足さないと、ホームの投稿欄から書いたのに下の流れに出てこない。 */
 function revalidateFeed(memberId?: string | null): void {
   revalidatePath("/feed");
+  revalidatePath("/dashboard");
   if (memberId) revalidatePath(`/producers/${memberId}`);
 }
 

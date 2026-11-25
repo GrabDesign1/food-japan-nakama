@@ -25,6 +25,7 @@ import {
 import { MyProfileHeader } from "@/components/MyProfileHeader";
 import { loadHomeTimeline } from "@/lib/home-timeline";
 import { PostCard, type Author } from "../feed/_components/PostCard";
+import { Composer } from "../feed/_components/Composer";
 import { btn, eyebrowCls, h2Cls, h3Cls } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "マイページ｜FOOD JAPAN NAKAMA" };
@@ -338,6 +339,15 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* いちばん上は投稿欄（2026-11-26 ユーザー指示
+          「これを Facebook のように作り込んで　一番TOPにでるようにして」）。
+          ⚠️ たたんだ1行のバーで置く。開いた状態で置くと、見るために来た人の邪魔になる。 */}
+      <Composer
+        myName={member?.contactName || su?.app.name || "あなた"}
+        avatarUrl={member?.contactPhotoUrl ?? member?.avatarUrl ?? null}
+        collapsible
+      />
+
       {/* あいさつ */}
       <div>
         <p className={eyebrowCls}>MY PAGE</p>

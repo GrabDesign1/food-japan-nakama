@@ -8,7 +8,24 @@ import { btn, input as inputCls } from "@/lib/ui";
 import { POST_BODY_MAX, POST_IMAGE_MAX } from "@/lib/feed-core";
 import { submitPost, peekLink, type PostState } from "../actions";
 
-export function Composer({ myName }: { myName: string }) {
+export function Composer({
+  myName,
+  avatarUrl,
+  collapsible = false,
+}: {
+  myName: string;
+  /** 顔写真（Facebook のように、書く欄の左に出す） */
+  avatarUrl?: string | null;
+  /**
+   * たたんだ状態から始めるか（ホームの最上部で使う。2026-11-26 ユーザー指示
+   * 「これを Facebook のように作り込んで　一番TOPにでるようにして」）。
+   * ⚠️ /feed では false（あそこは書くための画面なので、開いた状態で置く）。
+   */
+  collapsible?: boolean;
+}) {
+  const [open, setOpen] = useState(!collapsible);
+  /** たたんだ状態で「写真」を押したとき、開いてからファイル選択を出すための印 */
+  const wantFile = useRef(false);
   const [body, setBody] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [linkTitle, setLinkTitle] = useState("");
@@ -44,11 +61,62 @@ export function Composer({ myName }: { myName: string }) {
       setBody(""); setLinkUrl(""); setLinkTitle(""); setShowLink(false); setFiles([]);
       setPeek(null); peekedFor.current = "";
       if (fileRef.current) fileRef.current.value = "";
+      if (collapsible) setOpen(false); // 書き終わったら、また1行のバーに戻る
     }
-  }, [state]);
+  }, [state, collapsible]);
+
+  // たたんだ状態で「写真」を押したら、開いた直後にファイル選択を出す
+  useEffect(() => {
+    if (open && wantFile.current) {
+      wantFile.current = false;
+      fileRef.current?.click();
+    }
+  }, [open]);
 
   const previews = files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }));
   useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews]);
+
+  // ── たたんだ状態（Facebook の「その気持ち、シェアしよう」のバー）──
+  if (!open) {
+    return (
+      <div className="flex items-center gap-3 rounded-full border border-[var(--line)] bg-white p-2 pl-3">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--line-soft)] sm:h-10 sm:w-10">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="min-w-0 flex-1 truncate rounded-full bg-[var(--line-soft)] px-4 py-3 text-left text-[14px] text-[var(--muted)] transition hover:brightness-95 sm:px-5"
+        >
+          {/* ⚠️ 狭い画面では短い文に替える。長い文を入れると「○○さん、…」で切れて何の欄か分からない */}
+          <span className="sm:hidden">いまの取り組みを書く</span>
+          <span className="hidden sm:inline">{myName}さん、いまどんな取り組みをしていますか</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { wantFile.current = true; setOpen(true); }}
+          className="shrink-0 rounded-full px-2 py-2 text-[13px] font-semibold text-[var(--ink-2)] transition hover:bg-[var(--line-soft)] sm:px-3"
+          aria-label="写真を付けて投稿する"
+        >
+          <span aria-hidden>🖼</span>
+          <span className="ml-1.5 hidden sm:inline">写真</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { setShowLink(true); setOpen(true); }}
+          /* ⚠️ 狭い画面では隠す。3つ並べると書く欄が潰れて「いまの取り組みを…」で切れる */
+          className="hidden shrink-0 rounded-full px-3 py-2 text-[13px] font-semibold text-[var(--ink-2)] transition hover:bg-[var(--line-soft)] sm:block"
+          aria-label="記事のリンクを付けて投稿する"
+        >
+          <span aria-hidden>🔗</span>
+          <span className="ml-1.5 hidden sm:inline">リンク</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -59,6 +127,24 @@ export function Composer({ myName }: { myName: string }) {
       <label className="sr-only" htmlFor="post-body">
         投稿する内容
       </label>
+      {collapsible ? (
+        <div className="mb-3 flex items-center gap-3">
+          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--line-soft)]">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : null}
+          </div>
+          <span className="text-[14px] font-semibold text-[var(--ink)]">{myName}</span>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="ml-auto rounded-full px-3 py-1.5 text-[12px] text-[var(--muted)] transition hover:bg-[var(--line-soft)]"
+          >
+            閉じる
+          </button>
+        </div>
+      ) : null}
       <textarea
         id="post-body"
         name="body"
