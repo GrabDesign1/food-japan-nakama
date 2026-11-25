@@ -80,8 +80,16 @@ export async function listDirectory(args: {
   const [members, total] = await Promise.all([
     prisma.member.findMany({
       where,
-      // ⚠️ 中身の濃い方が先。記入率は画面に出さず、並びにだけ使う
-      orderBy: [{ completionRate: "desc" }, { updatedAt: "desc" }],
+      // ⚠️⚠️ **顔が出ている方が先。**（2026-11-25）
+      //    記入率だけで並べると、イベントから来た登壇者（顔写真・肩書・自己紹介あり・
+      //    事業の欄は空）が後ろに回ってしまう。紹介の場では、顔のある人が先。
+      // ⚠️ 記入率は画面に出さず、並びにだけ使う（相手を数字で見せない決まり）。
+      orderBy: [
+        { contactPhotoUrl: { sort: "desc", nulls: "last" } },
+        { contactBio: { sort: "desc", nulls: "last" } },
+        { completionRate: "desc" },
+        { updatedAt: "desc" },
+      ],
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
       select: {

@@ -25,6 +25,9 @@ import { publish, unpublish, sendInvites } from "../prereg-actions";
 
 export const metadata = { title: "登壇者の先行登録" };
 
+// ⚠️ イベントからの取り込みは、人数が多いと時間がかかる（既定の制限時間では足りない）
+export const maxDuration = 120;
+
 function fmt(d: Date | null): string {
   return d ? d.toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" }) : "—";
 }

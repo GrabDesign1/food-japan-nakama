@@ -169,6 +169,9 @@ export async function syncOnegaizar(_prev: PreregState, _fd: FormData): Promise<
       `新しく預かった ${r.created}名・すでに預かっていた ${r.updated}名・` +
       `すでに会員の方 ${r.linked}名。` +
       (r.skippedNoEmail > 0 ? `メールが無くて取り込めなかった方が ${r.skippedNoEmail}名います。` : "") +
+      (r.remaining > 0
+        ? `⚠️ あと ${r.remaining}名が残っています。もう一度押してください（重複はしません）。`
+        : "") +
       "まだ誰にも見えていません。",
   };
 }

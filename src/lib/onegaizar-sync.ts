@@ -25,6 +25,8 @@ export type SyncResult = {
   linked: number;
   /** メールが無くて取り込めなかった人 */
   skippedNoEmail: number;
+  /** 今回は作らず、次回に回した人 */
+  remaining: number;
   speaker: number;
   attendee: number;
 };
@@ -43,8 +45,15 @@ type RosterPerson = {
   events: string[];
 };
 
-/** 1回に取り込む上限。⚠️ 際限なく作らない */
+/** 1回に読む上限。⚠️ 際限なく読まない */
 export const SYNC_MAX = 2000;
+/**
+ * 1回に**新しく作る**上限。
+ * ⚠️⚠️ 311人を一度に作ると、画面が時間切れになる（Vercel の関数には制限時間がある）。
+ *    区切っても、印（sourceKey）で突き合わせるので**重複しません**。
+ *    残りは、もう一度押せば続きから入ります。
+ */
+export const CREATE_PER_RUN = 120;
 
 function clean(v: string | null | undefined, max = 200): string {
   return (v ?? "").trim().slice(0, max);
@@ -75,7 +84,7 @@ export async function syncFromOnegaizar(
 ): Promise<SyncResult> {
   const empty: SyncResult = {
     ok: false, created: 0, updated: 0, linked: 0,
-    skippedNoEmail: 0, speaker: 0, attendee: 0,
+    skippedNoEmail: 0, remaining: 0, speaker: 0, attendee: 0,
   };
 
   const url = process.env.ONEGAIZAR_SYNC_URL;
@@ -105,6 +114,35 @@ export async function syncFromOnegaizar(
   const out: SyncResult = { ...empty, ok: true };
   const now = new Date();
 
+  // ⚠️⚠️ **1人ずつDBに聞かない。** 311人いるので、往復が多いと画面が時間切れになる。
+  //    先にまとめて引いて、照合は手元でやる。
+  const known = await prisma.member.findMany({
+    where: { tenantId, sourceKey: { not: null } },
+    select: { id: true, sourceKey: true, summitEvents: true, summitRole: true, listed: true },
+  });
+  const bySource = new Map(known.map((m) => [m.sourceKey as string, m]));
+
+  const emails = [...new Set(people.map((p) => normalizeEmail(p.email)).filter(Boolean))];
+  const byEmail = new Map<string, { id: string; summitEvents: string[]; sourceKey: string | null; listed: boolean }>();
+  // ⚠️ メールの数だけ IN 句に入れると長くなりすぎるので、小分けにする
+  for (let i = 0; i < emails.length; i += 300) {
+    const chunk = emails.slice(i, i + 300);
+    const rows = await prisma.member.findMany({
+      where: {
+        tenantId,
+        OR: [{ preregEmail: { in: chunk } }, { users: { some: { email: { in: chunk } } } }],
+      },
+      select: {
+        id: true, summitEvents: true, sourceKey: true, listed: true,
+        preregEmail: true, users: { select: { email: true } },
+      },
+    });
+    for (const r of rows) {
+      const keys = [r.preregEmail ?? "", ...r.users.map((u) => u.email)].map((e) => e.toLowerCase());
+      for (const k of keys) if (k && !byEmail.has(k)) byEmail.set(k, r);
+    }
+  }
+
   for (const p of people) {
     const sourceKey = clean(p.sourceKey, 120);
     if (!sourceKey) continue;
@@ -114,18 +152,16 @@ export async function syncFromOnegaizar(
     else out.attendee++;
 
     // ① この印で、すでに預かっていないか
-    const bySource = await prisma.member.findUnique({
-      where: { sourceKey },
-      select: { id: true, summitEvents: true, listed: true },
-    });
-    if (bySource) {
-      await prisma.member.update({
-        where: { id: bySource.id },
-        data: {
-          summitEvents: mergeEvents(bySource.summitEvents, p.events),
-          summitRole: role,
-        },
-      });
+    const hit = bySource.get(sourceKey);
+    if (hit) {
+      const merged = mergeEvents(hit.summitEvents, p.events);
+      // ⚠️ 変わっていなければ書かない（311回の無駄な書き込みを避ける）
+      if (merged.length !== hit.summitEvents.length || hit.summitRole !== role) {
+        await prisma.member.update({
+          where: { id: hit.id },
+          data: { summitEvents: merged, summitRole: role },
+        });
+      }
       out.updated++;
       continue;
     }
@@ -134,29 +170,25 @@ export async function syncFromOnegaizar(
 
     // ② すでに本人が使っている会員か（メールで突き合わせる）。
     //    ⚠️⚠️ いたら作らない。開催の記録だけ足す（本人の書いたものを上書きしない）
-    const existing = await prisma.member.findFirst({
-      where: {
-        tenantId,
-        OR: [{ preregEmail: email }, { users: { some: { email } } }],
-      },
-      select: { id: true, summitEvents: true, sourceKey: true, listed: true },
-    });
-    if (existing) {
+    const ex = byEmail.get(email);
+    if (ex) {
       await prisma.member.update({
-        where: { id: existing.id },
+        where: { id: ex.id },
         data: {
-          summitEvents: mergeEvents(existing.summitEvents, p.events),
+          summitEvents: mergeEvents(ex.summitEvents, p.events),
           summitRole: role,
-          // 印がまだ無ければ付ける（次からは①で当たる）
-          ...(existing.sourceKey ? {} : { sourceKey }),
+          ...(ex.sourceKey ? {} : { sourceKey }),
         },
       });
-      if (existing.listed) out.linked++;
+      if (!ex.sourceKey) bySource.set(sourceKey, { ...ex, summitRole: role });
+      if (ex.listed) out.linked++;
       else out.updated++;
       continue;
     }
 
     // ③ 新しく預かる。⚠️ 必ず非公開。メールは送らない
+    // ⚠️⚠️ 1回に作る数を区切る。残りは、もう一度押せば続きから入る（印で突き合わせるので重複しない）
+    if (out.created >= CREATE_PER_RUN) { out.remaining++; continue; }
     await prisma.member.create({
       data: {
         tenantId,
@@ -164,7 +196,6 @@ export async function syncFromOnegaizar(
         contactName: clean(p.name, 80) || null,
         contactKana: clean(p.nameKana, 80) || null,
         contactRole: clean(p.title, 80) || null,
-        // ⚠️ 登壇者の写真とプロフィールは公開サイトに出ているもの。参加者には無い
         contactPhotoUrl: clean(p.photoUrl, 500) || null,
         contactBio: clean(p.bio, 2000) || null,
         website: clean(p.websiteUrl, 300) || null,
@@ -181,6 +212,7 @@ export async function syncFromOnegaizar(
       },
     });
     out.created++;
+    byEmail.set(email, { id: "", summitEvents: p.events, sourceKey, listed: false });
   }
 
   return out;
