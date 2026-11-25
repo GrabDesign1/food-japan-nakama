@@ -71,8 +71,11 @@ export async function listInvitable(tenantId: string, take = 500): Promise<Invit
  * ⚠️ すでに答えた人には発行しない。すでに送った人には同じ合言葉を返す（2通目を作らない）。
  */
 export async function issueInviteToken(tenantId: string, memberId: string): Promise<string | null> {
+  // ⚠️⚠️ **ここでも listed を条件にしないこと。**
+  //    2026-11-26。一覧に出した45名は listed:true なので、ここに listed:false が残っていると
+  //    合言葉が発行されず、送信が静かに0件で終わる（listInvitable だけ直しても意味が無い）。
   const m = await prisma.member.findFirst({
-    where: { tenantId, id: memberId, listed: false, users: { none: {} } },
+    where: { tenantId, id: memberId, preregAt: { not: null }, users: { none: {} } },
     select: { id: true, inviteToken: true, inviteAnswer: true, preregEmail: true },
   });
   if (!m || m.inviteAnswer || !m.preregEmail) return null;
