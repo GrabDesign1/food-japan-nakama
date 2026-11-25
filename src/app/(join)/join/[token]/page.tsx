@@ -16,11 +16,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** ⚠️ 外側の余白・ロゴは (join)/layout.tsx が持つ。ここはカード1枚だけ描く（二重にしない） */
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-[560px] px-4 py-10">
-      <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">{children}</div>
-    </div>
+    <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">{children}</div>
   );
 }
 

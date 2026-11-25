@@ -9,8 +9,7 @@ export const metadata: Metadata = {
 
 export default function JoinDonePage() {
   return (
-    <div className="mx-auto w-full max-w-[560px] px-4 py-10">
-      <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">
+    <div className="rounded-[12px] border border-[var(--line)] bg-white p-6 sm:p-8">
         <h1 className="text-[18px] font-bold text-[var(--ink)]">承知しました</h1>
         <p className="mt-3 text-[14px] leading-7 text-[var(--ink-2)]">
           お預かりしていた情報は削除しました。
@@ -19,7 +18,6 @@ export default function JoinDonePage() {
         <p className="mt-4 text-[13px] leading-7 text-[var(--muted)]">
           FOOD JAPAN SUMMIT にご参加いただき、ありがとうございました。
         </p>
-      </div>
     </div>
   );
 }
