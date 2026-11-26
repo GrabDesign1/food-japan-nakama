@@ -15,6 +15,8 @@ type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; 
 const NAV: NavItem[] = [
   { label: "ホーム", href: "/dashboard", ready: true },
   { label: "案件を探す", href: "/search", ready: true },
+  // 生産者×流通の突き合わせ（2026-11-26）。探すのとなりに置く
+  { label: "つながれそうな相手", href: "/matching", ready: true },
   // ⚠️ 会員を見る入口がナビに1つも無く「探してもない」とご指摘（2026-11-25）
   { label: "メンバーを見る", href: "/members", ready: true },
   { label: "売りたい・探している", href: "/ledger", ready: true },

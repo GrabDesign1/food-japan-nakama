@@ -17,7 +17,8 @@ export type AdminNavKey =
   | "reports"
   | "audit"
   | "crm"
-  | "community";
+  | "community"
+  | "matching";
 
 const PAGES: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "top", label: "事務局管理", href: "/admin" },
@@ -25,6 +26,8 @@ const PAGES: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "community", label: "コミュニティとお金", href: "/admin/community" },
   { key: "members", label: "会員管理", href: "/admin/members" },
   { key: "listings", label: "掲載の監視", href: "/admin/listings" },
+  // 売りたい × 探している の組み合わせ（2026-11-26）。つなぐのは人の手
+  { key: "matching", label: "つなぐ候補", href: "/admin/matching" },
   { key: "inquiries", label: "問い合わせ・応募の状況", href: "/admin/inquiries" },
   { key: "consultations", label: "個別相談の管理", href: "/admin/consultations" },
   { key: "billing", label: "課金管理", href: "/admin/billing" },

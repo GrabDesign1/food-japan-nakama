@@ -483,9 +483,14 @@ export default async function DashboardPage({
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className={h2Cls}>仲間の動き</h2>
-              <Link href="/search" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
-                案件を探す →
-              </Link>
+              <div className="flex gap-4">
+                <Link href="/matching" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
+                  つながれそうな相手 →
+                </Link>
+                <Link href="/search" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
+                  案件を探す →
+                </Link>
+              </div>
             </div>
             {timeline.items.length === 0 ? (
               <EmptyState
