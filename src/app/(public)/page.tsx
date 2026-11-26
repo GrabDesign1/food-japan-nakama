@@ -482,19 +482,26 @@ export default async function PublicHome() {
         <section>
           <SectionHead
             title="登録後、最初にすること"
-            sub="この3つが済むと、相手に見つけてもらいやすくなります"
+            sub="この4つが済むと、出会った方とのつながりが続きます"
           />
           <ol className="border-t border-[var(--line)]">
             {[
               {
                 t: "プロフィールを整える",
-                d: "会社・商品・強み・探している相手を登録します。記入率が50%に満たないと、事業者の一覧に表示されません。",
+                d: "顔写真・会社・商品・強みを登録します。サミットで名刺を交換した方が、あとから思い出せるようにしておきます。",
                 icon: "/steps/step-profile.png",
               },
               {
-                t: "案件を1件掲載する",
+                /* ⚠️ ここが「出会いを続ける」の要（2026-11-26 ユーザー指示）。
+                   掲載より前に置く＝書くことが先、売ることは次。 */
+                t: "たまに、近況を書く",
+                d: "いまやっていること、現場の写真、記事のリンク。名刺を交換した方のところに届きます。毎日でなくて構いません。",
+                icon: null,
+              },
+              {
+                t: "売りたいもの・PRしたいものを掲載する",
                 /* 「掲載は無料」は下の※行に集約した（無料表記を繰り返すと逆に疑わせるため） */
-                d: "売りたいもの、探しているもの、一緒につくりたいことを、具体的に載せます。",
+                d: "商品・サービス・一緒につくりたいことを、具体的に載せます。事務局が定期的にバイヤーへご紹介します。",
                 icon: "/steps/step-listing.png",
               },
               {
@@ -509,15 +516,26 @@ export default async function PublicHome() {
                 <span className="shrink-0 pt-0.5 text-[13px] font-bold tracking-[0.06em] text-[var(--green-d)]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                {/* アイコンは意味を文字で持たせているので alt は空にする（読み上げで見出しと二重に読まれないように） */}
-                <Image
-                  src={s.icon}
-                  alt=""
-                  width={192}
-                  height={192}
-                  sizes="48px"
-                  className="mt-0.5 h-10 w-10 shrink-0 sm:h-12 sm:w-12"
-                />
+                {/* アイコンは意味を文字で持たせているので alt は空にする（読み上げで見出しと二重に読まれないように）。
+                    ⚠️ 「たまに、近況を書く」の絵がまだ無いので、そこだけ丸い印で出している
+                       （目的別入口の4枚目と同じ作法）。絵が届いたら icon に入れること。 */}
+                {s.icon ? (
+                  <Image
+                    src={s.icon}
+                    alt=""
+                    width={192}
+                    height={192}
+                    sizes="48px"
+                    className="mt-0.5 h-10 w-10 shrink-0 sm:h-12 sm:w-12"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--green-soft)] text-[18px] sm:h-12 sm:w-12"
+                  >
+                    ✍
+                  </span>
+                )}
                 <div className="min-w-0">
                   <h3 className="text-[15px] font-bold text-[var(--ink)]">{s.t}</h3>
                   <p className="mt-1 text-[13px] leading-7 text-[var(--ink-2)]">{s.d}</p>
@@ -594,9 +612,11 @@ export default async function PublicHome() {
             枠は付けない＝他のセクション（目的別入口・実績・記事・3ステップ・サービス）と揃える。
             枠付きにしてよいのは最終CTAだけ（意図的な強調）。 */}
         <section>
-          <SectionHead title="オンラインの出会いを、現場の事業へ。" />
+          {/* ⚠️ 2026-11-26 に順番を直した。現場で出会い → NAKAMAで続ける → 次の現場、が実際の流れ。
+              「NAKAMAで見つけてSummitで会う」と書くと、サイトの意図が逆に伝わる。 */}
+          <SectionHead title="現場の出会いを、続く事業へ。" />
           <p className="max-w-[860px] text-[14px] leading-8 text-[var(--ink-2)]">
-            NAKAMAで課題や相手を見つけ、Food Japan Summitで対面し、試食、商談、現地視察、試作、実証へ進めます。
+            Food Japan Summit で出会い、NAKAMAでそのあとを続けます。近況のやり取りから、試食、商談、現地視察、試作、実証へ。
             生まれた事業は、次のSummitで成果として共有し、新しい連携につなげます。
           </p>
           {/* 6工程。矢印つきのピルだと狭い幅で折り返して順番が読めなくなるので、
