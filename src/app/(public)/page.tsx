@@ -152,11 +152,13 @@ export default async function PublicHome() {
 
           <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="max-w-[46em]">
+              {/* ⚠️ 2026-11-26 ユーザー指定の文。言い回しを勝手に整えないこと */}
               <p className="text-[15px] leading-8 text-[var(--ink-2)]">
                 先日は「FOOD JAPAN SUMMIT 2026 in MIYAZAKI」にご参加いただき、誠にありがとうございました。
-                当日の名刺交換や商談で生まれた出会いを、<strong className="text-[var(--ink)]">継続的なお付き合いにしていただくため</strong>、
-                そして共創のご相談・お取引・商品づくりにつなげていただくために、
-                「FOOD JAPAN NAKAMA」をご用意しています。
+                当日の名刺交換や商談で生まれた出会いを、
+                <strong className="text-[var(--ink)]">共創に繋げたり、継続的なお付き合いにしたいため</strong>、
+                また共創のご相談やお取引、商品づくりにつなげていただくために、
+                「FOOD JAPAN NAKAMA」をお使いください。
               </p>
               <p className="mt-4 text-[15px] leading-8 text-[var(--ink-2)]">
                 名刺を交換しても、こちらから何もしなければ、関係は静かに薄れていきます。
