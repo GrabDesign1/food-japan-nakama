@@ -47,6 +47,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <FooterCol title="NAKAMA" links={[
             ["NAKAMAとは", "/about"],
             ["実績", "/cases"],
+            // ⚠️ 特設ページはここからしか辿れない（2026-11-26）。開催を増やしたら1行足す
+            ["サミットの記録（宮崎2026）", "/summit/2026-miyazaki"],
+            ["サミットの記録（名古屋2026）", "/summit/2026-nagoya"],
             ["学び・セミナー", "/learn"],
             ["利用の流れ", "/flow"],
             ["利用料金・共創支援", "/pricing"],

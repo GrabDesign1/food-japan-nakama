@@ -18,6 +18,7 @@ export function PublicTopBar() {
         <nav className="fjn-nav" aria-label="メインナビゲーション">
           <Link href="/listings?type=want">探している案件を見る</Link>
           <Link href="/about">NAKAMAとは</Link>
+          <Link href="/summit/2026-nagoya">サミットの記録</Link>
           <Link href="/hanro">販路開拓支援</Link>
           <Link href="/produce">共創プロデュース</Link>
           <Link href="/food-loss">食品ロス支援</Link>

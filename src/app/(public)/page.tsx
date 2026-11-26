@@ -74,6 +74,7 @@ export default async function PublicHome() {
             {/* 掲載0件のときトップの案件セクションは出さないので、一覧ページへ送る（アンカーだと行き先が消える） */}
             <Link href="/listings?type=want">探している案件を見る</Link>
             <Link href="/about">NAKAMAとは</Link>
+            <Link href="/summit/2026-nagoya">サミットの記録</Link>
             <Link href="/hanro">販路開拓支援</Link>
             <Link href="/produce">共創プロデュース</Link>
             <Link href="/food-loss">食品ロス支援</Link>

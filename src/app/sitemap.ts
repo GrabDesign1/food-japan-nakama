@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { getPublicTenantId } from "@/lib/public-content";
 import { CASES_SORTED } from "@/lib/cases";
+import { SUMMIT_EVENTS } from "@/lib/summit-share-shared";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nakama.food-japan-summit.jp";
 
@@ -26,6 +27,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
   { path: "/crowdfunding", priority: 0.9, changeFrequency: "weekly" },
   { path: "/food-loss", priority: 0.9, changeFrequency: "weekly" },
   { path: "/cases", priority: 0.9, changeFrequency: "weekly" },
+  // 開催ごとの特設ページ（2026-11-26）。⚠️ 開催を増やしたら SUMMIT_EVENTS と一緒にここも足す
   // Food Japan Summit の協賛募集（2026-08-19 に検索対象へ。ユーザー指示「/sponsor のみ単独の SEO と AIO」）。
   // ⚠️ 申込・相談フォーム（/sponsor/apply・/sponsor/contact）は noindex のままなので**ここに足さない**。
   { path: "/sponsor", priority: 0.9, changeFrequency: "weekly" },
@@ -41,7 +43,14 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" |
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries: MetadataRoute.Sitemap = STATIC_PAGES.map((p) => ({
+  const entries: MetadataRoute.Sitemap = [
+    ...STATIC_PAGES,
+    ...SUMMIT_EVENTS.map((e) => ({
+      path: `/summit/${e.slug}`,
+      priority: 0.8,
+      changeFrequency: "weekly" as const,
+    })),
+  ].map((p) => ({
     url: `${APP_URL}${p.path}`,
     lastModified: CONTENT_UPDATED_AT,
     changeFrequency: p.changeFrequency,
