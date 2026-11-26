@@ -91,11 +91,13 @@ export default async function PublicHome() {
             <h1 id="fjn-hero-title">
               食のコミュニティ、共創事業を生み出す仲間をつくろう。
             </h1>
+            {/* ⚠️ ここは「市場」ではなく「出会いを続ける場所」と書く（2026-11-26 ユーザー指示
+                「このNAKAMAは、意図が違うから、説明をもう一度見直して」）。
+                ⚠️ 検索で来る方のために、生産者・食品メーカー・飲食店・卸・小売・バイヤーの語は残す。 */}
             <p className="fjn-hero__lead">
-              食の「売りたい」「探している」「あったらいいな」を共創でつなぐ。
-              <strong>つくる人と、届ける人を直接つなぐ場所です。</strong>
-              生産者・食品メーカーと、飲食店・卸・小売・バイヤーが、仲介をはさまずに出会い、
-              そのまま提案・試食・取引へ進めます。
+              <strong>出会ったあとを、続けるための場所です。</strong>
+              名刺交換で終わらせず、共創の相談・お取引・商品づくりへ。
+              生産者・食品メーカーと、飲食店・卸・小売・バイヤーが、仲介をはさまずに行き来できます。
             </p>
             <a
               className="fjn-hero__tag"
@@ -132,6 +134,84 @@ export default async function PublicHome() {
       </section>
 
       <div className="mx-auto flex max-w-[1100px] flex-col gap-14 px-4 py-14">
+        {/* なぜ NAKAMA があるのか（2026-11-26 ユーザー指示で全面的に書き直し）。
+            ⚠️⚠️ **「93日で半減／420日でリセット」とは書かない。** 調べたが出典が見つからなかった
+               （2026-11-26 に検索。Sansan・研美社などの調査にも該当する数字は無い）。
+               公開ページに出典のない数字を書かない。代わりに
+               ①出典のある調査（約9割が「続かない」と感じる）と
+               ②NAKAMA自身の仕組みの数字（半年で半分・約420日で切れた扱い＝card-relationship.ts の
+                 HALF_LIFE_DAYS 180 / ALIVE_THRESHOLD 20）だけを書いている。
+            ⚠️ card-relationship.ts の値を変えたら、ここの「半年」「約420日」も直すこと。 */}
+        <section aria-labelledby="fjn-why">
+          <h2
+            id="fjn-why"
+            className="font-serif text-[26px] leading-tight text-[var(--ink)] sm:text-[32px]"
+          >
+            出会いを、そのままにしないために。
+          </h2>
+
+          <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="max-w-[46em]">
+              <p className="text-[15px] leading-8 text-[var(--ink-2)]">
+                先日は「FOOD JAPAN SUMMIT 2026 in MIYAZAKI」にご参加いただき、誠にありがとうございました。
+                当日の名刺交換や商談で生まれた出会いを、<strong className="text-[var(--ink)]">継続的なお付き合いにしていただくため</strong>、
+                そして共創のご相談・お取引・商品づくりにつなげていただくために、
+                「FOOD JAPAN NAKAMA」をご用意しています。
+              </p>
+              <p className="mt-4 text-[15px] leading-8 text-[var(--ink-2)]">
+                名刺を交換しても、こちらから何もしなければ、関係は静かに薄れていきます。
+                営業職の方に聞いた調査では、
+                <a
+                  href="https://news.biglobe.ne.jp/economy/0417/prt_250417_4933922078.html"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2 hover:no-underline"
+                >
+                  約9割が「名刺交換のあと関係が続かない」と感じている
+                </a>
+                という結果も出ています。
+              </p>
+              <p className="mt-4 text-[15px] leading-8 text-[var(--ink-2)]">
+                NAKAMAでは、交換した名刺を<strong className="text-[var(--ink)]">生きている関係かどうか</strong>で見ています。
+                やり取りのない日が続くと、<strong className="text-[var(--ink)]">半年ほどでつながりの強さは半分</strong>に、
+                <strong className="text-[var(--ink)]">およそ420日で「切れています」</strong>とお知らせします。
+                投稿への反応や、ひとことのやり取りがあれば、そのたびに戻ります。
+              </p>
+            </div>
+
+            {/* お願いは2つだけ。多く並べない */}
+            <div className="flex flex-col gap-4">
+              <div className="rounded-[12px] border border-[var(--line)] bg-white p-5">
+                <h3 className="text-[15px] font-bold text-[var(--ink)]">たまに、近況を書いてください</h3>
+                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
+                  いまやっていること、現場の写真、記事のリンク。
+                  それだけで、サミットで会った方のところに届きます。毎日でなくて構いません。
+                </p>
+                <Link
+                  href={isLoggedIn ? "/dashboard" : "/signup"}
+                  className="mt-3 inline-block text-[13px] font-bold text-[var(--green-d)]"
+                >
+                  近況を書く →
+                </Link>
+              </div>
+              <div className="rounded-[12px] border border-[var(--line)] bg-white p-5">
+                <h3 className="text-[15px] font-bold text-[var(--ink)]">売りたいもの・PRしたいものを登録してください</h3>
+                <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
+                  商品・サービス・これから広めたいもの。
+                  {/* ⚠️ 事務局の約束。実際にバイヤーへ紹介する運用が前提（やらないと表示として問題になる） */}
+                  事務局が定期的にバイヤーへご紹介します。掲載は無料です。
+                </p>
+                <Link
+                  href={isLoggedIn ? "/ledger" : "/signup"}
+                  className="mt-3 inline-block text-[13px] font-bold text-[var(--green-d)]"
+                >
+                  無料で登録する →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 2つの利用導線 */}
         {/* 目的別の入口。
             写真素材が未提供なので、既存の「罫線＋見出し」の体裁をそのまま使ってリンクにしている
