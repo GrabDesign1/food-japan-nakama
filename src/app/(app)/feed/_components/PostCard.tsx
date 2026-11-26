@@ -51,7 +51,8 @@ function SharedBlock({ post, author }: { post: FeedPost; author: Author | undefi
       <p className="text-[12px] font-semibold leading-5 text-[var(--ink)]">
         {author ? (
           <Link href={`/producers/${author.id}`} className="hover:underline">
-            {author.name}
+            {/* ⚠️ 登録したては name が空。空のまま出すと誰の投稿か分からない（2026-11-26） */}
+            {author.name || "（お名前未設定の方）"}
           </Link>
         ) : (
           "退会された方"
@@ -169,7 +170,7 @@ export function PostCard({
             <p className="text-[14px] font-semibold leading-5 text-[var(--ink)]">
               {author ? (
                 <Link href={`/producers/${author.id}`} className="hover:underline">
-                  {author.name}
+                  {author.name || "（お名前未設定の方）"}
                 </Link>
               ) : (
                 "退会された方"

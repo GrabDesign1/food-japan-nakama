@@ -18,8 +18,13 @@ export function ShareCard({
   /** 公開ページでは会員ページへ送らない（ログインが要るため） */
   linkAuthor?: boolean;
 }) {
-  const name = s.author?.contactName || s.author?.name || "退会された方";
-  const sub = s.author?.contactName ? s.author?.name : null;
+  // ⚠️⚠️ **「名前が空」と「行が無い」を混ぜない。**（2026-11-26 テストアカウントで発覚）
+  //    登録したてでお名前が未入力の方まで「退会された方」と出てしまっていた。
+  //    退会と言ってよいのは、会員の行そのものが見つからないときだけ。
+  const name = s.author
+    ? s.author.contactName || s.author.name || "（お名前未設定の方）"
+    : "退会された方";
+  const sub = s.author?.contactName ? s.author.name || null : null;
 
   return (
     <article className="overflow-hidden rounded-[12px] border border-[var(--line)] bg-white">
