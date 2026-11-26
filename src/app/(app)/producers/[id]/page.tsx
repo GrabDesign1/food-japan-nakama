@@ -300,7 +300,7 @@ export default async function ProducerDetailPage({
                 : "まだ投稿がありません。"}
             </p>
             {isOwner ? (
-              <Link href="/feed" className={`${btn("primary", "sm")} mt-4 inline-block`}>
+              <Link href="/dashboard" className={`${btn("primary", "sm")} mt-4 inline-block`}>
                 取り組みを書く →
               </Link>
             ) : null}
@@ -322,7 +322,7 @@ export default async function ProducerDetailPage({
             </ul>
             {wall.hasMore ? (
               <p className="mt-3">
-                <Link href="/feed" className="text-[13px] text-[var(--green-d)] hover:underline">
+                <Link href="/dashboard" className="text-[13px] text-[var(--green-d)] hover:underline">
                   みんなの取り組みで、続きを読む →
                 </Link>
               </p>

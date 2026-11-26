@@ -423,7 +423,7 @@ export async function weeklyTasks(
       kind: "field",
       todo: "事務局から、壁に1本書く",
       why: "この7日間、誰も投稿していません。場が止まっています。誰かが先に書かないと、誰も書きません。",
-      href: "/feed",
+      href: "/dashboard",
       when: "今日",
     });
   } else if (pulse.posts7 <= 2) {
@@ -432,7 +432,7 @@ export async function weeklyTasks(
       kind: "field",
       todo: "事務局から、壁に1本書く",
       why: `この7日間の投稿は${pulse.posts7}件だけです。事務局が先に書くと、続く人が出ます。`,
-      href: "/feed",
+      href: "/dashboard",
       when: "今週",
     });
   }

@@ -30,7 +30,6 @@ export type PostState = { ok?: boolean; error?: string };
  *  ⚠️ ホーム（/dashboard）にも同じ流れが出ている（2026-11-26〜）。
  *     ここに足さないと、ホームの投稿欄から書いたのに下の流れに出てこない。 */
 function revalidateFeed(memberId?: string | null): void {
-  revalidatePath("/feed");
   revalidatePath("/dashboard");
   if (memberId) revalidatePath(`/producers/${memberId}`);
 }
@@ -188,7 +187,7 @@ export async function comment(formData: FormData): Promise<void> {
     );
   }
   // コメントはプロフィールの取り組み欄には出ないので、流れだけ作り直す
-  revalidatePath("/feed");
+  revalidatePath("/dashboard");
 }
 
 export async function removeComment(formData: FormData): Promise<void> {
@@ -196,7 +195,7 @@ export async function removeComment(formData: FormData): Promise<void> {
   if (!su) return;
   const me = await getOrCreateMemberForUser(su);
   await deleteComment(me.id, String(formData.get("commentId") ?? ""));
-  revalidatePath("/feed");
+  revalidatePath("/dashboard");
 }
 
 export async function editPost(formData: FormData): Promise<void> {
@@ -251,5 +250,5 @@ export async function toggleFeedEmail(formData: FormData): Promise<void> {
   const su = await getSessionUser();
   if (!su) return;
   await setFeedEmailEnabled(su.app.id, String(formData.get("enabled") ?? "") === "1");
-  revalidatePath("/feed");
+  revalidatePath("/dashboard");
 }

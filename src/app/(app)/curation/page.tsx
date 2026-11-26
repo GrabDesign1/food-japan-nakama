@@ -26,7 +26,7 @@ export default async function CurationPage() {
         <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
           事務局が見つけた記事と、<strong>名刺を交換した仲間が共有した記事</strong>が並びます。
           あなたが読んでほしい記事は、
-          <Link href="/feed" className="underline">みんなの取り組み</Link>
+          <Link href="/dashboard" className="underline">みんなの取り組み</Link>
           にURLを貼ると、つながっている方のここに出ます。
         </p>
       </div>

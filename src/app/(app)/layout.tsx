@@ -20,7 +20,7 @@ const NAV: NavItem[] = [
   { label: "売りたい・探している", href: "/ledger", ready: true },
   { label: "進行中の活動", href: "/deals", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
-  { label: "みんなの取り組み", href: "/feed", ready: true },
+  // ⚠️ 「みんなの取り組み」はホームに一本化した（2026-11-26）。入口を2つに戻さないこと
   { label: "集まりたい", href: "/gatherings", ready: true },
   // 仲間が共有した記事＋事務局ピック（2026-11-25）
   { label: "食のキュレーション", href: "/curation", ready: true },

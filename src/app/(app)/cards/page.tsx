@@ -131,7 +131,7 @@ export default async function CardsPage({
                         </Link>
                         <div className="text-[11px] text-[var(--muted)]">{f.state.hint}</div>
                       </div>
-                      <Link href="/feed" className="shrink-0 text-[12px] text-[var(--green-d)] underline">
+                      <Link href="/dashboard" className="shrink-0 text-[12px] text-[var(--green-d)] underline">
                         取り組みを見る
                       </Link>
                     </li>

@@ -24,6 +24,9 @@ import {
 } from "@/lib/project-taxonomy";
 import { MyProfileHeader } from "@/components/MyProfileHeader";
 import { loadHomeTimeline } from "@/lib/home-timeline";
+import { normalizeShown, FEED_PAGE_SIZE, FEED_MAX_SHOWN } from "@/lib/feed";
+import { feedEmailEnabled } from "@/lib/feed-notify";
+import { toggleFeedEmail } from "../feed/actions";
 import { PostCard, type Author } from "../feed/_components/PostCard";
 import { Composer } from "../feed/_components/Composer";
 import { btn, eyebrowCls, h2Cls, h3Cls } from "@/lib/ui";
@@ -97,8 +100,14 @@ const getNextBillingTs = unstable_cache(
   { revalidate: 3600 }
 );
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ shown?: string }>;
+}) {
   const su = await getSessionUser();
+  // 「もっと読む」はURLに出す（戻ってきても同じところが開く。/feed から引き継いだ作り）
+  const shown = normalizeShown((await searchParams)?.shown);
 
   const member = su?.app.memberId
     ? await prisma.member.findUnique({ where: { id: su.app.memberId } })
@@ -127,7 +136,7 @@ export default async function DashboardPage() {
       : Promise.resolve([]),
     // ホームの「まとめた流れ」＝仲間の投稿＋売りたい・探している（2026-11-26 ユーザー指示）。
     // ⚠️ 見える範囲は home-timeline.ts に任せる。ここで where を足さない。
-    loadHomeTimeline({ memberId, tenantId }),
+    loadHomeTimeline({ memberId, tenantId, take: shown }),
     // 自分が主催する共創プロジェクトの進行中の応募（次の行動・期限を「進行中の活動」に反映）
     memberId
       ? prisma.projectApplication.findMany({
@@ -152,7 +161,7 @@ export default async function DashboardPage() {
     .filter((v): v is string => !!v);
   const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
 
-  const [unreadGroups, appMembers, viewMap, dealThreads] = await Promise.all([
+  const [unreadGroups, appMembers, viewMap, mailOn, dealThreads] = await Promise.all([
     // 商談スレッドごとの未読数（「要返信」判定）
     memberId && dealThreadIds.length
       ? prisma.message.groupBy({
@@ -171,6 +180,8 @@ export default async function DashboardPage() {
       : Promise.resolve([]),
     // 24時間以内の閲覧数（流れに出す案件のカード表示用）
     views24hMap(timeline.offeringIds),
+    // お知らせメールを受け取っているか（/feed から移した。2026-11-26）
+    su ? feedEmailEnabled(su.app.id) : Promise.resolve(false),
     // 商談のスレッドが「どの案件のものか」（進行中の活動をカードで出すため）
     dealThreadIds.length
       ? prisma.thread.findMany({
@@ -472,14 +483,9 @@ export default async function DashboardPage() {
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className={h2Cls}>仲間の動き</h2>
-              <div className="flex gap-4">
-                <Link href="/feed" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
-                  取り組みを書く →
-                </Link>
-                <Link href="/search" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
-                  案件を探す →
-                </Link>
-              </div>
+              <Link href="/search" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
+                案件を探す →
+              </Link>
             </div>
             {timeline.items.length === 0 ? (
               <EmptyState
@@ -516,6 +522,43 @@ export default async function DashboardPage() {
                 )}
               </ul>
             )}
+
+            {/* 続きを読む。⚠️ 件数をURLに出して読み直す（継ぎ足すと、いいねの後で古いまま残る） */}
+            {timeline.items.length > 0 && timeline.hasMore ? (
+              <div className="mt-6 text-center">
+                <Link
+                  href={`/dashboard?shown=${shown + FEED_PAGE_SIZE}`}
+                  className={btn("secondary", "md")}
+                  scroll={false}
+                >
+                  もっと読む
+                </Link>
+              </div>
+            ) : shown >= FEED_MAX_SHOWN ? (
+              <p className="mt-6 text-center text-[12px] text-[var(--muted)]">
+                ここまでが直近{FEED_MAX_SHOWN}件です。
+              </p>
+            ) : null}
+
+            {/* 通知メールの受け取り（/feed から移した。2026-11-26）。
+                ⚠️ 止める手段を必ず画面に置く。止められないお知らせは、やがて迷惑メール扱いになる。
+                ⚠️ メール本文が「ホームの画面いちばん下で止められます」と案内している。動かすなら文面も直すこと。 */}
+            <form
+              action={toggleFeedEmail}
+              className="mt-8 rounded-[10px] border border-[var(--line)] bg-[#fcfcfb] px-4 py-4"
+            >
+              <p className="text-[13px] font-semibold text-[var(--ink)]">お知らせメール</p>
+              <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
+                自分の投稿へのコメント・いいね・紹介と、自分のコメントへの返信を
+                {mailOn ? "メールでお知らせしています。" : "いまはお知らせしていません。"}
+                <br />
+                いいねは、同じ投稿について1日1通までにしています。
+              </p>
+              <input type="hidden" name="enabled" value={mailOn ? "0" : "1"} />
+              <button type="submit" className={`${btn("secondary", "sm")} mt-3`}>
+                {mailOn ? "お知らせメールを止める" : "お知らせメールを受け取る"}
+              </button>
+            </form>
           </section>
 
           {/* 進行中の活動（商談＋共創プロジェクト統合） */}

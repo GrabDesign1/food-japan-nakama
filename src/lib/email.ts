@@ -860,11 +860,11 @@ function feedNoticeHtml(params: {
         : ""
     }
     <p style="margin:22px 0">
-      <a href="${APP_URL}/feed#p-${esc(postId)}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">${buttonLabel}</a>
+      <a href="${APP_URL}/dashboard#p-${esc(postId)}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">${buttonLabel}</a>
     </p>
     <p style="font-size:12px;color:#7C8899">
       このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
-      この種類のお知らせは、<a href="${APP_URL}/feed" style="color:#7C8899">みんなの取り組み</a>の画面いちばん下で止められます。
+      この種類のお知らせは、<a href="${APP_URL}/dashboard" style="color:#7C8899">ホーム</a>の画面いちばん下で止められます。
     </p>
   </div>`;
 }
@@ -983,7 +983,7 @@ export async function notifyGatheringJoin(params: {
     </p>
     <p style="font-size:12px;color:#7C8899">
       このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
-      この種類のお知らせは、<a href="${APP_URL}/feed" style="color:#7C8899">みんなの取り組み</a>の画面いちばん下で止められます。
+      この種類のお知らせは、<a href="${APP_URL}/dashboard" style="color:#7C8899">ホーム</a>の画面いちばん下で止められます。
     </p>
   </div>`;
   await send({

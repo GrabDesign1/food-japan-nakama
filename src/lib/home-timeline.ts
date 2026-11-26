@@ -52,6 +52,8 @@ export type HomeTimeline = {
   offeringIds: string[];
   /** 交換した相手がまだ居ないか（空のときの案内を出し分ける） */
   hasConnections: boolean;
+  /** まだ続きがあるか（「もっと読む」を出すかどうか） */
+  hasMore: boolean;
 };
 
 /** ホームに出す件数。多すぎると重いので、続きは各ページで見てもらう */
@@ -95,5 +97,7 @@ export async function loadHomeTimeline(args: {
     feed,
     offeringIds: items.flatMap((i) => (i.kind === "offering" ? [i.offering.id] : [])),
     hasConnections: feed.posts.some((p) => p.authorMemberId !== args.memberId),
+    // ⚠️ 混ぜて take 件に切っているので、どちらかに続きがあれば「もっと読む」を出す
+    hasMore: feed.hasMore || offerings.length >= take,
   };
 }
