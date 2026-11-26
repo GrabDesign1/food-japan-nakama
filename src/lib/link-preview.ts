@@ -17,10 +17,17 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
-/** 取りに行くときの待ち時間 */
-const TIMEOUT_MS = 5000;
-/** 読む本文の上限（見出しは先頭にある） */
-const MAX_HTML_BYTES = 512 * 1024;
+/** 取りに行くときの待ち時間。⚠️ 下の「上限まで読む」に変えたぶん、短いと途中で切れる */
+const TIMEOUT_MS = 8000;
+/**
+ * 読む本文の上限。
+ * ⚠️⚠️ **「見出しは先頭にある」は成り立たない。**（2026-11-26 実測）
+ *    nagoya.food-japan-summit.jp は `</head>` が 1,493 バイト目なのに、
+ *    og:image は 421,932 バイト目、`<title>` は 510,220 バイト目にあった
+ *    （配信しながら作る作りのページでは、メタ情報が後から流れてくる）。
+ *    512KB では `<title>` に届かず、読めたり読めなかったりしていた。
+ */
+const MAX_HTML_BYTES = 1536 * 1024;
 /** 追う転送の回数 */
 const MAX_REDIRECTS = 3;
 /** 画像として受け取る形式 */
@@ -188,7 +195,19 @@ export async function fetchLinkPreview(raw: string): Promise<LinkPreview | null>
       if (done) break;
       bytes += value.byteLength;
       html += decoder.decode(value, { stream: true });
-      if (bytes >= MAX_HTML_BYTES || /<\/head>/i.test(html)) break;
+      if (bytes >= MAX_HTML_BYTES) break;
+      // ⚠️⚠️ **`</head>` を見つけただけで止めないこと。**（2026-11-26 本番で踏んだ）
+      //    上の MAX_HTML_BYTES の注記のとおり、`</head>` のあとにメタ情報が流れてくる
+      //    ページが実在する。止めてよいのは「画像と見出しの両方を受け取れた」ときだけ。
+      // ⚠️ **必ず `<meta ...>` の形で確かめること。** 文字列 "og:image" だけを見ると、
+      //    画面を組み立てるための内部データ（JSON）に当たって、本物のメタ情報が
+      //    流れてくる前に止まってしまう（2026-11-26 実測。本物は 510,220 バイト目にあった）。
+      if (
+        /<meta[^>]+(?:og:image|twitter:image)/i.test(html) &&
+        /<meta[^>]+(?:og:title|twitter:title)|<title[^>]*>/i.test(html)
+      ) {
+        break;
+      }
     }
   } catch {
     return null;
