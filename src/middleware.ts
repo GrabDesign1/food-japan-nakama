@@ -14,6 +14,12 @@ const PUBLIC_PATHS = [
   "/fieldwork",
   // 「このサービス、使いますか？」のご案内（合言葉つきの個人宛・noindex・2026-11-23）
   "/join",
+  // 宮崎2026の特設ページ（公開側。2026-11-26）
+  // ⚠️⚠️ **"/summit" を丸ごと公開にしないこと。** /summit・/summit/share・/summit/reports は
+  //    会員だけが見るページ。ここは**この1本だけ**を通す（配下に会員向けを作らない）。
+  "/summit/2026-miyazaki",
+  // 特設ページの写真・リンク画像の配信口（公開に出したものだけ返す。判定はルート側）
+  "/api/summit-media",
   // SEO/AIO: クローラ向けファイル（要公開）
   "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
 ];

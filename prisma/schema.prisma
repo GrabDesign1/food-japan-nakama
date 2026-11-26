@@ -1339,6 +1339,54 @@ model ContactCard {
 //    それでも AI の学習や分析には使わない（会員の取り組みを勝手に材料にしない）。
 
 /// コミュニティへの投稿。取り組み・記事・近況。
+/// サミット特設ページへの共有（写真・動画・記事）。2026-11-26 ユーザー指示
+/// 「2026 宮崎 の特設サイトを作って、皆からの写真の共有、動画の共有、記事の共有をするページを準備して」
+///
+/// ⚠️⚠️ **既定は会員だけに見える。** featured を事務局が立てたものだけが公開ページに出る
+///    （ユーザー選択 2026-11-26「両方（二段構え）」）。会場の写真には人の顔が写るため。
+/// ⚠️ 動画は**URLを貼る形式**（ユーザー選択）。動画ファイルは預からない。
+/// ⚠️ 写真は非公開バケット post-images に summit/ 配下で置き、/api/summit-media から配る。
+model SummitShare {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// どの開催か（例: 2026-miyazaki）。将来の開催も同じ表に積む
+  eventSlug String @map("event_slug")
+
+  authorMemberId String @map("author_member_id")
+
+  /// "photo"（写真）| "video"（動画URL）| "article"（記事URL）
+  kind String
+
+  /// ひとこと（任意）
+  body String
+
+  /// 非公開バケット内の保存パス（公開URLは作らない）
+  imagePaths String[] @map("image_paths")
+
+  /// 動画・記事のURLと、そこから読んだ見出し（OGP）
+  /// ⚠️ linkImageUrl は外部URLをそのまま画面に出さない。/api/summit-media 経由で配る
+  linkUrl      String? @map("link_url")
+  linkTitle    String? @map("link_title")
+  linkImageUrl String? @map("link_image_url")
+  linkSiteName String? @map("link_site_name")
+
+  /// 事務局が公開ページへ出すと決めたか。⚠️ 既定 false（勝手に世に出さない）
+  featured   Boolean   @default(false)
+  featuredAt DateTime? @map("featured_at")
+
+  /// 削除は論理削除（通報への対応記録を残すため、行そのものは消さない）
+  deletedAt DateTime? @map("deleted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, eventSlug, createdAt])
+  @@index([eventSlug, featured, createdAt])
+  @@index([authorMemberId])
+  @@map("summit_shares")
+}
+
 model Post {
   id       String @id @default(cuid())
   tenantId String @map("tenant_id")

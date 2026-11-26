@@ -28,6 +28,8 @@ const NAV: NavItem[] = [
   { label: "サミットで会った人", href: "/summit", ready: true },
   // 開催報告（セッションごとの記事）。会員だけが読む（2026-11-25）
   { label: "開催報告を読む", href: "/summit/reports", ready: true },
+  // 宮崎2026の写真・動画・記事を持ち寄る場所（2026-11-26）
+  { label: "宮崎2026 みんなの記録", href: "/summit/share", ready: true },
   { label: "交換カード", href: "/cards", ready: true, section: "その他" },
   { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },
   { label: "お気に入り", href: "/favorites", ready: true, section: "その他" },
