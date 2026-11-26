@@ -6,6 +6,7 @@ import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { signOut } from "../(auth)/actions";
 import { MobileNav } from "./_components/MobileNav";
+import { MessagePeek } from "./_components/MessagePeek";
 import { btn } from "@/lib/ui";
 
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; section?: string };
@@ -159,18 +160,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 {ROLE_LABEL[su.app.role] ?? su.app.role}
               </div>
             </div>
-            <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-white font-serif text-[15px] text-[var(--green-d)]">
-              {member?.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={member.avatarUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                initial
-              )}
-            </div>
+            {/*
+              右上のアバターの右下に、メッセージの入口と届いている件数（2026-11-27 ユーザーご指示
+              「マイページのアイコン　右　下　に　メッセージのアイコンをつけて、バッチで届いた件数だすようにして」
+              「右上ね」「クリックしたらこんな風に表示するようにして」）。
+              ⚠️ 件数はここで数えた `unread` を渡す（⚠️⚠️ 中の一覧は、押したときにだけ読みに行く）。
+            */}
+            <MessagePeek unread={unread} avatarUrl={member?.avatarUrl ?? null} initial={initial} />
             <form action={signOut}>
               <button
                 type="submit"
