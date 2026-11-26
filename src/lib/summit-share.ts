@@ -7,7 +7,7 @@
 // ⚠️ 動画はURLを貼る形式。動画ファイルは預からない（保存料と変換の仕組みを持たない）。
 import { prisma } from "@/lib/db";
 import {
-  SUMMIT_EVENT_SLUG, SHARE_BODY_MAX, SHARE_IMAGE_MAX, SHARE_PAGE_SIZE, type ShareKind,
+  SHARE_BODY_MAX, SHARE_IMAGE_MAX, SHARE_PAGE_SIZE, normalizeEventSlug, type ShareKind,
 } from "@/lib/summit-share-shared";
 
 // ⚠️ 画面からも使う値は summit-share-shared.ts に置いてある（prisma を読ませないため）。
@@ -39,6 +39,8 @@ function toKind(v: string): ShareKind {
  * ⚠️ onlyFeatured=true は**公開ページ専用**。ログインしていない人に渡すのはこれだけ。
  */
 export async function listShares(args: {
+  /** どの開催か。⚠️ 必ず渡す（知らない値は既定の開催に寄せる） */
+  eventSlug: string;
   tenantId?: string;
   viewerMemberId?: string;
   onlyFeatured?: boolean;
@@ -46,7 +48,7 @@ export async function listShares(args: {
 }): Promise<ShareView[]> {
   const rows = await prisma.summitShare.findMany({
     where: {
-      eventSlug: SUMMIT_EVENT_SLUG,
+      eventSlug: normalizeEventSlug(args.eventSlug),
       deletedAt: null,
       ...(args.tenantId ? { tenantId: args.tenantId } : {}),
       ...(args.onlyFeatured ? { featured: true } : {}),
@@ -88,10 +90,10 @@ export async function listShares(args: {
   });
 }
 
-export async function countShares(onlyFeatured = false): Promise<number> {
+export async function countShares(eventSlug: string, onlyFeatured = false): Promise<number> {
   return prisma.summitShare.count({
     where: {
-      eventSlug: SUMMIT_EVENT_SLUG,
+      eventSlug: normalizeEventSlug(eventSlug),
       deletedAt: null,
       ...(onlyFeatured ? { featured: true } : {}),
     },
@@ -99,6 +101,7 @@ export async function countShares(onlyFeatured = false): Promise<number> {
 }
 
 export async function createShare(args: {
+  eventSlug: string;
   tenantId: string;
   authorMemberId: string;
   kind: ShareKind;
@@ -109,7 +112,7 @@ export async function createShare(args: {
   const row = await prisma.summitShare.create({
     data: {
       tenantId: args.tenantId,
-      eventSlug: SUMMIT_EVENT_SLUG,
+      eventSlug: normalizeEventSlug(args.eventSlug),
       authorMemberId: args.authorMemberId,
       kind: args.kind,
       body: args.body.slice(0, SHARE_BODY_MAX),

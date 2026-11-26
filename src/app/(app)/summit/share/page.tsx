@@ -8,7 +8,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser, isAdminRole } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
-import { listShares, countShares, SUMMIT_EVENT_NAME } from "@/lib/summit-share";
+import { listShares, countShares } from "@/lib/summit-share";
+import { SUMMIT_EVENTS, findSummitEvent, normalizeEventSlug } from "@/lib/summit-share-shared";
 import { EmptyState } from "@/components/EmptyState";
 import { btn, eyebrowCls, h1Cls } from "@/lib/ui";
 import { ShareComposer } from "./_components/ShareComposer";
@@ -16,26 +17,57 @@ import { ShareCard } from "./_components/ShareCard";
 import { removeMyShare, toggleFeatured, removeShareAsAdmin } from "./actions";
 
 export const metadata: Metadata = {
-  title: "宮崎2026 みんなの記録",
+  title: "みんなの記録",
   robots: { index: false, follow: false },
 };
 
-export default async function SummitSharePage() {
+export default async function SummitSharePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ e?: string }>;
+}) {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su);
   const admin = isAdminRole(su.app.role);
 
-  const [shares, publicCount] = await Promise.all([listShares({ viewerMemberId: me.id }), countShares(true)]);
+  // ⚠️ 知らない値が来ても落とさない。既定の開催に寄せる
+  const slug = normalizeEventSlug((await searchParams)?.e);
+  const ev = findSummitEvent(slug)!;
+
+  const [shares, publicCount] = await Promise.all([
+    listShares({ eventSlug: slug, viewerMemberId: me.id }),
+    countShares(slug, true),
+  ]);
 
   return (
     <div className="mx-auto max-w-[680px] px-4 py-8">
-      <div className={eyebrowCls}>FOOD JAPAN SUMMIT 2026 in MIYAZAKI</div>
-      <h1 className={`${h1Cls} mt-1`}>宮崎2026 みんなの記録</h1>
+      <div className={eyebrowCls}>{ev.name}</div>
+      <h1 className={`${h1Cls} mt-1`}>{ev.shortName} みんなの記録</h1>
       <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
-        {SUMMIT_EVENT_NAME} の写真・動画・記事を持ち寄る場所です。
+        {ev.dates}／{ev.place}。写真・動画・記事を持ち寄る場所です。
         当日の様子、登壇の記録、紹介された記事。お持ちのものを共有してください。
       </p>
+
+      {/* 開催の切り替え。⚠️ 開催を増やすときは summit-share-shared.ts に1行足すだけ */}
+      {SUMMIT_EVENTS.length > 1 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {SUMMIT_EVENTS.map((o) => (
+            <Link
+              key={o.slug}
+              href={`/summit/share?e=${o.slug}`}
+              aria-current={o.slug === slug ? "page" : undefined}
+              className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold ${
+                o.slug === slug
+                  ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                  : "border-[var(--line)] text-[var(--ink-2)] hover:border-[var(--ink)]"
+              }`}
+            >
+              {o.shortName}
+            </Link>
+          ))}
+        </div>
+      ) : null}
       <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
         <Link href="/summit/reports" className="font-bold text-[var(--green-d)] hover:underline">
           セッションごとの開催報告を読む →
@@ -43,13 +75,13 @@ export default async function SummitSharePage() {
       </p>
 
       <div className="mt-6">
-        <ShareComposer />
+        <ShareComposer eventSlug={slug} eventName={ev.shortName} />
       </div>
 
       {publicCount > 0 ? (
         <p className="mt-4 text-[12px] text-[var(--muted)]">
           このうち {publicCount}件 を
-          <a href="/summit/2026-miyazaki" target="_blank" rel="noreferrer" className="ml-1 underline">
+          <a href={`/summit/${slug}`} target="_blank" rel="noreferrer" className="ml-1 underline">
             公開ページ
           </a>
           に出しています。

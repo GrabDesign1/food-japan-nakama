@@ -8,7 +8,14 @@ import { btn, input as inputCls } from "@/lib/ui";
 import { SHARE_BODY_MAX, SHARE_IMAGE_MAX } from "@/lib/summit-share-shared";
 import { submitShare, type ShareState } from "../actions";
 
-export function ShareComposer() {
+export function ShareComposer({
+  eventSlug,
+  eventName,
+}: {
+  /** どの開催に出すか。⚠️ 画面のタブと必ず一致させる */
+  eventSlug: string;
+  eventName: string;
+}) {
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -27,7 +34,10 @@ export function ShareComposer() {
 
   return (
     <form action={formAction} className="rounded-[12px] border border-[var(--line)] bg-white p-5" noValidate>
-      <p className="text-[14px] font-bold text-[var(--ink)]">当日の写真・動画・記事を共有する</p>
+      <input type="hidden" name="eventSlug" value={eventSlug} />
+      <p className="text-[14px] font-bold text-[var(--ink)]">
+        {eventName} の写真・動画・記事を共有する
+      </p>
       <p className="mt-1 text-[12px] leading-6 text-[var(--ink-2)]">
         会場の写真、撮った動画のURL（YouTube・Instagramなど）、取り上げられた記事のURL。どれでも構いません。
       </p>

@@ -724,15 +724,23 @@ Phase 7 では下記から着手する。**着手前にこの節と「やるこ�
 | 画面 | パス | 誰が見るか |
 |---|---|---|
 | 持ち寄る場所 | `/summit/share` | **会員だけ**（(app) の中） |
-| 公開ページ | `/summit/2026-miyazaki` | **誰でも**（(public)。middleware に1本だけ通してある） |
+| 公開ページ | `/summit/[event]` | **誰でも**（(public)。middleware に開催ごとに1本ずつ通す） |
 | 写真・リンク画像の配信口 | `/api/summit-media/[id]` | 公開に出したものは誰でも／それ以外はログイン必須 |
 
 - 表は `summit_shares`（`SummitShare`）。1つの表に `eventSlug` で開催を分けて積む。
 - ⚠️⚠️ **featured が立ったものだけ公開ページに出る。** 既定は false。立てられるのは事務局だけ
   （`toggleFeatured`・監査ログを書く）。会場の写真には人の顔が写るので、自動で世に出さない。
   **写っている方の同意は、押す事務局が確かめる。**
+### 開催を増やすとき（2026-11-26 に名古屋を追加して2件になった）
+1. `src/lib/summit-share-shared.ts` の **`SUMMIT_EVENTS` に1行足す**（slug・正式名・短い名前・日付・会場・見出し）
+2. **`src/middleware.ts` の `PUBLIC_PATHS` に `"/summit/<slug>"` を足す**
+   ⚠️ 忘れると、公開ページなのにログインを求められる
+これだけで、会員側のタブ（`/summit/share?e=<slug>`）と公開ページ（`/summit/<slug>`）が増える。
+- いまの2件：`2026-miyazaki`（2026-11-17・終了）／`2026-nagoya`（2026-12-15・16・名鉄グランドホテル）
+- ⚠️ **これからの開催は `upcoming: true`**。文面が未来形になる（「開催します」「開催に向けて準備中です」）。
+  **終わったら false に直すこと。** 直さないと、終わった会を「開催します」と書き続ける。
 - ⚠️ **middleware で `/summit` を丸ごと公開にしないこと。** `/summit`・`/summit/share`・`/summit/reports`
-  は会員向け。公開にしてよいのは `/summit/2026-miyazaki` の1本だけ。
+  は会員向け。公開にしてよいのは `/summit/<開催slug>` だけ。
 - 動画はURLのみ（ファイルは預からない）。`kind` はURLの行き先から自動判定（YouTube/Vimeo/TikTok/
   Instagramのreel・tv/Facebookのvideos → video、それ以外のURL → article、写真あり → photo）。
 - 写真は既存の非公開バケット `post-images` の **`summit/` 配下**に置く（バケットを増やしていない）。

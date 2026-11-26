@@ -14,8 +14,10 @@ import { fetchLinkPreview } from "@/lib/link-preview";
 import { writeAudit } from "@/lib/audit";
 import {
   createShare, deleteMyShare, adminDeleteShare, setFeatured,
-  SHARE_BODY_MAX, SHARE_IMAGE_MAX, type ShareKind,
 } from "@/lib/summit-share";
+import {
+  SHARE_BODY_MAX, SHARE_IMAGE_MAX, SUMMIT_EVENTS, normalizeEventSlug, type ShareKind,
+} from "@/lib/summit-share-shared";
 
 const BUCKET = "post-images";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -31,6 +33,8 @@ export async function submitShare(_prev: ShareState, fd: FormData): Promise<Shar
   // いたずらよけ（人には見えない欄）
   if (String(fd.get("_gotcha") ?? "")) return { ok: true };
 
+  // ⚠️ 開催は画面から来るが、知らない値は既定の開催に寄せる（勝手な slug を作らせない）
+  const eventSlug = normalizeEventSlug(String(fd.get("eventSlug") ?? ""));
   const body = String(fd.get("body") ?? "").slice(0, SHARE_BODY_MAX);
   const url = String(fd.get("url") ?? "").trim();
   const files = fd.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
@@ -77,6 +81,7 @@ export async function submitShare(_prev: ShareState, fd: FormData): Promise<Shar
       : "article";
 
   await createShare({
+    eventSlug,
     tenantId: me.tenantId,
     authorMemberId: me.id,
     kind,
@@ -86,6 +91,7 @@ export async function submitShare(_prev: ShareState, fd: FormData): Promise<Shar
   });
 
   revalidatePath("/summit/share");
+  revalidatePath(`/summit/${eventSlug}`);
   return { ok: true };
 }
 
@@ -96,7 +102,7 @@ export async function removeMyShare(fd: FormData): Promise<void> {
   const me = await getOrCreateMemberForUser(su);
   await deleteMyShare(me.id, String(fd.get("id") ?? ""));
   revalidatePath("/summit/share");
-  revalidatePath("/summit/2026-miyazaki");
+  for (const e of SUMMIT_EVENTS) revalidatePath(`/summit/${e.slug}`);
 }
 
 /**
@@ -115,7 +121,7 @@ export async function toggleFeatured(fd: FormData): Promise<void> {
     }).catch((e) => console.error("[summit-share] 監査ログに失敗:", e));
   }
   revalidatePath("/summit/share");
-  revalidatePath("/summit/2026-miyazaki");
+  for (const e of SUMMIT_EVENTS) revalidatePath(`/summit/${e.slug}`);
 }
 
 /** 事務局：消す（通報対応など） */
@@ -130,5 +136,5 @@ export async function removeShareAsAdmin(fd: FormData): Promise<void> {
     }).catch((e) => console.error("[summit-share] 監査ログに失敗:", e));
   }
   revalidatePath("/summit/share");
-  revalidatePath("/summit/2026-miyazaki");
+  for (const e of SUMMIT_EVENTS) revalidatePath(`/summit/${e.slug}`);
 }
