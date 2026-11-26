@@ -1503,6 +1503,12 @@ model Relationship {
   /// 出会った文脈（card-context.ts の MeetContext.code）。複数持てる＝重なりが効く
   contextCodes String[] @map("context_codes")
 
+  /// 「そろそろご連絡を」を送った日時（2026-11-26 追加）。1回だけ送るための印
+  /// ⚠️ 接触があったら null に戻す（また離れたときに、もう一度知らせるため）
+  fadingNotifiedAt DateTime? @map("fading_notified_at")
+  /// 「このままだと切れます」を送った日時。同上
+  coldNotifiedAt   DateTime? @map("cold_notified_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

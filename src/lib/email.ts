@@ -1086,3 +1086,75 @@ export async function sendMemberInvite(params: {
     html,
   });
 }
+
+/**
+ * 関係が薄れてきた方のお知らせ（2026-11-26 ユーザー指示
+ *   「93日で半減するとか400日以上で名刺交換が無かったことになることも皆に通知していこう」）。
+ *
+ * ⚠️⚠️ **催促にしない。** 相手を責める言い方・「今すぐ」を書かない。気づきだけ渡して、あとは本人に任せる。
+ * ⚠️⚠️ **止め方を必ず書く。** 止められないお知らせは、やがて迷惑メール扱いになる。
+ * ⚠️ 1つの関係につき1回だけ（印は relationships.fading_notified_at / cold_notified_at）。
+ */
+export async function sendRelationshipReminder(params: {
+  to: string;
+  /** 宛名 */
+  name: string;
+  /** そろそろご連絡を（半年ほどやり取りが無い方） */
+  fading: string[];
+  /** このままだと切れる（1年2か月ほどやり取りが無い方） */
+  cold: string[];
+  /** 名前を並べる上限。超えた分は「ほか◯名」 */
+  maxNames: number;
+}): Promise<void> {
+  const list = (names: string[]): string => {
+    const shown = names.slice(0, params.maxNames).map((n) => esc(n));
+    const rest = names.length - shown.length;
+    return shown.join("、") + (rest > 0 ? ` ほか${rest}名` : "");
+  };
+
+  const blocks: string[] = [];
+  if (params.cold.length) {
+    blocks.push(`
+    <div style="margin:18px 0;padding:14px 16px;border:1px solid #E7C7BE;border-radius:8px;background:#FBE6E4">
+      <p style="margin:0;font-size:13px;font-weight:bold;color:#8A1C14">1年以上、やり取りがありません（${params.cold.length}名）</p>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.9;color:#3C4A62">${list(params.cold)}</p>
+      <p style="margin:8px 0 0;font-size:12px;line-height:1.8;color:#7C8899">
+        このままだと、NAKAMAでは「生きている関係」に数えなくなります。ひとこと送るだけで戻ります。
+      </p>
+    </div>`);
+  }
+  if (params.fading.length) {
+    blocks.push(`
+    <div style="margin:18px 0;padding:14px 16px;border:1px solid #DBE1D9;border-radius:8px;background:#F4F5F6">
+      <p style="margin:0;font-size:13px;font-weight:bold;color:#141414">半年ほど、やり取りがありません（${params.fading.length}名）</p>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.9;color:#3C4A62">${list(params.fading)}</p>
+    </div>`);
+  }
+
+  const html = `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:560px;margin:0 auto;color:#141414">
+    <p style="font-size:14px;line-height:1.9;color:#3C4A62">${esc(params.name)} さま</p>
+    <h2 style="font-size:17px;border-bottom:2px solid #141414;padding-bottom:8px">
+      そろそろ、ご連絡してみませんか
+    </h2>
+    <p style="font-size:14px;line-height:1.9;color:#3C4A62">
+      名刺を交換した方のうち、しばらくやり取りのない方をお知らせします。
+      急ぐ用事がなくても、近況をひとこと書くだけで十分です。
+    </p>
+    ${blocks.join("")}
+    <p style="margin:22px 0">
+      <a href="${APP_URL}/dashboard" style="display:inline-block;background:#FF3131;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;font-weight:bold">近況を書く</a>
+      <a href="${APP_URL}/cards" style="display:inline-block;margin-left:10px;color:#B8272D;text-decoration:none;padding:12px 8px;font-size:13px">交換カードを見る</a>
+    </p>
+    <p style="font-size:11px;line-height:1.8;color:#7C8899;border-top:1px solid #E2E4E6;padding-top:10px">
+      同じ方について、このお知らせは1回だけお送りします。<br />
+      この種類のお知らせは、<a href="${APP_URL}/dashboard" style="color:#7C8899">ホーム</a>の画面いちばん下で止められます。
+    </p>
+  </div>`;
+
+  await send({
+    to: [params.to],
+    subject: "【FOOD JAPAN NAKAMA】しばらくやり取りのない方がいます",
+    html,
+  });
+}

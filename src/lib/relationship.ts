@@ -58,6 +58,9 @@ export async function recordContact(params: {
         lastContactAt: now,
         lastKind: kind,
         contextCodes: [...contexts],
+        // ⚠️ やり取りが戻ったら、お知らせの印を外す（また離れたときに、もう一度知らせるため）
+        fadingNotifiedAt: null,
+        coldNotifiedAt: null,
       },
     });
 
