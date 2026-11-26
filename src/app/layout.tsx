@@ -22,7 +22,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nakama.food-japan-su
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
-  title: "FOOD JAPAN NAKAMA｜あなたの食材・素材・サービスを探している人と出会う",
+  // ⚠️ 2026-11-26 ユーザー指定の文言。出会いで止めず「継続的な事業へ」まで書く
+  //    （サイトの意図＝出会いを続ける場所。トップ本文と対にしてある）
+  title: "FOOD JAPAN NAKAMA｜食での共創の出会いを、継続的な事業へ。",
   description:
     "全国の食品メーカー、飲食店、小売、加工会社などが募集する食材・原料・商品を確認し、直接提案できます。商品の掲載・案件の閲覧・問い合わせの送信は無料。事務局による相手探し、商談、実証・事業化支援は個別契約です。",
   // 各ページのURLをそのままcanonicalにする（相対指定はページごとに解決される）
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "FOOD JAPAN NAKAMA",
     locale: "ja_JP",
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "FOOD JAPAN NAKAMA｜あなたの食材・素材・サービスを探している人と出会う" }],
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "FOOD JAPAN NAKAMA｜食での共創の出会いを、継続的な事業へ。" }],
   },
   twitter: {
     card: "summary_large_image",
