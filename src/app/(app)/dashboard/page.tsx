@@ -485,7 +485,7 @@ export default async function DashboardPage({
               <h2 className={h2Cls}>仲間の動き</h2>
               <div className="flex gap-4">
                 <Link href="/matching" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
-                  つながれそうな相手 →
+                  オススメの仲間 →
                 </Link>
                 <Link href="/search" className="-my-1 py-1 text-[13px] font-bold text-[var(--green-d)]">
                   案件を探す →

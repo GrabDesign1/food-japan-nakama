@@ -11,7 +11,7 @@ import { matchesForMember, type Match } from "@/lib/matching";
 import { EmptyState } from "@/components/EmptyState";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 
-export const metadata: Metadata = { title: "つながれそうな相手", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "オススメの仲間", robots: { index: false, follow: false } };
 
 function MatchRow({ m, mineLabel }: { m: Match; mineLabel: string }) {
   return (
@@ -66,7 +66,7 @@ export default async function MatchingPage() {
   return (
     <div className="mx-auto max-w-[880px] px-4 py-8">
       <div className={eyebrowCls}>MATCHING</div>
-      <h1 className={`${h1Cls} mt-1`}>つながれそうな相手</h1>
+      <h1 className={`${h1Cls} mt-1`}>オススメの仲間</h1>
       <p className="mt-2 text-[13px] leading-7 text-[var(--ink-2)]">
         あなたが出している案件と、条件の近い相手を並べています。
         <strong className="text-[var(--ink)]">なぜ合うのか</strong>も一緒に出しているので、
