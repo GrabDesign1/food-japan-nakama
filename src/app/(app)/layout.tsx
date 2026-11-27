@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { signOut } from "../(auth)/actions";
 import { MobileNav } from "./_components/MobileNav";
 import { MessagePeek } from "./_components/MessagePeek";
+import { TopBarNav } from "./_components/TopBarNav";
 import { NavIcon } from "./_components/NavIcon";
 import { incomingRequestCount } from "@/lib/connections";
 import { btn } from "@/lib/ui";
@@ -23,7 +24,7 @@ const NAV: NavItem[] = [
   // ⚠️ 会員を見る入口がナビに1つも無く「探してもない」とご指摘（2026-11-25）
   { label: "メンバーを見る", href: "/members", ready: true },
   // 仲間の申請（2026-11-27）。⚠️ 承認はこの1か所だけ。プロフィール側に増やさないこと
-  { label: "仲間の申請", href: "/connections", ready: true },
+  { label: "つながり", href: "/connections", ready: true },
   { label: "売りたい・探している", href: "/ledger", ready: true },
   { label: "進行中の活動", href: "/deals", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
@@ -182,16 +183,30 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               ⚠️⚠️ **アバターとは別の丸**（同日「アイコンわけてよ。」）。重ねると顔写真が読みにくい。
               ⚠️ 件数はここで数えた `unread` を渡す（⚠️⚠️ 中の一覧は、押したときにだけ読みに行く）。
             */}
+            {/*
+              よく行く画面の丸いアイコン（2026-11-27 ユーザーご指示・Facebook の上の帯に合わせた）。
+              ⚠️ つながりの丸には、届いている申請の件数を出す。
+            */}
+            <TopBarNav pending={pendingConnections} />
             <MessagePeek unread={unread} />
             {/* ⚠️ 狭い画面では出さない（メッセージの丸が増え、ロゴが3行に折れたため・375px で実測） */}
-            <div className="hidden h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[15px] text-[var(--green-d)] sm:grid">
+            {/*
+              ⚠️ 2026-11-27：ただの丸から、プロフィールへのリンクにした
+                 （ユーザー指示「ボタンリンクも表示して」。Facebook の右上のアカウントと同じ）。
+            */}
+            <Link
+              href="/profile"
+              title="プロフィール"
+              aria-label="プロフィール"
+              className="hidden h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white font-serif text-[15px] text-[var(--green-d)] transition hover:border-[var(--ink)] sm:grid"
+            >
               {member?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={member.avatarUrl} alt="" className="h-full w-full object-cover" />
               ) : (
                 initial
               )}
-            </div>
+            </Link>
             <form action={signOut}>
               <button
                 type="submit"

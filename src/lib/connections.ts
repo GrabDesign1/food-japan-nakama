@@ -233,3 +233,58 @@ export async function incomingRequests(meId: string, take = 20): Promise<Pending
 export async function incomingRequestCount(meId: string): Promise<number> {
   return prisma.memberConnection.count({ where: { addresseeId: meId, status: "PENDING" } });
 }
+
+/**
+ * 【一覧に出す人】2026-11-27 ユーザー指示「ボタンリンクも表示して」。
+ * 人数を押したときに出す、仲間／フォロー中／フォロワーの一覧。
+ *
+ * ⚠️⚠️ **非公開の方（listed=false／未承認）はプロフィールを開けない**
+ *    （producers/[id] が notFound にする）。⚠️ リンクにすると行き止まりになるので、
+ *    `openable` で分け、押せない行は名前だけ出す。⚠️ 人数からは減らさない（関係はあるので）。
+ */
+export type PersonRow = {
+  memberId: string;
+  name: string;
+  role: string | null;
+  photoUrl: string | null;
+  openable: boolean;
+};
+
+export type PeopleKind = "friends" | "following" | "followers";
+
+export async function connectionPeople(
+  memberId: string,
+  kind: PeopleKind,
+  take = 200,
+): Promise<PersonRow[]> {
+  let ids: string[];
+  if (kind === "friends") {
+    ids = await friendIds(memberId);
+  } else if (kind === "following") {
+    ids = await followingIds(memberId);
+  } else {
+    const rows = await prisma.memberFollow.findMany({
+      where: { followeeId: memberId },
+      select: { followerId: true },
+    });
+    ids = rows.map((r) => r.followerId);
+  }
+  if (ids.length === 0) return [];
+  const rows = await prisma.member.findMany({
+    where: { id: { in: ids.slice(0, take) } },
+    select: {
+      id: true, name: true, contactName: true, contactRole: true,
+      contactPhotoUrl: true, avatarUrl: true, status: true, listed: true,
+    },
+    orderBy: { name: "asc" },
+  });
+  return rows.map((r) => ({
+    memberId: r.id,
+    // ⚠️ 会うのは人なので、担当者名があればそちらを先に出す
+    name: r.contactName || r.name,
+    role: [r.contactRole, r.name].filter(Boolean).join("　/　") || null,
+    // ⚠️⚠️ 顔写真は contactPhotoUrl が先（登壇者の写真はこちらに入る）
+    photoUrl: r.contactPhotoUrl ?? r.avatarUrl ?? null,
+    openable: r.status === "APPROVED" && r.listed,
+  }));
+}

@@ -54,10 +54,8 @@ export function MyProfileHeader({
   const sub = [role, company].filter(Boolean).join("　/　");
 
   return (
-    <details
-      open={defaultOpen}
-      className="group overflow-hidden rounded-[14px] border border-[var(--line)] bg-white"
-    >
+    <div className="overflow-hidden rounded-[14px] border border-[var(--line)] bg-white">
+    <details open={defaultOpen} className="group">
       {/* たたんだ1行。押すと開く */}
       <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 marker:hidden hover:bg-[var(--line-soft)]/60 sm:px-5">
         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--line-soft)]">
@@ -71,24 +69,6 @@ export function MyProfileHeader({
             {personName || company || "（お名前が未登録です）"}
           </p>
           {sub ? <p className="truncate text-[12px] text-[var(--muted)]">{sub}</p> : null}
-          {/*
-            仲間とフォローの人数（2026-11-27）。⚠️ たたんだ1行にも出す——
-            ⚠️⚠️ ここは毎日見る場所なので、開かないと分からない数字にしない。
-            ⚠️ 狭い画面では「フォロワー」を落とす（⚠️ 3つ並ぶと名前が潰れる）。
-          */}
-          {counts ? (
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[12px] text-[var(--ink-2)]">
-              <span>
-                仲間 <b className="text-[var(--ink)]">{counts.friends}</b> 人
-              </span>
-              <span>
-                フォロー <b className="text-[var(--ink)]">{counts.following}</b> 人
-              </span>
-              <span className="hidden sm:inline">
-                フォロワー <b className="text-[var(--ink)]">{counts.followers}</b> 人
-              </span>
-            </p>
-          ) : null}
         </div>
         <span className="shrink-0 text-[12px] font-semibold text-[var(--muted)]">
           <span className="group-open:hidden">自分の登録情報</span>
@@ -136,5 +116,37 @@ export function MyProfileHeader({
         </div>
       </div>
     </details>
+
+      {/*
+        仲間・フォロー・フォロワーのボタンリンク（2026-11-27 ユーザー指示
+        「UIにしっかり表示してね。ボタンリンクも表示して」）。
+        ⚠️⚠️ **<details> の外に置く。** ⚠️ <summary> の中にリンクを入れると、
+           押したときに開け閉めと取り合いになる（HTML 的にも summary に操作部品は入れない）。
+        ⚠️ 0人でも出す（⚠️ 出たり消えたりすると、押す場所が動く）。
+      */}
+      {counts ? (
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--line)] bg-[var(--line-soft)]/50 px-4 py-2.5 sm:px-5">
+          <Link href="/connections?tab=friends" className={countPill}>
+            仲間 <b className="text-[14px] tabular-nums text-[var(--ink)]">{counts.friends}</b> 人
+          </Link>
+          <Link href="/connections?tab=following" className={countPill}>
+            フォロー <b className="text-[14px] tabular-nums text-[var(--ink)]">{counts.following}</b> 人
+          </Link>
+          <Link href="/connections?tab=followers" className={countPill}>
+            フォロワー <b className="text-[14px] tabular-nums text-[var(--ink)]">{counts.followers}</b> 人
+          </Link>
+          <Link
+            href="/connections"
+            className="ml-auto text-[12px] font-semibold text-[var(--green-d)] hover:underline"
+          >
+            届いた申請を見る →
+          </Link>
+        </div>
+      ) : null}
+    </div>
   );
 }
+
+/** 人数のボタンリンクの見た目（⚠️ 3つで揃えるので1か所にまとめる） */
+const countPill =
+  "inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-2)] transition hover:border-[var(--ink)] hover:text-[var(--ink)]";

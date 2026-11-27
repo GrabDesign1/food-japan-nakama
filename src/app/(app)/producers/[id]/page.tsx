@@ -211,16 +211,36 @@ export default async function ProducerDetailPage({
             仲間とフォローの人数（2026-11-27 ユーザー指示「仲間 ◯◯人　フォロー ◯◯人　というように」）。
             ⚠️ 0人でも出す（⚠️ 出たり消えたりすると、場所が動いて読みにくい）。
           */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--ink-2)]">
-            <span>
-              仲間 <b className="text-[var(--ink)]">{counts.friends}</b> 人
-            </span>
-            <span>
-              フォロー <b className="text-[var(--ink)]">{counts.following}</b> 人
-            </span>
-            <span>
-              フォロワー <b className="text-[var(--ink)]">{counts.followers}</b> 人
-            </span>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {(
+              [
+                ["仲間", counts.friends, "friends"],
+                ["フォロー", counts.following, "following"],
+                ["フォロワー", counts.followers, "followers"],
+              ] as const
+            ).map(([label, n, key]) =>
+              /*
+                ⚠️⚠️ **自分のページのときだけリンクにする**（2026-11-27「ボタンリンクも表示して」）。
+                   ⚠️ 他の方の顔ぶれを一覧で見せると、本人の同意なく「誰とつながっているか」が出てしまう。
+                   一覧（/connections）は自分のつながりしか出さない。
+              */
+              isOwner ? (
+                <Link
+                  key={key}
+                  href={`/connections?tab=${key}`}
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-2)] transition hover:border-[var(--ink)] hover:text-[var(--ink)]"
+                >
+                  {label} <b className="text-[14px] tabular-nums text-[var(--ink)]">{n}</b> 人
+                </Link>
+              ) : (
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--line-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-2)]"
+                >
+                  {label} <b className="text-[14px] tabular-nums text-[var(--ink)]">{n}</b> 人
+                </span>
+              ),
+            )}
           </div>
         </div>
 
