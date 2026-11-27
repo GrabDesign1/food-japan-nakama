@@ -23,6 +23,10 @@ const PUBLIC_PATHS = [
   "/api/summit-media",
   // SEO/AIO: クローラ向けファイル（要公開）
   "/robots.txt", "/sitemap.xml", "/llms.txt", "/og.jpg", "/BingSiteAuth.xml",
+  // PWA（2026-11-28）。⚠️⚠️ **ここを通さないと「ホーム画面に追加」が出ない。**
+  //    端末は manifest と Service Worker を**ログイン前に**取りに来るため、
+  //    ログインへ飛ばすと JSON/JS の代わりに HTML が返り、インストールできない。
+  "/manifest.webmanifest", "/sw.js", "/icons",
 ];
 
 export async function middleware(request: NextRequest) {

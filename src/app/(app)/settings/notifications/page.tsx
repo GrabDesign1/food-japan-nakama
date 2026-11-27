@@ -15,6 +15,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getNotifySettings, NOTIFY_KINDS, NOTIFY_LABEL } from "@/lib/notify-settings";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { NotifyToggle } from "./NotifyToggle";
+import { InstallApp } from "./InstallApp";
 
 export const metadata: Metadata = {
   title: "通知の設定",
@@ -54,6 +55,12 @@ export default async function NotificationSettingsPage() {
           </li>
         ))}
       </ul>
+
+      {/* ホーム画面に追加（2026-11-28・PWA）。
+          ⚠️ 通知の設定の下に置く。「スマホに届かない」理由がここだと分かるようにするため。 */}
+      <div className="mt-6">
+        <InstallApp />
+      </div>
 
       <div className="mt-6 rounded-[12px] bg-[var(--line-soft)] px-5 py-4">
         <p className="text-[12px] leading-[17px] text-[var(--muted)]">

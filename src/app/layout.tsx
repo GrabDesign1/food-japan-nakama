@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { ServiceWorker } from "./ServiceWorker";
 import { Noto_Sans_JP, Roboto } from "next/font/google";
 import "./globals.css";
 
@@ -43,6 +44,29 @@ export const metadata: Metadata = {
   verification: {
     other: { "msvalidate.01": "53A9B78DC52D0C4C5E9C7A7B9B4A982F" },
   },
+  // PWA（2026-11-28）。⚠️ 中身は src/app/manifest.ts
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    // ⚠️⚠️ iPhone の「ホーム画面に追加」はこれを使う。白地の画像を渡すこと
+    //    （透過のままだと黒い四角になる）
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "NAKAMA",
+    // ⚠️ 上部バーは地の色になじませる（black-translucent にすると時計が本文に重なる）
+    statusBarStyle: "default",
+  },
+};
+
+/**
+ * ⚠️ Android の上部バーの色。`metadata` ではなくこちらに置く決まり（Next.js 14 以降）。
+ * ⚠️ viewportFit は iPhone のノッチ対策。
+ */
+export const viewport: Viewport = {
+  themeColor: "#b8272d",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -51,7 +75,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ja"
       className={`${roboto.variable} ${notoSansJP.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* ⚠️ Service Worker の登録。これが無いと「ホーム画面に追加」もプッシュも出ない */}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }
