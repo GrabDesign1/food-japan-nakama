@@ -752,6 +752,11 @@ const CARD_SCAN_SCHEMA = {
     website: { type: "string", description: "ウェブサイトのURL。無ければ空文字。" },
     postalCode: { type: "string", description: "郵便番号。ハイフンありの7桁（例: 880-0805）。〒の記号は含めない。無ければ空文字。" },
     address: { type: "string", description: "住所。郵便番号を除いた部分。無ければ空文字。" },
+    businessNote: {
+      type: "string",
+      description:
+        "名刺に書かれている事業内容・取扱品・キャッチコピーの一文（例「有機栽培のミニトマト・ピーマン／業務用の規格外品もご相談ください」）。項目に当てはまらない説明文をそのまま。無ければ空文字。",
+    },
     confidence: {
       type: "string",
       enum: ["high", "medium", "low"],
@@ -760,7 +765,7 @@ const CARD_SCAN_SCHEMA = {
   },
   required: [
     "name", "nameKana", "company", "department", "jobTitle",
-    "email", "phone", "mobile", "website", "postalCode", "address", "confidence",
+    "email", "phone", "mobile", "website", "postalCode", "address", "businessNote", "confidence",
   ],
   additionalProperties: false,
 } as const;
@@ -776,6 +781,12 @@ const CARD_SCAN_SYSTEM = `あなたは名刺の文字起こしをする係です
 - 名刺以外のもの（人物の写真、書類、風景）が写っているときも、すべて空文字にして confidence を low にする。`;
 
 export type CardScanDraft = {
+  /**
+   * ⚠️ 2026-11-28 追加。名刺に書いてある「何を扱っているか」の一文。
+   *    ⚠️⚠️ **ここがタグと提案のいちばんの材料。** 会社名と肩書だけでは、
+   *       一緒にできることは出てこない（実際に1案しか出ず、しかも中身が薄かった）。
+   */
+  businessNote: string;
   name: string;
   nameKana: string;
   company: string;
@@ -847,6 +858,7 @@ export async function scanBusinessCard(dataUrl: string): Promise<CardScanResult>
         website: pick("website"),
         postalCode: pick("postalCode"),
         address: pick("address"),
+        businessNote: pick("businessNote"),
         confidence: conf === "high" || conf === "medium" || conf === "low" ? conf : "low",
       },
     };
@@ -861,5 +873,119 @@ export async function scanBusinessCard(dataUrl: string): Promise<CardScanResult>
       return { error: "混み合っています。少し時間をおいてお試しください。" };
     }
     return { error: "読み取れませんでした。明るいところで、もう一度撮影してください。" };
+  }
+}
+
+// ── 名刺から、その先を考える（2026-11-28 ユーザー指示「AIをガンガン使ったものにして」）──────
+//
+// 読み取り（scanBusinessCard）は文字起こしだけ。ここはその先＝
+//   ①タグを付ける ②一緒にできそうなことを考える ③最初のごあいさつを下書きする
+//
+// ⚠️⚠️ **規約17条に触れないこと。** 禁じているのは「**会員間の非公開メッセージ**をAIに使う」こと。
+//    ここに渡すのは、**交換した名刺の記載事項**と**自分自身のプロフィール**だけで、
+//    会員間のやり取りは一切渡していない。相手の非公開情報も渡さない。
+// ⚠️⚠️ **出すのは提案であって事実ではない。** 画面にも「AIの案です」と必ず書く。
+//    名刺に書いていないことを、相手の実績のように見せてはいけない。
+
+const CARD_INSIGHT_SCHEMA = {
+  type: "object",
+  properties: {
+    tags: {
+      type: "array",
+      description:
+        "この名刺を後から探すためのタグ。**取扱品・業種・都道府県**を優先する（例：ミニトマト／有機栽培／規格外品／宮崎県）。" +
+        "⚠️ 会社名・部署・役職・番地は、別の項目で保存済みなのでタグにしない。3〜5個。名刺に書かれていないものは作らない。",
+      items: { type: "string" },
+    },
+    ideas: {
+      type: "array",
+      description:
+        "自分の事業と相手の事業から考えて、一緒にできそうなこと。1案30〜60文字の具体的な1文。3案。思いつかない場合は空配列。",
+      items: { type: "string" },
+    },
+    greeting: {
+      type: "string",
+      description:
+        "名刺交換のお礼として最初に送る文面の下書き。200文字以内。日本語のビジネス文書。宛名は「{会社名} {お名前}様」から始める。会ったことへのお礼、自分が何者か、次に何をしたいか、の3点。大げさな営業文句は書かない。",
+    },
+  },
+  required: ["tags", "ideas", "greeting"],
+  additionalProperties: false,
+} as const;
+
+const CARD_INSIGHT_SYSTEM = `あなたは食の商談を支える担当者です。交換した名刺と、交換した本人の事業内容から、
+後の動きにつながる「タグ」「一緒にできそうなこと」「最初のごあいさつ」を用意します。
+
+守ること:
+- タグは**名刺に書かれていること**から作る。書かれていない業種を想像で足さない。
+- 「一緒にできそうなこと」は、双方の事業がかみ合う点だけを書く。かみ合わないなら無理に出さず、数を減らす。
+- ごあいさつは、**会ったことへのお礼が先**。いきなり売り込まない。
+- 相手の実績・規模・取引先を、名刺に無いのに書かない。
+- 誇張しない。「ぜひ！」「必ず」「絶対」は使わない。`;
+
+export type CardInsight = { tags: string[]; ideas: string[]; greeting: string };
+
+/**
+ * 名刺の内容と自分のプロフィールから、タグ・共創の切り口・あいさつ文を作る。
+ * ⚠️ 失敗しても null を返すだけ（読み取り結果そのものは返せているので、画面は進められる）。
+ */
+export async function suggestFromCard(params: {
+  card: { name: string; company: string; jobTitle: string; department: string; address: string; website: string; businessNote: string };
+  me: { name: string; categoryL1: string | null; categoryL2: string | null; description: string | null; challengeText: string | null; collabStyle: string | null };
+}): Promise<CardInsight | null> {
+  if (!client) return null;
+  const { card, me } = params;
+  if (!card.name && !card.company) return null;
+
+  const theirs = [
+    `会社：${card.company || "（不明）"}`,
+    `お名前：${card.name || "（不明）"}`,
+    card.department ? `部署：${card.department}` : null,
+    card.jobTitle ? `役職：${card.jobTitle}` : null,
+    card.address ? `所在地：${card.address}` : null,
+    card.website ? `サイト：${card.website}` : null,
+    // ⚠️ これが提案のいちばんの材料。無いと「情報交換しましょう」程度しか出てこない
+    card.businessNote ? `名刺に書かれている事業内容：${card.businessNote}` : null,
+  ].filter(Boolean).join("\n");
+
+  const mine = [
+    `自社：${me.name}`,
+    me.categoryL1 ? `区分：${me.categoryL1}${me.categoryL2 ? ` / ${me.categoryL2}` : ""}` : null,
+    me.description ? `事業内容：${me.description.slice(0, 600)}` : null,
+    me.challengeText ? `いま困っていること：${me.challengeText.slice(0, 300)}` : null,
+    me.collabStyle ? `組みたい相手：${me.collabStyle.slice(0, 300)}` : null,
+  ].filter(Boolean).join("\n");
+
+  try {
+    const res = await client.responses.create({
+      model: MODEL,
+      max_output_tokens: 1500,
+      text: { format: { type: "json_schema", name: "card_insight", schema: CARD_INSIGHT_SCHEMA, strict: true } },
+      input: [
+        { role: "system", content: CARD_INSIGHT_SYSTEM },
+        {
+          role: "user",
+          content: `【いただいた名刺】
+${theirs}
+
+【自分の事業】
+${mine || "（未入力）"}`,
+        },
+      ],
+    });
+    const text = res.output_text;
+    if (!text) return null;
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    const arr = (v: unknown, max: number) =>
+      (Array.isArray(v) ? v : []).map((x) => String(x).trim()).filter(Boolean).slice(0, max);
+    return {
+      tags: arr(parsed.tags, 5).map((t) => t.slice(0, 40)),
+      ideas: arr(parsed.ideas, 3).map((t) => t.slice(0, 120)),
+      greeting: String(parsed.greeting ?? "").trim().slice(0, 400),
+    };
+  } catch (e) {
+    if (e instanceof RateLimitError) return null;
+    console.error("[ai] 名刺からの提案に失敗:", e);
+    return null;
   }
 }

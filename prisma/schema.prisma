@@ -1568,6 +1568,13 @@ model ContactCard {
   note String?
   tags String[]
 
+  /// AIが出した「一緒にできそうなこと」（2026-11-28）。
+  /// ⚠️⚠️ **これは提案であって事実ではない。** 画面でも必ずそう書く。
+  ///    名刺に無いことを相手の実績のように見せない。
+  ideas String[] @default([])
+  /// 最初のごあいさつの下書き（AI）。送る前に本人が直す前提
+  greetingDraft String? @map("greeting_draft")
+
   /// 相手がNAKAMA会員だと分かったら結ぶ
   linkedMemberId String? @map("linked_member_id")
 

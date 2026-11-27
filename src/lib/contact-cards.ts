@@ -62,6 +62,14 @@ export async function createContactCard(
       metOn: metOn && !Number.isNaN(metOn.getTime()) ? metOn : null,
       note: clip(input.note, CARD_NOTE_MAX),
       tags,
+      // AIの提案（2026-11-28）。⚠️ 事実ではないので、画面でそう書くこと
+      ideas: (Array.isArray(input.ideas) ? input.ideas : [])
+        .map((t) => String(t).trim().slice(0, 120))
+        .filter(Boolean)
+        .slice(0, 3),
+      greetingDraft: clip(input.greetingDraft, 400),
+      // ⚠️ 相手がNAKAMA会員だと**本人が選んだ**ときだけ入れる（自動では結ばない）
+      linkedMemberId: clip(input.linkedMemberId, 40),
       source,
     },
     select: { id: true },
