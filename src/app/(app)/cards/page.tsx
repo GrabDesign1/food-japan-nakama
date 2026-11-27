@@ -16,7 +16,8 @@ import { fadingPartners, listMyRelationships, myEffectiveCount } from "@/lib/rel
 import { isAlive } from "@/lib/card-relationship";
 import { removeCard } from "./scan/actions";
 import { EmptyState } from "@/components/EmptyState";
-import { eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
 import { ExchangeForm } from "./ExchangeForm";
 import { CardShare } from "./CardShare";
 import { CardSettings } from "./CardSettings";
@@ -237,7 +238,12 @@ export default async function CardsPage({
       <section className="mt-10">
         <div className="flex items-baseline justify-between">
           <h2 className={h2Cls}>取り込んだ名刺</h2>
-          <Link href="/cards/scan" className="text-[13px] text-[var(--green-d)] underline">
+          {/* ⚠️ アイコンは Material Symbols の公式パス（components/MaterialIcon.tsx）。手で描かない */}
+          <Link
+            href="/cards/scan"
+            className="inline-flex items-center gap-1.5 text-[13px] text-[var(--green-d)] hover:underline"
+          >
+            <MaterialIcon name="photo_camera" size={16} />
             名刺を取り込む
           </Link>
         </div>
@@ -250,8 +256,16 @@ export default async function CardsPage({
             <EmptyState
               title="まだ取り込んだ名刺はありません"
               description="いただいた名刺を撮ると、お名前と連絡先を読み取って残せます。"
-              actions={[{ label: "名刺を取り込む", href: "/cards/scan", variant: "primary" as const }]}
-            />
+            >
+              {/* ⚠️ `actions` ではなく children。EmptyState（共通部品）を変えずにアイコンを足すため */}
+              <Link
+                href="/cards/scan"
+                className={`${btn("primary", "sm")} inline-flex items-center gap-1.5`}
+              >
+                <MaterialIcon name="photo_camera" size={16} />
+                名刺を取り込む
+              </Link>
+            </EmptyState>
           </div>
         ) : (
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
