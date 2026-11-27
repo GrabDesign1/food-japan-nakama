@@ -8,6 +8,8 @@ import { getCreditBalance } from "@/lib/contact-credits";
 import { PlanButton } from "./_components/PlanButton";
 import { PortalButton } from "./_components/PortalButton";
 import { btn, eyebrowCls, h1Cls, h2Cls } from "@/lib/ui";
+import { PriceTable } from "./_components/PriceTable";
+import { OPTION_PRICE_MIN, OPTION_PRICE_MAX } from "@/lib/billing-core";
 import { SERVICE_MENU, consultationHref } from "@/lib/services";
 
 // 購入履歴に出す注文の状態＝実際に支払いが成立したもの（返金済みは支払いの記録として残す）
@@ -207,6 +209,14 @@ export default async function BillingPage({
         </div>
       ) : null}
 
+      {/*
+        料金のまとめ（2026-11-28）。
+        ⚠️⚠️ **いちばん上に置く。** これが無かったのが「価格がわかりにくい」の原因だった。
+           残高の長い説明と、個別契約の大きなカード7枚に、肝心の値段が埋もれていた。
+        ⚠️ 金額は lib/billing-core.ts の定数から出している。手で書かない。
+      */}
+      <PriceTable optionMin={OPTION_PRICE_MIN} optionMax={OPTION_PRICE_MAX} />
+
       {/* 紹介クレジット残高 */}
       <div className="max-w-[760px] rounded-[10px] border border-[var(--line)] bg-white px-5 py-4">
         <h2 className={h2Cls}>紹介クレジット残高</h2>
@@ -220,13 +230,22 @@ export default async function BillingPage({
             </span>
           ) : null}
         </div>
-        <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
-          クレジットは、①「探している（調達したい）」案件への初回提案（通常案件1クレジット・NAKAMA確認済み案件3クレジット）と、②自社の「売りたい（提供したい）」案件に届いた問い合わせの初回開封（1クレジット・2026年8月26日から）に使います。
-          1クレジット1,100円（税込）で、5・10クレジットのまとめ買いパックも同じ単価です。
-          有償クレジットの有効期限は購入日から180日（期限の延長・再発行はありません）。ビジネス会員の月次クレジットは次回更新日で失効します。
-          消費の順番は、月次クレジット→有償クレジット（いずれも期限が早い順）です。
-          送信後14日間相手が未読の場合のみ、消費したクレジットを自動返還します（開封済みで返信がない場合、および有効期限が過ぎている場合は返還しません）。
-        </p>
+        {/*
+          ⚠️ 細かい決まりは**たたむ**（2026-11-28）。7行の塊が残高の下にあって、
+             肝心の金額が読まれていなかった。消さずに、開けば読める形にしている。
+        */}
+        <details className="mt-2">
+          <summary className="cursor-pointer text-[12px] font-bold text-[var(--green-d)]">
+            クレジットの細かい決まり（有効期限・返還・使う順番）
+          </summary>
+          <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
+            クレジットは、①「探している（調達したい）」案件への初回提案（通常案件1クレジット・NAKAMA確認済み案件3クレジット）と、②自社の「売りたい（提供したい）」案件に届いた問い合わせの初回開封（1クレジット・2026年8月26日から）に使います。
+            1クレジット1,100円（税込）で、5・10クレジットのまとめ買いパックも同じ単価です。
+            有償クレジットの有効期限は購入日から180日（期限の延長・再発行はありません）。ビジネス会員の月次クレジットは次回更新日で失効します。
+            消費の順番は、月次クレジット→有償クレジット（いずれも期限が早い順）です。
+            送信後14日間相手が未読の場合のみ、消費したクレジットを自動返還します（開封済みで返信がない場合、および有効期限が過ぎている場合は返還しません）。
+          </p>
+        </details>
       </div>
 
       {/* NAKAMAビジネス会員プラン（未加入のみ上部。契約中は最下部へ） */}

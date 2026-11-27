@@ -199,3 +199,13 @@ export function isUnreadRefundDue(params: {
   if (!unreadRefundDueAt) return false;
   return unreadRefundDueAt.getTime() <= now.getTime();
 }
+
+/**
+ * 掲載オプションの値段の幅（2026-11-28）。/billing の「料金のまとめ」と
+ * /tokushoho の法定表示で使う。
+ * ⚠️⚠️ **手で書かない。** 2026-11-28 時点で /tokushoho が「5,500円〜」と書いていたが、
+ *    実際の最安は急募ラベルの3,300円で、**法定表示が実価格と食い違っていた**。
+ * ⚠️ 値は `SEED_PRODUCTS`（lib/billing.ts）から数えた実値。商品を足したらここも見直す。
+ */
+export const OPTION_PRICE_MIN = 3300;
+export const OPTION_PRICE_MAX = 22000;
