@@ -16,6 +16,7 @@ import { trimTo, MESSAGE_MAX } from "@/lib/security";
 import { isReaction } from "@/lib/reactions";
 import { canRead, findMentionedMemberIds, type Visibility } from "@/lib/channels";
 import { allowedEmailsForMember } from "@/lib/notify-settings";
+import { sendPushToMember } from "@/lib/push";
 import { notifyChannelMention } from "@/lib/email";
 
 const NAME_MAX = 40;
@@ -154,13 +155,25 @@ export async function postToChannel(
       const lists = await Promise.all(
         mentioned.map((id) => allowedEmailsForMember(id, "mention")),
       );
+      const who = meRow?.contactName || meRow?.name || "NAKAMAの会員";
       await notifyChannelMention({
         to: Array.from(new Set(lists.flat())),
-        fromMemberName: meRow?.contactName || meRow?.name || "NAKAMAの会員",
+        fromMemberName: who,
         channelName: channel?.name ?? "チャンネル",
         channelId,
         preview: body,
       });
+      // 画面に出るお知らせ（2026-11-28）。⚠️ 発言の中身は入れない
+      await Promise.all(
+        mentioned.map((id) =>
+          sendPushToMember(id, "mention", {
+            title: channel?.name ?? "チャンネル",
+            body: `${who}さんがあなたを呼んでいます`,
+            url: `/channels/${channelId}`,
+            tag: `ch-${channelId}`,
+          }),
+        ),
+      );
     } catch (e) {
       console.error("[channels] ＠の通知に失敗:", e);
     }

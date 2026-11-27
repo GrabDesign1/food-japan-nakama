@@ -129,3 +129,22 @@ export async function allowedEmailsForMember(
     })
     .map((u) => u.email);
 }
+
+/**
+ * プッシュ通知を送ってよい会員だけに絞る（2026-11-28）。
+ * ⚠️⚠️ **メールと同じスイッチを使う。** 別々にすると「メールを切ったのにスマホが鳴る」になる。
+ * ⚠️ 1人でも受け取る設定のユーザーが居れば、その会員へは送る（端末は本人のものなので）。
+ */
+export async function allowedPushMemberIds(
+  memberIds: string[],
+  kind: NotifyKind
+): Promise<string[]> {
+  const ids = Array.from(new Set(memberIds.filter(Boolean)));
+  if (ids.length === 0) return [];
+  const out: string[] = [];
+  for (const id of ids) {
+    const emails = await allowedEmailsForMember(id, kind);
+    if (emails.length > 0) out.push(id);
+  }
+  return out;
+}

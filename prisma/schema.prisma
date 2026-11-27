@@ -272,6 +272,7 @@ model Member {
   channelPostMentions  ChannelPostMention[]
   reviewsWritten  DealReview[] @relation("DealReviewAuthor")
   reviewsReceived DealReview[] @relation("DealReviewTarget")
+  pushSubscriptions PushSubscription[]
 
   @@index([tenantId])
   @@index([status])
@@ -1945,4 +1946,28 @@ model DealReview {
   @@unique([threadId, authorMemberId])
   @@index([targetMemberId])
   @@map("deal_reviews")
+}
+
+/// プッシュ通知の宛先（2026-11-28・PWA）。1人が複数の端末を持つので、端末ごとに1行。
+/// ⚠️⚠️ **endpoint が宛先そのもの。** 他人に渡ると、その端末へ通知を送られてしまう。
+///    ⚠️ RLS を有効にして anon/authenticated から権限を剥がしてある。
+/// ⚠️ 端末側で通知を切られると、送信時に 404/410 が返る。そのときは**この行を消す**
+///    （消さないと、毎回失敗する宛先に送り続けることになる）。
+model PushSubscription {
+  id        String   @id @default(cuid())
+  memberId  String   @map("member_id")
+  /// 宛先URL（ブラウザが発行する。端末＋ブラウザごとに違う）
+  endpoint  String   @unique
+  /// 暗号化に使う鍵（ブラウザが発行）
+  p256dh    String
+  auth      String
+  /// どの端末か分かるように（「iPhoneの通知を切る」ができるように）
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("push_subscriptions")
 }

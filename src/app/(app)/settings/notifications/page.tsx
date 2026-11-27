@@ -16,6 +16,7 @@ import { getNotifySettings, NOTIFY_KINDS, NOTIFY_LABEL } from "@/lib/notify-sett
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { NotifyToggle } from "./NotifyToggle";
 import { InstallApp } from "./InstallApp";
+import { PushToggle } from "./PushToggle";
 
 export const metadata: Metadata = {
   title: "通知の設定",
@@ -56,9 +57,11 @@ export default async function NotificationSettingsPage() {
         ))}
       </ul>
 
-      {/* ホーム画面に追加（2026-11-28・PWA）。
-          ⚠️ 通知の設定の下に置く。「スマホに届かない」理由がここだと分かるようにするため。 */}
-      <div className="mt-6">
+      {/* 画面に出るお知らせ（2026-11-28・Web Push）と、その前提のホーム画面追加。
+          ⚠️ この順番を変えないこと。iPhone は「ホーム画面に追加」が先で、
+             追加しないと通知の許可すら聞けない（PushToggle が need-install を出す）。 */}
+      <div className="mt-6 flex flex-col gap-3">
+        <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         <InstallApp />
       </div>
 

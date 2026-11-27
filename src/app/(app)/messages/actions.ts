@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { allowedEmailsForMember } from "@/lib/notify-settings";
+import { sendPushToMember } from "@/lib/push";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
@@ -55,6 +56,21 @@ async function notifyRecipientIfCaughtUp(params: {
     threadId: params.threadId,
     listingTitle: params.listingTitle,
   });
+
+  // 画面に出るお知らせ（2026-11-28・Web Push）。
+  // ⚠️⚠️ **本文を入れない。** 通知はロック画面に出る。机の上のスマホから
+  //    商談の中身が読まれてしまう（規約17条・通信の秘密）。「誰から」までにする。
+  // ⚠️ 失敗してもメッセージ送信は成立させる。
+  try {
+    await sendPushToMember(params.recipientId, "message", {
+      title: "FOOD JAPAN NAKAMA",
+      body: `${params.senderName}さんからメッセージが届きました`,
+      url: `/messages/${params.threadId}`,
+      tag: `msg-${params.threadId}`,
+    });
+  } catch (e) {
+    console.error("[push] メッセージの通知に失敗:", e);
+  }
 }
 
 // メッセージ添付は非公開バケット。参加者検証と引き合い課金ゲートを通した署名付きURLでのみ配信する
