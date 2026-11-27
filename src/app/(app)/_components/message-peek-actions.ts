@@ -54,7 +54,14 @@ export async function loadMessagePeek(): Promise<PeekRow[]> {
   const [members, unread, locked] = await Promise.all([
     prisma.member.findMany({
       where: { id: { in: otherIds } },
-      select: { id: true, name: true, avatarUrl: true },
+      /**
+       * ⚠️⚠️ **顔写真は `contactPhotoUrl` が先**（2026-11-27 ユーザーご指摘
+       *    「登壇者は既にアイコンがあるはずなのでそれを使ってね」）。
+       *    ⚠️ 登壇者の顔写真は Onegaizar から `contactPhotoUrl` に入る（`onegaizar-sync.ts`）。
+       *      ⚠️⚠️ `avatarUrl` だけを見ると、**登壇者が全員「頭文字」で出る**。
+       *    ⚠️ 他の画面（/producers・/summit・ホーム）も `contactPhotoUrl ?? avatarUrl` の順。
+       */
+      select: { id: true, name: true, avatarUrl: true, contactPhotoUrl: true },
     }),
     prisma.message.groupBy({
       by: ["threadId"],
@@ -76,7 +83,7 @@ export async function loadMessagePeek(): Promise<PeekRow[]> {
     return {
       id: t.id,
       name: other?.name || "（不明）",
-      avatarUrl: other?.avatarUrl ?? null,
+      avatarUrl: other?.contactPhotoUrl ?? other?.avatarUrl ?? null,
       preview: locked.has(t.id)
         ? LEAD_LOCKED_TEXT
         : last
