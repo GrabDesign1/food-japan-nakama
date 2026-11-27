@@ -69,7 +69,7 @@ export async function AdminNav({ current }: { current: AdminNavKey }) {
             <Link key={p.key} href={p.href} className={aTab}>
               {p.label}
               {p.key === "members" && pendingMembers > 0 ? (
-                <span className="ml-1.5 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
+                <span className="ml-1.5 inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--gold)] px-1 text-[10px] font-bold text-white">
                   {pendingMembers}
                 </span>
               ) : null}

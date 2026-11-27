@@ -93,7 +93,7 @@ export function MessagePeek({ unread }: { unread: number }) {
       {unread > 0 ? (
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-white bg-[var(--red)] px-[4px] text-[10px] font-bold leading-none text-white"
+          className="pointer-events-none absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-white bg-[var(--gold)] px-[4px] text-[10px] font-bold leading-none text-white"
         >
           {unread > 99 ? "99+" : unread}
         </span>
@@ -166,7 +166,7 @@ export function PeekPanel({
         <span className="text-[20px] font-bold text-[var(--ink)]">メッセージ</span>
         <div className="flex items-center gap-2">
           {unread > 0 ? (
-            <span className="rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
+            <span className="rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-white">
               新着 {unread}
             </span>
           ) : null}
@@ -303,7 +303,7 @@ export function PeekList({
           </span>
           {/* ⚠️ 色だけで伝えない——点には読み上げ用の文字を添える */}
           {r.unread > 0 ? (
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--red)]">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--gold)]">
               <span className="sr-only">未読</span>
             </span>
           ) : null}

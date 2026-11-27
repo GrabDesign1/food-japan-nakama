@@ -45,7 +45,7 @@ export function MobileNav({ items, unread }: { items: Item[]; unread: number }) 
             <span className="text-[16px] leading-none">
               {b.icon}
               {b.href === "/messages" && unread > 0 ? (
-                <span className="absolute right-1 top-0 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-[var(--red)] px-1 text-[9px] font-bold text-white">
+                <span className="absolute right-1 top-0 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-[var(--gold)] px-1 text-[9px] font-bold text-white">
                   {unread}
                 </span>
               ) : null}
@@ -106,7 +106,7 @@ export function MobileNav({ items, unread }: { items: Item[]; unread: number }) 
                       <NavIcon href={item.href} size={20} />
                       <span>{item.label}</span>
                       {item.href === "/messages" && unread > 0 ? (
-                        <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        <span className="ml-auto rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                           {unread}
                         </span>
                       ) : null}

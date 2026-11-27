@@ -49,7 +49,7 @@ export function TopBarNav({ pending }: { pending: number }) {
               ⚠️ 99件を超えたら「99+」で止める（⚠️ 3桁で丸からはみ出す）。
             */}
             {it.href === "/connections" && pending > 0 ? (
-              <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-white bg-[var(--red)] px-1 text-[10px] font-bold leading-none text-white">
+              <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-white bg-[var(--gold)] px-1 text-[10px] font-bold leading-none text-white">
                 {pending > 99 ? "99+" : pending}
               </span>
             ) : null}

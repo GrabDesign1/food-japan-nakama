@@ -225,12 +225,12 @@ export function ProposalRows({
                 <td className="px-4 py-3 align-top">
                   <div className="flex flex-col items-start gap-1">
                     {r.locked ? (
-                      <span className="rounded-full bg-[var(--orange)] px-2 py-0.5 text-[10px] font-bold text-white">
+                      <span className="rounded-full bg-[var(--amber-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--amber-ink)]">
                         未開封
                       </span>
                     ) : null}
                     {r.unread > 0 ? (
-                      <span className="rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
+                      <span className="rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-white">
                         未返信 {r.unread}
                       </span>
                     ) : null}

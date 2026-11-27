@@ -86,13 +86,22 @@ export function inputBare(size: InputSize = "md"): string {
 // h1Cls   : ページタイトル（各ページに1つ）
 // h2Cls   : セクション見出し
 // h3Cls   : サブ見出し（セクション内の小見出し・テーブル見出し）
-export const eyebrowCls = "text-[10px] tracking-[0.2em] text-[var(--muted)]";
-export const h1Cls = "font-serif text-[22px] text-[var(--ink)]";
-export const h2Cls = "font-serif text-[18px] text-[var(--ink)]";
-export const h3Cls = "text-[15px] font-semibold text-[var(--ink)]";
+//
+// ⚠️⚠️ **2026-11-27：Material 3 の型スケールに合わせた。** 使うのは baseline 15 のうち8つだけ。
+//    対応：eyebrow=Label M / h1=Headline S / h2=Title L / h3=Title M / h2Form=Title M。
+//    ⚠️⚠️ **和文は language height = Medium。行送りを基準値から約7%足している**（M3の指定）。
+//       例：Title M は 16/24 が基準 → 和文は 16/26。行送りを削らないこと（文字が詰まる）。
+//    ⚠️ eyebrow は 10px → 12px に上げた。M3 の Label S（11px）は和文で小さすぎるため使わない。
+//    ⚠️ font-serif は、このプロジェクトでは sans と同じ指定（globals.css の @theme）。
+//       見た目は変わらないが、履歴として残してある。
+//    設計の全数値：https://claude.ai/artifact/VdRhU4AmvyV1UoB4N3RDku
+export const eyebrowCls = "text-[12px] leading-[17px] tracking-[0.1em] text-[var(--muted)]";
+export const h1Cls = "font-serif text-[24px] leading-[34px] tracking-[0.02em] text-[var(--ink)]";
+export const h2Cls = "font-serif text-[22px] leading-[30px] tracking-[0.02em] text-[var(--ink)]";
+export const h3Cls = "text-[16px] leading-[26px] font-bold text-[var(--ink)]";
 
 // h2FormCls : フォームの章見出しと、確認・プレビュー系モーダルのタイトル。
 //   ページのセクション見出し（h2Cls＝serif 18px）とは別系統で、
 //   入力欄が密集する場所では明朝18pxが重くなるためゴシック16px太字を使う。
 //   会員ゾーンと共通コンポーネント用（公開ページは別のタイプスケール）。
-export const h2FormCls = "text-[16px] font-bold text-[var(--ink)]";
+export const h2FormCls = "text-[16px] leading-[26px] font-bold text-[var(--ink)]";

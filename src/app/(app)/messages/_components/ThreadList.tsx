@@ -100,7 +100,7 @@ export async function ThreadList({
           >
             {/* 未読は左の縦ラインで一目で分かるようにする */}
             {unreadN > 0 ? (
-              <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-[var(--red)]" />
+              <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-[var(--gold)]" />
             ) : null}
             <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[16px] text-[var(--green-d)]">
               {other?.avatarUrl ? (
@@ -152,7 +152,7 @@ export async function ThreadList({
                   {preview}
                 </span>
                 {unreadN > 0 ? (
-                  <span className="shrink-0 rounded-full bg-[var(--red)] px-2 py-0.5 text-[10px] font-bold text-white">
+                  <span className="shrink-0 rounded-full bg-[var(--gold)] px-2 py-0.5 text-[10px] font-bold text-white">
                     新着 {unreadN}
                   </span>
                 ) : null}

@@ -153,17 +153,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   <NavIcon href={item.href} size={16} />
                   <span>{item.label}</span>
                   {item.href === "/messages" && unread > 0 ? (
-                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="ml-auto rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {unread}
                     </span>
                   ) : null}
                   {item.href === "/connections" && pendingConnections > 0 ? (
-                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="ml-auto rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {pendingConnections}
                     </span>
                   ) : null}
                   {item.href === "/admin" && pendingReview > 0 ? (
-                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="ml-auto rounded-full bg-[var(--gold)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {pendingReview}
                     </span>
                   ) : null}

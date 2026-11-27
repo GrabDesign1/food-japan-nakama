@@ -24,7 +24,7 @@ export default async function MessagesPage() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className={h1Cls}>メッセージ一覧</h1>
         {unreadTotal > 0 ? (
-          <span className="rounded-full bg-[var(--red)] px-3 py-1 text-[12px] font-bold text-white">
+          <span className="rounded-full bg-[var(--gold)] px-3 py-1 text-[12px] font-bold text-white">
             新着 {unreadTotal}件
           </span>
         ) : null}
