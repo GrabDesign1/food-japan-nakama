@@ -23,6 +23,10 @@ const NAV: NavItem[] = [
   { label: "ホーム", href: "/dashboard", ready: true },
   { label: "案件を探す", href: "/search", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
+  // ⚠️⚠️ **チャンネルは「メッセージ」の中に隠さない**（2026-11-27 設計）。
+  //    無料で人が集まる入口なので、独立した行にする。
+  //    順番は チャンネル（集まる）→ グループ（動かす）→ 商談（決める・有料）。
+  { label: "チャンネル", href: "/channels", ready: true },
   // 仲間の申請（2026-11-27）。⚠️ 承認はこの1か所だけ。プロフィール側に増やさないこと
   { label: "つながり", href: "/connections", ready: true },
 

@@ -9,6 +9,9 @@ import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
 import { MessageList } from "../_components/MessageList";
 import type { ThreadReply } from "../_components/MessageExtras";
+import { friendIds } from "@/lib/connections";
+import { inviteToThreadForm } from "../actions";
+import { btn } from "@/lib/ui";
 import { ThreadHeader } from "../_components/ThreadHeader";
 import { h1Cls } from "@/lib/ui";
 
@@ -22,8 +25,15 @@ export default async function ThreadPage({
   if (!su) redirect("/login");
   const me = await getOrCreateMemberForUser(su);
 
-  const thread = await prisma.thread.findUnique({ where: { id } });
-  if (!thread || (thread.fromMemberId !== me.id && thread.toMemberId !== me.id)) {
+  const thread = await prisma.thread.findUnique({
+    where: { id },
+    // ⚠️ グループ（2026-11-27）：最初の2人に加えて、承諾した参加者も読める
+    include: { participants: { where: { memberId: me.id }, select: { status: true } } },
+  });
+  const myPart = thread?.participants[0];
+  const isPair = thread ? thread.fromMemberId === me.id || thread.toMemberId === me.id : false;
+  if (!thread || (!isPair && myPart?.status !== "JOINED")) {
+    // ⚠️ 招待中（INVITED）の人は本文を読めない。承諾の画面は一覧側に出す
     notFound();
   }
   const otherId = thread.fromMemberId === me.id ? thread.toMemberId : thread.fromMemberId;
@@ -85,6 +95,31 @@ export default async function ThreadPage({
     // 進捗（商談）。スレッド単位＝案件単位
     prisma.deal.findFirst({ where: { threadId: thread.id }, select: { id: true, phase: true } }),
   ]);
+  // ── グループ：いまの参加者と、招ける相手（2026-11-27）──────────────────────
+  // ⚠️⚠️ **招く＝相手の会社名と担当者名が他社に見える。** だから候補は「自分の仲間」だけに絞る。
+  //    ⚠️ 会員全員から選ばせない（知らない人をいきなり商談に引き込めてしまう）。
+  // ⚠️ 招待中（INVITED）の人は本文を読めない。一覧の「届いた招待」から承諾してもらう。
+  const [participants, myFriendIds] = await Promise.all([
+    prisma.threadParticipant.findMany({
+      where: { threadId: thread.id, status: { in: ["INVITED", "JOINED"] } },
+      select: { memberId: true, status: true, member: { select: { name: true, contactName: true } } },
+    }),
+    friendIds(me.id),
+  ]);
+  const inThread = new Set([
+    thread.fromMemberId,
+    thread.toMemberId,
+    ...participants.map((p) => p.memberId),
+  ]);
+  const invitable = myFriendIds.filter((fid) => !inThread.has(fid));
+  const invitableMembers = invitable.length
+    ? await prisma.member.findMany({
+        where: { id: { in: invitable.slice(0, 100) } },
+        select: { id: true, name: true, contactName: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
+
   // ── スレッド返信とリアクションを、本文の発言にぶら下げる（2026-11-27）────────────
   // ⚠️⚠️ **本文に出すのは親（parentMessageId が null）だけ。**
   //    返信まで本文に流すと、商談の記録が枝葉で埋まる。
@@ -157,6 +192,67 @@ export default async function ThreadPage({
             >
               {other?.name || "（不明）"}
             </Link>
+          </div>
+
+          {/* グループ：参加者と「人を招く」（2026-11-27） */}
+          <div className="rounded-[12px] border border-[var(--line)] bg-white px-4 py-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="text-[12px] leading-[17px] text-[var(--muted)]">
+                {participants.length > 0 ? "この商談の参加者" : "1対1の商談です"}
+              </span>
+              <span className="flex flex-wrap items-center gap-1.5">
+                {participants.map((p) => (
+                  <span
+                    key={p.memberId}
+                    className={`rounded-full px-2.5 py-0.5 text-[12px] leading-[17px] ${
+                      p.status === "JOINED"
+                        ? "bg-[var(--line-soft)] text-[var(--ink)]"
+                        : "border border-dashed border-[var(--line)] text-[var(--muted)]"
+                    }`}
+                  >
+                    {p.member.contactName || p.member.name}
+                    {p.status === "INVITED" ? "（招待中）" : ""}
+                  </span>
+                ))}
+              </span>
+              {invitableMembers.length > 0 ? (
+                <details className="ml-auto">
+                  <summary className="cursor-pointer list-none text-[14px] font-bold leading-[21px] text-[var(--green-d)]">
+                    ＋ 人を招く
+                  </summary>
+                  {/*
+                    ⚠️⚠️ **招くと、相手の会社名・担当者名が他社に見える。**
+                       だから相手の承諾があるまで参加させない（招待中は本文を読めない）。
+                    ⚠️ 候補は自分の仲間だけ。会員全員から選ばせない。
+                  */}
+                  <form
+                    action={inviteToThreadForm.bind(null, thread.id)}
+                    className="mt-2 flex flex-wrap items-center gap-2"
+                  >
+                    <label htmlFor="inviteeId" className="sr-only">
+                      招く相手
+                    </label>
+                    <select
+                      id="inviteeId"
+                      name="inviteeId"
+                      required
+                      className="min-w-[200px] rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[14px] text-[var(--ink)]"
+                    >
+                      <option value="">仲間から選ぶ…</option>
+                      {invitableMembers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.contactName ? `${m.name}（${m.contactName}）` : m.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button className={btn("secondary", "sm")}>招待を送る</button>
+                    <span className="w-full text-[12px] leading-[17px] text-[var(--muted)]">
+                      招くと3社以上のグループになります。相手が承諾するまで、ここの内容は読まれません。
+                    </span>
+                  </form>
+                </details>
+              ) : null}
+            </div>
           </div>
 
           {/* 対象案件と進捗（案件ごとのやり取り） */}

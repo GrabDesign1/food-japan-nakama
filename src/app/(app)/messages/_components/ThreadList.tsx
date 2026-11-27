@@ -13,7 +13,15 @@ export async function ThreadList({
   activeId?: string;
 }) {
   const threads = await prisma.thread.findMany({
-    where: { OR: [{ fromMemberId: meId }, { toMemberId: meId }] },
+    // ⚠️ 2026-11-27：グループ（3社以上）に招かれて承諾した人にも出す。
+    //    ⚠️ 招待中（INVITED）は出さない。承諾してはじめて読める。
+    where: {
+      OR: [
+        { fromMemberId: meId },
+        { toMemberId: meId },
+        { participants: { some: { memberId: meId, status: "JOINED" } } },
+      ],
+    },
     orderBy: { lastMessageAt: "desc" },
     include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
   });

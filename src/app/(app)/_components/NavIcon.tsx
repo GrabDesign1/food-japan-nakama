@@ -69,6 +69,9 @@ const PATHS: Record<string, string> = {
   // 旗（違反を報告する）
   "/report":
     "M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z",
+  // ＃（チャンネル）
+  "/channels":
+    "M9.3 3 8.6 7H4.6l-.3 2h4l-.7 4h-4l-.3 2h4l-.7 4h2l.7-4h4l-.7 4h2l.7-4h4l.3-2h-4l.7-4h4l.3-2h-4l.7-4h-2l-.7 4h-4l.7-4zM9 9h4l-.7 4h-4z",
 };
 
 export function NavIcon({ href, size = 18 }: { href: string; size?: number }) {

@@ -246,6 +246,13 @@ model Member {
   followers      MemberFollow[]     @relation("FollowFollowee")
   /// 自分が付けた絵文字リアクション（2026-11-27）
   messageReactions MessageReaction[]
+  /// グループ（3社以上の商談）への参加・招待（2026-11-27）
+  threadParticipations ThreadParticipant[]
+  /// チャンネル（2026-11-27）
+  channelMemberships ChannelMember[]
+  channelPosts       ChannelPost[]
+  channelPostReactions ChannelPostReaction[]
+  channelPostMentions  ChannelPostMention[]
 
   @@index([tenantId])
   @@index([status])
@@ -580,6 +587,12 @@ model Deal {
 model Thread {
   id            String   @id @default(cuid())
   tenantId      String   @map("tenant_id")
+  /// DIRECT＝1対1の商談（これまでどおり）／GROUP＝3社以上に広げたもの（2026-11-27）。
+  /// ⚠️⚠️ **GROUP でも from/to はそのまま残す。** 既存の問い合わせ63か所が from/to で
+  ///    絞っているため、ここを null にすると全部を書き換えることになる。
+  ///    3人目以降は `participants` に入れ、一覧の問い合わせ側で足し込む。
+  /// ⚠️ チャンネルはここに入れない（別の表。混ぜると他人の商談一覧に漏れる）。
+  kind          String   @default("DIRECT")
   fromMemberId  String   @map("from_member_id") // 興味を送った側
   toMemberId    String   @map("to_member_id") // 送られた側
   offeringId    String?  @map("offering_id") // きっかけの共創プロジェクト
@@ -600,10 +613,137 @@ model Thread {
   notes    ProposalNote[]
   offers   ContractOffer[]
   docs     IssuedDocument[]
+  participants ThreadParticipant[]
 
   @@index([fromMemberId])
   @@index([toMemberId])
   @@map("threads")
+}
+
+/// グループ（3社以上の商談）の参加者（2026-11-27）。
+/// ⚠️⚠️ **商談から「人を招く」で生やす。** ゼロからグループを作らせない（設計キャンバス）。
+/// ⚠️⚠️ **招待は同意制。** INVITED のあいだは本文を読めない。
+///    招くと、相手の会社名・担当者名が他社に見えるため、本人が承諾するまで参加させない。
+/// ⚠️ 最初の2人（from/to）はここに行を作らなくてもよい。3人目以降と、招待の記録のために使う。
+model ThreadParticipant {
+  id        String    @id @default(cuid())
+  threadId  String    @map("thread_id")
+  memberId  String    @map("member_id")
+  /// INVITED＝招待中（まだ読めない）／JOINED＝参加中／LEFT＝抜けた
+  status    String    @default("INVITED")
+  invitedBy String    @map("invited_by")
+  invitedAt DateTime  @default(now()) @map("invited_at")
+  joinedAt  DateTime? @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, memberId])
+  @@index([memberId, status])
+  @@map("thread_participants")
+}
+
+/// チャンネル（話題の部屋。案件に紐づかない）2026-11-27。
+/// ⚠️⚠️ **商談の記録ではない。** 価格や取引条件の具体的な話は商談（1対1）へ移してもらう。
+///    画面にもその一文を出すこと（設計キャンバス④）。
+/// ⚠️⚠️ **公開範囲は3段階。あとから広げられない。**
+///    INVITE＝招いた人だけ／MEMBERS＝ログイン会員／PUBLIC＝ログイン無しでも読める。
+///    ⚠️ 広げる＝過去の発言まで新しい人に見えるということ。UIで「狭いほうから選ぶ」と明示する。
+/// ⚠️ スレッドの表（threads）に相乗りさせていない。混ぜると、from/to で絞っている
+///    既存の63か所の問い合わせに引っかかり、他人の商談一覧にチャンネルが出る。
+model Channel {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  name        String
+  description String?
+  /// INVITE / MEMBERS / PUBLIC
+  visibility  String    @default("MEMBERS")
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  /// 閉じたチャンネル（消さずに畳む。過去のやり取りは残す）
+  archivedAt  DateTime? @map("archived_at")
+
+  members ChannelMember[]
+  posts   ChannelPost[]
+
+  @@index([tenantId, visibility])
+  @@map("channels")
+}
+
+/// チャンネルの参加者。⚠️ PUBLIC でも「読む」と「書く」は別。書くには参加が要る。
+model ChannelMember {
+  id        String   @id @default(cuid())
+  channelId String   @map("channel_id")
+  memberId  String   @map("member_id")
+  /// OWNER＝事務局・作った人／MEMBER＝参加者
+  role      String   @default("MEMBER")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, memberId])
+  @@index([memberId])
+  @@map("channel_members")
+}
+
+/// チャンネルの発言。⚠️ 商談の Message とは別の表（上の理由）。
+/// ⚠️ スレッド返信は商談と同じ考え方＝**入れ子は1段だけ**。
+model ChannelPost {
+  id        String   @id @default(cuid())
+  channelId String   @map("channel_id")
+  memberId  String   @map("member_id")
+  body      String
+  /// ぶら下がっている親の発言。⚠️ null ＝ 本文に出る。⚠️ 入れ子は1段だけ
+  parentPostId String? @map("parent_post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  channel   Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  member    Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  parent    ChannelPost?  @relation("ChannelPostThread", fields: [parentPostId], references: [id], onDelete: Cascade)
+  replies   ChannelPost[] @relation("ChannelPostThread")
+  reactions ChannelPostReaction[]
+  mentions  ChannelPostMention[]
+
+  @@index([channelId, createdAt])
+  @@index([parentPostId])
+  @@map("channel_posts")
+}
+
+/// チャンネルの発言への絵文字リアクション。⚠️ 絵文字は src/lib/reactions.ts の6つだけ。
+model ChannelPostReaction {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  memberId  String   @map("member_id")
+  emoji     String   @db.VarChar(16)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post   ChannelPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  member Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, memberId, emoji])
+  @@index([postId])
+  @@map("channel_post_reactions")
+}
+
+/// ＠で名指しされた記録（2026-11-27）。
+/// ⚠️⚠️ **鳴らすのはこれだけ。** グループ・チャンネルの普通の新着では通知しない（設計の「数える」段）。
+/// ⚠️ readAt が null のあいだだけ、ホームの「今日やること」に出す。
+model ChannelPostMention {
+  id        String    @id @default(cuid())
+  postId    String    @map("post_id")
+  memberId  String    @map("member_id")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  post   ChannelPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  member Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, memberId])
+  @@index([memberId, readAt])
+  @@map("channel_post_mentions")
 }
 
 /// 秘密保持契約（NDA）の同意記録（2026-08-11）。

@@ -502,3 +502,97 @@ export async function sendThreadReply(parentMessageId: string, formData: FormDat
 
   revalidatePath(`/messages/${parent.threadId}`);
 }
+
+// ── グループ（商談から人を招く）2026-11-27 ────────────────────────────────
+// ⚠️⚠️ **グループは商談から生やす。** ゼロから作らせない（設計キャンバス④）。
+//    1対1で話が始まり、3社目が要る段になってから招く、という順番にしている。
+// ⚠️⚠️ **招待は同意制。** 招いた時点では相手は本文を読めない（status=INVITED）。
+//    ⚠️ 招く＝相手の会社名と担当者名が他社に見えるということ。本人の承諾なしに参加させない。
+// ⚠️ 最初の2人（from/to）は `thread_participants` に行を作らない。
+//    ⚠️⚠️ **GROUP になっても from/to はそのまま残す。** 既存の問い合わせ63か所が
+//       from/to で絞っているため、ここを崩すと全部を書き換えることになる。
+
+/** 自分がそのスレッドに関われるか（最初の2人、または参加中のメンバー）。 */
+export async function canAccessThread(threadId: string, memberId: string): Promise<boolean> {
+  const t = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: {
+      fromMemberId: true,
+      toMemberId: true,
+      participants: { where: { memberId, status: "JOINED" }, select: { id: true } },
+    },
+  });
+  if (!t) return false;
+  return t.fromMemberId === memberId || t.toMemberId === memberId || t.participants.length > 0;
+}
+
+/** この商談に人を招く（グループにする）。⚠️ 相手が承諾するまで読めない。 */
+export async function inviteToThread(threadId: string, inviteeId: string): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) redirect("/login");
+  const me = await getOrCreateMemberForUser(su);
+  if (!(await canAccessThread(threadId, me.id))) throw new Error("このやり取りには参加していません");
+  if (inviteeId === me.id) return;
+
+  const t = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: { fromMemberId: true, toMemberId: true },
+  });
+  if (!t) throw new Error("やり取りが見つかりません");
+  // 最初の2人は招く必要がない
+  if (t.fromMemberId === inviteeId || t.toMemberId === inviteeId) return;
+
+  await prisma.$transaction([
+    prisma.threadParticipant.upsert({
+      where: { threadId_memberId: { threadId, memberId: inviteeId } },
+      create: { threadId, memberId: inviteeId, invitedBy: me.id, status: "INVITED" },
+      // 抜けた人をもう一度招くときは、招待し直しになる
+      update: { status: "INVITED", invitedBy: me.id, invitedAt: new Date(), leftAt: null },
+    }),
+    prisma.thread.update({ where: { id: threadId }, data: { kind: "GROUP" } }),
+  ]);
+  revalidatePath(`/messages/${threadId}`);
+}
+
+/** 招待に答える（承諾 or 辞退）。⚠️ 承諾してはじめて本文が読める。 */
+export async function respondThreadInvite(threadId: string, accept: boolean): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) redirect("/login");
+  const me = await getOrCreateMemberForUser(su);
+  const row = await prisma.threadParticipant.findUnique({
+    where: { threadId_memberId: { threadId, memberId: me.id } },
+    select: { id: true, status: true },
+  });
+  if (!row || row.status !== "INVITED") return;
+
+  if (accept) {
+    await prisma.threadParticipant.update({
+      where: { id: row.id },
+      data: { status: "JOINED", joinedAt: new Date() },
+    });
+  } else {
+    // ⚠️ 辞退は記録を残さず消す（断ったことが相手に伝わらないように）
+    await prisma.threadParticipant.delete({ where: { id: row.id } });
+  }
+  revalidatePath("/messages");
+  revalidatePath(`/messages/${threadId}`);
+}
+
+/** グループから抜ける。⚠️ 書いたものは消さない（場の記録が虫食いになる）。 */
+export async function leaveThread(threadId: string): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) redirect("/login");
+  const me = await getOrCreateMemberForUser(su);
+  await prisma.threadParticipant.updateMany({
+    where: { threadId, memberId: me.id, status: "JOINED" },
+    data: { status: "LEFT", leftAt: new Date() },
+  });
+  revalidatePath("/messages");
+}
+
+/** フォームから招く（相手は仲間の一覧から選ぶ）。⚠️ 画面からはこちらを使う。 */
+export async function inviteToThreadForm(threadId: string, formData: FormData): Promise<void> {
+  const inviteeId = String(formData.get("inviteeId") ?? "").trim();
+  if (!inviteeId) return;
+  await inviteToThread(threadId, inviteeId);
+}
