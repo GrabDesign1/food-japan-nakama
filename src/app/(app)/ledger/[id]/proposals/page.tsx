@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { PHASES, PHASE_CONTRACTED, PHASE_DONE } from "@/lib/deal-constants";
+import { getTrackRecords, shortLabel } from "@/lib/track-record";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { EmptyState } from "@/components/EmptyState";
 import { loadLockedLeadThreadIds, leadPreview } from "@/lib/lead-unlock";
@@ -155,6 +156,9 @@ export default async function OfferingProposalsPage({
       return b.thread.lastMessageAt.getTime() - a.thread.lastMessageAt.getTime();
     });
 
+  // 相手の取引実績（2026-11-28）。⚠️ まとめて1回で数える（提案の数だけ問い合わせない）
+  const trackByMember = await getTrackRecords(rows.map((r) => r.other?.id ?? ""));
+
   const totals = {
     all: rows.length,
     unread: rows.filter((r) => r.unread > 0).length,
@@ -295,6 +299,10 @@ export default async function OfferingProposalsPage({
               otherLogoUrl: r.other?.companyLogoUrl ?? null,
               otherPlace: [r.other?.prefecture, r.other?.city].filter(Boolean).join(" "),
               otherIndustry: r.other?.categoryL1 ?? "",
+              // ⚠️ 記録が無い相手は null＝バッジを出さない
+              trackLabel: r.other?.id
+                ? shortLabel(trackByMember.get(r.other.id) ?? { closed: 0, delivered: 0, deliveredRate: null, firstAt: null, again: { yes: 0, total: 0 }, voices: [] })
+                : null,
               locked: lockedThreadIds.has(r.thread.id),
               firstBody: lockedThreadIds.has(r.thread.id)
                 ? leadPreview(r.first.body)

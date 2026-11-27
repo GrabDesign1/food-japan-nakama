@@ -31,6 +31,7 @@ import { toggleFeedEmail } from "../feed/actions";
 import { PostCard, type Author } from "../feed/_components/PostCard";
 import { Composer } from "../feed/_components/Composer";
 import { btn, eyebrowCls, h2Cls, h3Cls } from "@/lib/ui";
+import { getPastCounterparts } from "@/lib/track-record";
 
 export const metadata: Metadata = { title: "マイページ｜FOOD JAPAN NAKAMA" };
 
@@ -164,7 +165,7 @@ export default async function DashboardPage({
     .filter((v): v is string => !!v);
   const appMemberIds = Array.from(new Set(myProjectApps.map((a) => a.applicantMemberId)));
 
-  const [unreadGroups, appMembers, viewMap, mailOn, dealThreads] = await Promise.all([
+  const [unreadGroups, appMembers, viewMap, mailOn, dealThreads, pastPartners] = await Promise.all([
     // 商談スレッドごとの未読数（「要返信」判定）
     memberId && dealThreadIds.length
       ? prisma.message.groupBy({
@@ -192,6 +193,8 @@ export default async function DashboardPage({
           select: { id: true, offeringId: true },
         })
       : Promise.resolve([]),
+    // これまでに取引した相手（2026-11-28・リピートの導線）
+    memberId ? getPastCounterparts(memberId) : Promise.resolve([]),
   ]);
   // 自分が出した案件の管理表（届いた件数・未返信・放置が一目で分かる）
   const myListingRows = memberId ? await loadMyListingRows(memberId) : [];
@@ -727,6 +730,45 @@ export default async function DashboardPage({
 
         {/* 右カラム（モバイルでは相談カードを主操作の直後に表示。利用状況はモバイル非表示） */}
         <aside className="order-1 flex min-w-0 flex-col gap-4 lg:order-2">
+          {/*
+            これまでに取引した相手（2026-11-28 ユーザー決定・B案）。
+            ⚠️ クラウドワークスの「この人にもう一度依頼する」にあたる導線。
+               新規を探すより、一度うまくいった相手に声をかけるほうが決まりやすい。
+            ⚠️⚠️ **1件も無いときは出さない。** 空の枠を置くと、使っていないことが毎回目に入る。
+          */}
+          {pastPartners.length > 0 ? (
+            <div className="rounded-[14px] border border-[var(--line)] bg-white p-5">
+              <h2 className={h2Cls}>これまでに取引した相手</h2>
+              <ul className="mt-2 flex flex-col">
+                {pastPartners.map((p) => (
+                  <li key={p.id} className="border-b border-[var(--line-soft)] py-2.5 last:border-0">
+                    <Link
+                      href={`/producers/${p.id}?from=${encodeURIComponent("/dashboard")}`}
+                      className="flex items-center gap-2.5 hover:opacity-80"
+                    >
+                      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--line)] bg-white text-[13px] font-bold text-[var(--green-d)]">
+                        {p.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.logoUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          (p.name[0] ?? "?").toUpperCase()
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-bold text-[var(--ink)]">
+                          {p.name}
+                        </span>
+                        <span className="block text-[11px] text-[var(--muted)]">
+                          {p.lastAt.getFullYear()}年{p.lastAt.getMonth() + 1}月に取引 ・ もう一度相談する
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="rounded-[14px] border border-[#D5E5DB] bg-[var(--green-soft)] p-5">
             <h2 className={h2Cls}>事務局と一緒に進める</h2>
             <p className="mt-1.5 text-[13px] leading-6 text-[var(--ink-2)]">

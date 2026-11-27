@@ -17,6 +17,11 @@ export type ProposalRow = {
   otherLogoUrl: string | null;
   otherPlace: string;
   otherIndustry: string;
+  /**
+   * NAKAMAでの取引実績の一行（2026-11-28）。⚠️ 記録が無い相手は null＝何も出さない。
+   * 「実績0件」と書くと、まだ記録の無い相手が全員悪く見える。
+   */
+  trackLabel: string | null;
   /** 未開封＝本文は冒頭だけ（サーバー側で切ってある） */
   locked: boolean;
   firstBody: string;
@@ -260,6 +265,12 @@ export function ProposalRows({
                       </Link>
                       <div className="text-[11px] text-[var(--muted)]">{r.otherPlace || "地域未設定"}</div>
                       <div className="text-[11px] text-[var(--muted)]">{r.otherIndustry}</div>
+                      {/* ⚠️ 相手を選ぶのはここ。実績はこの場で見えないと意味がない */}
+                      {r.trackLabel ? (
+                        <div className="mt-1 inline-flex rounded-full bg-[var(--amber-soft)] px-2 py-0.5 text-[11px] font-bold text-[var(--amber-ink)]">
+                          {r.trackLabel}
+                        </div>
+                      ) : null}
                       <p className="mt-1 line-clamp-2 max-w-[240px] text-[12px] leading-5 text-[var(--ink-2)]">
                         {r.firstBody || "（ファイル）"}
                       </p>

@@ -17,6 +17,8 @@ import { MessageList } from "../../../../messages/_components/MessageList";
 import { ThreadHeader } from "../../../../messages/_components/ThreadHeader";
 import { DIRECTION_SHORT, formatPrice, formatAmount, formatDeadline } from "@/lib/offering-taxonomy";
 import { ContractPanel, type OfferRow } from "./ContractPanel";
+import { ReviewPanel } from "./ReviewPanel";
+import { PHASE_DONE } from "@/lib/deal-constants";
 import { defaultTaxRate, normalizeTaxRate, sellerBuyerIds } from "@/lib/invoice";
 import { ThreadTools } from "./ThreadTools";
 import { ndaBody } from "@/lib/nda";
@@ -41,7 +43,7 @@ export default async function OfferingThreadPage({
   // 段階は手で動かせないので、記録された事実とずれていたらここで直す
   await reconcileDealPhase(thread.id);
 
-  const [other, messages, draft, templates, offering, deal, contractOffers, nda, issuedDocs] = await Promise.all([
+  const [other, messages, draft, templates, offering, deal, contractOffers, nda, issuedDocs, reviews] = await Promise.all([
     prisma.member.findUnique({
       where: { id: otherId },
       select: {
@@ -97,6 +99,11 @@ export default async function OfferingThreadPage({
     }),
     prisma.ndaAgreement.findUnique({ where: { threadId: thread.id } }),
     prisma.issuedDocument.findMany({ where: { threadId: thread.id }, select: { kind: true } }),
+    // 取引のあとの評価（2026-11-28）。⚠️ 自分の分だけ引く。相手の中身は両者そろうまで見せない
+    prisma.dealReview.findMany({
+      where: { threadId: thread.id },
+      select: { authorMemberId: true, wouldWorkAgain: true, comment: true },
+    }),
   ]);
   if (!offering) notFound();
 
@@ -247,6 +254,31 @@ export default async function OfferingThreadPage({
               : "buyer"
           }
         />
+
+        {/*
+          取引のあとの評価（2026-11-28 ユーザー決定・B案）。
+          ⚠️⚠️ **完了した取引にだけ出す。** 途中で出せると「悪い評価をつけるぞ」と
+             圧力をかける道具になる（サーバー側でも同じ条件で弾いている）。
+          ⚠️ 相手の答えは、両者がそろうまで渡していない（`mine` しか渡していない）。
+        */}
+        {(deal?.phase ?? 0) >= PHASE_DONE ? (
+          <div className="border-b border-[var(--line)] px-6 py-4">
+            <ReviewPanel
+              offeringId={offering.id}
+              threadId={thread.id}
+              otherName={other?.name ?? "お相手"}
+              mine={
+                reviews.find((r) => r.authorMemberId === me.id)
+                  ? {
+                      wouldWorkAgain: reviews.find((r) => r.authorMemberId === me.id)!.wouldWorkAgain,
+                      comment: reviews.find((r) => r.authorMemberId === me.id)!.comment,
+                    }
+                  : null
+              }
+              bothDone={reviews.length >= 2}
+            />
+          </div>
+        ) : null}
 
         {/* 募集の内容（クラウドワークスと同じく、やり取りの上に依頼内容を置く） */}
         {offering.description || offering.usageContext ? (

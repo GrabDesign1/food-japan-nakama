@@ -12,6 +12,8 @@ import {
 import { connectionCounts, connectionState, isFollowing } from "@/lib/connections";
 import { startConversation } from "../../messages/actions";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
+import { getTrackRecord, isEmptyRecord } from "@/lib/track-record";
+import { TrackRecordPanel } from "@/components/TrackRecord";
 import { safeInternalPath } from "@/lib/security";
 import { loadMemberWall } from "@/lib/feed";
 import { PostCard, type Author } from "../../feed/_components/PostCard";
@@ -105,10 +107,12 @@ export default async function ProducerDetailPage({
    * 仲間とフォロー（2026-11-27 ユーザー指示・Facebook のプロフィールに合わせた）。
    * ⚠️ 3つとも互いに独立なので1往復でまとめる（⚠️ 直列だとプロフィールの表示が待たされる）。
    */
-  const [counts, relState, following] = await Promise.all([
+  const [counts, relState, following, record] = await Promise.all([
     connectionCounts(m.id),
     isOwner || !meId ? Promise.resolve("self" as const) : connectionState(meId, m.id),
     isOwner || !meId ? Promise.resolve(false) : isFollowing(meId, m.id),
+    // 取引実績（2026-11-28）。⚠️ 0件の会員では画面ごと出さない（下の isEmptyRecord）
+    getTrackRecord(m.id),
   ]);
   /**
    * タイムラインが読める相手。
@@ -375,6 +379,14 @@ export default async function ProducerDetailPage({
           </Link>
         </div>
       ) : null}
+
+      {/*
+        NAKAMAでの取引実績（2026-11-28 ユーザー決定・B案）。
+        ⚠️⚠️ **記録が無い会員では、まるごと出さない。** 「実績 0件」と書くと、
+           まだ記録の無い会員全員が悪く見える。持っている人にだけ付く印にする。
+        ⚠️ 相手を選ぶ場面で効かせたいので、タイムラインより上に置く。
+      */}
+      {isEmptyRecord(record) ? null : <TrackRecordPanel record={record} />}
 
       {/* ── タイムライン（2026-11-23 ユーザー指示「Facebookみたいなタイムライン制にして」）
           プロフィールの主役は、会社の仕様表ではなく、この人が何をしてきたか。
