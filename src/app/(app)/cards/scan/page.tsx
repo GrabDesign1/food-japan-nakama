@@ -11,6 +11,7 @@ import { defaultMetAt } from "@/lib/card-summit";
 import { AI_ENABLED } from "@/lib/ai";
 import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { ScanForm } from "./ScanForm";
+import { CleanupButton } from "./CleanupButton";
 
 export const metadata = { title: "名刺を取り込む" };
 
@@ -38,6 +39,12 @@ export default async function ScanPage() {
 
       <div className="mt-6">
         <ScanForm defaultMetAt={defaultMetAt()} />
+      </div>
+
+      {/* ⚠️ 読み取っただけで保存しなかった写真は残る。自分で片づけられるようにしておく
+             （事務局に頼まないと消せない、にしない） */}
+      <div className="mt-6">
+        <CleanupButton />
       </div>
 
       <p className="mt-8 text-center">
