@@ -12,6 +12,13 @@ import {
 } from "@/lib/contact-card-core";
 import { scanCard, saveCard, type ScanState, type SaveState } from "./actions";
 
+/**
+ * 一度に選べる枚数（2026-11-28）。
+ * ⚠️ 1枚ごとにAIを2回呼ぶ（読み取り＋提案）ので、多すぎると費用と待ち時間が跳ねる。
+ *    会期の帰りに溜まった名刺を想定して、ひとまず10枚。
+ */
+const MAX_AT_ONCE = 10;
+
 const labelCls = "flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--ink)]";
 const hintCls = "text-[12px] font-normal leading-5 text-[var(--muted)]";
 
@@ -43,7 +50,15 @@ export function ScanForm({ defaultMetAt }: { defaultMetAt: string | null }) {
   // AIの提案と、NAKAMA会員との突き合わせ（2026-11-28）
   const [linkedMemberId, setLinkedMemberId] = useState("");
   const [greeting, setGreeting] = useState("");
+  /**
+   * まとめて選んだ写真の待ち行列（2026-11-28 ユーザー質問「3枚同時とかって出来ますか？」）。
+   * ⚠️⚠️ **一度に読み取って一度に保存する、にはしない。** 読み取りは必ず間違える。
+   *    1枚ずつ確認して保存し、保存したら次の1枚を自動で出す。確認を飛ばせる作りにしない。
+   * ⚠️ ここに入るのは縮めたあとの data URL。元のファイルは持たない（メモリを食うため）。
+   */
+  const [queue, setQueue] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const multiRef = useRef<HTMLInputElement | null>(null);
 
   const [scanState, scanAction, scanning] = useActionState<ScanState, FormData>(scanCard, {});
   const [saveState, saveAction, saving] = useActionState<SaveState, FormData>(saveCard, {});
@@ -66,23 +81,50 @@ export function ScanForm({ defaultMetAt }: { defaultMetAt: string | null }) {
   // 保存できたら次の1枚へ
   useEffect(() => {
     if (saveState?.ok) {
-      setDataUrl(""); setValues({}); setNote(""); setTags(""); setLocalError("");
+      setValues({}); setNote(""); setTags(""); setLocalError("");
       setLinkedMemberId(""); setGreeting("");
+      // ⚠️ 待ち行列があれば、次の1枚をそのまま出す（毎回ファイルを選び直させない）
+      setQueue((rest) => {
+        setDataUrl(rest[0] ?? "");
+        return rest.slice(1);
+      });
       if (fileRef.current) fileRef.current.value = "";
+      if (multiRef.current) multiRef.current.value = "";
     }
   }, [saveState]);
 
   const scanned = !!scanState?.draft;
   const note1 = scanState?.draft ? confidenceNote(scanState.draft.confidence) : null;
 
-  async function pick(file: File | undefined) {
-    if (!file) return;
+  /**
+   * 写真を選ぶ。**何枚でも選べる**（2026-11-28）。
+   * 1枚目をすぐ出して、残りは待ち行列に積む。
+   * ⚠️ 縮める処理は1枚ずつ順番に。全部同時に走らせるとスマホのメモリが足りなくなる。
+   */
+  async function pick(files: FileList | null) {
+    const list = Array.from(files ?? []).slice(0, MAX_AT_ONCE);
+    if (list.length === 0) return;
     setLocalError("");
     setBusy(true);
     try {
-      setDataUrl(await shrink(file));
-    } catch {
-      setLocalError("写真を読み込めませんでした。別の写真でお試しください。");
+      const shrunk: string[] = [];
+      for (const f of list) {
+        try {
+          shrunk.push(await shrink(f));
+        } catch {
+          // ⚠️ 1枚読めなくても、残りは進める（1枚のために全部やり直させない）
+          console.error("[cards/scan] この写真は読み込めませんでした:", f.name);
+        }
+      }
+      if (shrunk.length === 0) {
+        setLocalError("写真を読み込めませんでした。別の写真でお試しください。");
+        return;
+      }
+      if (shrunk.length < list.length) {
+        setLocalError(`${list.length - shrunk.length}枚は読み込めませんでした。残りを続けます。`);
+      }
+      setDataUrl(shrunk[0]);
+      setQueue(shrunk.slice(1));
     } finally {
       setBusy(false);
     }
@@ -95,16 +137,48 @@ export function ScanForm({ defaultMetAt }: { defaultMetAt: string | null }) {
         <h2 className="text-[15px] font-bold text-[var(--ink)]">1. 名刺を撮る</h2>
         <p className="mt-1 text-[12px] leading-5 text-[var(--muted)]">
           明るいところで、名刺だけが入るように撮ってください。
+          <b className="text-[var(--ink)]">まとめて{MAX_AT_ONCE}枚まで選べます。</b>
+          1枚ずつ確かめて保存すると、次の1枚が出ます。
         </p>
 
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="mt-3 block w-full text-[13px]"
-          onChange={(e) => pick(e.target.files?.[0])}
-        />
+        {queue.length > 0 ? (
+          <p className="mt-2 rounded-[8px] bg-[var(--line-soft)] px-3 py-2 text-[13px] font-bold text-[var(--ink)]">
+            {/* ⚠️ 「1枚目」と書かない。2枚目以降も同じ文言が出て食い違う（実測で踏んだ） */}
+            このあと {queue.length} 枚あります。いまの1枚を保存すると、次が出ます。
+          </p>
+        ) : null}
+
+        {/*
+          ⚠️⚠️ **入口は2つ要る。**
+            ・その場で1枚撮る＝`capture` 付き。スマホでカメラが直接開く（会場での使い方）
+            ・あとでまとめて取り込む＝`multiple`。⚠️ `capture` を付けると**複数選べなくなる**
+          ⚠️ 2026-11-28、`multiple` を足すときに `capture` を消してしまい、
+             カメラが直接開かなくなった。片方に寄せないこと。
+        */}
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-6">
+          <label className="flex flex-col gap-1 text-[13px] font-semibold text-[var(--ink)]">
+            その場で1枚撮る
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="block w-full text-[13px] font-normal"
+              onChange={(e) => pick(e.target.files)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-[13px] font-semibold text-[var(--ink)]">
+            写真からまとめて選ぶ
+            <input
+              ref={multiRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="block w-full text-[13px] font-normal"
+              onChange={(e) => pick(e.target.files)}
+            />
+          </label>
+        </div>
 
         {dataUrl ? (
           <div className="mt-3">
