@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { signOut } from "../(auth)/actions";
 import { MobileNav } from "./_components/MobileNav";
 import { MessagePeek } from "./_components/MessagePeek";
+import { NavIcon } from "./_components/NavIcon";
 import { btn } from "@/lib/ui";
 
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; section?: string };
@@ -120,8 +121,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 ) : null}
                 <Link
                   href={item.href}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-[13px] transition hover:bg-white/8"
+                  className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] transition hover:bg-white/8"
                 >
+                  {/*
+                    ⚠️ 絵柄は行き先で決まる（NavIcon.tsx）。⚠️ 無い行き先は何も出ない。
+                    ⚠️⚠️ 絵柄のぶん幅が減り、「みんなの記録（写真・動画）」が2行に折れた（実測）。
+                       16px＋`gap-2`＋左右の余白を詰めて1行に戻している。⚠️ これ以上広げないこと。
+                  */}
+                  <NavIcon href={item.href} size={16} />
                   <span>{item.label}</span>
                   {item.href === "/messages" && unread > 0 ? (
                     <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">

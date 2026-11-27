@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { NavIcon } from "./NavIcon";
 import { useCloseOnEscape } from "@/components/useCloseOnEscape";
 
 type Item = { label: string; href: string; admin?: boolean; section?: string };
@@ -99,8 +100,10 @@ export function MobileNav({ items, unread }: { items: Item[]; unread: number }) 
                     <Link
                       href={item.href}
                       onClick={() => setOpen(false)}
-                      className="flex min-h-[44px] items-center gap-2 rounded-md px-3 py-2.5 text-[14px] transition hover:bg-white/8"
+                      className="flex min-h-[44px] items-center gap-2.5 rounded-md px-3 py-2.5 text-[14px] transition hover:bg-white/8"
                     >
+                      {/* ⚠️ 絵柄は行き先で決まる（NavIcon.tsx）。パソコンの左メニューと同じもの */}
+                      <NavIcon href={item.href} size={20} />
                       <span>{item.label}</span>
                       {item.href === "/messages" && unread > 0 ? (
                         <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
