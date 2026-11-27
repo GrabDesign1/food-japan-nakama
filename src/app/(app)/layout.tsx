@@ -17,32 +17,48 @@ type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; 
 // 上位＝利用者の主要行動。商談と商談ステータスの併記はやめ「進行中の活動」に一本化
 // （ボードは /deals 内の「ボードで見る」から到達）。
 const NAV: NavItem[] = [
+  // ── よく使う4つ（見出しなし）。2026-11-27 ユーザー指示「機能の整理とわかりやすさを最大限」。
+  //    ⚠️⚠️ **ここを5つ以上に増やさないこと。** 増やすと「よく使う」が意味を失い、
+  //       結局どれも探すことになる（20項目が平らに並んでいたのが元の状態）。
   { label: "ホーム", href: "/dashboard", ready: true },
   { label: "案件を探す", href: "/search", ready: true },
-  // 生産者×流通の突き合わせ（2026-11-26）。探すのとなりに置く
-  { label: "オススメの仲間", href: "/matching", ready: true },
-  // ⚠️ 会員を見る入口がナビに1つも無く「探してもない」とご指摘（2026-11-25）
-  { label: "メンバーを見る", href: "/members", ready: true },
+  { label: "メッセージ", href: "/messages", ready: true },
   // 仲間の申請（2026-11-27）。⚠️ 承認はこの1か所だけ。プロフィール側に増やさないこと
   { label: "つながり", href: "/connections", ready: true },
-  { label: "売りたい・探している", href: "/ledger", ready: true },
-  { label: "進行中の活動", href: "/deals", ready: true },
-  { label: "メッセージ", href: "/messages", ready: true },
+
+  // ── 人を見つける
+  // 生産者×流通の突き合わせ（2026-11-26）
+  { label: "オススメの仲間", href: "/matching", ready: true, section: "人を見つける" },
+  // ⚠️ 会員を見る入口がナビに1つも無く「探してもない」とご指摘（2026-11-25）
+  { label: "メンバーを見る", href: "/members", ready: true, section: "人を見つける" },
+  { label: "交換カード", href: "/cards", ready: true, section: "人を見つける" },
+
+  // ── 商いを動かす
+  { label: "売りたい・探している", href: "/ledger", ready: true, section: "商いを動かす" },
+  { label: "進行中の活動", href: "/deals", ready: true, section: "商いを動かす" },
+  { label: "共創プロジェクト", href: "/projects", ready: true, section: "商いを動かす" },
+  { label: "お気に入り", href: "/favorites", ready: true, section: "商いを動かす" },
+
+  // ── 集まる・読む
   // ⚠️ 「みんなの取り組み」はホームに一本化した（2026-11-26）。入口を2つに戻さないこと
-  { label: "集まりたい", href: "/gatherings", ready: true },
+  { label: "集まりたい", href: "/gatherings", ready: true, section: "集まる・読む" },
   // 仲間が共有した記事＋事務局ピック（2026-11-25）
-  { label: "食のキュレーション", href: "/curation", ready: true },
+  { label: "食のキュレーション", href: "/curation", ready: true, section: "集まる・読む" },
   // サミットで会った方の一覧（2026-11-25 ユーザー指示「参加した人のページをつくりたい」）
-  { label: "サミットで会った人", href: "/summit", ready: true },
+  { label: "サミットで会った人", href: "/summit", ready: true, section: "集まる・読む" },
   // 開催報告（セッションごとの記事）。会員だけが読む（2026-11-25）
-  { label: "開催報告を読む", href: "/summit/reports", ready: true },
+  { label: "開催報告を読む", href: "/summit/reports", ready: true, section: "集まる・読む" },
   // 宮崎2026の写真・動画・記事を持ち寄る場所（2026-11-26）
-  { label: "みんなの記録（写真・動画）", href: "/summit/share", ready: true },
-  { label: "交換カード", href: "/cards", ready: true, section: "その他" },
-  { label: "共創プロジェクト", href: "/projects", ready: true, section: "その他" },
-  { label: "お気に入り", href: "/favorites", ready: true, section: "その他" },
+  { label: "みんなの記録（写真・動画）", href: "/summit/share", ready: true, section: "集まる・読む" },
+
+  // ── アカウント
   { label: "プロフィール", href: "/profile", ready: true, section: "アカウント" },
   { label: "プラン・お支払い", href: "/billing", ready: true, section: "アカウント" },
+  // ⚠️⚠️ 2026-11-27 実測：**/report（違反報告）は作ってあるのに、どこからも行けなかった**
+  //    （ソース全体で参照0件）。作った機能をUIに繋ぐ、の原則どおりここに出す。
+  //    ⚠️ 相手や案件を指定して報告する場合は `/report?targetType=member&targetId=...`。
+  //       プロフィール側からの導線は producers/[id] にある。
+  { label: "違反を報告する", href: "/report", ready: true, section: "アカウント" },
   { label: "事務局管理", href: "/admin", admin: true, ready: true, section: "アカウント" },
 ];
 

@@ -367,28 +367,102 @@ a.fjn-hero__tag:hover { background: rgba(0, 47, 34, 0.06); }
   .fjn-button { transition: none; }
 }
 
-/* ── ログイン後（会員画面）のトーン＆マナー（2026-11-26 ユーザー指示）───────────
-   名古屋サイト（nagoya.food-japan-summit.jp）に合わせる。実測値は CLAUDE.md に記載。
+/* ── ログイン後（会員画面）＝ Material 3（2026-11-27 ユーザー決定）────────────────
+   ユーザー指示：「M3に沿ってUIを作り直しましょう」「全部やり直して」「M3版を本番の下書きにする」。
+   設計キャンバス（色ロール・型スケール・角・間隔・高さ・動き・画面幅の全数値）：
+   https://claude.ai/artifact/VdRhU4AmvyV1UoB4N3RDku
 
-   ⚠️⚠️ **公開LPには効かせない。** (app)/layout.tsx の一番外側に .app-tone を付け、
-      その中だけで変数を上書きしている。:root を直接書き換えると公開側まで変わる。
-   ⚠️⚠️ **変数名は --green のまま色だけ赤に替えている。**
-      会員画面133ファイルすべてが --green を参照しており、名前を変えると全部を書き換えることになる。
-      「--green が赤」は気持ち悪いが、1か所で戻せる状態を優先した。
-      ここを消せば、会員画面は元の緑に戻る（他は何も変わらない）。 */
+   ⚠️⚠️ **公開LPには効かせない。** (app)/layout.tsx の一番外側の .app-tone の中だけで上書きする。
+      :root を直接書き換えると公開側まで変わる。
+   ⚠️⚠️ **既存の変数名は変えていない。** 会員画面133ファイルが --green / --muted などを参照しており、
+      名前を変えると全部を書き換えることになる。**名前はそのまま、値だけM3のロールに差し替えた。**
+      ⚠️ 「--green が赤」「--amber が tertiary」は気持ち悪いが、1か所で戻せる状態を優先している。
+      ここを消せば元に戻る（他は何も変わらない）。
+   ⚠️ 新しく書く画面は、下の --md-sys-color-* を直接使うこと（こちらが正式な名前）。
+
+   ■ 色の出どころ：NAKAMAの赤 #FF3131 をソースカラーにして、M3のトーナルパレットを起こしている。
+     赤は捨てていない。primary は tone 40 ＝ #B8272D。
+
+   ⚠️⚠️ **地の色に赤みを付けない**（2026-11-26 の判断を引き継ぐ。面積が広いと画面が騒がしくなる）。
+      そのため surface 系だけは彩度を落とした中立トーンにしている。M3の範囲内の選択。
+
+   ⚠️⚠️ **error と primary がどちらも赤で、色だけでは見分けられない。**
+      エラーは「error container の地 ＋ 記号 ＋ 文章」の3点セットで出すこと。色だけに頼らない。
+
+   ■ 直った不具合（実測）
+     - 旧 --muted #78828f はコントラスト 3.90:1 で、小さい文字の基準4.5:1を満たしていなかった → 8.8:1
+     - 旧 --green #ff3131 を文字色に使うと 3.68:1 で不足 → #B8272D で 6.2:1 */
 .app-tone {
-  --ink: #111111;        /* 名古屋 --site-ink */
-  --ink-2: #454545;      /* 名古屋 --site-ink-2 */
-  --muted: #78828f;
-  --line: #e2e4e6;       /* 名古屋 --site-line（寒色の薄いグレー） */
-  --line-soft: #eeeeee;  /* 名古屋 --site-surface */
+  /* ── M3 色ロール（正式な名前。新しい画面はこちらを使う）─────────────── */
+  --md-sys-color-primary: #b8272d;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #ffdad6;
+  --md-sys-color-on-primary-container: #410006;
 
-  --green: #ff3131;      /* 主アクション＝赤（ユーザー決定 2026-11-26） */
-  --green-d: #b8272d;    /* ホバーと文字リンク（名古屋 --site-link） */
-  --green-soft: #f4f5f6; /* ⚠️ 淡い地に赤みを付けない。面積が広いので画面が騒がしくなる */
+  --md-sys-color-secondary: #775652;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #f6ddda;
+  --md-sys-color-on-secondary-container: #2c1512;
 
-  --action: #111111;     /* 最重要CTA（提案・問い合わせ）は黒。赤と competing させない */
-  --action-d: #333333;
+  --md-sys-color-tertiary: #6f5c2e;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #fae0a6;
+  --md-sys-color-on-tertiary-container: #261a00;
+
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+
+  /* surface 系は彩度を落とした中立トーン（上の⚠️を参照） */
+  --md-sys-color-surface: #fdfbfa;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f8f5f4;
+  --md-sys-color-surface-container: #f3f0ef;
+  --md-sys-color-surface-container-high: #edeae9;
+  --md-sys-color-surface-container-highest: #e8e4e3;
+  --md-sys-color-on-surface: #1c1b1b;
+  --md-sys-color-on-surface-variant: #4f4745;
+  --md-sys-color-outline: #807775;
+  --md-sys-color-outline-variant: #d1c9c7;
+
+  --md-sys-color-inverse-surface: #392e2d;
+  --md-sys-color-inverse-on-surface: #ffedeb;
+  --md-sys-color-inverse-primary: #ffb4ab;
+
+  /* ── 既存の変数を、上のロールへ繋ぐ（133ファイルはこちらを見ている）───────── */
+  --canvas:     var(--md-sys-color-surface);                  /* 画面の地 */
+  --surface:    var(--md-sys-color-surface-container-lowest); /* カード面（白） */
+  --ink:        var(--md-sys-color-on-surface);
+  --ink-2:      #3b3534;                                      /* on surface と variant の中間 */
+  --muted:      var(--md-sys-color-on-surface-variant);       /* ⚠️ 旧#78828f は対比不足だった */
+  --line:       var(--md-sys-color-outline-variant);          /* 区切り線は outline ではなく variant */
+  --line-soft:  var(--md-sys-color-surface-container-highest);
+
+  --green:      var(--md-sys-color-primary);                  /* 主アクション＝赤 */
+  --green-d:    #8c1c22;                                      /* ホバー・文字リンク（より濃い primary） */
+  --green-soft: var(--md-sys-color-surface-container);        /* ⚠️ 淡い地に赤みを付けない */
+
+  /* 最重要CTA（提案・問い合わせ）＝ M3 の inverse surface。赤と competing させない */
+  --action:     var(--md-sys-color-inverse-surface);
+  --action-d:   #231918;
+
+  --red:        var(--md-sys-color-error);
+  --red-soft:   var(--md-sys-color-error-container);
+
+  /* 金・山吹は tertiary に統合（ビジネス会員・「探している」・バッジ） */
+  --gold:       var(--md-sys-color-tertiary);
+  --gold-d:     #574619;
+  --amber:      var(--md-sys-color-tertiary);
+  --amber-d:    #574619;
+  --amber-ink:  var(--md-sys-color-on-tertiary-container);
+  --amber-line: #e3cb92;
+  --amber-soft: var(--md-sys-color-tertiary-container);
+  --amber-bg:   #fff4dc;
+
+  /* オレンジの差し色も tertiary へ寄せる（近い色を2つ持たない） */
+  --orange:      var(--md-sys-color-tertiary);
+  --orange-soft: #fff4dc;
 }
 
 /* ボタンはピル型（名古屋は高さ48px・左右32px・15px/600） */

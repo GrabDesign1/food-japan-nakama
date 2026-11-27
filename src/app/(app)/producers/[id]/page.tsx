@@ -520,6 +520,22 @@ export default async function ProducerDetailPage({
           </table>
         </div>
       </div>
+
+      {/*
+        違反の報告（2026-11-27）。⚠️⚠️ **「/report」は作ってあったのに、どこからも行けなかった**
+        （ソース全体で参照0件・実測）。相手と対象が分かるこの場所から渡す。
+        ⚠️ 自分のページには出さない。⚠️ 目立たせない（押し間違いと、報告の乱発を防ぐ）。
+      */}
+      {!isOwner ? (
+        <div className="border-t border-[var(--line-soft)] pt-4">
+          <Link
+            href={`/report?targetType=member&targetId=${m.id}`}
+            className="text-[12px] text-[var(--muted)] underline underline-offset-2 hover:text-[var(--ink-2)]"
+          >
+            この事業者について、事務局に報告する
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }

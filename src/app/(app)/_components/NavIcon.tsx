@@ -66,6 +66,9 @@ const PATHS: Record<string, string> = {
   // 盾（事務局管理）
   "/admin":
     "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z",
+  // 旗（違反を報告する）
+  "/report":
+    "M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z",
 };
 
 export function NavIcon({ href, size = 18 }: { href: string; size?: number }) {
