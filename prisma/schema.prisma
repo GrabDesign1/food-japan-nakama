@@ -1971,3 +1971,20 @@ model PushSubscription {
   @@index([memberId])
   @@map("push_subscriptions")
 }
+
+/// プッシュ通知の鍵（VAPID）。2026-11-28。**1行だけ**（id は "default" 固定）。
+/// ⚠️⚠️ **なぜDBに置くか**＝環境変数に置くと、本番へ反映するたびに人が貼り付ける必要があり、
+///    そこで作業が止まる。鍵は初回アクセス時にサーバーが自動生成して、ここに入れる。
+/// ⚠️⚠️ **private_key は秘密。** RLS を有効にして anon/authenticated から権限を剥がしてある。
+///    読めるのはサーバー（service_role）だけ。⚠️ 画面にもログにも出さないこと。
+/// ⚠️⚠️ **この鍵を作り直すと、既存の購読（push_subscriptions）が全部무効になる。**
+///    作り直したら push_subscriptions も空にして、会員に登録し直してもらうこと。
+model PushKey {
+  id         String   @id @default("default")
+  publicKey  String   @map("public_key")
+  privateKey String   @map("private_key")
+  subject    String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("push_keys")
+}

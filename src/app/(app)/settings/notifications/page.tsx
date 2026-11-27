@@ -17,6 +17,7 @@ import { eyebrowCls, h1Cls } from "@/lib/ui";
 import { NotifyToggle } from "./NotifyToggle";
 import { InstallApp } from "./InstallApp";
 import { PushToggle } from "./PushToggle";
+import { getVapidPublicKey } from "@/lib/push-keys";
 
 export const metadata: Metadata = {
   title: "通知の設定",
@@ -27,6 +28,8 @@ export default async function NotificationSettingsPage() {
   const su = await getSessionUser();
   if (!su) redirect("/login");
   const settings = await getNotifySettings(su.app.id);
+  // ⚠️ 鍵は環境変数ではなくDBから（無ければここで自動生成される）
+  const vapidPublicKey = await getVapidPublicKey();
 
   return (
     <div className="mx-auto w-full max-w-[720px]">
@@ -61,7 +64,7 @@ export default async function NotificationSettingsPage() {
           ⚠️ この順番を変えないこと。iPhone は「ホーム画面に追加」が先で、
              追加しないと通知の許可すら聞けない（PushToggle が need-install を出す）。 */}
       <div className="mt-6 flex flex-col gap-3">
-        <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        <PushToggle publicKey={vapidPublicKey} />
         <InstallApp />
       </div>
 

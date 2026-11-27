@@ -17,23 +17,23 @@ import { setVapidDetails, sendNotification } from "web-push";
 import { prisma } from "@/lib/db";
 import type { NotifyKind } from "@/lib/notify-settings";
 import { allowedPushMemberIds } from "@/lib/notify-settings";
+import { getVapidKeys } from "@/lib/push-keys";
 
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-const PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-const SUBJECT = process.env.VAPID_SUBJECT || "mailto:info@food-japan-summit.jp";
-
+// ⚠️ 鍵は DB から取る（無ければ自動生成）。環境変数に置くと、本番へ反映するたびに
+//    人が貼り付ける必要があって作業が止まるため（2026-11-28 ユーザー選択）。詳細は lib/push-keys.ts
 let ready = false;
-function setup(): boolean {
-  if (!PUBLIC_KEY || !PRIVATE_KEY) return false;
-  if (!ready) {
-    setVapidDetails(SUBJECT, PUBLIC_KEY, PRIVATE_KEY);
-    ready = true;
+async function setup(): Promise<boolean> {
+  try {
+    const { publicKey, privateKey, subject } = await getVapidKeys();
+    if (!ready) {
+      setVapidDetails(subject, publicKey, privateKey);
+      ready = true;
+    }
+    return true;
+  } catch (e) {
+    console.error("[push] 鍵の用意に失敗:", e);
+    return false;
   }
-  return true;
-}
-
-export function pushConfigured(): boolean {
-  return Boolean(PUBLIC_KEY && PRIVATE_KEY);
 }
 
 export type PushPayload = {
@@ -55,7 +55,7 @@ export async function sendPushToMember(
   kind: NotifyKind,
   payload: PushPayload
 ): Promise<void> {
-  if (!setup()) return;
+  if (!(await setup())) return;
   const allowed = await allowedPushMemberIds([memberId], kind);
   if (allowed.length === 0) return;
 
