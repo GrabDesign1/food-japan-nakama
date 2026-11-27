@@ -5,6 +5,7 @@
 // 配信は非公開バケット → /api/attachments/[messageId] が参加者検証をしてから署名付きURLへ。
 import { useState } from "react";
 import { ScrollToLatest } from "./ScrollToLatest";
+import { MessageExtras, type ReactionSummary, type ThreadReply } from "./MessageExtras";
 
 export type MessageForList = {
   id: string;
@@ -15,6 +16,10 @@ export type MessageForList = {
   attachmentName: string | null;
   attachmentSize: number | null;
   attachments: { id: string; name: string; size: number }[];
+  /** 絵文字リアクション（2026-11-27）。⚠️ 無ければ何も出さない（案件ごとの画面でも共用するため任意） */
+  reactions?: ReactionSummary[];
+  /** スレッド返信（2026-11-27）。⚠️ 本文には流れない。開いたときだけ出る */
+  replies?: ThreadReply[];
 };
 
 /** 拡張子から画像かどうかを判定する（サムネイル表示の可否）。 */
@@ -218,6 +223,13 @@ export function MessageList({
                   <div className="mt-2 whitespace-pre-wrap text-[14px] leading-7 text-[var(--ink)]">
                     <Body text={msg.body} />
                   </div>
+                  {msg.reactions || msg.replies ? (
+                    <MessageExtras
+                      messageId={msg.id}
+                      reactions={msg.reactions ?? []}
+                      replies={msg.replies ?? []}
+                    />
+                  ) : null}
                   {files_.map((a) => (
                     <div key={a.key} className="mt-3 rounded-[10px] border border-[var(--line)] bg-white p-3">
                       {isImageName(a.name) ? (
@@ -305,6 +317,21 @@ export function MessageList({
                     </div>
                   ))}
                 </div>
+                {/*
+                  ⚠️⚠️ **吹き出しの外に出すこと。** 中に入れると、自分の発言（赤地・白文字）に
+                     飲み込まれてチップが読めなくなる。
+                */}
+                {msg.reactions || msg.replies ? (
+                  <div className={mine ? "flex justify-end" : "flex justify-start"}>
+                    <div className="w-full max-w-[80%] text-left">
+                      <MessageExtras
+                        messageId={msg.id}
+                        reactions={msg.reactions ?? []}
+                        replies={msg.replies ?? []}
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
             );
           })}

@@ -12,6 +12,7 @@ import { notifyNewMessage } from "@/lib/email";
 import { safeAttachmentContentType } from "@/lib/upload";
 import { MAX_ATTACHMENTS } from "@/lib/attachments";
 import { loadLockedLeadThreadIds, leadPreview } from "@/lib/lead-unlock";
+import { isReaction } from "@/lib/reactions";
 import {
   trimTo,
   canSendToOthers,
@@ -403,4 +404,101 @@ export async function markThreadRead(threadId: string): Promise<void> {
     where: { threadId, seekerMemberId: me.id, openedAt: null },
     data: { openedAt: new Date() },
   });
+}
+
+// ── スレッド返信と絵文字リアクション（2026-11-27）─────────────────────────
+// ユーザー指示「Slack相当の5機能」のうち、1対1の中で完結する2つ。
+//
+// ⚠️⚠️ **参加者かどうかを必ずサーバー側で確かめる。** メッセージIDは推測されうるので、
+//    クライアントから渡された ID をそのまま信用しない。
+// ⚠️⚠️ **リアクションでは通知しない。** 設計の「黙る」段（開けば分かる）。
+//    ⚠️ ここでメールを送ると、1往復ごとに何通も飛ぶ。絶対に足さないこと。
+
+/** 自分が参加しているスレッドの発言かどうかを確かめ、スレッドIDを返す。 */
+async function assertParticipantMessage(
+  messageId: string,
+  memberId: string,
+): Promise<{ threadId: string }> {
+  const msg = await prisma.message.findUnique({
+    where: { id: messageId },
+    select: { id: true, threadId: true, thread: { select: { fromMemberId: true, toMemberId: true } } },
+  });
+  if (!msg) throw new Error("メッセージが見つかりません");
+  const t = msg.thread;
+  if (t.fromMemberId !== memberId && t.toMemberId !== memberId) {
+    throw new Error("このやり取りには参加していません");
+  }
+  return { threadId: msg.threadId };
+}
+
+/**
+ * 絵文字リアクションを付ける／外す（同じものをもう一度押すと外れる）。
+ * ⚠️ 通知しない。⚠️ 未読件数にも数えない。
+ */
+export async function toggleReaction(messageId: string, emoji: string): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) redirect("/login");
+  const me = await getOrCreateMemberForUser(su);
+  if (!isReaction(emoji)) return; // 一覧にないものは受け付けない（src/lib/reactions.ts が唯一の定義）
+  const { threadId } = await assertParticipantMessage(messageId, me.id);
+
+  const existing = await prisma.messageReaction.findUnique({
+    where: { messageId_memberId_emoji: { messageId, memberId: me.id, emoji } },
+    select: { id: true },
+  });
+  if (existing) {
+    await prisma.messageReaction.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.messageReaction.create({ data: { messageId, memberId: me.id, emoji } });
+  }
+  revalidatePath(`/messages/${threadId}`);
+}
+
+/**
+ * スレッド返信（この発言にぶら下げる）。
+ * ⚠️⚠️ **入れ子は1段だけ。** 親がすでに誰かの子なら、その親の親にぶら下げる。
+ * ⚠️ スレッドの返信は本文に流れない（＝本文が枝葉で埋まらない）。
+ * ⚠️ 相手への通知は本文の新着と同じ扱い（未読が溜まっていないときだけメール）。
+ */
+export async function sendThreadReply(parentMessageId: string, formData: FormData): Promise<void> {
+  const su = await getSessionUser();
+  if (!su) redirect("/login");
+  const me = await getOrCreateMemberForUser(su);
+  const body = trimTo(String(formData.get("body") ?? ""), MESSAGE_MAX);
+  if (!body) return;
+
+  const parent = await prisma.message.findUnique({
+    where: { id: parentMessageId },
+    select: {
+      id: true,
+      threadId: true,
+      parentMessageId: true,
+      offeringId: true,
+      thread: { select: { fromMemberId: true, toMemberId: true } },
+    },
+  });
+  if (!parent) throw new Error("メッセージが見つかりません");
+  const t = parent.thread;
+  if (t.fromMemberId !== me.id && t.toMemberId !== me.id) {
+    throw new Error("このやり取りには参加していません");
+  }
+  // 1段に畳む（返信への返信も、同じ親にぶら下げる）
+  const rootId = parent.parentMessageId ?? parent.id;
+
+  await prisma.message.create({
+    data: {
+      threadId: parent.threadId,
+      senderMemberId: me.id,
+      body,
+      parentMessageId: rootId,
+      offeringId: parent.offeringId,
+    },
+  });
+  // ⚠️ スレッドの返信でも「最後のやり取り」は進める（一覧の並び順が古いままにならないように）
+  await prisma.thread.update({
+    where: { id: parent.threadId },
+    data: { lastMessageAt: new Date() },
+  });
+
+  revalidatePath(`/messages/${parent.threadId}`);
 }

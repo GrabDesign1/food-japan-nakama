@@ -8,6 +8,7 @@ import { loadLockedLeadThreadIds } from "@/lib/lead-unlock";
 import { ThreadList } from "../_components/ThreadList";
 import { Composer } from "../_components/Composer";
 import { MessageList } from "../_components/MessageList";
+import type { ThreadReply } from "../_components/MessageExtras";
 import { ThreadHeader } from "../_components/ThreadHeader";
 import { h1Cls } from "@/lib/ui";
 
@@ -46,7 +47,11 @@ export default async function ThreadPage({
       where: { threadId: thread.id },
       orderBy: { createdAt: "asc" },
       // 添付は複数可（旧メッセージは attachmentUrl の1件だけを持つ）
-      include: { attachments: { orderBy: { sortOrder: "asc" } } },
+      // リアクションは件数と「自分が押したか」を出すため、全部引いて下でまとめる（1スレッド分なので軽い）
+      include: {
+        attachments: { orderBy: { sortOrder: "asc" } },
+        reactions: { select: { emoji: true, memberId: true } },
+      },
     }),
     prisma.messageDraft.findUnique({
       where: { threadId_memberId: { threadId: thread.id, memberId: me.id } },
@@ -80,7 +85,44 @@ export default async function ThreadPage({
     // 進捗（商談）。スレッド単位＝案件単位
     prisma.deal.findFirst({ where: { threadId: thread.id }, select: { id: true, phase: true } }),
   ]);
-  const lastMessageId = messages[messages.length - 1]?.id ?? "none";
+  // ── スレッド返信とリアクションを、本文の発言にぶら下げる（2026-11-27）────────────
+  // ⚠️⚠️ **本文に出すのは親（parentMessageId が null）だけ。**
+  //    返信まで本文に流すと、商談の記録が枝葉で埋まる。
+  // ⚠️ 返信は親ごとにまとめ、古い順のまま渡す。
+  const myName_ = me.contactName || me.name || "自分";
+  const otherName_ = other?.name ?? "相手";
+  const repliesByParent = new Map<string, ThreadReply[]>();
+  for (const m of messages) {
+    if (!m.parentMessageId) continue;
+    const list = repliesByParent.get(m.parentMessageId) ?? [];
+    list.push({
+      id: m.id,
+      body: m.body,
+      createdAt: m.createdAt,
+      mine: m.senderMemberId === me.id,
+      name: m.senderMemberId === me.id ? myName_ : otherName_,
+    });
+    repliesByParent.set(m.parentMessageId, list);
+  }
+  const rootMessages = messages
+    .filter((m) => !m.parentMessageId)
+    .map((m) => {
+      // 絵文字ごとに件数をまとめ、自分が押したかどうかを持たせる
+      const byEmoji = new Map<string, { count: number; mine: boolean }>();
+      for (const r of m.reactions) {
+        const cur = byEmoji.get(r.emoji) ?? { count: 0, mine: false };
+        cur.count += 1;
+        if (r.memberId === me.id) cur.mine = true;
+        byEmoji.set(r.emoji, cur);
+      }
+      return {
+        ...m,
+        reactions: [...byEmoji.entries()].map(([emoji, v]) => ({ emoji, ...v })),
+        replies: repliesByParent.get(m.id) ?? [],
+      };
+    });
+
+  const lastMessageId = rootMessages[rootMessages.length - 1]?.id ?? "none";
 
   return (
     <div className="flex flex-col gap-4">
@@ -123,7 +165,7 @@ export default async function ThreadPage({
 
           {/* メッセージ（案件ごとの提案画面と共用） */}
           <MessageList
-            messages={messages}
+            messages={rootMessages}
             meId={me.id}
             otherName={other?.name ?? "相手"}
             myName={me.name || "自分"}

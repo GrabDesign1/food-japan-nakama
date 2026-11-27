@@ -244,6 +244,8 @@ model Member {
   connectionsIn  MemberConnection[] @relation("ConnectionAddressee")
   following      MemberFollow[]     @relation("FollowFollower")
   followers      MemberFollow[]     @relation("FollowFollowee")
+  /// 自分が付けた絵文字リアクション（2026-11-27）
+  messageReactions MessageReaction[]
 
   @@index([tenantId])
   @@index([status])
@@ -725,13 +727,45 @@ model Message {
   /// （スレッドは会員ペアで1本のため、スレッドの offeringId では後続の問い合わせを判定できない）
   offeringId     String?   @map("offering_id")
   readAt         DateTime? @map("read_at")
+  /// スレッド返信（2026-11-27）。この発言がぶら下がっている親の発言。
+  /// ⚠️ null ＝ 本文に出る発言。値あり ＝ スレッドの中だけに出る発言。
+  /// ⚠️⚠️ **入れ子は1段だけ。** 返信への返信も、同じ親にぶら下げること
+  ///    （2段以上にすると、本文とスレッドのどちらに出すかが決められなくなる）。
+  /// ⚠️ 未読件数は本文の発言だけで数える。スレッドの枝葉で赤い数字を増やさない。
+  parentMessageId String?  @map("parent_message_id")
   createdAt      DateTime  @default(now()) @map("created_at")
 
   thread      Thread              @relation(fields: [threadId], references: [id], onDelete: Cascade)
   attachments MessageAttachment[]
+  parent      Message?            @relation("MessageThread", fields: [parentMessageId], references: [id], onDelete: Cascade)
+  replies     Message[]           @relation("MessageThread")
+  reactions   MessageReaction[]
 
   @@index([threadId])
+  @@index([parentMessageId])
   @@map("messages")
+}
+
+/// 発言への絵文字リアクション（2026-11-27）。
+/// ⚠️⚠️ **返事をしなくていい合図**として入れた。これがあると「了解」だけの往復が減る。
+/// ⚠️ 使える絵文字はアプリ側で6つに固定する（商談の場なので、全絵文字は出さない）。
+///    DBは文字列を受けるだけ。⚠️ 増やすときはアプリ側の一覧を直すこと。
+/// ⚠️ 同じ人が同じ発言に同じ絵文字を2回付けられない（unique）。もう一度押すと外れる。
+/// ⚠️⚠️ リアクションでは通知しない（設計の「黙る」段。開けば分かる）。
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String   @map("message_id")
+  memberId  String   @map("member_id")
+  /// 絵文字そのもの（例: 👍）。⚠️ 異体字セレクタ込みで入ることがあるので余裕を持たせる
+  emoji     String   @db.VarChar(16)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, memberId, emoji])
+  @@index([messageId])
+  @@map("message_reactions")
 }
 
 /// メッセージの添付ファイル（複数可・2026-08-11）。
