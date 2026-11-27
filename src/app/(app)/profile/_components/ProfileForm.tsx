@@ -24,6 +24,8 @@ export type MemberData = {
   brandLogoUrl: string | null;
   contactName: string | null;
   contactKana: string | null;
+  /** 携帯番号（2026-11-28・必須）。⚠️ 名簿・事業者ページには出さない */
+  contactMobile: string | null;
   contactRole: string | null;
   contactBio: string | null;
   /** 発信しているところ（2026-11-25）。決まった種類＋自由欄 */
@@ -70,6 +72,9 @@ const inputCls = `${inputBase} ${normalSkin}`;
 const GUIDE_FIELDS: { key: keyof MemberData; label: string; tab: number }[] = [
   { key: "name", label: "事業者名", tab: 0 },
   { key: "contactName", label: "担当者名", tab: 0 },
+  // ⚠️ 必須（2026-11-28）。ここに入れないと「すべて入力済み」と出てしまい、
+  //    上の「携帯番号をご登録ください」の帯と食い違う。
+  { key: "contactMobile", label: "携帯番号", tab: 0 },
   { key: "contactRole", label: "担当者の肩書", tab: 0 },
   { key: "contactBio", label: "担当者のひとこと", tab: 0 },
   { key: "categoryL1", label: "会員種別（大分類）", tab: 0 },
@@ -100,6 +105,8 @@ function Field({
   placeholder,
   required,
   guide,
+  inputMode,
+  hint,
 }: {
   label: string;
   name: string;
@@ -107,8 +114,12 @@ function Field({
   placeholder?: string;
   required?: boolean;
   guide?: boolean;
+  inputMode?: "tel" | "email" | "numeric";
+  /** 入力欄の下に出す一行。⚠️ 「公開されません」のような、入力をためらわせない説明に使う */
+  hint?: string;
 }) {
-  const hl = guide && isEmpty(defaultValue);
+  // ⚠️ 必須なのに未入力のときも、案内の色で目立たせる（guide 指定が無くても）
+  const hl = (guide || required) && isEmpty(defaultValue);
   return (
     <label className={labelCls}>
       <span>
@@ -120,8 +131,13 @@ function Field({
         name={name}
         defaultValue={defaultValue ?? ""}
         placeholder={placeholder}
+        required={required}
+        inputMode={inputMode}
         className={`${inputBase} ${hl ? guideSkin : normalSkin}`}
       />
+      {hint ? (
+        <span className="mt-1 block text-[11px] leading-[17px] text-[var(--muted)]">{hint}</span>
+      ) : null}
     </label>
   );
 }
@@ -376,6 +392,21 @@ export function ProfileForm({
           name="contactKana"
           defaultValue={member.contactKana}
           placeholder="みやざき たろう"
+        />
+        {/*
+          携帯番号（2026-11-28 ユーザー指示「携帯番号は登録するようにして」「登録必須」）。
+          ⚠️⚠️ **名簿にも事業者ページにも出さない。** 本人の同意なく掲載しない（2026-11-26）。
+             この注意書きを消さないこと。書いていないと、公開されると思って入力をためらわれる。
+          ⚠️ 090/080/070 の11桁だけ通す（固定電話はSMSが届かない）。判定は lib/mobile.ts。
+        */}
+        <Field
+          label="携帯番号（必須）"
+          name="contactMobile"
+          defaultValue={member.contactMobile}
+          placeholder="090-1234-5678"
+          required
+          inputMode="tel"
+          hint="公開されません。事務局からの緊急のご連絡と、お知らせの送信にだけ使います。"
         />
 
         {/* 担当者ご本人の紹介（2026-11-23 ユーザー指示「担当者の紹介ができてないよ」）。

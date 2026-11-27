@@ -99,6 +99,11 @@ export type ProfileInput = {
   name: string;
   contactName: string;
   contactKana: string;
+  /**
+   * 担当者の携帯番号（2026-11-28 ユーザー指示「携帯番号は登録するようにして」「登録必須」）。
+   * ⚠️⚠️ **名簿にも事業者ページにも出さない。** 事務局の緊急連絡とSMS通知だけに使う。
+   */
+  contactMobile: string;
   /** 担当者ご本人の紹介（2026-11-23）。顔写真はアップロード側で別に持つ */
   contactRole: string;
   contactBio: string;

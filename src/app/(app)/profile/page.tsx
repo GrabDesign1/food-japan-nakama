@@ -31,6 +31,7 @@ export default async function ProfilePage() {
     brandLogoUrl: member.brandLogoUrl,
     contactName: member.contactName,
     contactKana: member.contactKana,
+    contactMobile: member.contactMobile,
     contactRole: member.contactRole,
     contactBio: member.contactBio,
     contactPhotoUrl: member.contactPhotoUrl,

@@ -25,6 +25,7 @@ import {
 } from "@/lib/ai";
 import { AI_ACTION_PROFILE, aiDraftLimitReached, recordAiDraftUse } from "@/lib/ai-usage";
 import { canSendToOthers } from "@/lib/security";
+import { normalizeMobile, isValidMobile } from "@/lib/mobile";
 
 export type ProfileState = { ok?: boolean; error?: string; message?: string };
 
@@ -232,6 +233,8 @@ export async function saveProfile(
     name: g("name"),
     contactName: g("contactName"),
     contactKana: g("contactKana"),
+    // ⚠️ 全角・空白・記号を落として、数字とハイフンだけにする（表記ゆれでSMSが送れなくなるため）
+    contactMobile: normalizeMobile(g("contactMobile")),
     contactRole: g("contactRole"),
     contactBio: gl("contactBio"),
     categoryL1: g("categoryL1"),
@@ -261,6 +264,13 @@ export async function saveProfile(
   };
 
   if (!input.name) return { error: "事業者名は必須です。" };
+  // ⚠️ 携帯番号は必須（2026-11-28 ユーザー指示「登録必須」）。
+  //    ⚠️ 固定電話を弾く＝SMSが届かない番号を登録させないため。
+  //    ⚠️⚠️ DBは null 許可のまま。既存211名は未入力なので、プロフィールを**保存するとき**に求める。
+  if (!input.contactMobile) return { error: "携帯番号は必須です。090・080・070 から始まる番号をご記入ください。" };
+  if (!isValidMobile(input.contactMobile)) {
+    return { error: "携帯番号の形式が違うようです。090-1234-5678 のようにご記入ください。" };
+  }
   if (!input.contactName) return { error: "担当者名は必須です。" };
 
   await updateMemberProfile(member.id, input);

@@ -90,7 +90,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     memberId
       ? prisma.member.findUnique({
           where: { id: memberId },
-          select: { avatarUrl: true },
+          // ⚠️ contactMobile は「未入力の帯」を出すかの判定に使う（2026-11-28・登録必須）
+          select: { avatarUrl: true, contactMobile: true },
         })
       : Promise.resolve(null),
     memberId
@@ -239,6 +240,25 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </form>
           </div>
         </header>
+
+        {/*
+          携帯番号が未入力のときの帯（2026-11-28 ユーザー指示「携帯番号は登録するようにして」「登録必須」）。
+          ⚠️⚠️ **画面を塞がない。** 既存211名が使っている最中に全部止めると、問い合わせが溢れる。
+             消せない帯を出し続け、プロフィールの保存時に必須にする、の2段構えにしている。
+          ⚠️ 閉じるボタンは付けない（付けると誰も入れない）。
+        */}
+        {memberId && !member?.contactMobile ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[var(--amber-line)] bg-[var(--amber-bg)] px-4 py-3 md:px-8 print:hidden">
+            <p className="min-w-0 flex-1 text-[13px] leading-[21px] text-[var(--amber-ink)]">
+              <b>携帯番号のご登録をお願いします。</b>
+              お取引や事務局からの急ぎのご連絡に使います。
+              <span className="text-[var(--muted)]">公開されません。</span>
+            </p>
+            <Link href="/profile" className={btn("primary", "sm")}>
+              いま登録する
+            </Link>
+          </div>
+        ) : null}
 
         {/* スマホは下部固定ナビ分の余白を確保 */}
         <main id="main" className="max-w-[1200px] px-4 py-6 pb-24 md:px-8 md:pb-6">{children}</main>
