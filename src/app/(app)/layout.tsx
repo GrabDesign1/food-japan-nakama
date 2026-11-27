@@ -153,7 +153,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <div className="hidden text-right text-[12px] leading-tight sm:block">
               <div className="text-[var(--ink)]">{su.app.name}</div>
               <div className="text-[11px] text-[var(--muted)]">
@@ -161,12 +161,20 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
             {/*
-              右上のアバターの右下に、メッセージの入口と届いている件数（2026-11-27 ユーザーご指示
-              「マイページのアイコン　右　下　に　メッセージのアイコンをつけて、バッチで届いた件数だすようにして」
-              「右上ね」「クリックしたらこんな風に表示するようにして」）。
+              メッセージの入口と、届いている件数（2026-11-27 ユーザーご指示）。
+              ⚠️⚠️ **アバターとは別の丸**（同日「アイコンわけてよ。」）。重ねると顔写真が読みにくい。
               ⚠️ 件数はここで数えた `unread` を渡す（⚠️⚠️ 中の一覧は、押したときにだけ読みに行く）。
             */}
-            <MessagePeek unread={unread} avatarUrl={member?.avatarUrl ?? null} initial={initial} />
+            <MessagePeek unread={unread} />
+            {/* ⚠️ 狭い画面では出さない（メッセージの丸が増え、ロゴが3行に折れたため・375px で実測） */}
+            <div className="hidden h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white font-serif text-[15px] text-[var(--green-d)] sm:grid">
+              {member?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={member.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                initial
+              )}
+            </div>
             <form action={signOut}>
               <button
                 type="submit"

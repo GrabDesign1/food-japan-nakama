@@ -24,16 +24,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "offering", label: "案件" },
 ];
 
-export function MessagePeek({
-  unread,
-  avatarUrl,
-  initial,
-}: {
-  unread: number;
-  avatarUrl: string | null;
-  /** ⚠️ 写真が無い方の頭文字（レイアウト側で作っている値をそのままもらう） */
-  initial: string;
-}) {
+export function MessagePeek({ unread }: { unread: number }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<PeekRow[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,36 +67,37 @@ export function MessagePeek({
   }, [open]);
 
   return (
-    /* ⚠️ 吹き出しの位置の基準はこの箱（＝アバター）。⚠️⚠️ ここの relative を外すと、吹き出しが画面の隅へ飛ぶ */
-    <div ref={boxRef} className="relative h-9 w-9 shrink-0">
-      <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-white font-serif text-[15px] text-[var(--green-d)]">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          initial
-        )}
-      </div>
+    /**
+     * ⚠️⚠️ **アバターとは別の丸**（2026-11-27 ユーザーご指示「アイコンわけてよ。」）。
+     *    ⚠️ もとはアバターの右下に重ねていたが、顔写真に印がかぶって読みにくかった。
+     * ⚠️ 吹き出しの位置の基準はこの箱。⚠️⚠️ ここの relative を外すと、吹き出しが画面の隅へ飛ぶ。
+     */
+    <div ref={boxRef} className="relative shrink-0">
       <button
         type="button"
         onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={unread > 0 ? `メッセージ（届いています ${unread}件）` : "メッセージ"}
-        className={`absolute -bottom-1 -right-1 flex h-[20px] items-center gap-[2px] rounded-full border-2 border-white px-[4px] text-[10px] font-bold leading-none text-white transition ${
-          unread > 0 ? "bg-[var(--red)]" : "bg-[var(--ink)] hover:bg-[var(--green-d)]"
-        }`}
+        className="grid h-10 w-10 place-items-center rounded-full bg-[var(--line-soft)] text-[var(--ink)] transition hover:bg-[var(--line)]"
       >
         {/* Material Symbols の「chat」相当（Apache License 2.0） */}
-        <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden className="shrink-0">
+        <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden>
           <path
             fill="currentColor"
             d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"
           />
         </svg>
-        {/* ⚠️ 3桁は丸に収まらないので 99+ で止める */}
-        {unread > 0 ? <span>{unread > 99 ? "99+" : unread}</span> : null}
       </button>
+      {/* ⚠️ 件数は丸の右上。⚠️⚠️ 3桁は収まらないので 99+ で止める */}
+      {unread > 0 ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-white bg-[var(--red)] px-[4px] text-[10px] font-bold leading-none text-white"
+        >
+          {unread > 99 ? "99+" : unread}
+        </span>
+      ) : null}
 
       {open ? (
         <div
