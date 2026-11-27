@@ -352,7 +352,13 @@ export default async function DashboardPage({
   for (const a of timeline.feed.authors) authorsById[a.id] = a;
 
   return (
-    <div className="flex flex-col gap-6">
+    /*
+      ⚠️ 2026-11-28 ユーザー指示「真ん中の表示を80%程度縮小できないか？Facebook程度のサイズに」。
+         ホームだけ 980px で止める（1136px → 980px。流れの列は 802px → 646px ＝ 約80%）。
+         ⚠️ 共通の main は max-w-[1200px] のまま。ここを変えると他の133画面に波及する。
+         ⚠️ 右の310pxは据え置き。縮めたのは真ん中だけ。
+    */
+    <div className="mx-auto flex w-full max-w-[980px] flex-col gap-6">
       {/* あいさつ */}
       <div>
         <p className={eyebrowCls}>MY PAGE</p>
