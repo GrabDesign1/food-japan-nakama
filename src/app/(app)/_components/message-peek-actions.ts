@@ -15,10 +15,12 @@ import { prisma } from "@/lib/db";
 import { LEAD_LOCKED_TEXT, loadLockedLeadThreadIds } from "@/lib/lead-unlock";
 
 /**
- * ⚠️ 吹き出しに出す件数。続きは「すべて見る」で一覧へ。
+ * ⚠️ 吹き出しに読み込む件数。
+ * ⚠️⚠️ **絞り込み（未読・案件）と検索は、この読み込んだ分の中でやる**（2026-11-27）——
+ *    ⚠️ 打つたびにサーバーへ行かせない。足りなければ「すべて見る」で一覧へ。
  * ⚠️⚠️ **export しない**——`"use server"` のファイルから出せるのは async 関数だけ（⚠️ ビルドが落ちる）。
  */
-const PEEK_TAKE = 8;
+const PEEK_TAKE = 30;
 
 export type PeekRow = {
   id: string;
@@ -28,6 +30,8 @@ export type PeekRow = {
   /** ⚠️ サーバーで文字にする（⚠️⚠️ 画面で日付を組み立てると、最初の描き直しで食い違う） */
   timeLabel: string;
   unread: number;
+  /** 案件（売りたい・探している）に紐づくやり取りか。⚠️ 「案件」タブの絞り込みに使う */
+  hasOffering: boolean;
 };
 
 export async function loadMessagePeek(): Promise<PeekRow[]> {
@@ -78,19 +82,26 @@ export async function loadMessagePeek(): Promise<PeekRow[]> {
         : last
           ? `${last.senderMemberId === meId ? "自分：" : ""}${last.body || "（ファイル）"}`
           : "（メッセージはまだありません）",
-      timeLabel: shortTime(t.lastMessageAt),
+      timeLabel: agoLabel(t.lastMessageAt),
       unread: unreadMap.get(t.id) ?? 0,
+      hasOffering: Boolean(t.offeringId),
     };
   });
 }
 
-/** 今日なら時刻、それ以外は月/日（⚠️ 一覧（ThreadList）と同じ見え方にそろえる） */
-function shortTime(d: Date): string {
-  const now = new Date();
+/**
+ * 「3分」「35分」「13時間」「3日」——1週間を過ぎたら月/日。
+ * ⚠️ 2026-11-27、ユーザーご指示の見本（Messenger）に合わせた。
+ * ⚠️ 一覧（`ThreadList`）は今までどおり時刻・月/日のまま（⚠️ あちらは指示が無いので触っていない）。
+ */
+function agoLabel(d: Date): string {
+  const min = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (min < 1) return "たった今";
+  if (min < 60) return `${min}分`;
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return `${hour}時間`;
+  const day = Math.floor(hour / 24);
+  if (day < 7) return `${day}日`;
   const p = (n: number) => String(n).padStart(2, "0");
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  return sameDay ? `${p(d.getHours())}:${p(d.getMinutes())}` : `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
+  return `${p(d.getMonth() + 1)}/${p(d.getDate())}`;
 }
