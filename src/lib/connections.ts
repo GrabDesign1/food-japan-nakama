@@ -9,6 +9,8 @@
  *    人数を相手に見せていない。⚠️ 読み替えると、同意なく人数が見えてしまう。混ぜないこと。
  */
 import { prisma } from "@/lib/db";
+import { allowedEmailsForMember } from "@/lib/notify-settings";
+import { notifyConnectionRequest, notifyConnectionAccepted } from "@/lib/email";
 
 export type ConnectionState =
   | "self"
@@ -126,6 +128,22 @@ export async function requestConnection(
       message: message?.trim().slice(0, CONNECT_MESSAGE_MAX) || null,
     },
   });
+  // 申請が届いたことを知らせる（2026-11-28 ユーザー指示「何かアクションがあったらメールが飛ぶように」）。
+  // ⚠️ 通知で失敗しても申請そのものは成立させる（try/catch で握りつぶす）。
+  // ⚠️ 「通知の設定」で止めている人には送らない。
+  try {
+    const [to, me] = await Promise.all([
+      allowedEmailsForMember(otherId, "connection"),
+      prisma.member.findUnique({ where: { id: meId }, select: { name: true } }),
+    ]);
+    await notifyConnectionRequest({
+      to,
+      fromMemberName: me?.name ?? "NAKAMAの会員",
+      message: message?.trim() || null,
+    });
+  } catch (e) {
+    console.error("[connections] 申請の通知に失敗:", e);
+  }
   return { ok: true };
 }
 
@@ -149,6 +167,21 @@ export async function respondConnection(
       where: { id: row.id },
       data: { status: "ACCEPTED", respondedAt: new Date() },
     });
+    // 承認されたことを、申請した側へ知らせる（2026-11-28）
+    // ⚠️ 辞退のときは**送らない**（断られたことを相手に伝えない作りなので）
+    try {
+      const [to, me] = await Promise.all([
+        allowedEmailsForMember(row.requesterId, "connection"),
+        prisma.member.findUnique({ where: { id: meId }, select: { name: true } }),
+      ]);
+      await notifyConnectionAccepted({
+        to,
+        memberName: me?.name ?? "NAKAMAの会員",
+        memberId: meId,
+      });
+    } catch (e) {
+      console.error("[connections] 承認の通知に失敗:", e);
+    }
   } else {
     await prisma.memberConnection.delete({ where: { id: row.id } });
   }

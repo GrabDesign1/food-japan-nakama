@@ -16,6 +16,7 @@ import { canSendToOthers, MESSAGE_MAX } from "@/lib/security";
 import { MAX_ATTACHMENTS } from "@/lib/attachments";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { safeAttachmentContentType } from "@/lib/upload";
+import { allowedEmailsForMember } from "@/lib/notify-settings";
 
 export type ProposeState = { error?: string };
 
@@ -247,7 +248,8 @@ export async function sendProposal(
   // 通知・商談作成（失敗しても送信自体は成立）
   try {
     if (notifyUnread === 0) {
-      const to = await getMemberUserEmails(offering.memberId);
+      // ⚠️ 通知を止めている人には送らない（2026-11-28）
+      const to = await allowedEmailsForMember(offering.memberId, "message");
       await notifyNewMessage({
         to,
         fromMemberName: me.name,

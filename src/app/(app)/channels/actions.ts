@@ -15,6 +15,8 @@ import { prisma } from "@/lib/db";
 import { trimTo, MESSAGE_MAX } from "@/lib/security";
 import { isReaction } from "@/lib/reactions";
 import { canRead, findMentionedMemberIds, type Visibility } from "@/lib/channels";
+import { allowedEmailsForMember } from "@/lib/notify-settings";
+import { notifyChannelMention } from "@/lib/email";
 
 const NAME_MAX = 40;
 const DESC_MAX = 200;
@@ -139,6 +141,31 @@ export async function postToChannel(
         : undefined,
     },
   });
+  // ＠で呼ばれた人にだけメールを送る（2026-11-28 ユーザー指示）。
+  // ⚠️⚠️ **鳴らすのはここだけ。** チャンネルのふつうの発言では送らない
+  //    （2026-11-27「ウザくない」＝鳴らす／数える／黙る の3段階）。
+  // ⚠️ 「通知の設定」で止めている人には送らない。失敗しても投稿は成立させる。
+  if (mentioned.length > 0) {
+    try {
+      const [channel, meRow] = await Promise.all([
+        prisma.channel.findUnique({ where: { id: channelId }, select: { name: true } }),
+        prisma.member.findUnique({ where: { id: me.id }, select: { name: true, contactName: true } }),
+      ]);
+      const lists = await Promise.all(
+        mentioned.map((id) => allowedEmailsForMember(id, "mention")),
+      );
+      await notifyChannelMention({
+        to: Array.from(new Set(lists.flat())),
+        fromMemberName: meRow?.contactName || meRow?.name || "NAKAMAの会員",
+        channelName: channel?.name ?? "チャンネル",
+        channelId,
+        preview: body,
+      });
+    } catch (e) {
+      console.error("[channels] ＠の通知に失敗:", e);
+    }
+  }
+
   revalidatePath(`/channels/${channelId}`);
 }
 

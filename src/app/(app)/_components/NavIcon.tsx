@@ -72,6 +72,9 @@ const PATHS: Record<string, string> = {
   // ＃（チャンネル）
   "/channels":
     "M9.3 3 8.6 7H4.6l-.3 2h4l-.7 4h-4l-.3 2h4l-.7 4h2l.7-4h4l-.7 4h2l.7-4h4l.3-2h-4l.7-4h4l.3-2h-4l.7-4h-2l-.7 4h-4l.7-4zM9 9h4l-.7 4h-4z",
+  // ベル（通知の設定）
+  "/settings/notifications":
+    "M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2m6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1z",
 };
 
 export function NavIcon({ href, size = 18 }: { href: string; size?: number }) {

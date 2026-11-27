@@ -97,6 +97,16 @@ model User {
   ///    ただし**止める手段を必ず用意する**（/feed の下に切り替えを置いた）。
   feedEmailOptOutAt DateTime? @map("feed_email_opt_out_at")
 
+  /// 通知メールを止めた日時（2026-11-28 ユーザー指示「やだったら通知を消せるように ON OFF ボタンを」）。
+  /// ⚠️⚠️ **null＝受け取る**（既定はON）。どれも「自分宛に起きたこと」のお知らせで広告ではない。
+  ///    ⚠️ 広告・案内メールは `marketingOptInAt`（こちらは**同意が要る**ので既定OFF）。混ぜないこと。
+  /// ⚠️ 種類ごとに分けているのは、「商談のメールは要るが、いいねは要らない」を叶えるため。
+  ///    1本のスイッチにすると、うるさい側に合わせて全部切られる。
+  messageEmailOptOutAt    DateTime? @map("message_email_opt_out_at")
+  mentionEmailOptOutAt    DateTime? @map("mention_email_opt_out_at")
+  connectionEmailOptOutAt DateTime? @map("connection_email_opt_out_at")
+  dealEmailOptOutAt       DateTime? @map("deal_email_opt_out_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

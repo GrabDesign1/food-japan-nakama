@@ -12,6 +12,7 @@ import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
 import { sellerBuyerIds } from "@/lib/invoice";
 import { openLead, isChargeableLead, firstInboundAt } from "@/lib/lead-unlock";
+import { allowedEmailsForMember } from "@/lib/notify-settings";
 import {
   PHASE_CONTRACTED,
   PHASE_SHIPPED,
@@ -66,7 +67,8 @@ async function postSystemMessage(params: {
   });
   after(async () => {
     try {
-      const to = await getMemberUserEmails(params.recipientId);
+      // ⚠️ 取引の進みのお知らせ。通知を止めている人には送らない（2026-11-28）
+      const to = await allowedEmailsForMember(params.recipientId, "deal");
       const offering = await prisma.offering.findUnique({
         where: { id: params.offeringId },
         select: { title: true },

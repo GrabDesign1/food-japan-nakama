@@ -58,6 +58,8 @@ const NAV: NavItem[] = [
   // ── アカウント
   { label: "プロフィール", href: "/profile", ready: true, section: "アカウント" },
   { label: "プラン・お支払い", href: "/billing", ready: true, section: "アカウント" },
+  // 通知の ON/OFF（2026-11-28 ユーザー指示「やだったら通知を消せるように」）
+  { label: "通知の設定", href: "/settings/notifications", ready: true, section: "アカウント" },
   // ⚠️⚠️ 2026-11-27 実測：**/report（違反報告）は作ってあるのに、どこからも行けなかった**
   //    （ソース全体で参照0件）。作った機能をUIに繋ぐ、の原則どおりここに出す。
   //    ⚠️ 相手や案件を指定して報告する場合は `/report?targetType=member&targetId=...`。

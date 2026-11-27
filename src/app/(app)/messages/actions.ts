@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
+import { allowedEmailsForMember } from "@/lib/notify-settings";
 import { prisma } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureDeal, touchDealActivity } from "@/lib/deal";
@@ -32,7 +33,8 @@ async function notifyRecipientIfCaughtUp(params: {
   listingTitle?: string | null;
 }): Promise<void> {
   if (params.unreadBefore > 0) return;
-  const to = await getMemberUserEmails(params.recipientId);
+  // ⚠️ 通知を止めている人には送らない（2026-11-28・通知の設定）
+  const to = await allowedEmailsForMember(params.recipientId, "message");
 
   // 未開封のリードは、通知メールにも本文を載せない
   // （画面だけ伏せてもメールで全部読めてしまっては同じこと）

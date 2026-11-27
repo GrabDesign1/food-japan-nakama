@@ -864,7 +864,7 @@ function feedNoticeHtml(params: {
     </p>
     <p style="font-size:12px;color:#7C8899">
       このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
-      この種類のお知らせは、<a href="${APP_URL}/dashboard" style="color:#7C8899">ホーム</a>の画面いちばん下で止められます。
+      この種類のお知らせは、<a href="${APP_URL}/settings/notifications" style="color:#7C8899">通知の設定</a>で止められます。
     </p>
   </div>`;
 }
@@ -983,7 +983,7 @@ export async function notifyGatheringJoin(params: {
     </p>
     <p style="font-size:12px;color:#7C8899">
       このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
-      この種類のお知らせは、<a href="${APP_URL}/dashboard" style="color:#7C8899">ホーム</a>の画面いちばん下で止められます。
+      この種類のお知らせは、<a href="${APP_URL}/settings/notifications" style="color:#7C8899">通知の設定</a>で止められます。
     </p>
   </div>`;
   await send({
@@ -1148,7 +1148,7 @@ export async function sendRelationshipReminder(params: {
     </p>
     <p style="font-size:11px;line-height:1.8;color:#7C8899;border-top:1px solid #E2E4E6;padding-top:10px">
       同じ方について、このお知らせは1回だけお送りします。<br />
-      この種類のお知らせは、<a href="${APP_URL}/dashboard" style="color:#7C8899">ホーム</a>の画面いちばん下で止められます。
+      この種類のお知らせは、<a href="${APP_URL}/settings/notifications" style="color:#7C8899">通知の設定</a>で止められます。
     </p>
   </div>`;
 
@@ -1156,5 +1156,108 @@ export async function sendRelationshipReminder(params: {
     to: [params.to],
     subject: "【FOOD JAPAN NAKAMA】しばらくやり取りのない方がいます",
     html,
+  });
+}
+
+/**
+ * 通知メール（投稿以外）の共通の見た目。2026-11-28。
+ * ⚠️⚠️ **末尾に「通知の設定」への行き先を必ず入れる。** ユーザー指示
+ *    「やだったら、サイトから通知を消せるように」。メールから辿れないと、止めたい人が迷子になる。
+ */
+function actionNoticeHtml(params: {
+  heading: string;
+  lead: string;
+  quote?: string | null;
+  path: string;
+  buttonLabel: string;
+}): string {
+  const { heading, lead, quote, path, buttonLabel } = params;
+  return `
+  <div style="font-family:'Hiragino Sans',sans-serif;max-width:520px;margin:0 auto;color:#141414">
+    <h2 style="font-size:18px;border-bottom:2px solid #0F7A3D;padding-bottom:8px">${heading}</h2>
+    <p style="font-size:14px;color:#3C4A62">${lead}</p>
+    ${
+      quote
+        ? `<p style="font-size:13px;color:#3C4A62;background:#f2f5f0;border-radius:6px;padding:12px;white-space:pre-wrap">${esc(
+            quote
+          )}</p>`
+        : ""
+    }
+    <p style="margin:22px 0">
+      <a href="${APP_URL}${path}" style="display:inline-block;background:#0F7A3D;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px">${buttonLabel}</a>
+    </p>
+    <p style="font-size:12px;color:#7C8899">
+      このメールはFOOD JAPAN NAKAMAから自動送信されています。<br>
+      この種類のお知らせは、<a href="${APP_URL}/settings/notifications" style="color:#7C8899">通知の設定</a>で止められます。
+    </p>
+  </div>`;
+}
+
+/** つながりの申請が届いた（2026-11-28） */
+export async function notifyConnectionRequest(params: {
+  to: string[];
+  fromMemberName: string;
+  message?: string | null;
+}): Promise<void> {
+  const { to, fromMemberName, message } = params;
+  if (to.length === 0) return;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】${fromMemberName}さんから仲間の申請が届きました`,
+    html: actionNoticeHtml({
+      heading: "仲間の申請が届きました",
+      lead: `<b>${esc(fromMemberName)}</b> さんから、仲間になりたいという申請が届いています。`,
+      quote: message?.trim() || null,
+      path: "/connections",
+      buttonLabel: "申請を見る",
+    }),
+  });
+}
+
+/** つながりの申請が承認された（2026-11-28） */
+export async function notifyConnectionAccepted(params: {
+  to: string[];
+  memberName: string;
+  memberId: string;
+}): Promise<void> {
+  const { to, memberName, memberId } = params;
+  if (to.length === 0) return;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】${memberName}さんと仲間になりました`,
+    html: actionNoticeHtml({
+      heading: "仲間になりました",
+      lead: `<b>${esc(memberName)}</b> さんが、あなたの申請を承認しました。これでお互いの投稿が読めます。`,
+      path: `/producers/${encodeURIComponent(memberId)}`,
+      buttonLabel: "相手のページを見る",
+    }),
+  });
+}
+
+/**
+ * チャンネルで＠で名前を呼ばれた（2026-11-28）。
+ * ⚠️⚠️ **鳴らすのはこれだけ。** チャンネルのふつうの発言ではメールを送らない
+ *    （2026-11-27 の「ウザくない」＝鳴らす／数える／黙る の3段階。ここは「鳴らす」）。
+ */
+export async function notifyChannelMention(params: {
+  to: string[];
+  fromMemberName: string;
+  channelName: string;
+  channelId: string;
+  preview: string;
+}): Promise<void> {
+  const { to, fromMemberName, channelName, channelId, preview } = params;
+  if (to.length === 0) return;
+  const short = preview.length > 120 ? `${preview.slice(0, 120)}…` : preview;
+  await send({
+    to,
+    subject: `【FOOD JAPAN NAKAMA】${fromMemberName}さんが「${channelName}」であなたを呼んでいます`,
+    html: actionNoticeHtml({
+      heading: "チャンネルで名前を呼ばれました",
+      lead: `<b>${esc(channelName)}</b> で、<b>${esc(fromMemberName)}</b> さんがあなたを呼んでいます。`,
+      quote: short,
+      path: `/channels/${encodeURIComponent(channelId)}`,
+      buttonLabel: "チャンネルを開く",
+    }),
   });
 }

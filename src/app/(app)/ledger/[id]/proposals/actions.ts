@@ -9,6 +9,7 @@ import { getOrCreateMemberForUser, getMemberUserEmails } from "@/lib/member";
 import { prisma } from "@/lib/db";
 import { notifyNewMessage } from "@/lib/email";
 import { canSendToOthers, trimTo, MESSAGE_MAX } from "@/lib/security";
+import { allowedEmailsForMember } from "@/lib/notify-settings";
 
 /** 掲載者本人であることと、そのスレッドがこの案件のものであることを確かめる。 */
 async function ownOfferingThreads(offeringId: string, threadIds: string[]) {
@@ -90,7 +91,8 @@ export async function bulkSendToProposals(
     for (const t of threads) {
       const otherId = t.fromMemberId === me.id ? t.toMemberId : t.fromMemberId;
       try {
-        const to = await getMemberUserEmails(otherId);
+        // ⚠️ 通知を止めている人には送らない（2026-11-28）
+        const to = await allowedEmailsForMember(otherId, "message");
         await notifyNewMessage({
           to,
           fromMemberName: me.name,
