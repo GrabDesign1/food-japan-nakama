@@ -8,6 +8,7 @@ import { signOut } from "../(auth)/actions";
 import { MobileNav } from "./_components/MobileNav";
 import { MessagePeek } from "./_components/MessagePeek";
 import { NavIcon } from "./_components/NavIcon";
+import { incomingRequestCount } from "@/lib/connections";
 import { btn } from "@/lib/ui";
 
 type NavItem = { label: string; href: string; ready?: boolean; admin?: boolean; section?: string };
@@ -21,6 +22,8 @@ const NAV: NavItem[] = [
   { label: "オススメの仲間", href: "/matching", ready: true },
   // ⚠️ 会員を見る入口がナビに1つも無く「探してもない」とご指摘（2026-11-25）
   { label: "メンバーを見る", href: "/members", ready: true },
+  // 仲間の申請（2026-11-27）。⚠️ 承認はこの1か所だけ。プロフィール側に増やさないこと
+  { label: "仲間の申請", href: "/connections", ready: true },
   { label: "売りたい・探している", href: "/ledger", ready: true },
   { label: "進行中の活動", href: "/deals", ready: true },
   { label: "メッセージ", href: "/messages", ready: true },
@@ -60,7 +63,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   // アバターと未読バッジは並列で取得。未読はリレーション条件で1クエリにまとめる
   const memberId = su.app.memberId;
-  const [member, unread, pendingReview] = await Promise.all([
+  const [member, unread, pendingConnections, pendingReview] = await Promise.all([
     memberId
       ? prisma.member.findUnique({
           where: { id: memberId },
@@ -76,6 +79,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           },
         })
       : Promise.resolve(0),
+    // 届いている仲間の申請（2026-11-27）。⚠️ 未読と同じく、ナビのバッジに出す
+    memberId ? incomingRequestCount(memberId) : Promise.resolve(0),
     // 事務局向け：審査待ち会員の件数（「事務局管理」にバッジ表示）
     admin
       ? prisma.member.count({ where: { tenantId: su.app.tenantId, status: "PENDING" } })
@@ -133,6 +138,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                   {item.href === "/messages" && unread > 0 ? (
                     <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {unread}
+                    </span>
+                  ) : null}
+                  {item.href === "/connections" && pendingConnections > 0 ? (
+                    <span className="ml-auto rounded-full bg-[var(--red)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {pendingConnections}
                     </span>
                   ) : null}
                   {item.href === "/admin" && pendingReview > 0 ? (

@@ -6,7 +6,10 @@ import { prisma } from "@/lib/db";
 import { INDUSTRY_LABEL } from "@/lib/member-taxonomy";
 import { OfferingCard } from "@/components/OfferingCard";
 import { views24hMap } from "@/lib/offering-views";
-import { toggleFavoriteMember } from "../actions";
+import {
+  actFollow, actRemoveConnection, actRequestConnection, actUnfollow, toggleFavoriteMember,
+} from "../actions";
+import { connectionCounts, connectionState, isFollowing } from "@/lib/connections";
 import { startConversation } from "../../messages/actions";
 import { btn, h1Cls, h2Cls } from "@/lib/ui";
 import { safeInternalPath } from "@/lib/security";
@@ -41,6 +44,8 @@ export default async function ProducerDetailPage({
   if (!m) notFound();
 
   const isOwner = m.id === su.app.memberId;
+  // ⚠️ 会員の行がまだ無い利用者（登録直後）もいる。その人には関係のボタンを出さない
+  const meId = su.app.memberId ?? "";
   // 非公開の会員（listed=false）は、本人以外には存在ごと見せない（2026-11-23）
   if ((m.status !== "APPROVED" || !m.listed) && !isOwner) notFound();
 
@@ -95,8 +100,24 @@ export default async function ProducerDetailPage({
     listMemberLinks(m.id),
   ]);
   const isFavorited = !!favorite;
-  // 自分、または名刺を交換した相手だけ、タイムラインが読める
-  const canSeeWall = isOwner || !!exchange;
+
+  /**
+   * 仲間とフォロー（2026-11-27 ユーザー指示・Facebook のプロフィールに合わせた）。
+   * ⚠️ 3つとも互いに独立なので1往復でまとめる（⚠️ 直列だとプロフィールの表示が待たされる）。
+   */
+  const [counts, relState, following] = await Promise.all([
+    connectionCounts(m.id),
+    isOwner || !meId ? Promise.resolve("self" as const) : connectionState(meId, m.id),
+    isOwner || !meId ? Promise.resolve(false) : isFollowing(meId, m.id),
+  ]);
+  /**
+   * タイムラインが読める相手。
+   * ⚠️⚠️ **2026-11-27、仲間とフォローを足した。** `visibleAuthorIds()`（feed.ts）に
+   *    仲間とフォローを入れたので、⚠️ ここを名刺交換だけのままにすると、
+   *      ⚠️⚠️ **読めるのに「名刺を交換すると読めます」と出る**（食い違う）。
+   * ⚠️ 判定を2か所に書いている状態なので、feed.ts の見える範囲を変えたら**必ずここも直す**。
+   */
+  const canSeeWall = isOwner || !!exchange || relState === "friends" || following;
 
   // 人を先に立てる（2026-11-23 ユーザー指示「担当者の紹介ができてないよ」）。
   // ⚠️ 担当者名が未入力の既存会員は、これまでどおり事業者名を見出しにする（空白にしない）
@@ -186,10 +207,78 @@ export default async function ProducerDetailPage({
               </span>
             ) : null}
           </div>
+          {/*
+            仲間とフォローの人数（2026-11-27 ユーザー指示「仲間 ◯◯人　フォロー ◯◯人　というように」）。
+            ⚠️ 0人でも出す（⚠️ 出たり消えたりすると、場所が動いて読みにくい）。
+          */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--ink-2)]">
+            <span>
+              仲間 <b className="text-[var(--ink)]">{counts.friends}</b> 人
+            </span>
+            <span>
+              フォロー <b className="text-[var(--ink)]">{counts.following}</b> 人
+            </span>
+            <span>
+              フォロワー <b className="text-[var(--ink)]">{counts.followers}</b> 人
+            </span>
+          </div>
         </div>
 
         {!isOwner ? (
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
+            {/*
+              仲間になる／申請中／仲間（2026-11-27）。
+              ⚠️⚠️ **相手から申請が来ているとき（pendingIn）は、ここで承認させない。**
+                 ⚠️ 承認は「届いた申請」の画面（/connections）に一本化する。
+                 ⚠️ 2か所に置くと、片方を直し忘れて食い違う。
+            */}
+            {relState === "none" ? (
+              <form action={actRequestConnection.bind(null, m.id)}>
+                <button className={`${btn("primary")} flex w-full items-center justify-center gap-1.5`}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+                    <path
+                      fill="currentColor"
+                      d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    />
+                  </svg>
+                  仲間になる
+                </button>
+              </form>
+            ) : relState === "pendingOut" ? (
+              <form action={actRemoveConnection.bind(null, m.id)}>
+                <button className={`${btn("secondary")} w-full`}>申請中（取り消す）</button>
+              </form>
+            ) : relState === "pendingIn" ? (
+              <Link href="/connections" className={`${btn("primary")} block w-full text-center`}>
+                申請が届いています →
+              </Link>
+            ) : relState === "friends" ? (
+              <form action={actRemoveConnection.bind(null, m.id)}>
+                <button className={`${btn("secondary")} flex w-full items-center justify-center gap-1.5`}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+                    <path
+                      fill="currentColor"
+                      d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zM6.5 14.5l-2.5-2.5L2.6 13.4 6.5 17.3 10.4 13.4 9 12z"
+                    />
+                  </svg>
+                  仲間
+                </button>
+              </form>
+            ) : null}
+
+            {/* フォロー（片思い・承認なし）。⚠️ フォローすると、この方の投稿がホームに流れる */}
+            <form action={(following ? actUnfollow : actFollow).bind(null, m.id)}>
+              <button
+                className={`w-full rounded-lg px-4 py-2 text-[13px] font-medium transition ${
+                  following
+                    ? "bg-[var(--green-soft)] text-[var(--green-d)]"
+                    : "border border-[var(--green)] text-[var(--green-d)] hover:bg-[var(--green-soft)]"
+                }`}
+              >
+                {following ? "フォロー中" : "＋ フォロー"}
+              </button>
+            </form>
+
             {!existingThread ? (
               <form action={startConversation.bind(null, m.id)}>
                 <button className={`${btn("primary")} w-full`}>

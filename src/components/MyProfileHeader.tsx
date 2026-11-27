@@ -30,12 +30,19 @@ export function MyProfileHeader({
   member,
   fallbackName,
   defaultOpen = false,
+  counts,
 }: {
   member: MyProfileHeaderMember | null;
   /** 会員の行がまだ無いとき（登録直後）に出す名前 */
   fallbackName?: string | null;
   /** 最初から開いておくか。⚠️ ホームでは false（たたんでおく） */
   defaultOpen?: boolean;
+  /**
+   * 仲間・フォロー・フォロワーの人数（2026-11-27 ユーザー指示
+   * 「仲間 ◯◯人　フォロー ◯◯人　というように」）。
+   * ⚠️ 読み込み元（dashboard）が渡す。⚠️⚠️ ここで数えない（この部品はDBに触らない）。
+   */
+  counts?: { friends: number; following: number; followers: number } | null;
 }) {
   const photo = member?.contactPhotoUrl || member?.avatarUrl || null;
   const personName = member?.contactName || fallbackName || "";
@@ -64,6 +71,24 @@ export function MyProfileHeader({
             {personName || company || "（お名前が未登録です）"}
           </p>
           {sub ? <p className="truncate text-[12px] text-[var(--muted)]">{sub}</p> : null}
+          {/*
+            仲間とフォローの人数（2026-11-27）。⚠️ たたんだ1行にも出す——
+            ⚠️⚠️ ここは毎日見る場所なので、開かないと分からない数字にしない。
+            ⚠️ 狭い画面では「フォロワー」を落とす（⚠️ 3つ並ぶと名前が潰れる）。
+          */}
+          {counts ? (
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[12px] text-[var(--ink-2)]">
+              <span>
+                仲間 <b className="text-[var(--ink)]">{counts.friends}</b> 人
+              </span>
+              <span>
+                フォロー <b className="text-[var(--ink)]">{counts.following}</b> 人
+              </span>
+              <span className="hidden sm:inline">
+                フォロワー <b className="text-[var(--ink)]">{counts.followers}</b> 人
+              </span>
+            </p>
+          ) : null}
         </div>
         <span className="shrink-0 text-[12px] font-semibold text-[var(--muted)]">
           <span className="group-open:hidden">自分の登録情報</span>

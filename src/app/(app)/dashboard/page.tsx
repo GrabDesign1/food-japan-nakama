@@ -23,6 +23,7 @@ import {
   isMeetingSoon,
 } from "@/lib/project-taxonomy";
 import { MyProfileHeader } from "@/components/MyProfileHeader";
+import { connectionCounts } from "@/lib/connections";
 import { loadHomeTimeline } from "@/lib/home-timeline";
 import { normalizeShown, FEED_PAGE_SIZE, FEED_MAX_SHOWN } from "@/lib/feed";
 import { feedEmailEnabled } from "@/lib/feed-notify";
@@ -116,7 +117,7 @@ export default async function DashboardPage({
   const tenantId = su?.app.tenantId;
   const memberId = member?.id;
 
-  const [announcements, banners, dealsWithOther, myProjects, timeline, myProjectApps, nextBillingTs] = await Promise.all([
+  const [announcements, banners, dealsWithOther, myProjects, timeline, myProjectApps, nextBillingTs, myCounts] = await Promise.all([
     tenantId
       ? prisma.announcement.findMany({
           where: { tenantId },
@@ -153,6 +154,8 @@ export default async function DashboardPage({
     member?.paymentStatus === "PAID" && member.stripeSubscriptionId
       ? getNextBillingTs(member.stripeSubscriptionId)
       : Promise.resolve(null),
+    // 仲間・フォロー・フォロワーの人数（2026-11-27 ユーザー指示「仲間 ◯◯人　フォロー ◯◯人」）
+    memberId ? connectionCounts(memberId) : Promise.resolve(null),
   ]);
 
   // ── 2段目：1段目の結果に依存するクエリはまとめて並列実行（直列4往復→1往復に）──
@@ -373,7 +376,7 @@ export default async function DashboardPage({
       </div>
 
       {/* 自分の登録情報。⚠️ 既定はたたんだ1行（2026-11-26 ユーザー指示「普段は、畳んでおいて」） */}
-      <MyProfileHeader member={member} fallbackName={su?.app.name} />
+      <MyProfileHeader member={member} fallbackName={su?.app.name} counts={myCounts} />
 
       {/* 投稿欄（2026-11-26 ユーザー指示「これを Facebook のように作り込んで」）。
           ⚠️ はじめは登録情報より上に置いたが、同日「これ逆にして」で下に移した。

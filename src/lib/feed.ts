@@ -19,6 +19,8 @@ import { POST_BODY_MAX, POST_IMAGE_MAX, COMMENT_BODY_MAX, FEED_PAGE_SIZE } from 
 // 定数は feed-core.ts（クライアントからも読み込める）。従来どおりここからも使えるように再輸出する。
 export * from "@/lib/feed-core";
 
+import { followingIds, friendIds } from "@/lib/connections";
+
 /** 自分とカードを交換した相手の memberId（＝投稿が見える範囲） */
 export async function connectionIds(memberId: string): Promise<string[]> {
   const rows = await prisma.cardExchange.findMany({
@@ -30,9 +32,23 @@ export async function connectionIds(memberId: string): Promise<string[]> {
   return [...ids];
 }
 
-/** 自分が読んでよい著者の集合（自分＋つながっている相手） */
+/**
+ * 自分が読んでよい著者の集合（自分＋カードを交換した相手＋仲間＋フォローしている相手）。
+ *
+ * ⚠️⚠️ **2026-11-27、仲間とフォローを足した**（ユーザー決定）——
+ *    ⚠️ フォローは**片思いで承認が要らない**。つまり、⚠️⚠️ **相手の同意なく相手の投稿を読める**。
+ *      ⚠️ これは「投稿＝仲間内に見せるもの」という前提を広げる変更なので、
+ *        ⚠️⚠️ **投稿の公開範囲を狭くしたいという話が出たら、まずここを見直すこと。**
+ * ⚠️ 3つとも互いに独立なので1往復でまとめる。
+ */
 export async function visibleAuthorIds(memberId: string): Promise<string[]> {
-  return [memberId, ...(await connectionIds(memberId))];
+  const [cards, friends, following] = await Promise.all([
+    connectionIds(memberId),
+    friendIds(memberId),
+    followingIds(memberId),
+  ]);
+  // ⚠️ 重なるので Set で落とす（同じ人がカード交換・仲間・フォローの3つに入りうる）
+  return [...new Set([memberId, ...cards, ...friends, ...following])];
 }
 
 /** 紹介された元の投稿。見てよい相手でないときは visible:false で中身を伏せる */

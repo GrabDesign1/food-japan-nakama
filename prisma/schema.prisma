@@ -240,6 +240,10 @@ model Member {
   cardExchangesA CardExchange[] @relation("CardExchangeA")
   cardExchangesB CardExchange[] @relation("CardExchangeB")
   links          MemberLink[]
+  connectionsOut MemberConnection[] @relation("ConnectionRequester")
+  connectionsIn  MemberConnection[] @relation("ConnectionAddressee")
+  following      MemberFollow[]     @relation("FollowFollower")
+  followers      MemberFollow[]     @relation("FollowFollowee")
 
   @@index([tenantId])
   @@index([status])
@@ -1205,6 +1209,72 @@ model CardExchange {
   @@index([memberAId])
   @@index([memberBId])
   @@map("card_exchanges")
+}
+
+/// 仲間（申請→承認）。2026-11-27 ユーザー決定
+/// 「仲間 ◯◯人　フォロー ◯◯人　というように繋がりは申請型にしてね」。
+///
+/// ⚠️⚠️ **カード交換（CardExchange）とは別物。**（2026-11-27 ユーザー選択）
+///    カード交換は「いつどこで会ったか」の**記録**で、読み取った時点で成立する（承認は無い）。
+///    こちらは**本人が承認してはじめて成立する関係**。どちらも残す。
+/// ⚠️ 断られたら行ごと消す（DECLINED を残さない）。相手に「断られました」と見せないため。
+///    ⚠️ 消すので、同じ人へもう一度申請できる。小さな会のうちはこれで足りる。
+model MemberConnection {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// 申請した側
+  requesterId String @map("requester_id")
+  /// 申請された側（この人が承認する）
+  addresseeId String @map("addressee_id")
+
+  /// "PENDING"（申請中）| "ACCEPTED"（仲間）
+  /// ⚠️ 断った場合は行を消すので "DECLINED" は入らない
+  status String @default("PENDING")
+
+  /// 申請に添えるひとこと（任意・140字まで画面で制限）
+  message String?
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  respondedAt DateTime? @map("responded_at")
+
+  requester Member @relation("ConnectionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee Member @relation("ConnectionAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  /// ⚠️⚠️ 同じ向きの重複だけを止める。逆向き（B→A）は別の行になりうるので、
+  ///    ⚠️ **申請を作る前に逆向きを必ず調べる**（connections.ts）。無いと相互に申請中で止まる。
+  @@unique([requesterId, addresseeId])
+  @@index([tenantId])
+  @@index([addresseeId, status])
+  @@index([requesterId, status])
+  @@map("member_connections")
+}
+
+/// フォロー（片思い・承認なし）。2026-11-27 ユーザー決定。
+///
+/// ⚠️⚠️ **お気に入り（Favorite の targetType:"member"）とは別物。**
+///    お気に入りは**自分だけが見る非公開のしおり**。人数も相手に見せていない。
+///    ⚠️ 後からフォローに読み替えると、**非公開だったものが人数として相手に見える**。
+///    ⚠️⚠️ 同意なく見せることになるので、読み替えないこと（2026-11-27 判断）。
+/// ⚠️ フォローすると、相手の投稿がホームの「仲間の動き」に流れる（feed.ts の見える範囲に入る）。
+model MemberFollow {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  /// フォローした側
+  followerId String @map("follower_id")
+  /// フォローされた側
+  followeeId String @map("followee_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  follower Member @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee Member @relation("FollowFollowee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@index([tenantId])
+  @@index([followeeId])
+  @@map("member_follows")
 }
 
 /// 共創フィールドワークの回答と、AIが作った共創レポート（2026-11-18 都城・霧島バスフィールドワーク）。
